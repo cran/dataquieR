@@ -1,0 +1,23 @@
+```{r include=FALSE}
+if ((all(!is.na(resp_vars) && (length(resp_vars) == 1))) || outputSlot == "SummaryPlot") {
+  stop("Plot result")
+}
+if (outputSlot == "SummaryTable") {
+  stop("Not a table result")
+}
+all_res <- lapply(current_results, `[[`, outputSlot)
+have_a_result <- any(unlist(lapply(all_res, function(r) variable %in% names(r))))
+if (!have_a_result) {
+  stop("No results here")
+}
+```
+```{r results='asis', eval=have_a_result}
+cat(sprintf(title, dQuote(variable)))
+cat("\n")
+```
+```{r echo=FALSE, eval=have_a_result}
+# if (variable == "SBP_0" && iform == "acc_univariate_outlier") save(all_res, variable, file = "/tmp/yyy.RData")
+invisible(lapply(all_res, function(r) {
+  if (!is.null(r[[variable]])) print(r[[variable]])
+  }))
+```

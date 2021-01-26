@@ -1,0 +1,44 @@
+Package: dataquieR
+Title: Data Quality in Epidemiological Research
+Version: 1.0.3
+Authors@R: 
+    c(person(given = "Adrian",
+             family = "Richter",
+             role = "aut",
+             email = "richtera@uni-greifswald.de"),
+      person(given = "Carsten Oliver",
+             family = "Schmidt",
+             role = "aut",
+             email = "carsten.schmidt@uni-greifswald.de"),
+      person(given = "Stephan",
+             family = "Struckmann",
+             role = c("aut", "cre"),
+             email = "stephan.struckmann@uni-greifswald.de"))
+Description: A set of functions to assess data quality issues in
+    studies. See 'TMF' <https://www.tmf-ev.de/EnglishSite/Home.aspx>
+    guideline and 'DFG' <https://www.dfg.de/en/index.jsp> project at
+    <https://dfg-qa.ship-med.uni-greifswald.de>.
+License: CC BY 4.0
+URL: https://dfg-qa.ship-med.uni-greifswald.de/
+BugReports: https://gitlab.com/libreumg/dataquier/-/issues
+Depends: R (>= 3.3.0)
+Imports: MASS, MultinomialCI, R.devices, cowplot (>= 0.9.4), emmeans,
+        ggplot2 (>= 2.1.0), ggpubr, lme4, lubridate, parallelMap,
+        reshape, rlang, robustbase, dplyr (>= 1.0.2), utils
+Suggests: htmltools, rmarkdown, knitr, DT (>= 0.15), digest,
+        flexdashboard, anytime, patchwork, rstudioapi, testthat (>=
+        2.3.2), tibble, vdiffr
+VignetteBuilder: knitr
+Encoding: UTF-8
+KeepSource: TRUE
+Language: en-US
+LazyData: true
+RoxygenNote: 7.1.1
+NeedsCompilation: no
+Packaged: 2021-01-23 12:00:33 UTC; struckmanns
+Author: Adrian Richter [aut],
+  Carsten Oliver Schmidt [aut],
+  Stephan Struckmann [aut, cre]
+Maintainer: Stephan Struckmann <stephan.struckmann@uni-greifswald.de>
+Repository: CRAN
+Date/Publication: 2021-01-26 13:40:02 UTC

@@ -1,0 +1,23 @@
+```{r include=FALSE}
+if ((all(is.na(variable) || (length(variable) != 1))) && outputSlot == "SummaryPlotList") {
+  stop("PlotList result")
+}
+if (outputSlot == "SummaryTable") {
+  stop("Not a table result")
+}
+all_res <- current_results[resp_vars == variable]
+if (!chunk_error) {
+  all_res <- all_res[(vapply(all_res, length, FUN.VALUE = integer(1)) > 0)]
+}
+have_a_result <- length(all_res) > 0
+if (!have_a_result) {
+  stop("No results here")
+}
+```
+```{r results='asis', eval=have_a_result}
+cat(sprintf(title, dQuote(variable)))
+cat("\n")
+```
+```{r echo=FALSE, eval=have_a_result}
+invisible(lapply(all_res, print, slot = outputSlot))
+```

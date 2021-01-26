@@ -1,0 +1,26 @@
+#' Check for integer values
+#'
+#' This function checks if a variable is integer.
+#'
+#' @param x the object to test
+#' @param tol precision of the detection. Values deviating more than `tol` from
+#'            their closest integer value will not be deemed integer.
+#'
+#' @return `TRUE` or `FALSE`
+#' @seealso is.integer
+#'
+#' Copied from the documentation of \link[base]{is.integer}
+#'
+#' \link[base]{is.integer} detects, if the storage mode of an R-object is
+#' integer. Usually, users want to know, if the values are integer. As suggested
+#' by \link[base]{is.integer}'s documentation, `is.wholenumber` does so.
+#'
+util_is_integer <- function(x, tol = .Machine$double.eps^0.5) {
+  if (is.numeric(x)) {
+    r <- abs(x - round(x)) < tol
+  } else {
+    r <- rep(FALSE, length(x))
+  }
+  r[is.na(r)] <- TRUE # NA is not not an integer
+  r
+}

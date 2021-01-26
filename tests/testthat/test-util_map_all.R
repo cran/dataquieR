@@ -1,0 +1,134 @@
+test_that("util_map_all works", {
+  md <- prep_create_meta(
+    VAR_NAMES = letters,
+    DATA_TYPE = DATA_TYPES$FLOAT,
+    LABEL = LETTERS,
+    MISSING_LIST = "",
+    nums = seq_along(letters)
+  )
+  sd <- as.data.frame(lapply(setNames(nm = letters), paste, 1:10),
+                      stringsAsFactors = FALSE)
+  mapped <- util_map_all(
+    label_col = LABEL,
+    study_data = sd,
+    meta_data = md
+  )
+
+  expect_equal(colnames(mapped$df), LETTERS)
+
+  mapped <- util_map_all(
+    label_col = "nums",
+    study_data = sd,
+    meta_data = md
+  )
+
+  expect_error(util_map_all(
+      label_col = c("nums", "kkk"),
+      study_data = sd,
+      meta_data = md
+    ),
+    regexp =
+      paste("label_col must be exactly 1 meta data attribute,",
+            "neither a vector nor NULL.")
+  )
+
+  expect_error(util_map_all(
+    label_col = c(),
+    study_data = sd,
+    meta_data = md
+  ),
+  regexp =
+    paste("label_col must be exactly 1 meta data attribute,",
+          "neither a vector nor NULL.")
+  )
+
+  expect_error(util_map_all(
+    label_col = "NO NO NO NO NO",
+    study_data = sd,
+    meta_data = md
+  ), regexp = paste("label_col .+NO NO NO NO NO.+ not found in meta data.",
+                    "Did you mean .+VAR_NAMES.+"))
+
+  expect_error(util_map_all(
+    label_col = "speed",
+    study_data = sd,
+    meta_data = cars
+  ), regexp = paste("In util_map_all: VAR_NAMES not found in meta data."))
+
+  expect_error(util_map_all(
+    label_col = "DATA_TYPE",
+    study_data = sd,
+    meta_data = md
+  ), regexp = paste("The following .+DATA_TYPE.+ are duplicated in the meta",
+                    "data and cannot be used as label therefore: .+float.+"))
+
+  mdx <- md
+  mdx$VAR_NAMES[[5]] <- mdx$VAR_NAMES[[1]]
+  expect_error(util_map_all(
+    label_col = LABEL,
+    study_data = sd,
+    meta_data = mdx
+  ), regexp = paste("The following variable names are duplicated in the",
+                    "meta data and cannot be used as label therefore: .+a.+"))
+
+  mdx <- md
+  mdx$VAR_NAMES[[5]] <- NA
+  expect_error(util_map_all(
+    label_col = LABEL,
+    study_data = sd,
+    meta_data = mdx
+  ), regexp = paste("For the following variables, some variable names are",
+                    "missing in the meta data: Variable No. #5"))
+
+  mdx <- md
+  mdx$LABEL[[5]] <- NA
+  expect_error(util_map_all(
+    label_col = LABEL,
+    study_data = sd,
+    meta_data = mdx
+  ), regexp = paste("For the following variables, some .+LABEL.+ are missing",
+                    "in the meta data and cannot be used as label therefore:",
+                    "Variable No. #5"))
+
+  mdx <- md
+  mdx$VAR_NAMES[[1]] <- "xxx"
+  mdx$VAR_NAMES[[4]] <- "yyy"
+  expect_message(
+    expect_warning(util_map_all(
+      label_col = LABEL,
+      study_data = sd,
+      meta_data = mdx
+    ), regexp =
+      sprintf("(%s|%s|%s)",
+              paste("Lost 7.7% of the study data because",
+                    "of missing/not assignable meta-data"),
+              paste("Did not find any meta data for the following",
+                    "variables from the study data: .+a.+, .+d.+"),
+              paste("Lost 7.7% of the meta data because of",
+                    "missing/not assignable study-data")
+      ),
+      perl = TRUE,
+      all = TRUE
+    ), regexp =
+      sprintf("(%s|%s)",
+              paste("Did not find any meta data for the following",
+                    "variables from the study data: .+a.+, .+d.+"),
+              paste("Found meta data for the following variables not",
+                    "found in the study data: .+xxx.+, .+yyy.+")
+      ),
+    all = TRUE,
+    perl = TRUE
+  )
+
+  mdx <- md
+  mdx$LABEL[[5]] <- "    "
+  expect_error(util_map_all(
+    label_col = LABEL,
+    study_data = sd,
+    meta_data = mdx
+  ), regexp = paste("Mapping of meta on study data yielded invalid",
+                    "variable labels: .+    .+"))
+
+  expect_equal(colnames(mapped$df), as.character(seq_along(letters)))
+
+})

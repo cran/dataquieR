@@ -1,0 +1,358 @@
+---
+title: "dataquieR report"
+author: "`r Sys.info()[['user']]`"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  flexdashboard::flex_dashboard:
+    storyboard: true
+    vertical_layout: "scroll"
+    orientation: "columns"
+  html_document:
+    toc: true
+    toc_depth: 2
+params:
+  debug: false
+---
+
+```{css}
+/*.chart-wrapper { overflow-x: scroll; }*/
+```
+
+
+```{r setup, include=FALSE}
+if (params$debug) {
+  template <- "default"
+  packageName <- "dataquieR"
+  chunk_echo <- FALSE
+  chunk_warning <- FALSE
+  chunk_error <- FALSE
+  chunk_message <- FALSE
+#  load("/tmp/report.RData")
+}
+
+variables <- report$app_mat$SummaryTable$Variables
+
+df_report <- as.data.frame(report)
+if (nrow(df_report) * ncol(df_report) == 0)
+  stop("Report is empty, no results at all.")
+library(DT)
+knitr::opts_chunk$set(echo = chunk_echo, warning = chunk_warning, error = chunk_error, message = chunk_message)
+cache <- new.env(parent = emptyenv())
+process_result_chunk <- function(iform, outputSlot, title, subreport, variable) {
+    subreport <- match.arg(subreport, c("", "mv", "table", "plotlist_not_mv"))
+    if (nchar(subreport) > 0)
+      subreport <- paste0("_", subreport)
+    current_results <- subset(df_report, implementationform == iform, 'results', drop = TRUE)
+    resp_vars <- subset(df_report, implementationform == iform, 'resp_vars', drop = TRUE)
+    
+    child_hash <-
+      digest::digest(list(
+        iform, outputSlot, title, subreport, variable
+      ))
+    
+    if (exists(child_hash, cache)) {
+      return(get(child_hash, cache))
+    }
+    
+    chunk <- suppressWarnings(suppressMessages(try(
+      knitr::knit_child(
+        system.file(sprintf("%s_subreport%s.Rmd", template, subreport), package = packageName), 
+        envir = environment(), 
+        quiet = TRUE,
+        options = list( # https://rdrr.io/github/rubenarslan/formr/man/asis_knit_child.html
+           fig.path = paste0(knitr::opts_chunk$get("fig.path"), child_hash, "-"), 
+           cache.path = paste0(knitr::opts_chunk$get("cache.path"), child_hash, "-")
+        )
+      ), 
+    silent = TRUE)))
+    
+    assign(child_hash, chunk, cache)
+
+    return(chunk)
+}
+call_plan <- dplyr::tribble(
+  ~ iform, ~ outputSlot, ~ title, ~ subreport,
+#  "con_inadmissible_categorical", "SummaryTable", "### Inadmissible Categorical Values of %s", "table",
+  "con_limit_deviations", "SummaryPlotList", "### Hard Limit Deviations Plots for %s",            "mv",
+  "con_detection_limits", "SummaryPlotList", "### Detection Limit Deviations Plots for %s",            "mv",
+#  "con_contradictions", "SummaryPlot", "### Contradictions Affecting %s", NULL,
+  "acc_distributions",    "SummaryPlotList", "### Distribution Plots for %s",                "mv",
+  "acc_shape_or_scale",   "SummaryPlot",     "### Distribution Shape-or-Scale Plots for %s", NULL,
+  "acc_margins",          "SummaryPlot",     "### Marginal Means Plots for %s",              NULL,
+  "acc_loess",            "SummaryPlotList", "### LOESS-smoothed Time Course Plots for %s",  "plotlist_not_mv",
+#  "com_unit_missingness", "SummaryPlot", "### Unit Missingngess", NULL,
+#  "com_segment_missingness", "SummaryPlot", "### Segment Missingness", NULL,
+#  "com_item_missingness", "SummaryPlot", "### Item Missingngess", NULL,
+  "acc_univariate_outlier", "SummaryPlotList", "### Univariate Outlier of %s", "mv",
+  "acc_varcomp", "SummaryTable", "### Variance Components of %s", "table",
+  "acc_end_digits", "SummaryPlot", "### End digit preferences of %s", NULL,
+#  "acc_multivariate_outlier", "SummaryPlot", "### acc_multivariate_outlier", NULL,
+)
+if (FALSE && params$debug) {
+  call_plan <- dplyr::tribble(
+    ~ iform, ~ outputSlot, ~ title, ~ subreport,
+#  "con_inadmissible_categorical", "SummaryTable", "### Inadmissible Categorical Values of %s", "table",
+  "con_limit_deviations", "SummaryPlotList", "### Hard Limit Deviations Plots for %s",            "mv",
+  "con_detection_limits", "SummaryPlotList", "### Detection Limit Deviations Plots for %s",            "mv",
+    "acc_varcomp",          "SummaryTable",    "### acc_varcomp",                 "table",
+    "acc_margins",          "SummaryPlot",     "### Marginal Means Plots for %s", NULL,
+    "acc_univariate_outlier", "SummaryPlotList", "### Univariate Outlier of %s", "mv",
+    "acc_loess",            "SummaryPlotList", "### LOESS-smoothed Time Course Plots for %s",  "plotlist_not_mv",
+  )
+}
+invisible(NULL)
+```
+
+# Overview {data-navmenu="General information"}
+
+> Analysing a data set with `r nrow(report$study_data)` observations and `r ncol(report$study_data)` variables. 
+> The metadata table comprises `r ncol(report$meta_data)` attributes of `r nrow(report$meta_data)` variables.
+
+```{r summary}
+s <- summary(report)
+sv <- s$StudyVariable
+for (cl in colnames(s)) {
+  s[[cl]] <- htmltools::htmlEscape(s[[cl]])
+}
+if (nrow(s) > 0)
+  s$StudyVariable <- paste0('<a href="#', sv, '">', s$StudyVariable, '</a>')
+s[is.na(s)] <- "N/A"
+datatable(s, filter = "top", escape=FALSE, )
+```
+
+# Applicability {data-navmenu="General information"}
+```{r app_mat, fig.height = 12, fig.width = 8}
+report$app_mat$ApplicabilityPlot
+```
+
+# Unit missingness {data-navmenu="Completeness"}
+
+```{r unit_miss_tab, fig.height = 12, fig.width = 8}
+if (length(report$long_format$com_unit_missingness$results) >= 1)
+  datatable(as.data.frame(t(report$long_format$com_unit_missingness$results[[1]]$SummaryData), stringsAsFactors = FALSE), filter = "top")
+```
+
+# Segment missingness figure {data-navmenu="Completeness"}
+
+```{r segment_miss_fig, fig.height = 12, fig.width = 8, error=TRUE}
+if ((!is.null(report$long_format$com_segment_missingness)) && 
+  (length(report$long_format$com_segment_missingness$results) == 1))
+  if (inherits(report$long_format$com_segment_missingness$results[[1]], "try-error")) {
+    stop(report$long_format$com_segment_missingness$results[[1]])
+  } else {
+    report$long_format$com_segment_missingness$results[[1]]$SummaryPlot[[1]]
+  }
+```
+
+# Segment missingness table {data-navmenu="Completeness"}
+
+```{r segment_miss_tab, fig.height = 12, fig.width = 8, error=TRUE}
+if (inherits(report$long_format$com_segment_missingness$results[[1]], "try-error")) {
+  stop(report$long_format$com_segment_missingness$results[[1]])
+} else {
+  datatable(report$long_format$com_segment_missingness$results[[1]]$SummaryData, filter = "top")
+}
+```
+
+# Item missingness figure {data-navmenu="Completeness"}
+
+```{r item_miss_fig, fig.height = 12, fig.width = 8, error=TRUE}
+if (length(report$long_format$com_item_missingness$results) == 1) {
+  if (inherits(report$long_format$com_item_missingness$results[[1]], "try-error")) {
+    stop(report$long_format$com_item_missingness$results[[1]])
+  } else {
+    report$long_format$com_item_missingness$results[[1]]$SummaryPlot
+  }
+}
+```
+
+# Item missingness table {data-navmenu="Completeness"}
+
+```{r item_miss_tab, fig.height = 12, fig.width = 8, error=TRUE}
+if (inherits(report$long_format$com_item_missingness$results[[1]], "try-error")) {
+  stop(report$long_format$com_item_missingness$results[[1]])
+} else {
+  datatable(report$long_format$com_item_missingness$results[[1]]$SummaryTable, filter = "top")
+}
+```
+
+# Inadmissible categorical values {data-navmenu="Consistency"}
+
+```{r iac_tab, fig.height = 12, fig.width = 8, error=TRUE}
+if (inherits(report$long_format$con_inadmissible_categorical$results[[1]], "try-error")) {
+  stop(report$long_format$con_inadmissible_categorical$results[[1]])
+} else {
+  datatable(report$long_format$con_inadmissible_categorical$results[[1]]$SummaryTable, filter = "top")
+}
+```
+
+# Contradictions figure {data-navmenu="Consistency"}
+```{r contra_fig, fig.height = 12, fig.width = 8}
+if (length(report$long_format$con_contradictions$results) == 1)
+  if (inherits(report$long_format$con_contradictions$results[[1]], "try-error")) {
+    conditionMessage(attr(report$long_format$con_contradictions$results[[1]], "condition"))
+  } else {
+    report$long_format$con_contradictions$results[[1]]$SummaryPlot
+  }
+```
+
+# Contradictions table {data-navmenu="Consistency"}
+
+```{r contra_tab, fig.height = 12, fig.width = 8}
+if (inherits(report$long_format$con_contradictions$results[[1]], "try-error")) {
+  conditionMessage(attr(report$long_format$con_contradictions$results[[1]], "condition"))
+} else {
+  datatable(report$long_format$con_contradictions$results[[1]]$SummaryData, filter = "top")
+}
+```
+
+```{r con_output1, echo=FALSE, results='asis', eval = TRUE}
+cp <- call_plan[startsWith(call_plan$iform, "con_"), , FALSE]
+by_indicator <- dataquieR::prep_pmap(cp, function(...) {
+  single_results <- 
+    lapply(setNames(nm = unique(as.character(variables))), function(variable) {
+    process_result_chunk(..., variable = variable)
+  })
+  errors <- vapply(single_results, function(x) {
+    inherits(x, "try-error") || inherits(x, "error")
+  } , FUN.VALUE =  logical(1))
+  if (any(errors)) {
+    if (chunk_error) {
+      invisible(lapply(single_results[errors], function(e) try(stop(e))))
+    }
+    single_results <- single_results[!errors]
+  }
+  iform <- c(...)["iform"]
+  title <- c(...)["title"]
+  title <- gsub("^#+ ", "", title)
+  title <- gsub(" [a-z]+ %s$", "", title)
+  r <- c(sprintf('\n# %s {#%s_con_mv data-navmenu="Consistency"}', title, iform), 
+         single_results) 
+  
+  r[trimws(r) == ""] <- NULL
+  if (length(r) > 1) {
+    r
+  } else {
+    NULL
+  }
+})
+cat(unlist(by_indicator), sep = '\n')
+```
+```{r con_output2, echo=FALSE, results='asis', eval = TRUE}
+res <- lapply(unique(as.character(variables)), function(variable) {
+    cp <- call_plan[startsWith(call_plan$iform, "con_"), , FALSE]
+    cp$variable <- variable
+    single_results <- dataquieR::prep_pmap(cp, process_result_chunk)
+    errors <- vapply(single_results, function(x) {
+      inherits(x, "try-error") || inherits(x, "error")
+    } , FUN.VALUE =  logical(1))
+    if (any(errors)) {
+      if (chunk_error) {
+        invisible(lapply(single_results[errors], function(e) try(stop(e))))
+      }
+      single_results <- single_results[!errors]
+    }
+    r <- c(sprintf('\n# %s {#%s_con data-navmenu="Consistency"}', dQuote(variable), variable), 
+           single_results) 
+
+    r[trimws(r) == ""] <- NULL
+    if (length(r) > 1) {
+      r
+    } else {
+      NULL
+    }
+  })
+cat(unlist(res), sep = '\n')
+```
+
+
+
+
+
+```{r acc_output1, echo=FALSE, results='asis', eval = TRUE}
+cp <- call_plan[startsWith(call_plan$iform, "acc_"), , FALSE]
+by_indicator <- dataquieR::prep_pmap(cp, function(...) {
+  single_results <- 
+    lapply(setNames(nm = unique(as.character(variables))), function(variable) {
+    process_result_chunk(..., variable = variable)
+  })
+  errors <- vapply(single_results, function(x) {
+    inherits(x, "try-error") || inherits(x, "error")
+  } , FUN.VALUE =  logical(1))
+  if (any(errors)) {
+    if (chunk_error) {
+      invisible(lapply(single_results[errors], function(e) try(stop(e))))
+    }
+    single_results <- single_results[!errors]
+  }
+  iform <- c(...)["iform"]
+  title <- c(...)["title"]
+  title <- gsub("^#+ ", "", title)
+  title <- gsub(" [a-z]+ %s$", "", title)
+  r <- c(sprintf('\n# %s {#%s_acc_mv data-navmenu="Accuracy"}', title, iform), 
+         single_results) 
+  
+  r[trimws(r) == ""] <- NULL
+  if (length(r) > 1) {
+    r
+  } else {
+    NULL
+  }
+})
+
+cat(unlist(by_indicator), sep = '\n')
+```
+
+```{r acc_output2, echo=FALSE, results='asis', eval = TRUE}
+res <- lapply(unique(as.character(variables)), function(variable) {
+    cp <- call_plan[startsWith(call_plan$iform, "acc_"), , FALSE]
+    cp$variable <- variable
+    single_results <- dataquieR::prep_pmap(cp, process_result_chunk)
+    errors <- vapply(single_results, function(x) {
+      inherits(x, "try-error") || inherits(x, "error")
+    } , FUN.VALUE =  logical(1))
+    if (any(errors)) {
+      if (chunk_error) {
+        invisible(lapply(single_results[errors], function(e) try(stop(e))))
+      }
+      single_results <- single_results[!errors]
+    }
+    r <- c(sprintf('\n# %s {#%s_acc data-navmenu="Accuracy"}', dQuote(variable), variable), 
+           single_results) 
+
+    r[trimws(r) == ""] <- NULL
+    if (length(r) > 1) {
+      r
+    } else {
+      NULL
+    }
+  })
+cat(unlist(res), sep = '\n')
+```
+
+```{r main_output, echo=FALSE, results='asis', eval = TRUE}
+res <- lapply(unique(as.character(variables)), function(variable) {
+    cp <- call_plan
+    cp$variable <- variable
+    single_results <- dataquieR::prep_pmap(cp, process_result_chunk)
+    errors <- vapply(single_results, function(x) {
+      inherits(x, "try-error") || inherits(x, "error")
+    } , FUN.VALUE =  logical(1))
+    if (any(errors)) {
+      if (chunk_error) {
+        invisible(lapply(single_results[errors], function(e) try(stop(e))))
+      }
+      single_results <- single_results[!errors]
+    }
+    r <- c(list(sprintf('\n# %s {#%s data-navmenu="Single Variables"}', dQuote(variable), variable)), 
+           single_results) 
+
+    r[trimws(r) == ""] <- NULL
+    if (length(r) > 1) {
+      r
+    } else {
+      NULL
+    }
+  })
+cat(unlist(res), sep = '\n')
+```
