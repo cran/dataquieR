@@ -1,3 +1,14 @@
+# dataquieR 1.0.4
+  * Fixed CITATION, a broken reference in Rd and a problem with the vignette
+    on `pandoc`-less systems
+  * Improved an inaccurate argument description for multivariate outliers
+  * Fixed a problem with error messages, if a `dataquieR` function was called 
+    by a generated function `f` that lives in an environment 
+    directly inheriting from the empty environment, e.g. 
+    `environment(f) <- new.env(parent = emptyenv())`.
+  * Marked some examples as `dontrun`, because they sometimes caused `NOTE`s
+    on `rhub`.
+
 # dataquieR 1.0.3
   * Addressed all comments by the CRAN reviewers, thank you.
 

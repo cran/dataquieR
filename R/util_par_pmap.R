@@ -1,6 +1,6 @@
-#' Utility function parallel version of [`purrr::pmap`]
+#' Utility function parallel version of `purrr::pmap`
 #'
-#' Parallel version of [`purrr::pmap`].
+#' Parallel version of `purrr::pmap`.
 #'
 #'
 #' @param .l [data.frame] with one call per line and one function argument
@@ -14,7 +14,7 @@
 #' @param use_cache [logical] set to FALSE to omit re-using already distributed
 #'                            study- and metadata on a parallel cluster
 #'
-#' @seealso [purrr::pmap]
+#' @seealso `purrr::pmap`
 #' @seealso [Stack Overflow post](https://stackoverflow.com/a/47575143)
 #'
 #' @author [Aurèle](https://stackoverflow.com/users/6197649)

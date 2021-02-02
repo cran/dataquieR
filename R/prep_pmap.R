@@ -1,6 +1,6 @@
 #' Support function for a parallel `pmap`
 #'
-#' parallel version of [purrr::pmap]
+#' parallel version of `purrr::pmap`
 #'
 #' @param .l [data.frame] with one call per line and one function argument
 #'                        per column
@@ -11,7 +11,7 @@
 #'              been started by the caller. Set to 0 to run without
 #'              parallelization.
 #'
-#' @seealso [purrr::pmap]
+#' @seealso `purrr::pmap`
 #' @seealso [Stack Overflow post](https://stackoverflow.com/a/47575143)
 #'
 #' @author [Aurèle](https://stackoverflow.com/users/6197649)

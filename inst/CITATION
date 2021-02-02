@@ -3,7 +3,7 @@ citHeader("To cite dataquieR in publications use")
 if(!exists("meta") || is.null(meta))
   meta <- packageDescription("dataquieR")
 if (is.null(meta$Date)) meta$Date <- Sys.Date()
-year <- format(meta$Date, "%Y")
+year <- format(as.Date(meta$Date), "%Y")
 note <- sprintf("R package version %s", meta$Version)
 
 citEntry(entry = "Manual",
@@ -22,44 +22,3 @@ citEntry(entry = "Manual",
   	       paste(note, ".", sep = ""),
                  "URL https://dfg-qa.ship-med.uni-greifswald.de/")
 )
-
-structure(list(schmidt2021 = structure(list(author = structure(list(
-    list(given = "Carsten", family = "Schmidt", role = NULL,
-        email = NULL, comment = NULL), list(given = "Stephan",
-        family = "Struckmann", role = NULL, email = NULL, comment = NULL),
-    list(given = "Cornelia", family = "Enzenbach", role = NULL,
-        email = NULL, comment = NULL), list(given = "Achim",
-        family = "Reineke", role = NULL, email = NULL, comment = NULL),
-    list(given = "Jürgen", family = "Stausberg", role = NULL,
-        email = NULL, comment = NULL), list(given = "Stefan",
-        family = "Damerow", role = NULL, email = NULL, comment = NULL),
-    list(given = "Marianne", family = "Huebner", role = NULL,
-        email = NULL, comment = NULL), list(given = "Börge",
-        family = "Schmitt", role = NULL, email = NULL, comment = NULL),
-    list(given = "Willi", family = "Sauerbrei", role = NULL,
-        email = NULL, comment = NULL), list(given = "Adrian",
-        family = "Richter", role = NULL, email = NULL, comment = NULL)), class = "person"),
-    title = "Facilitating Harmonized Data Quality Assessments. A Data Quality Framework for Observational Health Research Data Collections With Software Implementations in R",
-    journal = "BMC Medical Research Methodology", year = "2021",
-    month = "Jan", day = "15", issn = "2693-5015", doi = "10.21203/rs.3.rs-119457/v1",
-    url = "https://doi.org/10.21203/rs.3.rs-119457/v1"), bibtype = "Article", key = "schmidt2021")), class = "bibentry", strings = structure(character(0), .Names = character(0)))
-
-structure(list(RN19141 = structure(list(author = structure(list(
-    list(given = "A", family = "Richter", role = NULL, email = NULL,
-        comment = NULL), list(given = "J", family = "Schössow",
-        role = NULL, email = NULL, comment = NULL), list(given = "A",
-        family = "Werner", role = NULL, email = NULL, comment = NULL),
-    list(given = "B", family = "Schauer", role = NULL, email = NULL,
-        comment = NULL), list(given = "D", family = "Radke",
-        role = NULL, email = NULL, comment = NULL), list(given = "J",
-        family = "Henke", role = NULL, email = NULL, comment = NULL),
-    list(given = "S", family = "Struckmann", role = NULL, email = NULL,
-        comment = NULL), list(given = "CO", family = "Schmidt",
-        role = NULL, email = NULL, comment = NULL)), class = "person"),
-    title = "Data quality monitoring in clinical and observational epidemiologic
-                         studies: the role of metadata and process information",
-    journal = "GMS Med Inform Biom Epidemiol", volume = "15",
-    number = "1", doi = "10.3205/mibe000202", year = "2019",
-    type = "Journal Article"), bibtype = "Article", key = "RN19141")),
-      strings = structure(character(0), .Names = character(0)),
-      class = "bibentry")

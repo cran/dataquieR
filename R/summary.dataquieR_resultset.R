@@ -14,6 +14,8 @@
 #' @importFrom stats setNames
 #' @importFrom dplyr %>%
 #' @examples
+#' \dontrun{
+#' # runs spuriously slow on rhub
 #' load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
 #'   environment())
 #' load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
@@ -27,6 +29,7 @@
 #'        "Consistency")
 #' ))
 #' x <- summary(report)
+#' }
 summary.dataquieR_resultset <- function(object, ...) {
   .df <- as.data.frame(object)
   .res <- object$app_mat$SummaryTable

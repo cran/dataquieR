@@ -1,6 +1,6 @@
 Package: dataquieR
 Title: Data Quality in Epidemiological Research
-Version: 1.0.3
+Version: 1.0.4
 Authors@R: 
     c(person(given = "Adrian",
              family = "Richter",
@@ -35,10 +35,10 @@ Language: en-US
 LazyData: true
 RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2021-01-23 12:00:33 UTC; struckmanns
+Packaged: 2021-02-02 16:31:01 UTC; struckmanns
 Author: Adrian Richter [aut],
   Carsten Oliver Schmidt [aut],
   Stephan Struckmann [aut, cre]
 Maintainer: Stephan Struckmann <stephan.struckmann@uni-greifswald.de>
 Repository: CRAN
-Date/Publication: 2021-01-26 13:40:02 UTC
+Date/Publication: 2021-02-02 17:00:03 UTC

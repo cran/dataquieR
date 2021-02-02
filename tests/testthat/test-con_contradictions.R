@@ -1,4 +1,5 @@
 test_that("con_contradictions works", {
+  Sys.setenv(TZ = 'CET')
   load(system.file("extdata", "study_data.RData", package = "dataquieR"),
        envir = environment())
   load(system.file("extdata", "meta_data.RData", package = "dataquieR"),
@@ -53,9 +54,9 @@ test_that("con_contradictions works", {
       regexp = sprintf("%s|%s|%s|%s",
                        paste("All variables with CONTRADICTIONS in the",
                              "metadata are used."),
-                       paste("N = 21 values in EDUCATION_1 have",
+                       paste("N = 3 values in EDUCATION_1 have",
                              "been above HARD_LIMITS and were removed."),
-                       paste("N = 120 values in SMOKE_SHOP_0 have been",
+                       paste("N = 24 values in SMOKE_SHOP_0 have been",
                              "above HARD_LIMITS and were removed."),
                        paste("Variables: AGE_0, AGE_1, EXAM_DT_0, LAB_DT_0",
                              "have no assigned labels and levels.")

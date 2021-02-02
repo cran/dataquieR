@@ -1,4 +1,5 @@
 test_that("con_limit_deviations works", {
+  Sys.setenv(TZ = 'CET')
   load(system.file("extdata", "study_data.RData", package = "dataquieR"),
        envir = environment())
   load(system.file("extdata", "meta_data.RData", package = "dataquieR"),
@@ -37,6 +38,7 @@ test_that("con_limit_deviations works", {
 })
 
 test_that("con_limit_deviations and timevars with < 20 integer sec-values ok", {
+  Sys.setenv(TZ = 'CET')
   load(system.file("extdata", "study_data.RData", package = "dataquieR"),
        envir = environment())
   load(system.file("extdata", "meta_data.RData", package = "dataquieR"),
@@ -70,6 +72,7 @@ test_that("con_limit_deviations and timevars with < 20 integer sec-values ok", {
 })
 
 test_that("con_limit_deviations works w/o resp_vars", {
+  Sys.setenv(TZ = 'CET')
   load(system.file("extdata", "study_data.RData", package = "dataquieR"),
        envir = environment())
   load(system.file("extdata", "meta_data.RData", package = "dataquieR"),
@@ -121,6 +124,7 @@ test_that("con_limit_deviations works w/o resp_vars", {
 })
 
 test_that("con_limit_deviations handles errors", {
+  Sys.setenv(TZ = 'CET')
 
   load(system.file("extdata", "study_data.RData", package = "dataquieR"),
        envir = environment())
@@ -198,10 +202,8 @@ test_that("con_limit_deviations handles errors", {
     perl = TRUE
   )
 
-  expect_lt(
-    abs(sum(MyValueLimits$SummaryTable$GRADING) /
-          nrow(MyValueLimits$SummaryTable) - 0.1515152),
-    0.001
+  expect_equal(
+    sum(MyValueLimits$SummaryTable$GRADING), 5
   )
 
   md0$HARD_LIMITS <- NA # no limits
@@ -232,6 +234,7 @@ test_that("con_limit_deviations handles errors", {
 })
 
 test_that("con_limit_deviations and values < 0", {
+  Sys.setenv(TZ = 'CET')
   load(system.file("extdata", "study_data.RData", package = "dataquieR"),
        envir = environment())
   load(system.file("extdata", "meta_data.RData", package = "dataquieR"),
@@ -267,6 +270,7 @@ test_that("con_limit_deviations and values < 0", {
 })
 
 test_that("con_limit_deviations and values < 0 with max -1", {
+  Sys.setenv(TZ = 'CET')
   load(system.file("extdata", "study_data.RData", package = "dataquieR"),
        envir = environment())
   load(system.file("extdata", "meta_data.RData", package = "dataquieR"),
@@ -304,6 +308,7 @@ test_that("con_limit_deviations and values < 0 with max -1", {
 
 
 test_that("con_limit_deviations with no lower limit", {
+  Sys.setenv(TZ = 'CET')
   load(system.file("extdata", "study_data.RData", package = "dataquieR"),
        envir = environment())
   load(system.file("extdata", "meta_data.RData", package = "dataquieR"),
@@ -347,6 +352,7 @@ test_that("con_limit_deviations with no lower limit", {
 })
 
 test_that("con_limit_deviations with constant data", {
+  Sys.setenv(TZ = 'CET')
   load(system.file("extdata", "study_data.RData", package = "dataquieR"),
        envir = environment())
   load(system.file("extdata", "meta_data.RData", package = "dataquieR"),
@@ -379,6 +385,7 @@ test_that("con_limit_deviations with constant data", {
 })
 
 test_that("con_limit_deviations does not crash with missing codes", {
+  Sys.setenv(TZ = 'CET')
   load(system.file("extdata", "study_data.RData", package = "dataquieR"),
        envir = environment())
   load(system.file("extdata", "meta_data.RData", package = "dataquieR"),

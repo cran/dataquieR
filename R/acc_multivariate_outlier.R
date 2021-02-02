@@ -32,7 +32,7 @@
 #'
 #' @param resp_vars [variable list] len=1-2. the name of the continuous
 #'                                           measurement variable
-#' @param id_vars [variable list] [variable list] optional, an ID variable of
+#' @param id_vars [variable] optional, an ID variable of
 #'                        the study data. If not specified row numbers are used.
 #' @param n_rules [numeric] from=1 to=4. the no. of rules that must be violated
 #'                                       to classify as outlier

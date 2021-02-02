@@ -79,6 +79,8 @@
 #' @importFrom utils tail head
 #'
 #' @examples
+#' \dontrun{
+#' # runs spuriously slow on rhub
 #' load(system.file("extdata/study_data.RData", package = "dataquieR"))
 #' load(system.file("extdata/meta_data.RData", package = "dataquieR"))
 #' co_vars <- c("AGE_0")
@@ -95,6 +97,7 @@
 #'             group_vars = group_vars,
 #'             label_col = label_col,
 #'             co_vars = co_vars)
+#' }
 #' @seealso
 #' [Online Documentation](
 #' https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_margins.html

@@ -97,6 +97,8 @@ is treated as continuous data. This is in fact a coarsening of the original
 data but for the purpose of clarity this approach is chosen.
 }
 \examples{
+\dontrun{
+# runs spuriously slow on rhub
 load(system.file("extdata/study_data.RData", package = "dataquieR"))
 load(system.file("extdata/meta_data.RData", package = "dataquieR"))
 co_vars <- c("AGE_0")
@@ -113,6 +115,7 @@ acc_margins(resp_vars = rvs,
             group_vars = group_vars,
             label_col = label_col,
             co_vars = co_vars)
+}
 }
 \seealso{
 \href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_margins.html}{Online Documentation}

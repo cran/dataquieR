@@ -307,7 +307,7 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
         minx2 <- min(ds1_ll[[rvs[[i]]]], na.rm = TRUE)
 
         if (!is.na(minx1) & minx1 > minx2) {
-          n_below <- sum(ds1_ll[[rvs[[i]]]][ds1_ll[[rvs[[i]]]] < minx1],
+          n_below <- sum(ds1_ll[[rvs[[i]]]] < minx1,
                          na.rm = TRUE)
           ds1_ll[[rvs[[i]]]][ds1_ll[[rvs[[i]]]] < minx1] <- NA
           util_warning(paste0("N = ", n_below, " values in ", rvs[[i]],
@@ -319,7 +319,7 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
         maxx2 <- max(ds1_ll[[rvs[[i]]]], na.rm = TRUE)
 
         if (!is.na(maxx1) & maxx1 < maxx2) {
-          n_above <- sum(ds1_ll[[rvs[[i]]]][ds1_ll[[rvs[[i]]]] > maxx1],
+          n_above <- sum(ds1_ll[[rvs[[i]]]] > maxx1,
                          na.rm = TRUE)
           ds1_ll[[rvs[[i]]]][ds1_ll[[rvs[[i]]]] > maxx1] <- NA
           util_warning(paste0("N = ", n_above, " values in ", rvs[[i]],
@@ -334,7 +334,7 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
     levlabs <- meta_data$VALUE_LABELS[meta_data[[label_col]] %in% rvs]
 
     # any variables without labels?
-    if (any(!is.na(levlabs))) {
+    if (any(is.na(levlabs))) {
       util_warning(paste0("Variables: ", paste0(rvs[is.na(levlabs)],
                                                 collapse = ", "),
                           " have no assigned labels and levels."))

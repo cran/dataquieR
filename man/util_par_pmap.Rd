@@ -2,7 +2,7 @@
 % Please edit documentation in R/util_par_pmap.R
 \name{util_par_pmap}
 \alias{util_par_pmap}
-\title{Utility function parallel version of \code{\link[purrr:map2]{purrr::pmap}}}
+\title{Utility function parallel version of \code{purrr::pmap}}
 \usage{
 util_par_pmap(
   .l,
@@ -31,10 +31,10 @@ study- and metadata on a parallel cluster}
 \link{list} of results of the function calls
 }
 \description{
-Parallel version of \code{\link[purrr:map2]{purrr::pmap}}.
+Parallel version of \code{purrr::pmap}.
 }
 \seealso{
-\link[purrr:map2]{purrr::pmap}
+\code{purrr::pmap}
 
 \href{https://stackoverflow.com/a/47575143}{Stack Overflow post}
 }

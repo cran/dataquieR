@@ -22,6 +22,8 @@ Summarizes a \link[=dq_report]{dataquieR report} extracting all GRADING
 results.
 }
 \examples{
+\dontrun{
+# runs spuriously slow on rhub
 load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
   environment())
 load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
@@ -35,4 +37,5 @@ report <- suppressWarnings(dq_report(
        "Consistency")
 ))
 x <- summary(report)
+}
 }

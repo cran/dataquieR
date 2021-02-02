@@ -23,10 +23,10 @@ parallelization.}
 \link{list} of results of the function calls
 }
 \description{
-parallel version of \link[purrr:map2]{purrr::pmap}
+parallel version of \code{purrr::pmap}
 }
 \seealso{
-\link[purrr:map2]{purrr::pmap}
+\code{purrr::pmap}
 
 \href{https://stackoverflow.com/a/47575143}{Stack Overflow post}
 }

@@ -42,9 +42,39 @@ util_interpret_limits <- function(mdata) {
   # the code below works only on non-empty elements of the column
   # the number of elements will most likely vary between columns
   for (i in seq_along(lv)) {
-   valid <- grepl(
-    "[\\[(]([0-9\\.Ee+\\-]*|[\\+\\-]?Inf);([0-9\\.Ee+\\-]*|[\\+\\-]?Inf)[\\])]",
+    valid1 <- grepl(
+      "[\\[(]([0-9\\.Ee+\\-]*|[\\+\\-]?Inf);([0-9\\.Ee+\\-]*|[\\+\\-]?Inf)[\\])]",
       gsub(" ", "", mdata[[lv[i]]], fixed = TRUE), perl = TRUE)
+    valid2 <- vapply(mdata[[lv[i]]], FUN.VALUE = logical(1),
+                     function(x) {
+                       if (is.na(x) || trimws(x) == "") {
+                         return(FALSE)
+                       }
+                       x <- gsub("^[(\\[]+", "", x, perl = TRUE)
+                       x <- gsub("[)\\]]+$", "", x, perl = TRUE)
+                       x <- paste("", x, "")
+                       xs <- trimws(strsplit(x, ";", fixed = TRUE)[[1]])
+                       if (length(xs) != 2) {
+                         return(FALSE)
+                       }
+                       xs1 <- xs[[1]]
+                       xs2 <- xs[[2]]
+                       if (xs1 %in% c("", "Inf", "+Inf", "-Inf")) {
+                         a <- TRUE
+                       } else {
+                         a <- !inherits(try(as.POSIXct(xs1), silent = TRUE),
+                                        "try-error")
+                       }
+                       if (xs2 %in% c("", "Inf", "+Inf", "-Inf")) {
+                         b <- TRUE
+                       } else {
+                         b <- !inherits(try(as.POSIXct(xs2), silent = TRUE),
+                                        "try-error")
+                       }
+                       a && b
+                     })
+
+    valid <- valid1 | valid2
 
     if (any(!valid & !util_empty(mdata[[lv[i]]]))) {
       util_warning(
@@ -163,7 +193,7 @@ util_interpret_limits <- function(mdata) {
         paste0("INCL_", paste0(pv[i], "_LIMIT_LOW")),
         paste0("INCL_", paste0(pv[i], "_LIMIT_UP"))
       )
-# --> for dates, use as.POSIXct(X$UPPER, origin = "1970-01-01")
+# --> for dates, use as.POSIXct(X$UPPER, origin = min(Sys.time(), 0))
 #     to translate back.
 
       mdata_ext <- merge(mdata_ext, X, by = "VAR_NAMES", all.x = TRUE)

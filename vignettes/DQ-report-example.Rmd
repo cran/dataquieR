@@ -16,10 +16,12 @@ vignette: >
 library(knitr)
 library(DT)
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-knit_print.data.frame = function(x, ...) {
-  knit_print(DT::datatable(head(x, 10)), ...)
+if (rmarkdown::pandoc_available()) {
+  knit_print.data.frame = function(x, ...) {
+    knit_print(DT::datatable(head(x, 10)), ...)
+  }
+  registerS3method("knit_print", "data.frame", knit_print.data.frame)
 }
-registerS3method("knit_print", "data.frame", knit_print.data.frame)
 library(dataquieR)
 ```
 

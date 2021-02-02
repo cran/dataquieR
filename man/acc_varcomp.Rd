@@ -89,6 +89,8 @@ group_vars for adjustment.
 }
 
 \examples{
+\dontrun{
+# runs spuriously slow on rhub
 load(system.file("extdata/study_data.RData", package = "dataquieR"))
 load(system.file("extdata/meta_data.RData", package = "dataquieR"))
 co_vars <- c("SEX_0", "AGE_0")
@@ -107,6 +109,7 @@ acc_varcomp(
   min_subgroups = min_subgroups, label_col = label_col,
   study_data = study_data, meta_data = meta_data
 )
+}
 
 }
 \seealso{

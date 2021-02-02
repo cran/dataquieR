@@ -17,7 +17,7 @@ acc_multivariate_outlier(
 \item{resp_vars}{\link{variable list} len=1-2. the name of the continuous
 measurement variable}
 
-\item{id_vars}{\link{variable list} \link{variable list} optional, an ID variable of
+\item{id_vars}{\link{variable} optional, an ID variable of
 the study data. If not specified row numbers are used.}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
