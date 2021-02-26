@@ -28,7 +28,8 @@ with labels of variables}
 \item{threshold_value}{\link{numeric} from=0 to=100. a numerical value
 ranging from 0-100}
 
-\item{check_table}{\link{data.frame} Table defining contractions. See details for
+\item{check_table}{\link{data.frame} contradiction rules table.  Table defining
+contractions. See details for
 its required structure.}
 
 \item{summarize_categories}{\link{logical} Needs a column 'tag' in the

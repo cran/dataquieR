@@ -1,3 +1,10 @@
+# dataquieR 1.0.5
+  * Fixed two bugs in con_inadmissible_categorical (one resp_var only and
+    value-limits all the same for all resp_vars)
+  * Changed LICENSE to BSD-2
+  * Slightly updated documentation
+  * Updated `README`-File
+
 # dataquieR 1.0.4
   * Fixed CITATION, a broken reference in Rd and a problem with the vignette
     on `pandoc`-less systems

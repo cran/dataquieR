@@ -30,12 +30,12 @@ with labels of variables}
 \item{show_causes}{\link{logical} if TRUE, then the distribution of missing codes
 is shown}
 
-\item{cause_label_df}{\link{data.frame} if missing codes have labels the
-respective data frame must be specified
-here}
+\item{cause_label_df}{\link{data.frame} missing code table. If missing codes have
+labels the respective data frame must be
+specified here}
 
-\item{include_sysmiss}{\link{logical} Optional, if TRUE system missingness (NAs) is
-evaluated in the summary plot}
+\item{include_sysmiss}{\link{logical} Optional, if TRUE system missingness (NAs)
+is evaluated in the summary plot}
 
 \item{threshold_value}{\link{numeric} from=0 to=100. a numerical value ranging
 from 0-100}

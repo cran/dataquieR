@@ -35,7 +35,8 @@
 #'                                       with labels of variables
 #' @param threshold_value [numeric] from=0 to=100. a numerical value
 #'                                                 ranging from 0-100
-#' @param check_table [data.frame] Table defining contractions. See details for
+#' @param check_table [data.frame] contradiction rules table.  Table defining
+#'                                 contractions. See details for
 #'                                 its required structure.
 #' @param summarize_categories [logical] Needs a column 'tag' in the
 #'                             `check_table`.

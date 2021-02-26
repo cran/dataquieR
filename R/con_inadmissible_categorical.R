@@ -102,7 +102,7 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
   obs_cats <- function(x) {
     as.character(unique(x[!is.na(x)]))
   }
-  sumdf1$OBSERVED_CATEGORIES <- lapply(ds1[, rvs], obs_cats)
+  sumdf1$OBSERVED_CATEGORIES <- lapply(ds1[, rvs, drop = FALSE], obs_cats)
 
   # which categories were defined in metadata
   defcats <- lapply(lapply(setNames(util_map_labels(rvs,
@@ -113,6 +113,7 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
                        util_parse_assignments), unlist) # get for all item
 
   sumdf1$DEFINED_CATEGORIES <- mapply(lapply(defcats, names), defcats,
+                                      SIMPLIFY = FALSE,
                                       FUN = setNames) # swap names and values
 
   # which used categories were not defined

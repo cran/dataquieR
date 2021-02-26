@@ -21,4 +21,19 @@ test_that("con_inadmissible_categorical works", {
   expect_equal(sum(IAVCatAll$SummaryTable$GRADING), 5)
   expect_equal(sum(IAVCatAll$FlaggedStudyData$EDUCATION_1_IAV), 3)
 
+  expect_silent(suppressWarnings({
+    IAVCatAll <- con_inadmissible_categorical(study_data = study_data,
+                                              meta_data  = meta_data,
+                                              label_col  = "LABEL",
+                                              resp_vars =
+                                                c("MARRIED_0",
+                                                  "SMOKING_0",
+                                                  "PREGNANT_0"))
+
+    IAVCatAll <- con_inadmissible_categorical(study_data = study_data,
+                                              meta_data  = meta_data,
+                                              label_col  = "LABEL",
+                                              resp_vars = c("MARRIED_0"))
+  }))
+
 })

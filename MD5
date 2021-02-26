@@ -1,6 +1,7 @@
-86e23ed04fab89b80220dfe3d96276d8 *DESCRIPTION
+ee6754697c583e728cc6093ecd591da2 *DESCRIPTION
+182d7434a22335207bc1dd8dc27c731e *LICENSE
 2df2fcee41212ab99275dfb1a2a7e589 *NAMESPACE
-e7cc93c33ba95e4ae39ef24e954174d9 *NEWS.md
+9fa06b09340af4bdf09e5e2b9d6a9e65 *NEWS.md
 0366345b18bcd650fff85a7ad5879557 *R/000_globs.R
 3bd6b8ef310bb7e9a0f9716f256300c1 *R/acc_distributions.R
 10404d0fb5bf607cceefb745a7172dd7 *R/acc_end_digits.R
@@ -12,11 +13,11 @@ e625f0f293a790b9c1e156703bb2baf6 *R/acc_loess.R
 0bcc7c013ebf88252c75ad45a1dd51ce *R/acc_varcomp.R
 bd446ea05f6a51b57519d57b5495bbf1 *R/as.data.frame.dataquieR_resultset.R
 0fd0ac06c3b3aa0dc6500a50b92b377e *R/as.list.dataquieR_resultset.R
-fe134d294d95f3af6eb0b7edc8828284 *R/com_item_missingness.R
+406935924b995c47874c2151ee1647e5 *R/com_item_missingness.R
 17965222b51e5253889c2de8af43c9dc *R/com_segment_missingness.R
 c207541d558189bbb1c6cca14240da69 *R/com_unit_missingness.R
-9bac98505a4b3f6583a0f09aa26f817c *R/con_contradictions.R
-544592a54d7cfa46f413949092fdcc6b *R/con_inadmissible_categorical.R
+168b12328480985024a26f533b67f211 *R/con_contradictions.R
+9fa0185fef88d89c754d591e87f034b8 *R/con_inadmissible_categorical.R
 2acaee648a91ca210066138dfd98843d *R/con_limit_deviations.R
 1884c4770059371ac1a5dbaeb565209b *R/dataquieR-package.R
 f582859e807718e4c0224b3cd610a4da *R/dataquieR_resultset.R
@@ -98,7 +99,7 @@ f717c2baf6bc0798fe3802c2d34d3eb0 *R/util_sixsigma.R
 302df59b9cf88cc4b769330b97663941 *R/util_validate_known_meta.R
 38277a7ef317114d692c9a5f15c20922 *R/util_warn_unordered.R
 6c88be28b0db900c6e8b5d14083d9dc9 *R/util_warning.R
-92ccc4d9ca183403a14cdb30212a917c *README.md
+332cd63d466352a0622f4d768d4692cb *README.md
 6e57b64e023357c59220e67fae699e76 *build/vignette.rds
 a3eca3c3b55b82df207451ab6ecd31ca *inst/CITATION
 9ba965f0719b465197eda8eb5e31c286 *inst/WORDLIST
@@ -109,7 +110,7 @@ a3eca3c3b55b82df207451ab6ecd31ca *inst/CITATION
 f6f1f5a238d085777f16b85cb661bee5 *inst/default_subreport_table.Rmd
 999c1ddcf5acbb0cdbc4fbee0640d41a *inst/doc/DQ-report-example.R
 32e0b78e289b21701f47861c5df53e09 *inst/doc/DQ-report-example.Rmd
-f23e5646bc3094f41e4973f53c9d64e9 *inst/doc/DQ-report-example.html
+d4759c9e2cf5460e720f3cce0716ac0c *inst/doc/DQ-report-example.html
 c1f8c3a6f19ca10905da5e5d9c6ffad5 *inst/extdata/Missing-Codes-2020.csv
 8f811701036d64d3ab3d45a312feaa4b *inst/extdata/Missing-Codes-SHIP.csv
 e8f9ab1d23f5cd97a2360a919485e317 *inst/extdata/SHIP-sample-meta-data.csv
@@ -137,10 +138,10 @@ d6967353157d7caac05c6aea788ad459 *man/acc_univariate_outlier.Rd
 60805d668ef95e3cd52d131cefe1b917 *man/acc_varcomp.Rd
 edc85e4c787bf3fdbc0b0a0e3b8c1902 *man/as.data.frame.dataquieR_resultset.Rd
 ceb11e92f4941465c984f52af671ac97 *man/as.list.dataquieR_resultset.Rd
-a887a0b4b0b6bd06f49b054f5fbf4d66 *man/com_item_missingness.Rd
+255684a710db30a58a4243bd22eeb980 *man/com_item_missingness.Rd
 6dbf679c1788c10b3103a9ccc68e1d7b *man/com_segment_missingness.Rd
 eb79b8578d664bf52104b010d4df2bd8 *man/com_unit_missingness.Rd
-0e2217c9408d6e0799781e8091facc13 *man/con_contradictions.Rd
+6ed37943df85848b34b7449e2c9a7a34 *man/con_contradictions.Rd
 2b4515ddd4724451c594906fbd1707e0 *man/con_detection_limits.Rd
 da2694a676850f5095a3ddb4e1d1196c *man/con_inadmissible_categorical.Rd
 41a4f5ab4aa96ea4eb94c11415f4e5c1 *man/con_limit_deviations.Rd
@@ -267,7 +268,7 @@ bc02f2e50a23f24e393555d8bd4df58b *tests/testthat/test-acc_multivariate_outlier.R
 8e66ed75eca8d8d082cad7374676c484 *tests/testthat/test-com_segment_missingness.R
 4be4bc712640a60515dfadcd7faa3c6a *tests/testthat/test-com_unit_missingness.R
 b06ef9bce6e417914b5676c2538f12e9 *tests/testthat/test-con_contradictions.R
-2d19b1204ccec1dbc1ee87872eaa5624 *tests/testthat/test-con_inadmissible_categorical.R
+0e6f585aba1d30dcc082fac598771f78 *tests/testthat/test-con_inadmissible_categorical.R
 7ead131abec13b3c1e5cb0c2475535aa *tests/testthat/test-con_limit_deviations.R
 6af2851fc743f6fd13cb96dd7d50264f *tests/testthat/test-dataquieR_resultset_verify.R
 5a825161a9dca4a3d07e081f782055ce *tests/testthat/test-dq_report.R

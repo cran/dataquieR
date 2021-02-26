@@ -29,11 +29,11 @@
 #'                                       with labels of variables
 #' @param show_causes [logical] if TRUE, then the distribution of missing codes
 #'                              is shown
-#' @param cause_label_df [data.frame] if missing codes have labels the
-#'                                    respective data frame must be specified
-#'                                    here
-#' @param include_sysmiss [logical] Optional, if TRUE system missingness (NAs) is
-#'                                  evaluated in the summary plot
+#' @param cause_label_df [data.frame] missing code table. If missing codes have
+#'                                    labels the respective data frame must be
+#'                                    specified here
+#' @param include_sysmiss [logical] Optional, if TRUE system missingness (NAs)
+#'                                  is evaluated in the summary plot
 #' @param threshold_value [numeric] from=0 to=100. a numerical value ranging
 #'                                                 from 0-100
 #' @param suppressWarnings [logical] warn about mixed missing and jump code
