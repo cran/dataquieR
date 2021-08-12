@@ -2,7 +2,7 @@
 library(knitr)
 library(DT)
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-if (rmarkdown::pandoc_available()) {
+if (rmarkdown::pandoc_available(version = "1.12.3")) {
   knit_print.data.frame = function(x, ...) {
     knit_print(DT::datatable(head(x, 10)), ...)
   }

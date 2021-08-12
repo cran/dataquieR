@@ -41,6 +41,7 @@ barplot (discrete).
 \item \code{ModifiedStudyData} \link{data.frame}  If the function identifies limit
 deviations, the respective values are
 removed in \code{ModifiedStudyData.}
+\item \code{ReportSummaryTable}: heatmap-like data frame about limit violations
 }
 }
 \description{
@@ -109,6 +110,6 @@ MyValueLimits$SummaryPlotList$QUEST_DT_0
 \seealso{
 \itemize{
 \item \link{con_detection_limits}
-\item \href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_con_impl_limit_deviations.html}{Online Documentation}
+\item \href{https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_limit_deviations.html}{Online Documentation}
 }
 }

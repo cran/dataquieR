@@ -15,7 +15,8 @@ acc_loess(
   meta_data,
   resolution = 180,
   se_line = list(color = "red", linetype = 2),
-  plot_data_time
+  plot_data_time,
+  plot_format = "AUTO"
 )
 }
 \arguments{
@@ -56,6 +57,11 @@ passed to \code{\link[ggplot2:geom_path]{ggplot2::geom_line()}}}
 
 \item{plot_data_time}{\link{logical} mark times with data values (caution, there
 may be many marks)}
+
+\item{plot_format}{\link{enum} AUTO | COMBINED | FACETS | BOTH. Return the
+LOESS plot as a combined plot or as facets plots
+one per group. BOTH will return both plot variants,
+AUTO will decide based on the number of observers.}
 }
 \value{
 a \link{list} with:
@@ -104,5 +110,5 @@ if the minimum of observations in one level of the group_vars is higher than
 \code{n=30}.
 }
 \seealso{
-\href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_loess.html}{Online Documentation}
+\href{https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_loess.html}{Online Documentation}
 }

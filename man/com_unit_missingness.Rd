@@ -62,8 +62,10 @@ This function does not support a \code{resp_vars} argument but \code{id_vars}, w
 have a roughly inverse logic behind: id_vars with values do not prevent a row
 from being considered missing, because an ID is the only hint for a unit that
 elsewise would not occur in the data at all.
+
+List function.
 }
 }
 \seealso{
-\href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_com_impl_unit_missingness.html}{Online Documentation}
+\href{https://dataquality.ship-med.uni-greifswald.de/VIN_com_impl_unit_missingness.html}{Online Documentation}
 }

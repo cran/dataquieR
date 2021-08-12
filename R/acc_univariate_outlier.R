@@ -33,6 +33,9 @@
 #' than indicate a distortion of the data. For the heuristic definition of a
 #' large distance \eqn{1 * \sigma} has been been chosen.
 #'
+#' Note, that the plots are not deterministic, because they use
+#' [ggplot2::geom_jitter].
+#'
 #' @details
 #' # ALGORITHM OF THIS IMPLEMENTATION:
 #'
@@ -59,11 +62,16 @@
 #'                                       not included
 #' @param n_rules [integer] from=1 to=4. the no. of rules that must be violated
 #'        to flag a variable as containing outliers. The default is 4, i.e. all.
+#' @param max_non_outliers_plot [integer] from=0. Maximum number of non-outlier
+#'                                                points to be plot. If more
+#'                                                points exist, a subsample will
+#'                                                be plotted only. Note, that
+#'                                                sampling is not deterministic.
 #'
 #' @seealso
 #' - [acc_robust_univariate_outlier]
 #' - [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_robust_univariate_outlier.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_robust_univariate_outlier.html
 #' )
 #'
 #' @importFrom reshape melt
@@ -79,19 +87,35 @@
 #'        `Variables`, `Mean`, `SD`, `Median`, `Skewness`, `Tukey (N)`,
 #'        `6-Sigma (N)`, `Hubert (N)`, `Sigma-gap (N)`, `Most likely (N)`,
 #'        `To low (N)`, `To high (N)` `Grading`
-#'   - `SummaryPlotList`: [`ggplot2`] univariate outlier plots
+#'   - `SummaryPlotList`: [`ggplot`] univariate outlier plots
 #'
 #'
 acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
-                                   meta_data, exclude_roles, n_rules = 4) {
+                                   meta_data, exclude_roles, n_rules = 4,
+                                   max_non_outliers_plot = 10000) {
   rvs <- resp_vars
 
   if (length(n_rules) != 1 || !is.numeric(n_rules) ||
       !all(util_is_integer(n_rules)) ||
       !(n_rules %in% 1:4)) {
     util_warning(
-      "The formal n_rules is not an integer of 1 to 4, default (4) is used. ")
-    n_rules <- 4
+      "The formal n_rules is not an integer of 1 to 4, default (%d) is used.",
+      formals(acc_univariate_outlier)$n_rules,
+      applicability_problem = TRUE)
+    n_rules <- formals(acc_univariate_outlier)$n_rules
+  }
+
+  if (length(max_non_outliers_plot) != 1 ||
+      !is.numeric(max_non_outliers_plot) ||
+      !all(util_is_integer(max_non_outliers_plot)) ||
+      (max_non_outliers_plot < 0)) {
+    util_warning(
+      c("The formal max_non_outliers_plot is not an integer >= 0,",
+        "default (%d) is used."),
+      formals(acc_univariate_outlier)$max_non_outliers_plot,
+      applicability_problem = TRUE)
+    max_non_outliers_plot <-
+      formals(acc_univariate_outlier)$max_non_outliers_plot
   }
 
   # Preps ----------------------------------------------------------------------
@@ -132,7 +156,8 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
       "No %s for all or some variables defined in the metadata.",
       "I guessed them based on data: %s"),
       dQuote(DATA_TYPE),
-      list_of_types
+      list_of_types,
+      applicability_problem = TRUE
     )
   }
 
@@ -143,9 +168,11 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
     rvs <- meta_data[[label_col]][meta_data[[DATA_TYPE]] %in%
                                     c(DATA_TYPES$FLOAT, DATA_TYPES$INTEGER)]
     util_warning(paste0("The following variables: ",
-                        paste0(rvs, collapse = ", "), " were selected."))
+                        paste0(rvs, collapse = ", "), " were selected."),
+                 applicability_problem = TRUE)
     if (length(rvs) == 0) {
-      util_error(paste0("No variables suitable data type defined."))
+      util_error(paste0("No variables suitable data type defined."),
+                 applicability_problem = TRUE)
     }
 
     rvs <- intersect(rvs, colnames(ds1))
@@ -160,7 +187,8 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
       rvs <- meta_data[[label_col]][isfloat & isrvs]
       if (!all(!isrvs | isfloat)) util_warning(paste0("Only: ",
                                       paste0(rvs, collapse = ", "),
-                          " are defined to be of type float or integer."))
+                          " are defined to be of type float or integer."),
+                          applicability_problem = TRUE)
     }
   }
 
@@ -168,14 +196,16 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   if (!missing(exclude_roles)) {
     if (!(all(exclude_roles %in% meta_data[[VARIABLE_ROLE]]))) {
       util_warning(
-        "Specified VARIABLE_ROLE not in meta_data. No exclusion applied.")
+        "Specified VARIABLE_ROLE not in meta_data. No exclusion applied.",
+        applicability_problem = TRUE)
     } else {
       which_vars_not <- meta_data[[label_col]][meta_data[[VARIABLE_ROLE]] %in%
                                                  exclude_roles]
       if (length(intersect(rvs, which_vars_not)) > 0) {
         util_warning(paste0("Study variables: ",
                             paste(dQuote(intersect(rvs, which_vars_not)),
-                                  collapse = ", "), " have been excluded."))
+                                  collapse = ", "), " have been excluded."),
+                     applicability_problem = TRUE)
       }
       rvs <- setdiff(rvs, which_vars_not)
     }
@@ -190,7 +220,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
       "Variables ", paste0(dQuote(rvs[!whicharenum]), collapse = ", "),
       " are not of type float or integer and will be removed",
       " from univariate outlier analysis."
-    ))
+    ), applicability_problem = TRUE)
     rvs <- rvs[whicharenum]
   }
 
@@ -201,7 +231,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
     util_warning(paste0(
       "Variables: ", paste0(dQuote(rvs[intcheck]), collapse = ", "),
       " show integer values only, but will be nonetheless considered."
-    ))
+    ), applicability_problem = FALSE)
   }
 
   if (length(rvs) > 0) {
@@ -226,7 +256,8 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   # ds2 <- melt(ds1_ll[, c(rvs, group_vars)], measure.vars = rvs)
 
   if (length(rvs) == 0) {
-    util_error("No suitable response variables left.")
+    util_error("No suitable response variables left.",
+               applicability_problem = TRUE)
   } else if (length(rvs) == 1) {
     ds2 <- ds1_ll[, rvs, drop = FALSE]
     ds2$variable <- rvs
@@ -241,7 +272,8 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   # remove NAs from analysis df
   ds2plot <- ds2[!is.na(ds2$value), ]
   if (nrow(ds2plot) * ncol(ds2plot) == 0) {
-    util_error("No data left, aborting.")
+    util_error("No data left, aborting.",
+               applicability_problem = FALSE)
   }
 
   # Initialize with NA
@@ -317,24 +349,71 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
 
   # create plot list here ------------------------------------------------------
   # format to factor for plot
-  ds2plot$Rules <- factor(ds2plot$Rules)
   plot_list <- list()
 
   disc_cols <- c("#2166AC", "#fdd49e", "#fc8d59", "#d7301f", "#7f0000")
   names(disc_cols) <- c(0:4)
 
   for (i in unique(ds2plot$variable)) {
+
     ds_i <- subset(ds2plot, variable == i)
-    p_i <- ggplot(ds_i, aes(x = variable, y = value)) +
-      geom_jitter(data = ds_i, position = position_jitter(0.1),
-                  aes(color = Rules, alpha = 0.5, size =
-                        as.numeric(Rules) / 10)) +
-      scale_size_continuous(range = c(0.01, 3), guide = "none") +
-      scale_color_manual(values = disc_cols) +
-      facet_wrap(vars(variable), scales = "free") +
-      scale_alpha(guide = "none") +
-      theme_minimal()
-    plot_list[[i]] <- p_i
+
+    n_non_ol <- sum(ds_i$Rules == 0)
+
+    if (max_non_outliers_plot < n_non_ol) {
+
+      dsi_non_ol <- ds_i[ds_i$Rules == 0, , FALSE]
+      dsi_ol <- ds_i[ds_i$Rules > 0, , FALSE]
+
+      subsel_non_ol <- sample(seq_len(nrow(dsi_non_ol)),
+                              size =
+                                min(max_non_outliers_plot, nrow(dsi_non_ol)))
+
+      ds_i <- rbind.data.frame(dsi_non_ol[subsel_non_ol, , FALSE], dsi_ol)
+
+      util_warning(
+        c("For %s, %d from %d non-outlier data values were",
+          "sampled to avoid large plots."),
+        dQuote(i),
+        max_non_outliers_plot,
+        n_non_ol,
+        applicability_problem = FALSE
+        )
+    }
+
+    ds_i$Rules <- factor(ds_i$Rules)
+
+    if (nrow(ds_i) > 0) {
+      p_i <- ggplot(ds_i, aes(x = variable, y = value)) +
+        geom_jitter(data = ds_i, position = position_jitter(0.1),
+                    aes(color = Rules, alpha = 0.5, size =
+                          as.numeric(Rules) / 10)) +
+        scale_size_continuous(range = c(0.01, 3), guide = "none") +
+        scale_color_manual(values = disc_cols) +
+        facet_wrap(vars(variable), scales = "free") +
+        scale_alpha(guide = "none") +
+        theme_minimal()
+    } else {
+      p_i <- ggplot() +
+        annotate("text", x = 0, y = 0, label =
+                   sprintf("No outliers detected for %s", dQuote(i))) +
+        theme(
+          axis.line = element_blank(),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          legend.position = "none",
+          panel.background = element_blank(),
+          panel.border = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          plot.background = element_blank()
+        )
+    }
+
+    plot_list[[i]] <- util_set_size(p_i, width_em = 10, height_em = 25)
   }
 
   return(list(SummaryTable = st1, SummaryPlotList = plot_list))

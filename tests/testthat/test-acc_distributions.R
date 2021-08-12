@@ -55,7 +55,8 @@ test_that("acc_distributions works with 2 args", {
   )
 
   md0 <- meta_data
-  expect_warning(
+  # expect_warning(
+  expect_error(
       res1 <-
         acc_distributions(resp_vars = head(meta_data$VAR_NAMES[
           meta_data$DATA_TYPE %in% c(DATA_TYPES$INTEGER, DATA_TYPES$FLOAT)
@@ -64,16 +65,15 @@ test_that("acc_distributions works with 2 args", {
                           group_vars =
                             c("v00012", "v00103")),
       regexp =
-        sprintf(
-          "(%s|%s|%s)",
-          paste("All variables defined to be integer or float",
-                "in the metadata are used"),
-          paste("Variables v10000, v20000, v30000 contain only",
-                "one value and will be removed from analyses."),
-          paste("Only 1 group variables allowed. Variable:",
-                "v00012 was selected.")
-        ),
-      all = TRUE,
+        "Need excactly one element in argument group_vars, got 2: .v00012, v00103.",
+#        sprintf(
+#          "(%s|%s|%s)",
+#          paste("All variables defined to be integer or float",
+#                "in the metadata are used"),
+#          paste("Variables v10000, v20000, v30000 contain only",
+#                "one value and will be removed from analyses.")
+#        ),
+#      all = TRUE,
       perl = TRUE
     )
 

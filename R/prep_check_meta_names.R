@@ -61,24 +61,29 @@
 #' )
 prep_check_meta_names <- function(meta_data, level, character.only = FALSE) {
   if (missing(level)) {
-    level <- "REQUIRED"
+    level <- VARATT_REQUIRE_LEVELS$REQUIRED
   } else {
     if (character.only) {
       level <- as.character(level)
     } else {
       level <- as.character(substitute(expr = level))
     }
-    level <- try(match.arg(level, choices = names(VARATT_REQUIRE_LEVELS),
-                       several.ok = FALSE), silent = TRUE)
-    if (inherits(level, "try-error")) {
-      util_error(
-        "Error regarding argument %s: %s",
-        dQuote("level"),
-        conditionMessage(attr(level, "condition"))
-      )
+    if (length(level) > 0) {
+      level <- try(match.arg(level, choices = c(names(VARATT_REQUIRE_LEVELS),
+                                                unlist(VARATT_REQUIRE_LEVELS)),
+                             several.ok = FALSE), silent = TRUE)
+      if (inherits(level, "try-error")) {
+        util_error(
+          "Error regarding argument %s: %s",
+          dQuote("level"),
+          conditionMessage(attr(level, "condition"))
+        )
+      }
+      if (level %in% names(VARATT_REQUIRE_LEVELS)) {
+        level <- VARATT_REQUIRE_LEVELS[[level]]
+      }
     }
   }
-  level <- VARATT_REQUIRE_LEVELS[[level]]
   env <- new.env(environment())
   env$res <- try(stop("Internal error"), silent = TRUE)
   try(
@@ -96,7 +101,7 @@ prep_check_meta_names <- function(meta_data, level, character.only = FALSE) {
             paste0(dQuote(colnames(meta_data)), collapse = ", "),
             paste0(dQuote(required_atts[!(required_atts %in%
                                             colnames(meta_data))]),
-                   collapse = ", ")
+                   collapse = ", "), applicability_problem = TRUE
           )
         }
         if (!all(colnames(meta_data) %in% required_atts)) {
@@ -128,7 +133,8 @@ prep_check_meta_names <- function(meta_data, level, character.only = FALSE) {
             util_warning(c("Found the following addtional metadata columns,",
                            "which look like typos of defined names: %s"),
                          paste(dQuote(names(fuzzy_match)), dQuote(fuzzy_match),
-                               sep = " -> ", collapse = ", "))
+                               sep = " -> ", collapse = ", "),
+                         applicability_problem = TRUE)
           }
         }
         env$res <- TRUE

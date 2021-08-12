@@ -36,9 +36,10 @@
 #'  data but for the purpose of clarity this approach is chosen.
 #'
 #' @keywords accuracy
+#'
 #' @param resp_vars [variable] the name of the continuous measurement variable
-#' @param group_vars [variable list] the name of the observer, device or reader
-#'                                   variable
+#' @param group_vars [variable list] len=1-1. the name of the observer, device or
+#'                                   reader variable
 #' @param co_vars [variable list] a vector of covariables, e.g. age and sex for
 #'                                adjustment
 #' @param threshold_type [enum] empirical | user | none. In case empirical is
@@ -75,7 +76,7 @@
 #'                     geom_pointrange geom_density coord_flip annotate
 #'                     ggplot_build theme_minimal labs theme scale_colour_manual
 #'                     geom_count aes geom_vline theme_set
-#' @importFrom cowplot theme_cowplot plot_grid ggdraw draw_label
+#' @import patchwork
 #' @importFrom utils tail head
 #'
 #' @examples
@@ -100,7 +101,7 @@
 #' }
 #' @seealso
 #' [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_margins.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_margins.html
 #' )
 acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
                         threshold_type = NULL, threshold_value,
@@ -113,8 +114,6 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
 
   util_correct_variable_use("resp_vars", need_type = "integer|float")
   util_correct_variable_use("group_vars",
-    allow_null = TRUE,
-    allow_more_than_one = TRUE,
     allow_any_obs_na = TRUE,
     need_type = "!float"
   )
@@ -125,39 +124,19 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
 
   rvs <- resp_vars
 
-  # response variable specified?
-  if (length(rvs) == 0) {
-    util_error("A response variable must be specified with rvs.")
-  }
-  if (length(rvs) > 1) {
-    util_warning("Only one response variable cant be specified with rvs.")
-    rvs <- rvs[1]
-  }
-
-  # group variable specified?
-  if (is.null(group_vars)) {
-    util_error("A group variable must be specified with group_vars.")
-  }
-
-  # only one group variable
-  if (length(group_vars) > 1) {
-    util_warning(
-      c("Only one group variable can be specified. \n",
-        "The first variable is selected."))
-    group_vars <- group_vars[1]
-  }
-
   # no minimum observations specified
-  if (missing(min_obs_in_subgroup)) {
+  if (missing(min_obs_in_subgroup) || length(min_obs_in_subgroup) != 1) {
     min_obs_in_subgroup <- 5
     util_warning(
-      "No minimum observation count was specified and is set to n=5.")
+      "No or many minimum observation count was specified and is set to n=5.",
+      applicability_problem = TRUE)
   } else {
     .min_obs_in_subgroup <- as.integer(min_obs_in_subgroup)
     if (is.na(.min_obs_in_subgroup)) {
       util_warning(
        "min_obs_in_subgroup is not integer: %s, setting it to default value 5.",
-        dQuote(try(as.character(min_obs_in_subgroup))))
+        dQuote(try(as.character(min_obs_in_subgroup))),
+       applicability_problem = TRUE)
       min_obs_in_subgroup <- 5
     } else {
       min_obs_in_subgroup <-
@@ -167,25 +146,21 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
 
   if (min_obs_in_subgroup < 5) {
     min_obs_in_subgroup <- 5
-    util_warning("min_obs_in_subgroup cannot be set below 5.")
+    util_warning("min_obs_in_subgroup cannot be set below 5.",
+                 applicability_problem = TRUE)
   }
 
   # co_vars optional but warn if missing
   if (is.null(co_vars)) {
     co_vars <- NA
-    util_warning("No co_vars specified")
+#    util_warning("No co_vars specified",
+#                 applicability_problem = FALSE)
   }
 
   # Label assignment -----------------------------------------------------------
   # temporary study data
 
   if (!is.null(group_vars)) {
-    if (!(group_vars %in% meta_data[[label_col]])) {
-     util_error(
-      c("Variable of group_vars is not specified in the metadata",
-      "or spelling is incorrect."))
-    }
-
     # all labelled variables
     levlabs <- meta_data$VALUE_LABELS[meta_data[[label_col]] %in% group_vars]
 
@@ -221,7 +196,8 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
       "Due to missing values in ", paste0(co_vars, collapse = ", "),
       " or ", group_vars, " N=", n_prior - n_post,
       " observations were excluded."
-    ))
+    ),
+    applicability_problem = FALSE)
   }
 
   # rvs
@@ -233,7 +209,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     util_warning(paste0(
       "Due to missing values in ", paste0(rvs), " N=",
       n_prior - n_post, " observations were excluded."
-    ))
+    ), applicability_problem = FALSE)
   }
 
   # type factor
@@ -245,10 +221,11 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     } else {
       .threshold_value <- NA
     }
-    if (is.na(.threshold_value)) {
+    if (length(threshold_value != 1) || is.na(.threshold_value)) {
       util_warning(
-        "threshold_value is not numeric: %s, setting it to default value 1.",
-                   dQuote(head(try(as.character(threshold_value)), 1)))
+        "threshold_value is not numeric(1): %s, setting it to default value 1.",
+                   dQuote(head(try(as.character(threshold_value)), 1)),
+        applicability_problem = TRUE)
       threshold_value <- 1
     } else {
       threshold_value <-
@@ -256,8 +233,10 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     }
   }
 
-  if (is.null(threshold_type)) {
-    util_warning("No threshold type specified and set to empirical.")
+  if (is.null(threshold_type) || (!is.list(threshold_type)
+                                  && length(threshold_type) != 1)) {
+    util_warning("No or many threshold type specified and set to empirical.",
+                 applicability_problem = TRUE)
     threshold_type <- "empirical"
   }
 
@@ -274,7 +253,8 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
      c(
       "Threshold was set to user but no value for the unit of measurements",
       "was defined.\n",
-      "The function switches to one SD as default."))
+      "The function switches to one SD as default."),
+     applicability_problem = TRUE)
     threshold_type == "empirical"
     threshold_value <- 1
   }
@@ -289,11 +269,12 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     critical_levels <- levels(check_df$Var1)[check_df$Freq <
                                                min_obs_in_subgroup]
     util_warning(paste0(c(
-      "The following levels:", critical_levels, "have <",
+      "The following levels:", head(critical_levels, 100),
+      if (length(critical_levels) > 100)  {", ..." }, "have <",
       min_obs_in_subgroup, " observations and will be removed."
     ),
     collapse = " "
-    ))
+    ), applicability_problem = FALSE)
 
     ds1 <- ds1[!(ds1[[group_vars]] %in% critical_levels), ]
   }
@@ -344,7 +325,8 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
       lf <- as.numeric(head(names(sort(table(ds1[[rvs]]))), 1))
       ds1[[rvs]][ds1[[rvs]] == lf] <- 1
       util_warning(paste0("The levels of ", rvs, " (", mf, " and ", lf,
-                          ") have been recoded to 0 and 1)"))
+                          ") have been recoded to 0 and 1)"),
+                   applicability_problem = FALSE)
     }
 
     # call logreg
@@ -465,7 +447,11 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   }
 
   if (length(co_vars) > 0) {
-    subtitle <- sprintf("adjusted for %s", paste0(co_vars, collapse = ", "))
+    if (length(co_vars) < 10) {
+      subtitle <- sprintf("adjusted for %s", paste0(co_vars, collapse = ", "))
+    } else {
+      subtitle <- sprintf("adjusted for %d variables", length(co_vars))
+    }
   } else {
     subtitle <- ""
   }
@@ -561,55 +547,49 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   aty <- mean(range(ggplot_build(get_y_scale)$data[[1]]$y))
 
 
-  p2 <- ggplot(ds1, aes_(x = ~ .data[[rvs]])) +
-    geom_density(alpha = 0.35) +
+  p2 <- ggplot(ds1, aes_(y = ~ .data[[rvs]])) +
+    geom_density(alpha = 0.35, orientation = "y") +
     theme_minimal() +
-    coord_flip() +
+#    coord_flip() +
     labs(x = NULL, y = NULL) +
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
           text = element_text(size = 16))
   if (threshold_type != "none") {
     p2 <-
       p2 +
-      annotate(geom = "text", x = pars + offs, y = aty, label = parn) +
-      geom_vline(xintercept = pars[2], color = "red") +
-      geom_vline(xintercept = pars[-2], color = "red", linetype = 2)
+      annotate(geom = "text", y = pars + offs, x = aty, label = parn) +
+      geom_hline(yintercept = pars[2], color = "red") +
+      geom_hline(yintercept = pars[-2], color = "red", linetype = 2)
   } else {
     p2 <-
       p2 +
-      annotate(geom = "text", x = pars + offs, y = aty,
+      annotate(geom = "text", y = pars + offs, x = aty,
                label = c("", parn[2], "")) +
-      geom_vline(xintercept = pars[2], color = "red")
+      geom_hline(yintercept = pars[2], color = "red")
   }
 
 
   # combine plots
-  theme_set(theme_cowplot(font_size = 12)) # reduce default font size
-  res_plot <- plot_grid(p1, p2, labels = "AUTO", align = "h",
-                        rel_widths = c(5, 1))
-
-  # now add the title
-  title <- ggdraw() +
-    draw_label(paste(group_vars, "margins in", rvs),
-      fontface = "bold",
-      size = 12
-    )
-
-  stitle <- ggdraw() +
-    draw_label(subtitle, size = 12, lineheight = 0.6)
-
-  titled_res_plot <-
-    plot_grid(title, stitle, res_plot, ncol = 1,
-      rel_heights = c(0.1, 0.06, 1)) # rel_heights values control title margins
-
+  # and add the title
+  res_plot <-
+    p1 +
+    p2 +
+    plot_layout(nrow = 1,
+                widths = c(5, 1)
+                ) +
+    plot_annotation(title = paste(group_vars, "margins in", rvs),
+                    subtitle = subtitle)
 
   SummaryTable <- data.frame(Variables = rvs, GRADING =
                                as.numeric(any(res_df$grading > 0)))
 
+  # length(unique(fit_df$GROUP)))
   # output
   return(list(
     SummaryData = res_df,
     SummaryTable = SummaryTable,
-    SummaryPlot = titled_res_plot
+    SummaryPlot = util_set_size(res_plot, width_em = 25 +
+                                  1.2 * length(unique(ds1[[group_vars]])),
+                                height_em = 25)
   ))
 }

@@ -6,7 +6,7 @@
 <!-- badges: start -->
 
 [![minimal R
-version](https://img.shields.io/badge/R%3E%3D-3.3.0-6666ff.svg)](https://cran.r-project.org/)
+version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-project.org/)
 [![Pipeline
 Status](https://travis-ci.com/libreumg/dataquier.svg?branch=master)](https://travis-ci.com/gitlab/libreumg/dataquier)
 [![Coverage](https://codecov.io/gl/libreumg/dataquier/branch/master/graph/badge.svg?token=79TK6GQTMG)](https://codecov.io/gl/libreumg/dataquier)
@@ -17,6 +17,7 @@ state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![`Lifecycle`](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 [![license](https://img.shields.io/badge/license-BSD_2_clause%20+%20file%20LICENSE-00be00.svg)](https://choosealicense.com/)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.03093/status.svg)](https://doi.org/10.21105/joss.03093)
 
 <!-- badges: end -->
 
@@ -27,11 +28,9 @@ pipeline. `dataquieR` also implements one generic pipeline producing
 
 See also
 
-[`https://dfg-qa.ship-med.uni-greifswald.de`](https://dfg-qa.ship-med.uni-greifswald.de)
+[`https://dataquality.ship-med.uni-greifswald.de`](https://dataquality.ship-med.uni-greifswald.de)
 
 ------------------------------------------------------------------------
-
-Funded by the DFG: SCHM 2744/3-1
 
 ## Installation
 
@@ -54,4 +53,19 @@ devtools::install_gitlab("libreumg/dataquier")
 ```
 
 For examples and additional documentation, please refer to our
-[website](https://dfg-qa.ship-med.uni-greifswald.de).
+[website](https://dataquality.ship-med.uni-greifswald.de).
+
+## References
+
+-   [Software Paper](https://doi.org/10.21105/joss.03093) [![JOSS
+    Article](https://joss.theoj.org/papers/10.21105/joss.03093/status.svg)](https://doi.org/10.21105/joss.03093)
+-   [Data Quality Concept
+    Paper](https://doi.org/10.1186/s12874-021-01252-7)
+-   [Data Quality Concept and Software Web
+    Site](https://dataquality.ship-med.uni-greifswald.de)
+
+## Funding
+
+-   German Research Foundation (DFG: `SCHM 2744/3–1`)
+-   European Union’s Horizon 2020 research and innovation program (grant
+    agreement No 825903.

@@ -50,7 +50,7 @@ util_count_code_classes <- function(sdf, mdf, variables, name, list,
       sprintf("Found %s in %s for %s, which is not numeric\n", row[[1]], list,
               row[[2]])
     })) {
-      util_warning(w)
+      util_warning(w, applicability_problem = FALSE)
     }
   }
 

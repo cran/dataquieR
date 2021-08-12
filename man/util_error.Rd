@@ -5,12 +5,14 @@
 \title{Produce an error message with a useful short stack trace. Then it stops the
 execution.}
 \usage{
-util_error(m, ...)
+util_error(m, ..., applicability_problem = NA)
 }
 \arguments{
 \item{m}{error message or a \link{simpleError}}
 
 \item{...}{arguments for \link{sprintf} on m, if m is a character}
+
+\item{applicability_problem}{\link{logical} error indicates unsuitable resp_vars}
 }
 \value{
 nothing, its purpose is to stop.

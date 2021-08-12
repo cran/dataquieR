@@ -9,4 +9,8 @@ test_that("util_app_im works", {
   )
   expect_equal(util_app_im(md, as.factor(rep(1, nrow(md)))),
                as.factor(c(rep(3, 10), rep(2, 5), rep(3, 11))))
+  md$JUMP_LIST <- NULL
+  md$MISSING_LIST <- NULL
+  expect_equal(util_app_im(md, as.factor(rep(1, nrow(md)))),
+               as.factor(rep(2, 26)))
 })

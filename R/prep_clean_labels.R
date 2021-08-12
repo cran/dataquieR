@@ -69,21 +69,24 @@ prep_clean_labels <- function(label_col, meta_data, no_dups = FALSE) {
     orig_col <- label_col
   }
   if (no_dups && any(duplicated(orig_col))) {
-    util_error("Have duplicates in desired variable labels")
+    util_error("Have duplicates in desired variable labels",
+               applicability_problem = TRUE)
   }
   adjusted_col <- gsub("[^a-zA-Z0-9_]+", "_", orig_col)
   adjusted_col <- gsub("^[^a-zA-Z]+", "", adjusted_col)
   if (no_dups && any(duplicated(adjusted_col))) {
     util_error(c(
       "Have duplicates in desired variable labels after",
-      "adjusting them to be valid variable names"))
+      "adjusting them to be valid variable names"),
+      applicability_problem = TRUE)
   }
   if (any(na.omit(orig_col != adjusted_col))) {
     if (!missing(meta_data)) {
       util_warning("Adjusted labels in %s to be valid variable names.",
-                   dQuote(label_col))
+                   dQuote(label_col), applicability_problem = TRUE)
     } else {
-      util_warning("Adjusted labels to be valid variable names.")
+      util_warning("Adjusted labels to be valid variable names.",
+                   applicability_problem = TRUE)
     }
   }
   if (!missing(meta_data)) {

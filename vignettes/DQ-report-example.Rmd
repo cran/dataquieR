@@ -16,7 +16,7 @@ vignette: >
 library(knitr)
 library(DT)
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-if (rmarkdown::pandoc_available()) {
+if (rmarkdown::pandoc_available(version = "1.12.3")) {
   knit_print.data.frame = function(x, ...) {
     knit_print(DT::datatable(head(x, 10)), ...)
   }
@@ -29,7 +29,7 @@ library(dataquieR)
 
 This is a brief example report using `dataquieR`'s functions. For a longer and
 better elaborated example, please also consider our
-[online example with data from SHIP](https://dfg-qa.ship-med.uni-greifswald.de/tutorials.html#Advanced_Report_SHIP_Example).
+[online example with data from SHIP](https://dataquality.ship-med.uni-greifswald.de/tutorials.html#Advanced_Report_SHIP_Example).
 
 # INTEGRITY
 

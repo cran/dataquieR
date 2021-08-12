@@ -1,0 +1,24 @@
+.colheader {
+  position: relative;
+}
+
+.colheader span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  display: inline-block;
+  overflow: visible;
+}
+
+table.ReportSummaryTable > thead > tr > th {
+  vertical-align: bottom;
+  padding-left: 0px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+table.ReportSummaryTable > tbody > tr > td {
+  padding: 0;
+}
+
+/* https://stackoverflow.com/a/50406895 */

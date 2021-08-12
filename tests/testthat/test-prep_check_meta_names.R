@@ -1,4 +1,6 @@
 test_that("prep_check_meta_names works", {
+ expect_silent(prep_check_meta_names(data.frame(), level = NULL))
+
  expect_silent( prep_check_meta_names(data.frame(VAR_NAMES = 1, DATA_TYPE = 2,
                         MISSING_LIST = 3)))
 

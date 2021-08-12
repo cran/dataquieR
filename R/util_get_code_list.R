@@ -28,7 +28,8 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
     if (warning_if_no_list) {
       util_warning(
         "Meta data does not provide a column called %s for the labels.",
-        dQuote(label_col))
+        dQuote(label_col),
+        applicability_problem = TRUE)
     }
     return(numeric(0))
   }
@@ -37,7 +38,8 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
       util_warning(
         c("Meta data does not provide a column called %s",
           "for replacing codes with NAs."),
-        dQuote(code_name))
+        dQuote(code_name),
+        applicability_problem = TRUE)
     }
     return(numeric(0))
   }
@@ -50,7 +52,8 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
         c("Could not find %s for %s in the meta_data",
           "for replacing codes with NAs."),
         dQuote(code_name),
-        dQuote(x))
+        dQuote(x),
+        applicability_problem = TRUE)
     }
     return(numeric(0))
   }
@@ -67,7 +70,8 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
          dQuote(code_name),
          dQuote(x),
          paste(sQuote(res[is.na(numeric_res) != is.na(res)]),
-               collapse = ", "))
+               collapse = ", "),
+        applicability_problem = TRUE)
     }
     numeric_res
   } else {

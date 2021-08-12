@@ -28,22 +28,24 @@
 prep_min_obs_level <- function(study_data, group_vars, min_obs_in_subgroup) {
   if (!is.character(group_vars)) {
     util_error("%s is required to be a character(1) argument.",
-               dQuote("group_vars"))
+               dQuote("group_vars"), applicability_problem = TRUE)
   }
 
   if (length(group_vars) > 1) {
-    util_warning("Subsets based only on one variable possible.")
+    util_warning("Subsets based only on one variable possible.",
+                 applicability_problem = TRUE)
     group_vars <- group_vars[1]
   }
 
   if (length(group_vars) != 1) {
     util_error("%s is required to name exactly one variable.",
-                 dQuote("group_vars"))
+                 dQuote("group_vars"), applicability_problem = TRUE)
   }
 
   if (!(group_vars %in% colnames(study_data))) {
     util_error("%s is not a variable.",
-               paste(sQuote("group_vars"), "=", dQuote(group_vars)))
+               paste(sQuote("group_vars"), "=", dQuote(group_vars)),
+               applicability_problem = TRUE)
   }
 
   if (missing(min_obs_in_subgroup) || length(min_obs_in_subgroup) != 1 ||
@@ -51,7 +53,8 @@ prep_min_obs_level <- function(study_data, group_vars, min_obs_in_subgroup) {
     util_warning(
       c("argument %s was missing, not of length 1 or NA, setting to its",
         "default, 30"),
-      dQuote("min_obs_in_subgroup"))
+      dQuote("min_obs_in_subgroup"),
+      applicability_problem = TRUE)
     min_obs_in_subgroup <- 30
   }
 
@@ -68,7 +71,8 @@ prep_min_obs_level <- function(study_data, group_vars, min_obs_in_subgroup) {
     util_warning(
       "The following levels: %s have < %d observations and are disregarded",
       paste0(dQuote(critical_levels), collapse = ", "),
-      min_obs_in_subgroup
+      min_obs_in_subgroup,
+      applicability_problem = FALSE
     )
     subsdf <- study_data[!(study_data[[group_vars]] %in% critical_levels), ]
   } else {

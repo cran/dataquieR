@@ -64,7 +64,7 @@
 #'
 #' @seealso
 #' [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_varcomp.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_varcomp.html
 #' )
 #'
 #' @examples
@@ -104,7 +104,8 @@ acc_varcomp <-
     "Could not convert min_obs_in_subgroup %s to a number.",
     "Set to standard value."
     ),
-     dQuote(as.character(min_obs_in_subgroup))
+     dQuote(as.character(min_obs_in_subgroup)),
+    applicability_problem = TRUE
    )
     min_obs_in_subgroup <- 30
   } else {
@@ -115,7 +116,8 @@ acc_varcomp <-
   if (is.na(.min_subgroups)) {
     util_warning(
       "Could not convert min_subgroups %s to a number. Set to standard value.",
-      dQuote(as.character(min_subgroups))
+      dQuote(as.character(min_subgroups)),
+      applicability_problem = TRUE
     )
     min_subgroups <- 5
   } else {
@@ -150,7 +152,8 @@ acc_varcomp <-
     rvs <- setdiff(rvs, co_vars)
     if (length(group_vars) != 1)
       util_error(
-        "Need exactly 1 group_vars, if all applicable resp_vars are used")
+        "Need exactly 1 group_vars, if all applicable resp_vars are used",
+        applicability_problem = TRUE)
   }
 
   if (length(group_vars) == 1 && length(rvs) > 1) {
@@ -164,7 +167,8 @@ acc_varcomp <-
     util_error(
       c("acc_varcomp expects one group_var per resp_var. Here,",
         "it has been called with %d resp_vars but %d group_vars"),
-      length(rvs), length(group_vars))
+      length(rvs), length(group_vars),
+      applicability_problem = TRUE)
   }
 
   ds1[, unique(group_vars)] <- lapply(ds1[, unique(group_vars), drop = FALSE],
@@ -194,7 +198,8 @@ acc_varcomp <-
     if (length(critical_levels) > 0) {
       util_warning("Levels %s were excluded due to less than %d observations.",
                    paste0(vapply(critical_levels, dQuote, ""), collapse = ", "),
-                   min_obs_in_subgroup)
+                   min_obs_in_subgroup,
+                   applicability_problem = FALSE)
       # exclude levels with too less observations
       ds1 <- ds1[!(ds1[[group_var]] %in% critical_levels), ]
       # dropping unused levels
@@ -210,7 +215,8 @@ acc_varcomp <-
                    length(check_df[, 1]),
                    min_subgroups,
                    dQuote(group_var),
-                   dQuote(rv))
+                   dQuote(rv),
+                   applicability_problem = FALSE)
       return(data.frame(
         Variables = NA,
         Object = NA,

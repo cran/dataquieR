@@ -41,6 +41,7 @@ categories:
 \item \code{ApplicabilityPlot}: \link{ggplot2} heatmap plot, graphical representation of
 \code{SummaryTable}
 \item \code{ApplicabilityPlotList}: \link{list} of plots per (maybe artificial) segment
+\item \code{ReportSummaryTable}: data frame underlying \code{ApplicabilityPlot}
 }
 }
 \description{

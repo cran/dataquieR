@@ -3,10 +3,13 @@
 #'
 #' @param m error message or a [simpleError]
 #' @param ... arguments for [sprintf] on m, if m is a character
+#' @param applicability_problem [logical] error indicates unsuitable resp_vars
 #'
 #' @return nothing, its purpose is to stop.
 #'
-util_error <- function(m, ...) {
+util_error <- function(m, ..., applicability_problem = NA) {
+  stopifnot(length(applicability_problem) == 1 &&
+              is.logical(applicability_problem))
   start_from_call <- util_find_first_externally_called_functions_in_stacktrace()
   caller. <- as.character(sys.call(1 - start_from_call))[[1]]
   if (caller. == "do.call") {
@@ -30,9 +33,20 @@ util_error <- function(m, ...) {
     if (m == "") {
       m <- "Error"
     }
-    stop(paste0("In ", caller., ": ", m, "\n", stacktrace, "\n"), call. = FALSE)
+    ec <-
+      errorCondition(paste0("In ", caller., ": ", m, "\n", stacktrace, "\n"))
   } else {
-    stop(paste0("In ", caller., ": ", sprintf(paste0(m, collapse = " "), ...),
+    mm <- paste0(m,
+           collapse =
+             " ")
+    if (nchar(mm) > 8192) {
+      mm <- substr(mm, 1, 8192)
+      mm <- sub("(%[^%]$)", "\\1", mm, perl = TRUE)
+    }
+    ec <-
+      errorCondition(paste0("In ", caller., ": ", sprintf(mm, ...),
                 "\n", stacktrace, "\n"), call. = FALSE)
   }
+  attr(ec, "applicability_problem") <- applicability_problem
+  stop(ec)
 }

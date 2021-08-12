@@ -41,7 +41,8 @@ util_validate_known_meta <- function(meta_data) {
     env$error <- unique(env$error)
     if (length(env$error) > 0) {
       util_warning("Invalid limits detected: %s",
-                   paste0(env$error, collapse = "\n"))
+                   paste0(env$error, collapse = "\n"),
+                   applicability_problem = TRUE)
     }
   }
   if (VALUE_LABELS %in% colnames(meta_data)) {
@@ -58,7 +59,7 @@ util_validate_known_meta <- function(meta_data) {
     }
     env$error <- unique(env$error)
     if (length(env$error) > 0)
-      util_warning(env$error)
+      util_warning(env$error, applicability_problem = TRUE)
   }
   if (any(c(MISSING_LIST, JUMP_LIST) %in% colnames(meta_data))) {
     env$error <- character(0)
@@ -83,7 +84,8 @@ util_validate_known_meta <- function(meta_data) {
                          "Please report it as bug in",
                          "%s to %s"),
                        dQuote("util_validate_known_meta"),
-                       dQuote(utils::packageDescription("dataquieR")[["BugReports"]]))
+                       dQuote(utils::packageDescription("dataquieR")[["BugReports"]]),
+                       applicability_problem = FALSE)
           env$error <- c(env$error,
             sprintf("Found missing or jump code not being a character: %s",
                        dQuote(
@@ -104,13 +106,14 @@ util_validate_known_meta <- function(meta_data) {
           util_warning(
             "Duplicates in %s: %s. Maybe another missing code is not listed?",
                        dQuote(l),
-                       paste0(sQuote(dup_lists), collapse = ", "))
+                       paste0(sQuote(dup_lists), collapse = ", "),
+            applicability_problem = TRUE)
         }
       }
     }
     env$error <- unique(env$error)
     if (length(env$error) > 0)
-      util_warning(env$error)
+      util_warning(env$error, applicability_problem = TRUE)
   }
   invisible(NULL)
 }

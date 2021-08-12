@@ -29,7 +29,7 @@ distribution of a study variable}
 
 \item{par2}{\link{numeric} second parameter of the distribution if applicable}
 
-\item{end_digits}{\link{logical} check for end digits preferences}
+\item{end_digits}{\link{logical} internal use. check for end digits preferences}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
@@ -67,5 +67,5 @@ distribution
 }
 
 \seealso{
-\href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_shape_or_scale.html}{Online Documentation}
+\href{https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_shape_or_scale.html}{Online Documentation}
 }

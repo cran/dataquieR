@@ -36,7 +36,8 @@ for (x in all_res) {
   attr(x, "error") <- NULL
   class(x) <- setdiff(class(x), 'dataquieR_result')
   if (is.data.frame(x[[outputSlot]]) && nrow(x[[outputSlot]]) > 0 && ncol(x[[outputSlot]]) > 0) {
-    print( htmltools::tagList(DT::datatable(x[[outputSlot]], filter = "top")) )
+    print( htmltools::tagList(DT::datatable(x[[outputSlot]], filter = "top",
+                                            options = list(scrollCollapse = TRUE, scrollY = "75vh"))) )
   }
 }
 ```

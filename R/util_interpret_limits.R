@@ -15,7 +15,8 @@ util_interpret_limits <- function(mdata) {
   lv <- colnames(mdata[grep("LIMIT", colnames(mdata))])
 
   if (length(lv) == 0) {
-    util_error("No column containing the term LIMIT.")
+    util_error("No column containing the term LIMIT.",
+               applicability_problem = TRUE)
   }
 
   # all not empty?
@@ -23,7 +24,8 @@ util_interpret_limits <- function(mdata) {
 
   if (any(ne)) {
     util_warning(paste0("The column: ", lv[ne],
-                        " has no defined intervals and is omitted."))
+                        " has no defined intervals and is omitted."),
+                 applicability_problem = TRUE)
   }
 
   # don't consider empty columns at all
@@ -82,7 +84,8 @@ util_interpret_limits <- function(mdata) {
         sQuote(lv[i]),
         paste(head(dQuote(mdata[[lv[i]]][!valid & !is.na(mdata[[lv[i]]])]), 5),
               collapse = ", "),
-        (ifelse(sum(!valid & !is.na(mdata[[lv[i]]])) > 5, ", ...", ""))
+        (ifelse(sum(!valid & !is.na(mdata[[lv[i]]])) > 5, ", ...", "")),
+        applicability_problem = TRUE
       )
     }
 
@@ -153,7 +156,8 @@ util_interpret_limits <- function(mdata) {
           "Damaged lower %s: %s%s",
           field,
           defects,
-          dots
+          dots,
+          applicability_problem = TRUE
         )
       }
 
@@ -169,7 +173,8 @@ util_interpret_limits <- function(mdata) {
           "Damaged upper %s: %s%s",
           field,
           defects,
-          dots
+          dots,
+          applicability_problem = TRUE
         )
       }
 

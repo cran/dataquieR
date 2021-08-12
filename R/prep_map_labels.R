@@ -41,22 +41,25 @@ prep_map_labels <- function(x, meta_data = NULL,
   if (!is.data.frame(meta_data)) {
     util_error(
       c("Need meta data as a data frame for mapping",
-        "variables to their attributes")
+        "variables to their attributes"),
+      applicability_problem = TRUE
     )
   }
   x <- try(as.character(x), silent = TRUE)
   if (inherits(x, "try-error") || any(is.na(x))) {
-    util_error("all variable source names must be characters")
+    util_error("all variable source names must be characters",
+               applicability_problem = TRUE)
   }
   if (!is.character(to) || length(to) != 1 || !(to %in% colnames(meta_data))) {
     util_error(
-      "Need exactly one existing variable attribute name to map variables to")
+      "Need exactly one existing variable attribute name to map variables to",
+      applicability_problem = TRUE)
   }
   if (!is.character(from) || length(from) != 1 ||
       !(from %in% colnames(meta_data))) {
     util_error(
       c("Need exactly one variable attribute name",
-        "to use as variable name on mapping"))
+        "to use as variable name on mapping"), applicability_problem = TRUE)
   }
   util_map_labels(x, meta_data, to, from, ifnotfound)
 }

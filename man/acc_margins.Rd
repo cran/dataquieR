@@ -19,8 +19,8 @@ acc_margins(
 \arguments{
 \item{resp_vars}{\link{variable} the name of the continuous measurement variable}
 
-\item{group_vars}{\link{variable list} the name of the observer, device or reader
-variable}
+\item{group_vars}{\link{variable list} len=1-1. the name of the observer, device or
+reader variable}
 
 \item{co_vars}{\link{variable list} a vector of covariables, e.g. age and sex for
 adjustment}
@@ -118,6 +118,6 @@ acc_margins(resp_vars = rvs,
 }
 }
 \seealso{
-\href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_margins.html}{Online Documentation}
+\href{https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_margins.html}{Online Documentation}
 }
 \keyword{accuracy}

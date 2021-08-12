@@ -1,4 +1,10 @@
 ```{r include=FALSE}
+#if (any(grepl("Limit", title))) {
+#  save(resp_vars, outputSlot, current_results, file = "/tmp/con.RData")
+#}
+if (is.list(resp_vars) && length(resp_vars) == 1 && is.character(resp_vars[[1]])) {
+  resp_vars <- resp_vars[[1]]
+}
 if ((all(!is.na(resp_vars) && (length(resp_vars) == 1))) || outputSlot == "SummaryPlot") {
   stop("Plot result")
 }

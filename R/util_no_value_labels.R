@@ -35,12 +35,14 @@ util_no_value_labels <- function(resp_vars, meta_data, label_col, warn = TRUE,
     util_error(c(
       "None of the variables %s is float or integer",
       "without VALUE_LABELS; aborting."),
-      paste0(dQuote(resp_vars), collapse = ", "))
+      paste0(dQuote(resp_vars), collapse = ", "),
+      applicability_problem = TRUE)
   } else if (warn && any(!matching_vars)) {
     util_warning(
       c("The variables %s are neither float nor integer",
         "without VALUE_LABELS. Ignoring those"),
-      paste0(dQuote(resp_vars[!matching_vars]), collapse = ", ")
+      paste0(dQuote(resp_vars[!matching_vars]), collapse = ", "),
+      applicability_problem = TRUE
     )
   }
   resp_vars[matching_vars]

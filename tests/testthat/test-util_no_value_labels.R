@@ -14,7 +14,7 @@ test_that("util_no_value_labels works", {
                                       label_col = LABEL, stop = TRUE,
                                       warn = FALSE), character(0),
       regexp = NULL,
-      class = "simpleError"
+      class = "error"
     )
     expect_identical(
       sort(util_no_value_labels(resp_vars = meta_data[[LABEL]],

@@ -23,26 +23,29 @@ test_that("as.data.frame.dataquieR_resultset works", {
 
   x <- as.data.frame(report)
 
-  expect_equal(dim(x), c(7, 6))
+  expect_equal(dim(x), c(7, 7))
   expect_equal(colnames(x),
                c("implementationform", "results",
-                 "show_causes", "cause_label_df", "resp_vars", "check_table"))
+                 "show_causes", "cause_label_df", "include_sysmiss",
+                 "resp_vars", "check_table"))
   expect_equal(x$implementationform,
                c("com_unit_missingness", "com_segment_missingness",
                  "com_item_missingness",  "con_limit_deviations",
                  "con_inadmissible_categorical",
                  "con_contradictions",  "con_detection_limits"))
   expect_equal(vapply(x$results, length, FUN.VALUE = integer(1)),
-               c(2L, 2L, 2L, 4L, 3L, 4L, 4L))
+               c(2L, 2L, 3L, 5L, 3L, 4L, 5L))
   expect_equal(lapply(x$results, names),
                list(c("FlaggedStudyData", "SummaryData"),
                     c("SummaryData", "SummaryPlot" ),
-                    c("SummaryTable", "SummaryPlot"),
+                    c("SummaryTable", "SummaryPlot", "ReportSummaryTable"),
                     c("FlaggedStudyData", "SummaryTable",
+                      "ReportSummaryTable",
                       "SummaryPlotList", "ModifiedStudyData"),
                     c("SummaryTable", "ModifiedStudyData",  "FlaggedStudyData"),
                     c("FlaggedStudyData", "SummaryTable",
                       "SummaryData",  "SummaryPlot"),
                     c("FlaggedStudyData", "SummaryTable",
+                      "ReportSummaryTable",
                       "SummaryPlotList",  "ModifiedStudyData")))
 })

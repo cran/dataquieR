@@ -5,7 +5,7 @@
 #' @docType package
 #' @description
 #' For a quick start please read [dq_report] and maybe the vignettes
-#' or the package's [website](https://dfg-qa.ship-med.uni-greifswald.de/).
+#' or the package's [website](https://dataquality.ship-med.uni-greifswald.de/).
 #'
 NULL
 #> NULL

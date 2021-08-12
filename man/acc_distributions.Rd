@@ -52,5 +52,5 @@ group-wise ecdf are presented.
 }
 
 \seealso{
-\href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_distributions.html}{Online Documentation}
+\href{https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_distributions.html}{Online Documentation}
 }

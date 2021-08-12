@@ -13,6 +13,5 @@ util_sigmagap(x)
 binary vector
 }
 \description{
-This function calculates outliers according to the rule of Huber et al. T
-his function requires the package \code{robustbase}.
+This function calculates outliers according to the rule of Huber et al.
 }

@@ -48,6 +48,7 @@ a list with:
 \itemize{
 \item \code{SummaryTable}: data frame about item missingness per response variable
 \item \code{SummaryPlot}: ggplot2 heatmap plot, if show_causes was TRUE
+\item \code{ReportSummaryTable}: data frame underlying \code{SummaryPlot}
 }
 }
 \description{
@@ -73,5 +74,5 @@ each variable) are generated
 }
 
 \seealso{
-\href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_com_impl_item_missingness.html}{Online Documentation}
+\href{https://dataquality.ship-med.uni-greifswald.de/VIN_com_impl_item_missingness.html}{Online Documentation}
 }

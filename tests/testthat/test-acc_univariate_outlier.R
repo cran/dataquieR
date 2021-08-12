@@ -4,11 +4,60 @@ test_that("acc_univariate_outlier works without label_col", {
   load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
          environment())
 
+  sd1 <- study_data # no outliers at all
+  set.seed(234325)
+  sd1$v00014 <- rnorm(nrow(sd1), sd = 0.01)
+  sd1 <- sd1[sd1$v00014 < 0.02 & sd1$v00014 > -0.02, ]
+  expect_warning(
+    no_ol_det <- acc_univariate_outlier(resp_vars = "v00014", study_data = sd1,
+                           meta_data = meta_data, max_non_outliers_plot = 0),
+    regexp =
+      paste("For .+v00014.+, 0 from 2851 non-outlier data values",
+      "were sampled to avoid large plots."))
+
+  expect_match(
+    ggplot2::ggplot_build(no_ol_det$SummaryPlotList$v00014)$data[[1]]$label,
+    "No outliers detected for .+v00014.+",
+    perl = TRUE
+  )
+
   expect_warning(invisible(
     acc_univariate_outlier(resp_vars = "v00014", study_data = study_data,
                            meta_data = meta_data, n_rules = cars)),
     regexp =
       "The formal n_rules is not an integer of 1 to 4, default .4. is used.")
+
+  expect_warning(invisible(
+    acc_univariate_outlier(resp_vars = "v00014", study_data = study_data,
+                           meta_data = meta_data,
+                           max_non_outliers_plot = 100)),
+    regexp =
+      paste("For .+v00014.+, 100 from 2633 non-outlier data values",
+            "were sampled to avoid large plots."))
+
+  expect_warning(invisible(
+    acc_univariate_outlier(resp_vars = "v00014", study_data = study_data,
+                           meta_data = meta_data,
+                           max_non_outliers_plot = -42)),
+    regexp =
+      paste("The formal max_non_outliers_plot is not an",
+            "integer >= 0, default .10000. is used."))
+
+  sd1 <- study_data[, c("v00103", "v00001", "v00013")]
+  md1 <- subset(meta_data, VAR_NAMES %in% colnames(sd1))
+  md1$JUMP_LIST <- "|"
+  md1$MISSING_LIST <- "|"
+
+  expect_warning(
+    expect_error(invisible(
+      acc_univariate_outlier(study_data = sd1,
+                             meta_data = md1)),
+      regexp =
+        paste("No variables suitable data type defined.")),
+    regexp = "The following variables:  were selected.",
+    all = TRUE,
+    fixed = TRUE
+  )
 
   md0 <- meta_data
   md0$DATA_TYPE <- NULL

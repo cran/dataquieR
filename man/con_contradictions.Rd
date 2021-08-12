@@ -95,6 +95,8 @@ combination, and
 }
 \item A summary plot illustrating the number of contradictions is generated.
 }
+
+List function.
 }
 }
 \examples{
@@ -140,5 +142,5 @@ con_contradictions(
 )
 }
 \seealso{
-\href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_con_impl_contradictions.html}{Online Documentation}
+\href{https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_contradictions.html}{Online Documentation}
 }

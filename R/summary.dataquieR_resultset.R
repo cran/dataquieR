@@ -80,7 +80,8 @@ summary.dataquieR_resultset <- function(object, ...) {
   if (length(all_gradings) == 0) {
     util_warning(c(
       "No summary available for this report. None of the called",
-      "implementation forms returned any GRADING column."))
+      "implementation forms returned any GRADING column."),
+      applicability_problem = FALSE)
     return(data.frame())
   }
   all_gradings <- do.call(rbind, all_gradings)

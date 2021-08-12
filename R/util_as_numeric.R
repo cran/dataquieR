@@ -24,11 +24,13 @@ util_as_numeric <- function(v, warn) {
   if (any(conversion_errors)) {
     if (is.factor(v)) {
       util_warning("Could not convert %s%s to numeric values",
-                   paste0(dQuote(v_conversion_errors), collapse = ", "), dot)
+                   paste0(dQuote(v_conversion_errors), collapse = ", "), dot,
+                   applicability_problem = FALSE)
     }
     if (!missing(warn) && length(warn) == 1 && is.character(warn) &&
         !is.na(warn)) {
-      util_warning(warn, paste0(dQuote(v_conversion_errors), collapse = ", "))
+      util_warning(warn, paste0(dQuote(v_conversion_errors), collapse = ", "),
+                   applicability_problem = FALSE)
     }
   }
   r

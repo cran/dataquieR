@@ -93,8 +93,10 @@ If direction is low than all values above the threshold_value are normal
 
 This function does not support a \code{resp_vars} argument but \code{exclude_roles} to
 specify variables not relevant for detecting a missing segment.
+
+List function.
 }
 }
 \seealso{
-\href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_com_impl_segment_missingness.html}{Online Documentation}
+\href{https://dataquality.ship-med.uni-greifswald.de/VIN_com_impl_segment_missingness.html}{Online Documentation}
 }

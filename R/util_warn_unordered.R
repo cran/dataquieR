@@ -30,7 +30,8 @@ util_warn_unordered <- function(x, varname) {
         "may still be possbile, but they could be meaningless."
       ),
       dQuote(varname),
-      paste0(sQuote(unique(c(class(x), typeof(x)))), collapse = ", ")
+      paste0(sQuote(unique(c(class(x), typeof(x)))), collapse = ", "),
+      applicability_problem = TRUE
     )
   }
   invisible(NULL)

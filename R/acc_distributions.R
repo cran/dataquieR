@@ -37,7 +37,7 @@
 #' @importFrom stats na.omit
 #' @seealso
 #' [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_distributions.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_distributions.html
 #' )
 acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
                               study_data, meta_data) {
@@ -56,7 +56,7 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
 
   util_correct_variable_use("group_vars",
     allow_null = TRUE,
-    allow_more_than_one = TRUE,
+    allow_more_than_one = FALSE,
     allow_any_obs_na = TRUE,
     need_type = "!float"
   )
@@ -68,13 +68,14 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
     util_warning(
       paste0(
         "All variables defined to be integer or float in the metadata are used"
-      )
+      ), applicability_problem = FALSE
     )
     rvs <- meta_data[[label_col]][meta_data$DATA_TYPE %in%
                                     c("integer", "float")]
     rvs <- intersect(rvs, colnames(ds1))
     if (length(rvs) == 0) {
-      util_error("No suitable variables were defined.")
+      util_error("No suitable variables were defined.",
+                 applicability_problem = TRUE)
     }
   }
 
@@ -82,14 +83,6 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
   # temporary study data
 
   if (length(group_vars) > 0) {
-    # only two grouping variables allowed
-    if (length(group_vars) > 1) {
-      group_vars <- group_vars[1]
-      util_warning(paste0(
-        "Only 1 group variables allowed. Variable: ",
-        paste0(group_vars[1], collapse = ", "), " was selected."
-      ))
-    }
 
     # all labelled variables
     levlabs <- meta_data$VALUE_LABELS[meta_data[[label_col]] %in% group_vars]
@@ -100,7 +93,7 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
         util_warning(paste0(
           "Variables: ", paste0(group_vars[is.na(levlabs)], collapse = ", "),
           " have no assigned labels and levels."
-        ))
+        ), applicability_problem = TRUE)
       }
 
       # only variables with labels
@@ -128,10 +121,10 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
     util_warning(paste0(
       "Variables ", paste0(rvs[!whicharenum], collapse = ", "),
       " are not of type float or integer and will be removed from analyses."
-    ))
+    ), applicability_problem = TRUE)
     rvs <- rvs[whicharenum]
     if (length(rvs) == 0) {
-      util_warning("No variables left to analyse")
+      util_warning("No variables left to analyse", applicability_problem = TRUE)
       return(list(SummaryPlots = list()))
     }
   }
@@ -145,10 +138,11 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
     util_warning(paste0(
       "Variables ", paste0(rvs[which_all_na], collapse = ", "),
       " contain NAs only and will be removed from analyses."
-    ))
+    ), applicability_problem = TRUE)
     rvs <- rvs[!which_all_na]
     if (length(rvs) == 0) {
-      util_warning("No variables left to analyse")
+      util_warning("No variables left to analyse",
+                   applicability_problem = TRUE)
       return(list(SummaryPlots = list()))
     }
   }
@@ -161,10 +155,11 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
     util_warning(paste0(
       "Variables ", paste0(rvs[whichunique], collapse = ", "),
       " contain only one value and will be removed from analyses."
-    ))
+    ), applicability_problem = TRUE)
     rvs <- rvs[!whichunique]
     if (length(rvs) == 0) {
-      util_warning("No variables left to analyse")
+      util_warning("No variables left to analyse",
+                   applicability_problem = TRUE)
       return(list(SummaryPlots = list()))
     }
   }
@@ -251,7 +246,8 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
           "codes (%s)? Will arbitrarily reduce the number of breaks below",
           "10000 to avoid rendering problems."),
         dQuote(rv), length(unique(breaks_x)), paste0(dQuote(likely
-        ), collapse = " or ")
+        ), collapse = " or "),
+        applicability_problem = FALSE
       )
       while (length(unique(breaks_x)) > 10000) {
         breaks_x <- breaks_x[!is.na(breaks_x)]
@@ -260,7 +256,8 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
       util_warning(
         paste0("For %s. Will arbitrarily reduced the number of breaks to ",
           "%d <= 10000 to avoid rendering problems.", collapse = ""),
-        dQuote(rv), length(unique(breaks_x)))
+        dQuote(rv), length(unique(breaks_x)),
+        applicability_problem = FALSE)
     }
 
     # building the plot -------------------------------------------------------
@@ -349,7 +346,7 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
       }
     }
 
-    P
+    util_set_size(P)
   })
 
   return(list(SummaryPlotList = plot_list))

@@ -47,5 +47,5 @@ distribution
 }
 
 \seealso{
-\href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_end_digits.html}{Online Documentation}
+\href{https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_end_digits.html}{Online Documentation}
 }

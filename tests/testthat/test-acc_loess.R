@@ -120,6 +120,46 @@ test_that("acc_loess works without label_col", {
     all = TRUE
   )
 
+  # test with mocked absence of anytime: https://community.rstudio.com/t/how-can-i-make-testthat-think-i-dont-have-a-package-installed/33441/2
+  expect_warning(
+    testthat::expect_message(
+      expect_error(
+        with_mock(
+          "dataquieR:::util_anytime_installed" = function() FALSE,
+          res1 <-
+            acc_loess(resp_vars = "v00014", study_data = sd1,
+                    meta_data = meta_data, group_vars = "v00016",
+                    time_vars = "v00017") # ===> "LAB_DT_0"
+        ),
+        regexp =
+          paste("In acc_loess: No not-missing value in",
+                  "DATETIME variable .+v00017.+"),
+        perl = TRUE
+      ),
+      paste("Package .+anytime.+ is not installed.",
+        "Trying conversion with base as.POSIXct function.")
+    )
+    ,
+    regexp =
+      sprintf(
+        "(%s|%s|%s|%s|%s|%s)",
+        paste("No min_obs_in_subgroup was set. Default n=30 per",
+              "level is used."),
+        paste("301 observations were omitted due to missing values",
+              "in .+v00014.+"),
+        paste("Due to missing values in v00016",
+              "138 observations were deleted."),
+        paste("Converting .+v00017.+ to DATETIME,",
+              "2561 values could not be converted"),
+        paste("Due to missing values in v00017",
+              "886 observations were deleted."),
+        paste("Due to invalid time formats in v00017",
+              "886 observations were deleted.")
+      ),
+    perl = TRUE,
+    all = TRUE
+  )
+
   expect_error(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = study_data,
@@ -295,7 +335,7 @@ test_that("acc_loess works without label_col", {
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = study_data,
                 meta_data = meta_data, group_vars = "v00016",
-                time_vars = "v00017") # ===> "LAB_DT_0"
+                time_vars = "v00017", plot_format = "BOTH") # ===> "LAB_DT_0"
     ,
     regexp =
       sprintf(
@@ -377,7 +417,7 @@ test_that("acc_loess works with label_col", {
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 time_vars = "LAB_DT_0",
-                label_col = LABEL)
+                label_col = LABEL, plot_format = "BOTH")
     ,
     regexp =
       sprintf(
@@ -416,7 +456,7 @@ test_that("acc_loess output matches", {
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 time_vars = "LAB_DT_0",
-                label_col = LABEL)
+                label_col = LABEL, plot_format = "BOTH")
     ,
     regexp =
       sprintf(
@@ -462,7 +502,7 @@ test_that("acc_loess min_obs_in_subgroups with label_col", {
     ),
     regexp =
       sprintf(
-        "(%s|%s|s)",
+        "(%s|%s|%s)",
         paste("301 observations were omitted due to missing values",
               "in .+CRP_0.+"),
         paste("Due to missing values in DEV_NO_0",
@@ -541,7 +581,7 @@ test_that("acc_loess with co-vars output matches", {
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 time_vars = "LAB_DT_0", co_vars = c("AGE_0", "SEX_0"),
-                label_col = LABEL)
+                label_col = LABEL, plot_format = "BOTH")
     ,
     regexp =
       sprintf(
@@ -675,6 +715,7 @@ test_that("acc_loess works for all time span ranges", {
 
   sd0 <- study_data
   g <- subset(meta_data, LABEL == "DEV_NO_0", VAR_NAMES, TRUE)
+  set.seed(42)
   sd0[[g]][!is.na(sd0[[g]])] <-
     sample(x = 11, size = sum(!is.na(sd0[[g]])),
            replace = TRUE) # for >= 11 groups,
@@ -684,7 +725,7 @@ test_that("acc_loess works for all time span ranges", {
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 time_vars = "LAB_DT_0",
-                label_col = LABEL)
+                label_col = LABEL, plot_format = "BOTH")
   )
 
   sd0[[g]][!is.na(sd0[[g]])] <-
@@ -696,7 +737,7 @@ test_that("acc_loess works for all time span ranges", {
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 time_vars = "LAB_DT_0",
-                label_col = LABEL)
+                label_col = LABEL, plot_format = "BOTH")
   )
 
   g <- ggplot2::ggplot_build(res1$SummaryPlotList$Loess_fits_combined)
@@ -712,4 +753,249 @@ test_that("acc_loess works for all time span ranges", {
   ggs_default <- sort(ggplot2::scale_color_discrete()$palette(11))
 
   expect_equal(got0, ggs_default)
+})
+
+
+test_that("acc_loess output matches plot_format=auto", {
+  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
+         environment())
+  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
+         environment())
+  expect_warning(
+    res1 <-
+      acc_loess(resp_vars = "CRP_0", study_data = study_data,
+                meta_data = meta_data, group_vars = "DEV_NO_0",
+                time_vars = "LAB_DT_0",
+                label_col = LABEL, plot_format = "AUTO")
+    ,
+    regexp =
+      sprintf(
+        "(%s|%s|%s)",
+        paste("No min_obs_in_subgroup was set. Default n=30 per",
+              "level is used."),
+        paste("301 observations were omitted due to missing values",
+              "in .+CRP_0.+"),
+        paste("Due to missing values in DEV_NO_0",
+              "138 observations were deleted.")
+      ),
+    perl = TRUE,
+    all = TRUE
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_equal(
+    length(res1$SummaryPlotList),
+    1
+  )
+  sd1 <- study_data
+  set.seed(42)
+  sd1$v00016 <- sample(1:20, size = nrow(sd1), replace = TRUE)
+  expect_warning(
+    res2 <-
+      acc_loess(resp_vars = "CRP_0", study_data = sd1,
+                meta_data = meta_data, group_vars = "DEV_NO_0",
+                time_vars = "LAB_DT_0",
+                label_col = LABEL, plot_format = "AUTO")
+    ,
+    regexp =
+      sprintf(
+        "(%s|%s|%s)",
+        paste("No min_obs_in_subgroup was set. Default n=30 per",
+              "level is used."),
+        paste("301 observations were omitted due to missing values",
+              "in .+CRP_0.+"),
+        paste("Due to missing values in DEV_NO_0",
+              "138 observations were deleted.")
+      ),
+    perl = TRUE,
+    all = TRUE
+  )
+  expect_true("SummaryPlotList" %in% names(res2))
+  expect_equal(
+    length(res2$SummaryPlotList),
+    1
+  )
+  skip_on_cran()
+  skip_if_not_installed("vdiffr")
+  vdiffr::expect_doppelganger("loess plot for CRP_0 AUTO1 ok",
+                              res1$SummaryPlotList$CRP_0)
+  vdiffr::expect_doppelganger("loess plot for CRP_0 AUTO2 ok",
+                              res2$SummaryPlotList$CRP_0)
+})
+
+test_that("acc_loess output matches plot_format=combined", {
+  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
+         environment())
+  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
+         environment())
+  expect_warning(
+    res1 <-
+      acc_loess(resp_vars = "CRP_0", study_data = study_data,
+                meta_data = meta_data, group_vars = "DEV_NO_0",
+                time_vars = "LAB_DT_0",
+                label_col = LABEL, plot_format = "COMBINED")
+    ,
+    regexp =
+      sprintf(
+        "(%s|%s|%s)",
+        paste("No min_obs_in_subgroup was set. Default n=30 per",
+              "level is used."),
+        paste("301 observations were omitted due to missing values",
+              "in .+CRP_0.+"),
+        paste("Due to missing values in DEV_NO_0",
+              "138 observations were deleted.")
+      ),
+    perl = TRUE,
+    all = TRUE
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_equal(
+    length(res1$SummaryPlotList),
+    1
+  )
+  skip_on_cran()
+  skip_if_not_installed("vdiffr")
+  vdiffr::expect_doppelganger("loess combined plot for CRP_0 COMBINED ok",
+                              res1$SummaryPlotList$CRP_0)
+})
+
+test_that("acc_loess output matches plot_format=facets", {
+  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
+         environment())
+  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
+         environment())
+  expect_warning(
+    res1 <-
+      acc_loess(resp_vars = "CRP_0", study_data = study_data,
+                meta_data = meta_data, group_vars = "DEV_NO_0",
+                time_vars = "LAB_DT_0",
+                label_col = LABEL, plot_format = "FACETS")
+    ,
+    regexp =
+      sprintf(
+        "(%s|%s|%s)",
+        paste("No min_obs_in_subgroup was set. Default n=30 per",
+              "level is used."),
+        paste("301 observations were omitted due to missing values",
+              "in .+CRP_0.+"),
+        paste("Due to missing values in DEV_NO_0",
+              "138 observations were deleted.")
+      ),
+    perl = TRUE,
+    all = TRUE
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_equal(
+    length(res1$SummaryPlotList),
+    1
+  )
+  skip_on_cran()
+  skip_if_not_installed("vdiffr")
+  vdiffr::expect_doppelganger("loess facets plot for CRP_0 FACETS ok",
+                              res1$SummaryPlotList$CRP_0)
+})
+
+test_that("acc_loess output matches plot_format=both", {
+  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
+         environment())
+  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
+         environment())
+  expect_warning(
+    res1 <-
+      acc_loess(resp_vars = "CRP_0", study_data = study_data,
+                meta_data = meta_data, group_vars = "DEV_NO_0",
+                time_vars = "LAB_DT_0",
+                label_col = LABEL, plot_format = "BOTH")
+    ,
+    regexp =
+      sprintf(
+        "(%s|%s|%s)",
+        paste("No min_obs_in_subgroup was set. Default n=30 per",
+              "level is used."),
+        paste("301 observations were omitted due to missing values",
+              "in .+CRP_0.+"),
+        paste("Due to missing values in DEV_NO_0",
+              "138 observations were deleted.")
+      ),
+    perl = TRUE,
+    all = TRUE
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_equal(
+    length(res1$SummaryPlotList),
+    2
+  )
+  skip_on_cran()
+  skip_if_not_installed("vdiffr")
+  vdiffr::expect_doppelganger("loess facets plot for CRP_0 BOTH ok",
+                              res1$SummaryPlotList$Loess_fits_facets)
+  vdiffr::expect_doppelganger("loess combined plot for CRP_0 BOTH ok",
+                              res1$SummaryPlotList$Loess_fits_combined)
+})
+
+test_that("acc_loess output matches plot_format=invalid1", {
+  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
+         environment())
+  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
+         environment())
+  expect_warning(
+    res1 <-
+      acc_loess(resp_vars = "CRP_0", study_data = study_data,
+                meta_data = meta_data, group_vars = "DEV_NO_0",
+                time_vars = "LAB_DT_0",
+                label_col = LABEL, plot_format = "invalid")
+    ,
+    regexp =
+      sprintf(
+        "(%s|%s|%s|%s)",
+        paste("No min_obs_in_subgroup was set. Default n=30 per",
+              "level is used."),
+        paste("301 observations were omitted due to missing values",
+              "in .+CRP_0.+"),
+        paste("Due to missing values in DEV_NO_0",
+              "138 observations were deleted."),
+        paste("Unknown .+plot_format.+: .+invalid.+ --",
+              "will switch to default value AUTO.")
+      ),
+    perl = TRUE,
+    all = TRUE
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_equal(
+    length(res1$SummaryPlotList),
+    1
+  )
+})
+
+test_that("acc_loess output matches plot_format=invalid2", {
+  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
+         environment())
+  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
+         environment())
+  expect_warning(
+    res1 <-
+      acc_loess(resp_vars = "CRP_0", study_data = study_data,
+                meta_data = meta_data, group_vars = "DEV_NO_0",
+                time_vars = "LAB_DT_0",
+                label_col = LABEL, plot_format = 1:10)
+    ,
+    regexp =
+      sprintf(
+        "(%s|%s|%s|%s)",
+        paste("No min_obs_in_subgroup was set. Default n=30 per",
+              "level is used."),
+        paste("301 observations were omitted due to missing values",
+              "in .+CRP_0.+"),
+        paste("Due to missing values in DEV_NO_0",
+              "138 observations were deleted."),
+        paste("Unknown .+plot_format.+: .+NOT character.1. STRING AT ALL.+ --",
+              "will switch to default value AUTO.")
+      ),
+    perl = TRUE,
+    all = TRUE
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_equal(
+    length(res1$SummaryPlotList),
+    1
+  )
 })

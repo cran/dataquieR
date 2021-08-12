@@ -252,7 +252,8 @@ pipeline_vectorized <- function(fct, resp_vars = NULL, study_data, meta_data,
         c("Found %s in arguments of %s. Will call %s for",
           "all available KEY_VARS (%s)\n"),
         dQuote(a), dQuote(.fct_name), dQuote(.fct_name),
-        paste0(dQuote(all_key_vars), collapse = ", ")
+        paste0(dQuote(all_key_vars), collapse = ", "),
+        applicability_problem = TRUE
       )
       if ("time_vars" %in% args_to_fill) {
         # do no use KEY_DATETIME if the function cares about time.
@@ -295,7 +296,8 @@ pipeline_vectorized <- function(fct, resp_vars = NULL, study_data, meta_data,
       c("Found %s in arguments of %s. Will call %s for all",
         "available KEY_VARS (%s)\n"),
       dQuote(a), dQuote(.fct_name), dQuote(.fct_name),
-      paste0(dQuote(all_key_vars), collapse = ", ")
+      paste0(dQuote(all_key_vars), collapse = ", "),
+      applicability_problem = TRUE
     )
     names(all_key_vars) <- all_key_vars
 
@@ -326,7 +328,8 @@ pipeline_vectorized <- function(fct, resp_vars = NULL, study_data, meta_data,
   if (any(c("co_vars", "id_vars") %in%
           names(which(!filled, useNames = TRUE)))) {
     util_warning(
-      "For co_vars and id_vars, auto-fill has not yet been implemented.")
+      "For co_vars and id_vars, auto-fill has not yet been implemented.",
+      applicability_problem = TRUE)
   }
 
   # reduce call_plan by columns never specified hoping for the target function

@@ -41,6 +41,8 @@
 #' This function does not support a `resp_vars` argument but `exclude_roles` to
 #' specify variables not relevant for detecting a missing segment.
 #'
+#' List function.
+#'
 #' @param study_data [data.frame] the data frame that contains the measurements
 #' @param meta_data [data.frame] the data frame that contains metadata
 #'                               attributes of study data
@@ -67,7 +69,7 @@
 #' @export
 #' @seealso
 #' [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_com_impl_segment_missingness.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_com_impl_segment_missingness.html
 #' )
 com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
                                     strata_vars = NULL, label_col,
@@ -82,28 +84,32 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
       !is.numeric(threshold_value)) {
     util_warning(
       c("threshold_value should be a single number between 0 and 100.",
-      "Invalid value specified, setting to 10%%."))
+      "Invalid value specified, setting to 10%%."),
+      applicability_problem = TRUE)
     threshold_value <- 10
   }
 
   if (missing(direction)) {
     util_warning(c(
       "No specification of threshold direction found.",
-      "The function interprets values higher the threshold as violations."))
+      "The function interprets values higher the threshold as violations."),
+      applicability_problem = TRUE)
     direction <- "high"
   }
 
   if (length(direction) != 1) {
     util_error(
       "Parameter %s, if not missing, should be of length 1, but not %d.",
-      dQuote("direction"), length(direction))
+      dQuote("direction"), length(direction),
+      applicability_problem = TRUE)
   }
 
   if (!(direction %in% c("low", "high"))) {
     util_error(
       "Parameter %s should be either %s or %s, but not %s.",
       dQuote("direction"),
-      dQuote("low"), dQuote("high"), dQuote(direction)
+      dQuote("low"), dQuote("high"), dQuote(direction),
+      applicability_problem = TRUE
     )
   }
 
@@ -140,7 +146,7 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
           "' was not found in metadata, only: '",
           exclude_roles[exclude_roles %in% meta_data[[VARIABLE_ROLE]]],
           "' is used."
-        ))
+        ), applicability_problem = TRUE)
 
         exclude_roles <- exclude_roles[exclude_roles %in%
                                          meta_data[[VARIABLE_ROLE]]]
@@ -160,14 +166,15 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
             paste(dQuote(intersect(names(ds1), which_vars_not)),
                   collapse = ", "),
             " are not considered due to their VARIABLE_ROLE."
-          ))
+          ), applicability_problem = TRUE)
         }
         ds1 <- ds1[, !(names(ds1) %in% which_vars_not)]
       } else {
         exclude_roles <- FALSE
         util_warning(
           c("Specified VARIABLE_ROLE(s) were not found in metadata.",
-            "All variables are included here."))
+            "All variables are included here."),
+          applicability_problem = TRUE)
       }
 
 
@@ -176,7 +183,7 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
       if (missing(exclude_roles)) {
         util_warning(
           c("Formal exclude_roles is used with default: all process variables",
-            "are not included here."))
+            "are not included here."), applicability_problem = TRUE)
       }
 
       which_vars_not <- meta_data[[label_col]][meta_data[[VARIABLE_ROLE]] %in%
@@ -193,7 +200,7 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
                                                       which_vars_not)),
                                      collapse = ", "),
           " are not considered due to their VARIABLE_ROLE."
-        ))
+        ), applicability_problem = FALSE)
       }
       ds1 <- ds1[, !(names(ds1) %in% which_vars_not)]
     }
@@ -202,12 +209,14 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
     exclude_roles <- FALSE
     util_warning(
       c("VARIABLE_ROLE has not been defined in the metadata,",
-        "therefore all variables within segments are used."))
+        "therefore all variables within segments are used."),
+      applicability_problem = TRUE)
   }
 
   # Which segments?
   if (!("KEY_STUDY_SEGMENT" %in% names(meta_data))) {
-    util_error("Metadata do not contain the column KEY_STUDY_SEGMENT.")
+    util_error("Metadata do not contain the column KEY_STUDY_SEGMENT.",
+               applicability_problem = TRUE)
   }
 
   segs <- unique(meta_data$KEY_STUDY_SEGMENT[!(is.na(
@@ -242,7 +251,7 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
   }
 
   # Which groups?
-  if (!is.null(group_vars)) {
+  if (length(group_vars) > 0) {
     # No. of group levels and labels
     ds1[[group_vars]] <- util_assign_levlabs(
       variable = ds1[[group_vars]],
@@ -264,12 +273,13 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
     cvs <- "Examinations"
   }
 
-  if (!is.null(strata_vars)) {
+  if (length(strata_vars) > 0) {
     # No. of strata levels and labels
-    if (dim(ds1)[1] != dim(ds1[!is.na(strata_vars), ])[1]) {
-      ds1 <- ds1[!is.na(strata_vars), ]
+    if (dim(ds1)[1] != dim(ds1[!is.na(ds1[[strata_vars]]), ])[1]) {
+      ds1 <- ds1[!is.na(ds1[[strata_vars]]), ]
       util_warning(paste0("Some observations in ", strata_vars,
-                          " are NA and were removed."))
+                          " are NA and were removed."),
+                   applicability_problem = FALSE)
     }
 
     ds1[[strata_vars]] <- util_assign_levlabs(
@@ -285,12 +295,12 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
   }
 
   # create result dataframe by factor combinations
-  if (is.null(strata_vars)) {
+  if (length(strata_vars) == 0) {
     res_df <- expand.grid(Group = gr, Examinations = names(segs))
     colnames(res_df) <- c(group_vars, "Examinations")
   } else {
     res_df <- expand.grid(
-      Strata = strata, Group = gr, Examinations = seg_names,
+      Strata = strata, Group = gr, Examinations = names(segs),
       stringsAsFactors = TRUE
     )
     colnames(res_df) <- c(strata_vars, group_vars, "Examinations")
@@ -307,7 +317,7 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
   Ns <- c()
   Ms <- c()
 
-  if (is.null(strata_vars)) {
+  if (length(strata_vars) == 0) {
     for (j in seq_along(segs)) {
       for (i in seq_along(gr)) {
         Ns <- c(Ns, dim(ds1[ds1[[group_vars]] == gr[i], ])[1])
@@ -353,14 +363,14 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
   inversion <- ifelse(direction == "low", 1, 0)
 
   # order result data frame by grouping variable
-  if (is.null(strata_vars)) {
+  if (length(strata_vars) == 0) {
     # order result data frame by grouping variable
     res_df <- res_df[order(res_df[[group_vars]]), ]
     p <- util_heatmap_1th(
       df = res_df, cat_vars = cvs, values = "(%) of missing segments",
       right_intv = TRUE, threshold = threshold_value,
       invert = inversion
-    )
+    )$SummaryPlot
   } else {
     # order result data frame by grouping variable
     res_df <- res_df[order(res_df[[strata_vars]], res_df[[group_vars]]), ]
@@ -368,8 +378,28 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
       df = res_df, cat_vars = cvs[-1], values = "(%) of missing segments",
       right_intv = TRUE, threshold = threshold_value,
       invert = inversion, strata = strata_vars
-    )
+    )$SummaryPlot
   }
+
+  suppressWarnings({
+    # suppress wrong warnings: https://github.com/tidyverse/ggplot2/pull/4439/commits
+    # find out size of the plot https://stackoverflow.com/a/51795017
+    bp <- ggplot_build(p)
+    w <- 2 * length(bp$layout$panel_params[[1]]$x$get_labels())
+    if (w == 0) {
+      w <- 10
+    }
+    w <- w + 2 +
+      max(nchar(bp$layout$panel_params[[1]]$y$get_labels()),
+          na.rm = TRUE)
+    h <- 2 * length(bp$layout$panel_params[[1]]$y$get_labels())
+    if (h == 0) {
+      h <- 10
+    }
+    h <- h + 15
+
+    p <- util_set_size(p, width_em = w, height_em = h)
+  })
 
   return(list(SummaryData = res_df, SummaryPlot = p))
 }

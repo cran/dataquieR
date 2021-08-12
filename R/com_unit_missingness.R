@@ -26,6 +26,7 @@
 #' from being considered missing, because an ID is the only hint for a unit that
 #' elsewise would not occur in the data at all.
 #'
+#' List function.
 #'
 #' @param study_data [data.frame] the data frame that contains the measurements
 #' @param meta_data [data.frame] the data frame that contains metadata
@@ -51,7 +52,7 @@
 #'
 #' @seealso
 #' [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_com_impl_unit_missingness.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_com_impl_unit_missingness.html
 #' )
 com_unit_missingness <- function(study_data, meta_data, id_vars = NULL,
                                  strata_vars = NULL, label_col) {
@@ -73,7 +74,8 @@ com_unit_missingness <- function(study_data, meta_data, id_vars = NULL,
   if (is.null(id_vars)) {
     util_warning(
       c("No ID-variables specified, all variables are",
-        "considered to be measurements.")
+        "considered to be measurements."),
+      applicability_problem = TRUE
       )
   }
 
@@ -114,7 +116,7 @@ com_unit_missingness <- function(study_data, meta_data, id_vars = NULL,
   # summarize for strata_vars
   if (!(is.null(strata_vars))) {
     if (!(is.null(label_col)) & !(is.na(meta_data$VALUE_LABELS[
-        meta_data$LABEL
+        meta_data[[label_col]]
           == strata_vars]))) {
       lab_string <- meta_data$VALUE_LABELS[meta_data$LABEL == strata_vars]
       sumdf1[[strata_vars]] <- util_assign_levlabs(sumdf1[[strata_vars]],

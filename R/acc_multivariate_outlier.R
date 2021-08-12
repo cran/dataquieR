@@ -30,8 +30,10 @@
 #' - An output data frame is generated that flags each outlier
 #' - A parallel coordinate plot indicates respective outliers
 #'
-#' @param resp_vars [variable list] len=1-2. the name of the continuous
-#'                                           measurement variable
+#' List function.
+#'
+#' @param resp_vars [variable list] the name of the continuous
+#'                                           measurement variables
 #' @param id_vars [variable] optional, an ID variable of
 #'                        the study data. If not specified row numbers are used.
 #' @param n_rules [numeric] from=1 to=4. the no. of rules that must be violated
@@ -63,7 +65,7 @@
 #' @importFrom rlang .data
 #' @seealso
 #' [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_multivariate_outlier.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_multivariate_outlier.html
 #' )
 acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
                                      n_rules = 4, study_data, meta_data) {
@@ -73,7 +75,8 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
   if (n_rules != 4) {
     if (!(n_rules %in% 1:4)) {
       util_warning(
-        "The formal n_rules is not an integer of 1 to 4, default (4) is used. ")
+        "The formal n_rules is not an integer of 1 to 4, default (4) is used. ",
+        applicability_problem = TRUE)
       n_rules <- 4
     }
   }
@@ -88,22 +91,23 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
   )
 
   if (length(resp_vars) == 1) {
-    util_error("Need at least two variables for multivariate outliers.")
+    util_error("Need at least two variables for multivariate outliers.",
+               applicability_problem = TRUE)
   }
 
   # check correct use of ID-variable if specified
-  if (!is.null(id_vars)) {
-    util_correct_variable_use("id_vars",
-      allow_any_obs_na = TRUE,
-      need_type = "character | integer"
-    )
-  }
+  util_correct_variable_use("id_vars",
+    allow_any_obs_na = TRUE,
+    allow_null = TRUE,
+    need_type = "character | integer"
+  )
 
   # no use of id_vars?
   if (is.null(id_vars)) {
     ds1$dq_id <- rownames(ds1)
     id_vars <- "dq_id"
-    util_warning("As no ID-var has been specified the rownumbers will be used.")
+    util_warning("As no ID-var has been specified the rownumbers will be used.",
+                 applicability_problem = TRUE)
   }
 
   if (length(id_vars) > 1) {
@@ -122,7 +126,8 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
 
   if (n_post == 0) {
     util_error("No samples with without missing values in one of %s. Aborting.",
-               paste0(dQuote(vars), collapse = ", "))
+               paste0(dQuote(vars), collapse = ", "),
+               applicability_problem = FALSE)
   }
 
   if (n_post < n_prior) {
@@ -130,7 +135,7 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
       "Due to missing values in ", paste0(rvs, collapse = ", "),
       " or ", id_vars, " N=", n_prior - n_post,
       " observations were excluded."
-    ))
+    ), applicability_problem = FALSE)
   }
 
   rvs <-
@@ -221,5 +226,12 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
     scale_size_manual(values = .s) +
     theme_minimal()
 
-  return(list(FlaggedStudyData = ds1plot, SummaryTable = st1, SummaryPlot = p))
+  return(list(FlaggedStudyData = ds1plot,
+              SummaryTable = st1,
+              SummaryPlot =
+                util_set_size(p,
+                              width_em = 25 +
+                                1.2 * length(rvs),
+                              height_em = 25
+                              )))
 }

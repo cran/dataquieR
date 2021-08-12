@@ -8,8 +8,10 @@
 #' @return all matching variable attribute names
 #'
 util_get_var_att_names_of_level <- function(level) {
-  level <- match.arg(level, choices = unlist(VARATT_REQUIRE_LEVELS),
-                     several.ok = TRUE)
+  if (length(level) > 0) {
+    level <- match.arg(level, choices = unlist(VARATT_REQUIRE_LEVELS),
+                       several.ok = TRUE)
+  }
   r <- vapply(WELL_KNOWN_META_VARIABLE_NAMES, function(att_name) {
     if (attr(att_name, REQUIREMENT_ATT) %in% level) {
       att_name

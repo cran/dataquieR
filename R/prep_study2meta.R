@@ -11,6 +11,7 @@
 #'
 #' @param study_data [data.frame] the data frame that contains the measurements
 #' @param level [enum] level to provide (see also [VARATT_REQUIRE_LEVELS])
+#' @param convert_factors [logical] convert the
 #'
 #' @return a meta_data data frame
 #' @export
@@ -19,9 +20,14 @@
 prep_study2meta <- function(study_data, level = c(
                               VARATT_REQUIRE_LEVELS$REQUIRED,
                               VARATT_REQUIRE_LEVELS$OPTIONAL
-                            )) {
+                            ),
+                            convert_factors = FALSE) {
   if (missing(study_data) || !is.data.frame(study_data)) {
     util_error("Need study data as a data frame")
+  }
+
+  if (length(convert_factors) != 1 || !is.logical(convert_factors)) {
+    util_error("Argument %s must be logical(1)", dQuote("convert_factors"))
   }
 
   if (requireNamespace("tibble", quietly = TRUE)) {
@@ -42,7 +48,8 @@ prep_study2meta <- function(study_data, level = c(
       dQuote("tibble"),
       dQuote("https://r4ds.had.co.nz/tibbles.html#tibbles-vs.data.frame"),
       dQuote("dataquieR"),
-      dQuote("study_data")
+      dQuote("study_data"),
+      applicability_problem = FALSE
     )
   }
 
@@ -68,12 +75,28 @@ prep_study2meta <- function(study_data, level = c(
       }
     }, study_data, datatypes)
 
-  res <- prep_create_meta(
-    VAR_NAMES = var_names,
-    DATA_TYPE = datatypes,
-    MISSING_LIST = missing_list
-  )
+  if (convert_factors) {
+    valuelabels <- prep_valuelabels_from_data(resp_vars = var_names,
+                                              study_data = study_data)
+  } else {
+    valuelabels <- list()
+    valuelabels[[VALUE_LABELS]] <- NA_character_
+  }
 
+  if (convert_factors) {
+    res <- prep_create_meta(
+      VAR_NAMES = var_names,
+      DATA_TYPE = datatypes,
+      VALUE_LABELS = valuelabels[[VALUE_LABELS]],
+      MISSING_LIST = missing_list
+    )
+  } else {
+    res <- prep_create_meta(
+      VAR_NAMES = var_names,
+      DATA_TYPE = datatypes,
+      MISSING_LIST = missing_list
+    )
+  }
 
   generated_atts <- util_get_var_att_names_of_level(level)
   missing_atts <- setdiff(generated_atts, colnames(res))
@@ -97,6 +120,13 @@ prep_study2meta <- function(study_data, level = c(
       paste0(dQuote(
         generated_atts[!(generated_atts %in% colnames(res))]
       ), collapse = ", ")
+    )
+  }
+
+  if (convert_factors) {
+    res <- list(
+      MetaData = res,
+      ModifiedStudyData = valuelabels[["ModifiedStudyData"]]
     )
   }
 

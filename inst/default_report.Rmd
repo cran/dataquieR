@@ -36,10 +36,13 @@ df_report <- as.data.frame(report)
 if (nrow(df_report) * ncol(df_report) == 0)
   stop("Report is empty, no results at all.")
 library(DT)
+datatable(data.frame(a = 1, b = Sys.time(), c = "test", d = 1.1, 
+                     e = as.factor("test"), stringsAsFactors = FALSE),
+          filter = "top")
 knitr::opts_chunk$set(echo = chunk_echo, warning = chunk_warning, error = chunk_error, message = chunk_message)
 cache <- new.env(parent = emptyenv())
-process_result_chunk <- function(iform, outputSlot, title, subreport, variable) {
-    subreport <- match.arg(subreport, c("", "mv", "table", "plotlist_not_mv"))
+process_result_chunk <- function(iform, outputSlot, title, subreport, variable, by_indicator = FALSE) {
+    subreport <- match.arg(subreport, c("", "mv", "table", "plotlist_not_mv", "meta_miss"))
     if (nchar(subreport) > 0)
       subreport <- paste0("_", subreport)
     current_results <- subset(df_report, implementationform == iform, 'results', drop = TRUE)
@@ -47,24 +50,30 @@ process_result_chunk <- function(iform, outputSlot, title, subreport, variable) 
     
     child_hash <-
       digest::digest(list(
-        iform, outputSlot, title, subreport, variable
+        iform, outputSlot, title, subreport, variable, by_indicator
       ))
     
     if (exists(child_hash, cache)) {
       return(get(child_hash, cache))
     }
     
-    chunk <- suppressWarnings(suppressMessages(try(
-      knitr::knit_child(
-        system.file(sprintf("%s_subreport%s.Rmd", template, subreport), package = packageName), 
-        envir = environment(), 
-        quiet = TRUE,
-        options = list( # https://rdrr.io/github/rubenarslan/formr/man/asis_knit_child.html
-           fig.path = paste0(knitr::opts_chunk$get("fig.path"), child_hash, "-"), 
-           cache.path = paste0(knitr::opts_chunk$get("cache.path"), child_hash, "-")
-        )
-      ), 
-    silent = TRUE)))
+    if (by_indicator && subreport == "_table" && outputSlot == "SummaryTable") {
+      chunk <- subset(current_results, resp_vars == variable, outputSlot)
+      class(chunk) <- union(class(chunk), "SummaryTable_by_indicator")
+    } else {
+      chunk <- suppressWarnings(suppressMessages(try(
+        knitr::knit_child(
+          system.file(sprintf("%s_subreport%s.Rmd", template, subreport), package = packageName), 
+          envir = environment(), 
+          quiet = TRUE,
+          options = list( # https://rdrr.io/github/rubenarslan/formr/man/asis_knit_child.html
+             fig.path = paste0(knitr::opts_chunk$get("fig.path"), child_hash, "-"), 
+             cache.path = paste0(knitr::opts_chunk$get("cache.path"), child_hash, "-")
+          )
+        ), 
+      silent = TRUE)))
+    }
+    
     
     assign(child_hash, chunk, cache)
 
@@ -117,7 +126,7 @@ for (cl in colnames(s)) {
 if (nrow(s) > 0)
   s$StudyVariable <- paste0('<a href="#', sv, '">', s$StudyVariable, '</a>')
 s[is.na(s)] <- "N/A"
-datatable(s, filter = "top", escape=FALSE, )
+datatable(s, filter = "top", escape = FALSE, options = list(scrollCollapse = TRUE, scrollY = "75vh"))
 ```
 
 # Applicability {data-navmenu="General information"}
@@ -129,7 +138,8 @@ report$app_mat$ApplicabilityPlot
 
 ```{r unit_miss_tab, fig.height = 12, fig.width = 8}
 if (length(report$long_format$com_unit_missingness$results) >= 1)
-  datatable(as.data.frame(t(report$long_format$com_unit_missingness$results[[1]]$SummaryData), stringsAsFactors = FALSE), filter = "top")
+  datatable(as.data.frame(t(report$long_format$com_unit_missingness$results[[1]]$SummaryData), stringsAsFactors = FALSE), filter = "top",
+            options = list(scrollCollapse = TRUE, scrollY = "75vh"))
 ```
 
 # Segment missingness figure {data-navmenu="Completeness"}
@@ -140,7 +150,7 @@ if ((!is.null(report$long_format$com_segment_missingness)) &&
   if (inherits(report$long_format$com_segment_missingness$results[[1]], "try-error")) {
     stop(report$long_format$com_segment_missingness$results[[1]])
   } else {
-    report$long_format$com_segment_missingness$results[[1]]$SummaryPlot[[1]]
+    report$long_format$com_segment_missingness$results[[1]]$SummaryPlot
   }
 ```
 
@@ -150,7 +160,7 @@ if ((!is.null(report$long_format$com_segment_missingness)) &&
 if (inherits(report$long_format$com_segment_missingness$results[[1]], "try-error")) {
   stop(report$long_format$com_segment_missingness$results[[1]])
 } else {
-  datatable(report$long_format$com_segment_missingness$results[[1]]$SummaryData, filter = "top")
+  datatable(report$long_format$com_segment_missingness$results[[1]]$SummaryData, filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"))
 }
 ```
 
@@ -172,7 +182,7 @@ if (length(report$long_format$com_item_missingness$results) == 1) {
 if (inherits(report$long_format$com_item_missingness$results[[1]], "try-error")) {
   stop(report$long_format$com_item_missingness$results[[1]])
 } else {
-  datatable(report$long_format$com_item_missingness$results[[1]]$SummaryTable, filter = "top")
+  datatable(report$long_format$com_item_missingness$results[[1]]$SummaryTable, filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"))
 }
 ```
 
@@ -182,7 +192,7 @@ if (inherits(report$long_format$com_item_missingness$results[[1]], "try-error"))
 if (inherits(report$long_format$con_inadmissible_categorical$results[[1]], "try-error")) {
   stop(report$long_format$con_inadmissible_categorical$results[[1]])
 } else {
-  datatable(report$long_format$con_inadmissible_categorical$results[[1]]$SummaryTable, filter = "top")
+  datatable(report$long_format$con_inadmissible_categorical$results[[1]]$SummaryTable, filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"))
 }
 ```
 
@@ -199,10 +209,13 @@ if (length(report$long_format$con_contradictions$results) == 1)
 # Contradictions table {data-navmenu="Consistency"}
 
 ```{r contra_tab, fig.height = 12, fig.width = 8}
+progress(30)
 if (inherits(report$long_format$con_contradictions$results[[1]], "try-error")) {
-  conditionMessage(attr(report$long_format$con_contradictions$results[[1]], "condition"))
+  conditionMessage(attr(report$long_format$con_contradictions$results[[1]],
+                        "condition"))
 } else {
-  datatable(report$long_format$con_contradictions$results[[1]]$SummaryData, filter = "top")
+  datatable(report$long_format$con_contradictions$results[[1]]$SummaryData, 
+            filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"))
 }
 ```
 
@@ -211,7 +224,7 @@ cp <- call_plan[startsWith(call_plan$iform, "con_"), , FALSE]
 by_indicator <- dataquieR::prep_pmap(cp, function(...) {
   single_results <- 
     lapply(setNames(nm = unique(as.character(variables))), function(variable) {
-    process_result_chunk(..., variable = variable)
+    process_result_chunk(..., variable = variable, by_indicator = TRUE)
   })
   errors <- vapply(single_results, function(x) {
     inherits(x, "try-error") || inherits(x, "error")
@@ -222,14 +235,29 @@ by_indicator <- dataquieR::prep_pmap(cp, function(...) {
     }
     single_results <- single_results[!errors]
   }
+  if (all(vapply(single_results, inherits, "SummaryTable_by_indicator", 
+                 FUN.VALUE = logical(1)))
+      ) {
+    sr <- unlist(single_results, recursive = FALSE)
+    oslo <- c(...)["outputSlot"] # oslo <- "SummaryTable" # for now only this
+    if (all(vapply(lapply(sr, names), `%in%`, x = oslo, FUN.VALUE = logical(1)))) {
+      sr <- lapply(sr, `[[`, oslo)
+      srdf <- try(do.call(rbind.data.frame, sr), silent = TRUE)
+      if (is.data.frame(srdf)) {
+        single_results <- as.character(htmltools::tagList(DT::datatable(srdf, filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"))))
+      }
+    }
+  }
   iform <- c(...)["iform"]
   title <- c(...)["title"]
   title <- gsub("^#+ ", "", title)
   title <- gsub(" [a-z]+ %s$", "", title)
-  r <- c(sprintf('\n# %s {#%s_con_mv data-navmenu="Consistency"}', title, iform), 
+  r <- c(sprintf('\n# %s {#%s_con_mv data-navmenu="Consistency"}', title, 
+                 iform), 
          single_results) 
   
   r[trimws(r) == ""] <- NULL
+  progress(40)
   if (length(r) > 1) {
     r
   } else {
@@ -262,6 +290,7 @@ res <- lapply(unique(as.character(variables)), function(variable) {
       NULL
     }
   })
+progress(50)
 cat(unlist(res), sep = '\n')
 ```
 
@@ -274,7 +303,7 @@ cp <- call_plan[startsWith(call_plan$iform, "acc_"), , FALSE]
 by_indicator <- dataquieR::prep_pmap(cp, function(...) {
   single_results <- 
     lapply(setNames(nm = unique(as.character(variables))), function(variable) {
-    process_result_chunk(..., variable = variable)
+    process_result_chunk(..., variable = variable, by_indicator = TRUE)
   })
   errors <- vapply(single_results, function(x) {
     inherits(x, "try-error") || inherits(x, "error")
@@ -284,6 +313,19 @@ by_indicator <- dataquieR::prep_pmap(cp, function(...) {
       invisible(lapply(single_results[errors], function(e) try(stop(e))))
     }
     single_results <- single_results[!errors]
+  }
+  if (all(vapply(single_results, inherits, "SummaryTable_by_indicator", 
+                 FUN.VALUE = logical(1)))
+      ) {
+    sr <- unlist(single_results, recursive = FALSE)
+    oslo <- c(...)["outputSlot"] # oslo <- "SummaryTable" # for now only this
+    if (all(vapply(lapply(sr, names), `%in%`, x = oslo, FUN.VALUE = logical(1)))) {
+      sr <- lapply(sr, `[[`, oslo)
+      srdf <- try(do.call(rbind.data.frame, sr), silent = TRUE)
+      if (is.data.frame(srdf)) {
+        single_results <- as.character(htmltools::tagList(DT::datatable(srdf, filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"))))
+      }
+    }
   }
   iform <- c(...)["iform"]
   title <- c(...)["title"]
@@ -299,7 +341,7 @@ by_indicator <- dataquieR::prep_pmap(cp, function(...) {
     NULL
   }
 })
-
+progress(65)
 cat(unlist(by_indicator), sep = '\n')
 ```
 
@@ -327,6 +369,7 @@ res <- lapply(unique(as.character(variables)), function(variable) {
       NULL
     }
   })
+progress(85)
 cat(unlist(res), sep = '\n')
 ```
 
@@ -345,6 +388,7 @@ res <- lapply(unique(as.character(variables)), function(variable) {
       single_results <- single_results[!errors]
     }
     r <- c(list(sprintf('\n# %s {#%s data-navmenu="Single Variables"}', dQuote(variable), variable)), 
+           process_result_chunk("com_item_missingness", "", "### General Information about %s", "meta_miss", variable),
            single_results) 
 
     r[trimws(r) == ""] <- NULL
@@ -354,5 +398,6 @@ res <- lapply(unique(as.character(variables)), function(variable) {
       NULL
     }
   })
+progress(99)
 cat(unlist(res), sep = '\n')
 ```

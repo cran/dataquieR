@@ -1,7 +1,6 @@
 #' Utility function outliers according to the rule of Huber et al.
 #'
-#' This function calculates outliers according to the rule of Huber et al. T
-#' his function requires the package `robustbase`.
+#' This function calculates outliers according to the rule of Huber et al.
 #'
 #' @param x [numeric] data to check for outliers
 #'
@@ -23,7 +22,7 @@ util_sigmagap <- function(x) {
 
   if (max(ints$sigmagap, na.rm = TRUE) == 1) {
     # if break is low
-    if (min(which(ints$sigmagap == 1)) < xmu) {
+    if (min(ints$VALUE[which(ints$sigmagap == 1)]) < xmu) {
       ints$sigmagap[1:min(which(ints$sigmagap == 1))] <- 1
     } else {
       ints$sigmagap[min(which(ints$sigmagap == 1)):length(x)] <- 1

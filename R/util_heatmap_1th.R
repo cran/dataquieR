@@ -33,16 +33,18 @@ util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
   if (!(length(cat_vars) %in% c(1, 2))) {
     util_error(paste0(
       "Argument cat_vars can have 1 or 2 elements. You specified ",
-      length(cat_vars), "elements."))
+      length(cat_vars), "elements."), applicability_problem = TRUE)
   }
 
   if (!(is.numeric(df[[values]]))) {
     util_error(paste0("The variable you specified under ",
-                      values, " must be numeric."))
+                      values, " must be numeric."),
+               applicability_problem = TRUE)
   }
 
   if (missing(threshold)) {
-    util_error(paste0("No threshold has been specified"))
+    util_error(paste0("No threshold has been specified"),
+               applicability_problem = TRUE)
   }
 
   # Preps

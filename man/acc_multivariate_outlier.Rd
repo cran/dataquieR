@@ -14,8 +14,8 @@ acc_multivariate_outlier(
 )
 }
 \arguments{
-\item{resp_vars}{\link{variable list} len=1-2. the name of the continuous
-measurement variable}
+\item{resp_vars}{\link{variable list} the name of the continuous
+measurement variables}
 
 \item{id_vars}{\link{variable} optional, an ID variable of
 the study data. If not specified row numbers are used.}
@@ -79,8 +79,10 @@ each observation in the study data
 \item An output data frame is generated that flags each outlier
 \item A parallel coordinate plot indicates respective outliers
 }
+
+List function.
 }
 
 \seealso{
-\href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_multivariate_outlier.html}{Online Documentation}
+\href{https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_multivariate_outlier.html}{Online Documentation}
 }

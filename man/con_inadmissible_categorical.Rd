@@ -68,5 +68,5 @@ of modified study data
 }
 }
 \seealso{
-\href{https://dfg-qa.ship-med.uni-greifswald.de/VIN_con_impl_inadmissible_categorical.html}{Online Documentation}
+\href{https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_inadmissible_categorical.html}{Online Documentation}
 }

@@ -112,6 +112,6 @@ test_that("acc_multivariate_outlier works with label_col", {
   skip_on_cran()
   skip_if_not_installed("vdiffr")
   vdiffr::expect_doppelganger(
-    "acc_multivariate_outlier CRP_0 GLOBAL_HEALTH_VAS_0",
+    "acc_mv_outlierCRP0GLOBHEAVA0",
                               res1$SummaryPlot)
 })

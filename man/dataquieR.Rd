@@ -8,5 +8,5 @@
 Epidemiological Research}
 \description{
 For a quick start please read \link{dq_report} and maybe the vignettes
-or the package's \href{https://dfg-qa.ship-med.uni-greifswald.de/}{website}.
+or the package's \href{https://dataquality.ship-med.uni-greifswald.de/}{website}.
 }

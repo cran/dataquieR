@@ -89,6 +89,30 @@ print.dataquieR_resultset <- function(x, ...) {
     }
   }
 
+  rstudiojob <- NULL
+  if (requireNamespace("rstudioapi", quietly = TRUE)) {
+    try({
+      rstudiojob = rstudioapi::jobAdd("Viewing dq_report",
+                                      progressUnits = 100L)
+    }, silent = TRUE)
+  }
+
+  on.exit({
+    if (!is.null(rstudiojob)) { # nocov start
+      try({
+        rstudioapi::jobRemove(rstudiojob)
+      }, silent = TRUE)
+    } # nocov end
+  })
+
+  progress <- function(percent) {
+    if (!is.null(rstudiojob)) { # nocov start
+      try({
+        rstudioapi::jobSetProgress(rstudiojob, percent)
+      }, silent = TRUE)
+    } # nocov end
+  }
+
   file <- rmarkdown::render(
     quiet = TRUE,
     template_file,
@@ -97,6 +121,7 @@ print.dataquieR_resultset <- function(x, ...) {
     output_file = outputFile,
     envir = environment()
   )
+
 
   viewer <- getOption("viewer")
   if (is.null(viewer)) { # nocov start

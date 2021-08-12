@@ -106,7 +106,7 @@ dq_report_by <- function(study_data, meta_data, label_col, meta_data_split =
       if (after < before) {
         util_warning(
           "Lost %d variables due to mapping problems. %d variables left.",
-          before - after, after)
+          before - after, after, applicability_problem = TRUE)
       }
       sd <- sd[, vars_in_segment, FALSE]
       md <- md[md[[VAR_NAMES]] %in% vars_in_segment, , FALSE]

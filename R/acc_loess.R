@@ -38,6 +38,10 @@
 #'                       passed to [ggplot2::geom_line()]
 #' @param plot_data_time [logical] mark times with data values (caution, there
 #'                                 may be many marks)
+#' @param plot_format [enum] AUTO | COMBINED | FACETS | BOTH. Return the
+#'                           LOESS plot as a combined plot or as facets plots
+#'                           one per group. BOTH will return both plot variants,
+#'                           AUTO will decide based on the number of observers.
 #'
 #' @return a [list] with:
 #'   - `SummaryPlotList`: list with two plots:
@@ -80,13 +84,13 @@
 #'                   cov
 #' @seealso
 #' [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_loess.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_loess.html
 #' )
 acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
                       min_obs_in_subgroup, label_col = NULL, study_data,
                       meta_data, resolution = 180, se_line = list(color = "red",
                                                                   linetype = 2),
-                      plot_data_time) {
+                      plot_data_time, plot_format = "AUTO") {
 
   ###########################
   # STOPS, PREPS AND CHECKS #
@@ -97,19 +101,22 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
   if (missing(min_obs_in_subgroup)) {
     min_obs_in_subgroup <- 30
     util_warning(
-      "No min_obs_in_subgroup was set. Default n=30 per level is used."
+      "No min_obs_in_subgroup was set. Default n=30 per level is used.",
+      applicability_problem = TRUE
       )
   } else {
     if (length(min_obs_in_subgroup) != 1) {
       util_error("%s should be a scalar integer value, not %d values.",
-                 dQuote("min_obs_in_subgroup"), length(min_obs_in_subgroup))
+                 dQuote("min_obs_in_subgroup"), length(min_obs_in_subgroup),
+                 applicability_problem = TRUE)
     }
     .min_obs_in_subgroup <- suppressWarnings(as.integer(min_obs_in_subgroup))
     if (is.na(.min_obs_in_subgroup) != is.na(min_obs_in_subgroup)) {
       util_warning(c(
         "Coulud not convert min_obs_in_subgroup %s to a number.",
         "Set to standard value n=30."),
-        dQuote(as.character(min_obs_in_subgroup))
+        dQuote(as.character(min_obs_in_subgroup)),
+        applicability_problem = TRUE
       )
       min_obs_in_subgroup <- 30
     } else {
@@ -117,7 +124,8 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
     }
     if (is.na(min_obs_in_subgroup)) {
       min_obs_in_subgroup <- 30
-      util_warning("No min_obs_in_subgroup. Default n=30 per level is used.")
+      util_warning("No min_obs_in_subgroup. Default n=30 per level is used.",
+                   applicability_problem = TRUE)
     }
   }
 
@@ -130,19 +138,20 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
       !is.numeric(resolution) ||
       !is.finite(resolution)) {
     util_error("%s needs to be a single finite numeric value.",
-               dQuote("resolution"))
+               dQuote("resolution"),
+               applicability_problem = TRUE)
   }
 
   if (!is.list(se_line)) {
     util_error(c(
       "%s needs to be a list of arguments for ggplot2::geom_line for",
       "the standard error lines."),
-      dQuote("se_line"))
+      dQuote("se_line"),
+      applicability_problem = TRUE)
   }
 
   if (is.null(co_vars)) {
     co_vars <- character(0)
-    #    util_warning("No co_vars were defined")
   }
 
   # util_ensure_variable_exactly_once_avail("co_vars", allow_na = TRUE,
@@ -157,7 +166,8 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
     util_warning(paste0(sum(is.na(ds1[[resp_vars]])),
                         " observations were omitted due to missing values in '",
                         resp_vars, "'",
-      collapse = " "))
+      collapse = " "),
+      applicability_problem = FALSE)
     ds1 <- ds1[!(is.na(ds1[[resp_vars]])), ]
   }
 
@@ -168,7 +178,8 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
 
   if (n_post < n_prior) {
     util_warning(paste0("Due to missing values in ", time_vars, " ",
-                        n_prior - n_post, " observations were deleted."))
+                        n_prior - n_post, " observations were deleted."),
+                 applicability_problem = FALSE)
   }
 
   # missings in group_vars?
@@ -178,38 +189,42 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
 
   if (n_post < n_prior) {
     util_warning(paste0("Due to missing values in ", group_vars, " ",
-                        n_prior - n_post, " observations were deleted."))
+                        n_prior - n_post, " observations were deleted."),
+                 applicability_problem = FALSE)
   }
 
   # unparseable time values in time_vars?
   if (is.character(ds1[[time_vars]]) || is.factor(ds1[[time_vars]])) {
     before <- sum(is.na(ds1[[time_vars]]))
-    if (requireNamespace("anytime", quietly = TRUE)) {
+    if (util_anytime_installed()) {
       ds1[[time_vars]] <- anytime::anytime(ds1[[time_vars]])
-    } else { # nocov start
-      # cannot really test in absence of suggested packages
+    } else {
       message(sprintf(
-        paste0("Package %s is not installed. Trying conversion with base",
-               "as.POSIXct function.", collapse = " "),
+        paste("Package %s is not installed. Trying conversion with base",
+              "as.POSIXct function.", collapse = " "),
         dQuote("anytime")))
-      ds1[[time_vars]] <- suppressWarnings(as.POSIXct(ds1[[time_vars]]))
-    } # nocov end
+      ds1[[time_vars]] <- suppressWarnings(as.POSIXct(ds1[[time_vars]],
+                                                      optional = TRUE))
+    }
     after <- sum(is.na(ds1[[time_vars]]))
     if (before < after) {
       util_warning(
         "Converting %s to DATETIME, %d values could not be converted",
-        dQuote(time_vars), after - before)
+        dQuote(time_vars), after - before,
+        applicability_problem = FALSE)
     }
     if (all(is.na(ds1[[time_vars]]))) {
       util_error("No not-missing value in DATETIME variable %s",
-                 dQuote(time_vars))
+                 dQuote(time_vars),
+                 applicability_problem = FALSE)
     }
     n_prior <- dim(ds1)[1]
     ds1 <- ds1[!(is.na(ds1[[time_vars]])), ]
     n_post <- dim(ds1)[1]
     if (n_post < n_prior) {
       util_warning(paste0("Due to invalid time formats in ", time_vars, " ",
-                          n_prior - n_post, " observations were deleted."))
+                          n_prior - n_post, " observations were deleted."),
+                   applicability_problem = FALSE)
     }
   }
 
@@ -221,7 +236,8 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
   if (n_post < n_prior) {
     util_warning(paste0("Due to missing values in any of ",
                         paste0(co_vars, collapse = ", "), " ",
-                        n_prior - n_post, " observations were deleted."))
+                        n_prior - n_post, " observations were deleted."),
+                 applicability_problem = FALSE)
   }
 
   # Type factor
@@ -236,7 +252,8 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
   if (length(obs_lt_minobs) > 0) {
     util_warning(paste0(c("The following levels:", obs_lt_minobs,
                           "have < 30 observations and were discarded."),
-                        collapse = " "))
+                        collapse = " "),
+                 applicability_problem = FALSE)
     # exclude levels with too few observations
     ds2 <- subset(ds1, ds1[[group_vars]] %in% obs_gt_minobs)
     # dropping unused levels
@@ -246,7 +263,8 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
   }
 
   if (nrow(ds2) == 0) {
-    util_error("No data left, cannot produce a plot, sorry.")
+    util_error("No data left, cannot produce a plot, sorry.",
+               applicability_problem = FALSE)
   }
 
   rm(ds1) # memory consumption
@@ -269,13 +287,15 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
         util_warning(c("%s is a categorial but not an ordinal variable.",
                        "I'll use the levels as ordinals, but this may lead",
                         "to wrong conclusions."), paste0(dQuote(resp_vars),
-                                                         collapse = ", "))
+                                                         collapse = ", "),
+                     applicability_problem = TRUE)
       }
       util_warning(
         c("%s is not a metric variable. Ordinal variables may in some cases",
           "still be interpretable with the LOESS plots, but be aware that",
           "distances are meaningless."), paste0(dQuote(resp_vars), collapse =
-                                                  ", "))
+                                                  ", "),
+        applicability_problem = TRUE)
       ds2[[resp_vars]] <- suppressWarnings(as.integer(ds2[[resp_vars]]))
     # } else {
     #   # too complicated, unclear concept. cancelled so far.
@@ -535,7 +555,11 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
   # statistical threshold (tbd)
 
   if (length(co_vars) > 0) {
-    subtitle <- sprintf("adjusted for %s", paste0(co_vars, collapse = ", "))
+    if (length(co_vars) < 10) {
+      subtitle <- sprintf("adjusted for %s", paste0(co_vars, collapse = ", "))
+    } else {
+      subtitle <- sprintf("adjusted for %d variables", length(co_vars))
+    }
   } else {
     subtitle <- ""
   }
@@ -556,7 +580,8 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
           "turned off."),
         sQuote("plot_data_time"),
         max(dots_per_group),
-        dQuote(names(dots_per_group))[which.max(dots_per_group)]
+        dQuote(names(dots_per_group))[which.max(dots_per_group)],
+        applicability_problem = TRUE
       )
       plot_data_time <- FALSE
     } else {
@@ -567,7 +592,8 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
         is.na(plot_data_time) ||
         !is.logical(plot_data_time)) {
           util_error("Argument %s must be a sclar logical value.",
-                     dQuote("plot_data_time"))
+                     dQuote("plot_data_time"),
+                     applicability_problem = TRUE)
         }
   }
 
@@ -625,10 +651,40 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
     ggtitle(paste("Effects of ", group_vars, " in ", resp_vars), subtitle) +
     theme(legend.title = element_blank())
 
+  p1 <- util_set_size(p1,
+                      width_em = 45,
+                      height_em = (length(unique(fit_df$GROUP))) * 15 / 2)
+  p2 <- util_set_size(p2, 30, 15)
+
   pl <- list(
     Loess_fits_facets = p1,
     Loess_fits_combined = p2
   )
 
+  if (length(plot_format) != 1 || !is.character(plot_format)) {
+    plot_format <- "NOT character(1) STRING AT ALL"
+  }
+
+  if (plot_format == "BOTH") {
+    return(list(SummaryPlotList = pl))
+  } else if (plot_format == "COMBINED") {
+    return(list(SummaryPlotList = setNames(pl["Loess_fits_combined"],
+                    nm = resp_vars)))
+  } else if (plot_format == "FACETS") {
+    return(list(SummaryPlotList = setNames(pl["Loess_fits_facets"],
+                    nm = resp_vars)))
+  } else if (plot_format != "AUTO") {
+    util_warning("Unknown %s: %s -- will switch to default value AUTO.",
+               dQuote("plot_format"), dQuote(plot_format),
+               applicability_problem = TRUE)
+  }
+  if (length(unique(GROUP)) < 15) {
+    selection <- "Loess_fits_combined"
+  } else {
+    selection <- "Loess_fits_facets"
+  }
+  pl <- pl[selection]
+  names(pl) <- resp_vars
   return(list(SummaryPlotList = pl))
+
 }

@@ -6,13 +6,16 @@
 \usage{
 prep_study2meta(
   study_data,
-  level = c(VARATT_REQUIRE_LEVELS$REQUIRED, VARATT_REQUIRE_LEVELS$OPTIONAL)
+  level = c(VARATT_REQUIRE_LEVELS$REQUIRED, VARATT_REQUIRE_LEVELS$OPTIONAL),
+  convert_factors = FALSE
 )
 }
 \arguments{
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
 \item{level}{\link{enum} level to provide (see also \link{VARATT_REQUIRE_LEVELS})}
+
+\item{convert_factors}{\link{logical} convert the}
 }
 \value{
 a meta_data data frame

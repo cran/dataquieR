@@ -215,4 +215,31 @@ test_that("dq_report works", {
                                        )
   ))
 
+  sd0 <- study_data[, 1:5]
+  md0 <- subset(meta_data, VAR_NAMES %in% colnames(sd0))
+  report <- suppressWarnings(dq_report(sd0, md0,
+                                       resp_vars = "SBP_0",
+                                       cores = 1,
+                                       label_col = LABEL,
+                                       dimensions = # for speed, omit Accuracy
+                                         c("Completeness",
+                                           "Consistency",
+                                           "Accuracy"),
+                                       specific_args = list(
+                                         acc_margins =
+                                           list(min_obs_in_subgroup = 40),
+                                         com_item_missingness = list(
+                                           show_causes = TRUE,
+                                           cause_label_df = read.csv(
+                                             system.file(
+                                               "extdata",
+                                               "Missing-Codes-2020.csv",
+                                               package = "dataquieR"),
+                                             header = TRUE, sep = ";"
+                                           )
+                                         )
+                                       )
+  ))
+
+  expect_equal(length(report$long_format$com_item_missingness$results), 1)
 })

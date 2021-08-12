@@ -69,12 +69,13 @@ pipeline_recursive_result <- function(call_plan_with_results,
   if (!all(result_groups %in% colnames(call_plan_with_results))) {
     util_warning(c(
       "Not all desired result groups correspond to columns in the call_plan.",
-      "Remove the unknowns."))
+      "Remove the unknowns."), applicability_problem = FALSE)
     result_groups <- intersect(result_groups, colnames(call_plan_with_results))
   }
   if (any(result_groups %in% c("resp_vars", "results"))) {
     util_warning(c(
-      "resp_vars and results cannot be used as result_groups."))
+      "resp_vars and results cannot be used as result_groups."),
+      applicability_problem = FALSE)
     result_groups <- setdiff(result_groups, c("resp_vars", "results"))
   }
   if (!length(result_groups) > 0 ||
@@ -104,7 +105,8 @@ pipeline_recursive_result <- function(call_plan_with_results,
           "Not each parameter has been selected to create a",
           "recursion level. You may miss some results with identical names.",
           "Please check your %s-argument.", collapse = " "),
-          sQuote("result_groups")
+          sQuote("result_groups"),
+          applicability_problem = FALSE
         )
       }
       r <- r[, c(1, ncol(r)), drop = FALSE]

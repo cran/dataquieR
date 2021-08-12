@@ -44,13 +44,14 @@
 #' @return a list with:
 #'   - `SummaryTable`: data frame about item missingness per response variable
 #'   - `SummaryPlot`: ggplot2 heatmap plot, if show_causes was TRUE
+#'   - `ReportSummaryTable`: data frame underlying `SummaryPlot`
 #'
 #' @export
 #' @importFrom ggplot2 ggplot facet_wrap geom_bar theme_minimal theme annotate
 #'                     scale_fill_gradientn theme element_blank
 #' @seealso
 #' [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_com_impl_item_missingness.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_com_impl_item_missingness.html
 #' )
 com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
                                  label_col, show_causes = TRUE,
@@ -61,14 +62,16 @@ com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
     suppressWarnings <- FALSE
     if (!missing(suppressWarnings)) {
       util_warning(
-        "Setting suppressWarnings to its default FALSE")
+        "Setting suppressWarnings to its default FALSE",
+        applicability_problem = TRUE)
     }
   } else {
     suppressWarnings <- as.logical(suppressWarnings)
     if (is.na(suppressWarnings)) {
       suppressWarnings <- FALSE
       util_warning(
-        "suppressWarnings should be a scalar logical value. Setting FALSE")
+        "suppressWarnings should be a scalar logical value. Setting FALSE",
+        applicability_problem = TRUE)
     }
   }
 
@@ -81,7 +84,8 @@ com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
     if (!missing(cause_label_df) && !is.null(cause_label_df) &&
         !is.data.frame(cause_label_df)) {
       util_warning(
-        "If given, cause_label_df must be a data frame. Ignored the argument.")
+        "If given, cause_label_df must be a data frame. Ignored the argument.",
+        applicability_problem = TRUE)
     }
     all_missing_codes <- unique(sort(unlist(lapply(
       as.character(meta_data[[MISSING_LIST]]),
@@ -134,19 +138,22 @@ com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
   mc_lab$CODE_VALUE <- util_as_numeric(mc_lab$CODE_VALUE)
 
   # special code for SysMiss
-  sm_code <- max(mc_lab$CODE_VALUE) + 1
-  sm <- data.frame(CODE_VALUE = sm_code, CODE_LABEL = "ADDED: SysMiss")
+  sm_code <- suppressWarnings(max(mc_lab[FALSE, ]$CODE_VALUE,
+                                  na.rm = TRUE) + 1)
+  sm <- data.frame(CODE_VALUE = sm_code, CODE_LABEL = .SM_LAB)
   # add new missing code for sysmiss to table
   mc_lab <- dplyr::bind_rows(mc_lab, sm)
 
   if (!suppressWarnings && any(duplicated(cause_label_df$CODE_VALUE))) {
-    util_warning("There are codes used for missings and jumps.")
+    util_warning("There are codes used for missings and jumps.",
+                 applicability_problem = TRUE)
   }
 
   if (missing(threshold_value)) {
     util_warning(
       c("The mandatory argument threshold_value was not",
-        "defined and is set to the default of 90%%."))
+        "defined and is set to the default of 90%%."),
+      applicability_problem = TRUE)
     threshold_value <- 90
   }
   .threshold_value <- as.numeric(threshold_value)
@@ -154,7 +161,8 @@ com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
     util_warning(
       c("Could not convert threshold_value %s to a number.",
         "Set to default value 90%%."),
-      dQuote(as.character(threshold_value))
+      dQuote(as.character(threshold_value)),
+      applicability_problem = TRUE
     )
     threshold_value <- 90
   } else {
@@ -172,6 +180,26 @@ com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
   if (length(resp_vars) == 0) {
     resp_vars <- names(ds1)
   }
+
+
+  j_for_vars <- meta_data[meta_data[[label_col]] %in%
+                            resp_vars, JUMP_LIST, drop = TRUE]
+  m_for_vars <- meta_data[meta_data[[label_col]] %in%
+                            resp_vars, MISSING_LIST, drop = TRUE]
+
+  j_for_vars <- suppressWarnings(as.numeric(unlist(strsplit(
+    as.character(j_for_vars), SPLIT_CHAR,
+    fixed = TRUE
+  ))))
+
+  m_for_vars <- suppressWarnings(as.numeric(unlist(strsplit(
+    as.character(m_for_vars), SPLIT_CHAR,
+    fixed = TRUE
+  ))))
+
+  mc_lab <- mc_lab[ mc_lab$CODE_LABEL == .SM_LAB |
+                   (mc_lab$CODE_VALUE %in% c(j_for_vars, m_for_vars)),
+                   , drop = FALSE]
 
   # initialize result dataframe
   result_table <- data.frame(Variables = resp_vars)
@@ -305,32 +333,38 @@ com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
 
   if (missing(include_sysmiss) || length(include_sysmiss) != 1) {
     if (missing(include_sysmiss)) {
-      util_warning("include_sysmiss set to FALSE")
+      util_warning("include_sysmiss set to FALSE",
+                   applicability_problem = FALSE)
     } else {
-      util_warning("include_sysmiss cannot be a vector. Set it to FALSE")
+      util_warning("include_sysmiss cannot be a vector. Set it to FALSE",
+                   applicability_problem = TRUE)
     }
     include_sysmiss <- FALSE
   } else {
     include_sysmiss <- as.logical(include_sysmiss)[[1]]
     if (is.na(include_sysmiss)) {
       util_warning(
-        "Cannot parse include_sysmiss as a logical value. Set it to FALSE")
+        "Cannot parse include_sysmiss as a logical value. Set it to FALSE",
+        applicability_problem = TRUE)
       include_sysmiss <- FALSE
     }
   }
 
   if (missing(show_causes) || length(show_causes) != 1) {
     if (length(show_causes) == 1) {
-      util_warning("show_causes set to TRUE")
+      util_warning("show_causes set to TRUE",
+                   applicability_problem = TRUE)
     } else {
-      util_warning("show_causes cannot be a vector. Set it to TRUE")
+      util_warning("show_causes cannot be a vector. Set it to TRUE",
+                   applicability_problem = TRUE)
     }
     show_causes <- TRUE
   } else {
     show_causes <- as.logical(show_causes)[[1]]
     if (is.na(show_causes)) {
       util_warning(
-        "Cannot parse show_causes as a logical value. Set it to TRUE")
+        "Cannot parse show_causes as a logical value. Set it to TRUE",
+        applicability_problem = TRUE)
       show_causes <- TRUE
     }
   }
@@ -350,7 +384,8 @@ com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
 
 
     # wide to long
-    ds3 <- suppressMessages(melt(ds2[, resp_vars, FALSE]))
+    ds3 <- suppressMessages(melt(ds2[, resp_vars, FALSE],
+                                 measure.vars = resp_vars))
 
     # include sysmiss with special code
     if (!missing(include_sysmiss) && isTRUE(include_sysmiss)) {
@@ -358,8 +393,8 @@ com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
       ds3$value[is.na(ds3$value)] <- sm_code
     } else {
       # omit sysmiss
-      ds3 <- ds3[!(is.na(ds3$value)), ]
-      mc_lab <- mc_lab[mc_lab$CODE_LABEL != "ADDED: SysMiss", ]
+      ds3 <- ds3[!(is.na(ds3$value)), , drop = FALSE]
+      mc_lab <- mc_lab[mc_lab$CODE_LABEL != .SM_LAB, ]
       mc_lab$CODE_LABEL <- factor(mc_lab$CODE_LABEL)
     }
 
@@ -399,15 +434,22 @@ com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
           panel.grid.minor = element_blank(),
           plot.background = element_blank()
         )
+      p <- util_set_size(p)
     } else {
       if (length(unique(ctab1$Var1)) > length(unique(ctab1$Var2))) {
         p <- ggballoonplot(ctab1, x = "Var2", y = "Var1", fill = "Freq",
                            ggtheme = theme_minimal()) +
           scale_fill_gradientn(colors = rev(my_cols))
+        p <- util_set_size(p,
+                           width_em  = length(unique(ctab1$Var2)) + 20,
+                           height_em = length(unique(ctab1$Var1)) + 5)
       } else {
         p <- ggballoonplot(ctab1, x = "Var1", y = "Var2", fill = "Freq",
                            ggtheme = theme_minimal()) +
           scale_fill_gradientn(colors = rev(my_cols))
+        p <- util_set_size(p,
+                           width_em  = length(unique(ctab1$Var1)) + 20,
+                           height_em = length(unique(ctab1$Var2)) + 5)
       }
     }
   } else {
@@ -427,7 +469,31 @@ com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
         panel.grid.minor = element_blank(),
         plot.background = element_blank()
       )
+    p <- util_set_size(p)
   }
 
-  return(list(SummaryTable = result_table, SummaryPlot = p))
+
+  plot_data <- p$data
+
+  if (is.null(dim(plot_data))) {
+    plot_data <- as.data.frame(matrix(ncol = 3), stringsAsFactors = FALSE)
+  }
+
+  ReportSummaryTable <-
+    merge(reshape::cast(value = "Freq", setNames(plot_data,
+                                                 c("Var1", "Variables",
+                                                   "Freq")),
+                        formula = Variables ~ Var1),
+          data.frame(
+            Variables = result_table$Variables,
+            N = (if (!include_sysmiss)
+              N_no_SysMiss else No_obs)
+          )
+    )
+
+  class(ReportSummaryTable) <- union("ReportSummaryTable",
+                                     class(ReportSummaryTable))
+
+  return(list(SummaryTable = result_table, SummaryPlot = p,
+              ReportSummaryTable = ReportSummaryTable))
 }

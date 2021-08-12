@@ -38,7 +38,8 @@ prep_datatype_from_data <-
       dQuote("tibble"),
       dQuote("https://r4ds.had.co.nz/tibbles.html#tibbles-vs.data.frame"),
       dQuote("dataquieR"),
-      dQuote("study_data")
+      dQuote("study_data"),
+      applicability_problem = FALSE
     )
   }
 
@@ -46,7 +47,7 @@ prep_datatype_from_data <-
   if ((length(study_data) == 0) || !is.character(resp_vars)) {
     util_error(
       "%s should be missing or give variable names referring the study_data.",
-      dQuote("resp_vars"))
+      dQuote("resp_vars"), applicability_problem = TRUE)
   }
 
   if (!(all(resp_vars %in% colnames(study_data)))) {
@@ -55,7 +56,8 @@ prep_datatype_from_data <-
       "Won't return a type for them: %s"),
       dQuote("resp_vars"),
       dQuote("study_data"),
-      sQuote(resp_vars[!(resp_vars %in% colnames(study_data))])
+      sQuote(resp_vars[!(resp_vars %in% colnames(study_data))]),
+      applicability_problem = TRUE
     )
   }
 

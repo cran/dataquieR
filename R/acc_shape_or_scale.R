@@ -24,7 +24,7 @@
 #' @param guess [logical] estimate parameters
 #' @param par1 [numeric] first parameter of the distribution if applicable
 #' @param par2 [numeric] second parameter of the distribution if applicable
-#' @param end_digits [logical] check for end digits preferences
+#' @param end_digits [logical] internal use. check for end digits preferences
 #' @param study_data [data.frame] the data frame that contains the measurements
 #' @param meta_data [data.frame] the data frame that contains metadata
 #'                               attributes of study data
@@ -45,7 +45,7 @@
 #' @importFrom stats dunif dgamma dnorm punif  pgamma pnorm median
 #' @seealso
 #' [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_shape_or_scale.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_shape_or_scale.html
 #' )
 acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
                                end_digits, label_col, study_data, meta_data) {
@@ -65,21 +65,23 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
     util_warning(
       c("A column of the metaddata specifying the distributions has",
       "not been specified. Trying the default %s."),
-      dQuote(DISTRIBUTION))
+      dQuote(DISTRIBUTION), applicability_problem = TRUE)
   }
 
   if (!(dist_col %in% colnames(meta_data))) {
-    util_error(sprintf("Did not find variable attribute %s in the meta_data",
-                       dist_col))
+    util_error("Did not find variable attribute %s in the meta_data",
+                       dist_col, applicability_problem = TRUE)
   }
 
   if (missing(guess) || is.na(guess[[1]])) {
     if (!missing(guess) && length(guess) > 1) {
-      util_warning("Have more than one value for guess, use the first one only")
+      util_warning("Have more than one value for guess, use the first one only",
+                   applicability_problem = TRUE)
     }
     if (!missing(par1) && !missing(par2)) {
       guess <- FALSE
-      util_warning("Since parameters were specified: 'guess' is set to false")
+      util_warning("Since parameters were specified: 'guess' is set to false",
+                   applicability_problem = TRUE)
     } else {
       guess <- TRUE
     }
@@ -88,62 +90,70 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
   if (!(missing(end_digits)) && length(end_digits) > 1) {
     util_warning(
       c("end_digits should be a scalar logical value. Have more than one",
-        "value, use the first one only"))
+        "value, use the first one only"),
+      applicability_problem = TRUE)
     end_digits <- end_digits[[1]]
   }
 
   if (!missing(guess) && length(guess) > 1) {
     util_warning(
       c("guess should be a scalar logical value.",
-        "Have more than one value, use the first one only"))
+        "Have more than one value, use the first one only"),
+      applicability_problem = TRUE)
     guess <- guess[[1]]
   }
 
   if (!missing(par1) && length(par1) > 1) {
     util_warning(
       c("par1 should be a scalar numeric value. Have more than one value,",
-        "use the first one only"))
+        "use the first one only"),
+      applicability_problem = TRUE)
     par1 <- par1[[1]]
   }
 
   if (!missing(par2) && length(par2) > 1) {
     util_warning(
       c("par2 should be a scalar numeric value.",
-        "Have more than one value, use the first one only"))
+        "Have more than one value, use the first one only"),
+      applicability_problem = TRUE)
     par2 <- par2[[1]]
   }
 
   if (!missing(guess) && !all(is.logical(guess))) {
     guess <- suppressWarnings(as.logical(guess))
     if ((!all(is.logical(guess))) || any(is.na(guess))) {
-      util_error("guess should be a logical value")
+      util_error("guess should be a logical value",
+                 applicability_problem = TRUE)
     }
   }
 
   if (!missing(end_digits) && !all(is.logical(end_digits))) {
     end_digits <- suppressWarnings(as.logical(end_digits))
     if ((!all(is.logical(end_digits))) || any(is.na(end_digits))) {
-      util_error("end_digits should be a logical value")
+      util_error("end_digits should be a logical value",
+                 applicability_problem = TRUE)
     }
   }
 
   if (!missing(par1) && !all(is.numeric(par1))) {
     par1 <- suppressWarnings(as.numeric(par1))
     if ((!all(is.numeric(par1))) || any(is.na(par1))) {
-      util_error("par1 should be a numeric value")
+      util_error("par1 should be a numeric value",
+                 applicability_problem = TRUE)
     }
   }
 
   if (!missing(par2) && !all(is.numeric(par2))) {
     par2 <- suppressWarnings(as.numeric(par2))
     if ((!all(is.numeric(par2))) || any(is.na(par2))) {
-      util_error("par2 should be a numeric value")
+      util_error("par2 should be a numeric value",
+                 applicability_problem = TRUE)
     }
   }
 
   if (length(ds1[[resp_vars]]) == 0L || mode(ds1[[resp_vars]]) != "numeric") {
     util_error("resp_vars == '%s' must be a non-empty numeric variable",
-               resp_vars)
+               resp_vars, applicability_problem = TRUE)
   }
 
   # missings in resp_vars?
@@ -156,13 +166,14 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
                         n_prior - n_post,
       " observations were deleted.",
       collapse = " "
-    ))
+    ), applicability_problem = FALSE)
   }
 
   if (guess == FALSE && (missing(par1) || missing(par2) ||
                          !is.finite(par1) || !is.finite(par2))) {
     util_error(c("Since 'guess' is not true finite numerical",
-                 "parameters must be prespecified"))
+                 "parameters must be prespecified"),
+               applicability_problem = TRUE)
   }
 
   if (missing(end_digits)) {
@@ -174,7 +185,8 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
     is.na(meta_data[meta_data[[label_col]] == resp_vars, dist_col]) ||
     trimws(meta_data[meta_data[[label_col]] == resp_vars, dist_col]) == "") {
     util_error(paste0("No distribution specified for ", resp_vars, " in ",
-                      dist_col, collapse = ""))
+                      dist_col, collapse = ""),
+               applicability_problem = TRUE)
   }
 
   dist <- paste0(meta_data[meta_data[[label_col]] == resp_vars, dist_col])
@@ -200,7 +212,8 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
   p.fun <- switch(dist, uniform = punif, gamma = pgamma, normal = pnorm, NULL)
 
   if (is.null(d.fun)) {
-    util_error(sprintf("This distribution '%s' is not supported yet...", dist))
+    util_error(sprintf("This distribution '%s' is not supported yet...", dist),
+               applicability_problem = TRUE)
   }
 
   # create histogram
@@ -291,7 +304,7 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
   p1 <- ggplot(df1, aes_(x = ~INTERVALS, y = ~PROB)) +
     theme_minimal() +
     geom_bar(aes_(fill = ~GRADING), stat = "identity") +
-    scale_fill_manual(values = grading_cols, guide = FALSE) +
+    scale_fill_manual(values = grading_cols, guide = "none") +
     geom_errorbar(aes_(ymin = ~LOWER_CL, ymax = ~UPPER_CL), width = 0.1) + {
       if (!(end_digits) & dist != "uniform") {
         geom_line(data = df2, aes_(x = ~x2, y = ~y_line, color = "#E69F00"),
@@ -309,7 +322,10 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
       if (end_digits) geom_hline(yintercept = 0.1, color = "#E69F00", size = 2)
     } + {
       if (end_digits) xlab("End digits")
-    } + scale_color_manual(values = c("#E69F00"), guide = FALSE)
+    } + scale_color_manual(values = c("#E69F00"), guide = "none")
+
+
+  p1 <- util_set_size(p1);
 
   return(list(
     SummaryData = df1, SummaryPlot = p1,

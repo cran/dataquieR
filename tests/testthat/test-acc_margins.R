@@ -46,20 +46,40 @@ test_that("acc_margins works without label_col", {
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = NULL,
                 label_col = LABEL),
-    regexp = paste("A group variable must be specified with group_vars."),
+    regexp = paste("Argument group_vars is NULL"),
     perl = TRUE
   )
 
   skip_on_cran() # the remainder of this file runs slow.
 
-  expect_warning( # many group_vars
+  expect_error( # many group_vars
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = c("DEV_NO_0", "USR_BP_0"),
                 label_col = LABEL),
-    regexp = paste("Only one group variable can be specified.\\s+",
-                   "The first variable is selected."),
+    regexp = paste("Need excactly one element in argument group_vars,",
+                   "got 2: .DEV_NO_0, USR_BP_0."),
+    perl = TRUE
+  )
+
+
+  gv <- prep_map_labels("SEX_0", meta_data, VAR_NAMES, LABEL)
+
+  expect_warning(
+    acc_margins(resp_vars = "CRP_0", study_data = study_data,
+                meta_data = meta_data, group_vars = c("SEX_0"),
+                label_col = LABEL),
+    regexp = sprintf(
+      "(%s|%s|%s|%s|%s)",
+      paste("Due to missing values in  or SEX_0 N=60",
+                   "observations were excluded."),
+      paste("Due to missing values in CRP_0 N=241 observations were excluded."),
+      paste("No or many threshold type specified and set to empirical."),
+      paste(
+      "No or many minimum observation count was specified and is set to n=5."),
+      paste("No co_vars specified")
+    ),
     perl = TRUE,
-    all = FALSE
+    all = TRUE
   )
 
   expect_warning( # float
@@ -73,7 +93,7 @@ test_that("acc_margins works without label_col", {
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 threshold_value = data.frame(l = letters, L = LETTERS),
                 label_col = LABEL),
-    regexp = "acc_margins: threshold_value is not numeric: .+,",
+    regexp = "acc_margins: threshold_value is not numeric.1.: .+,",
     perl = TRUE,
     all = FALSE
   )
@@ -89,8 +109,27 @@ test_that("acc_margins works without label_col", {
       acc_margins(resp_vars = "v00014", study_data = study_data,
                 meta_data = meta_data)
     },
-    regexp = paste(".*A group variable must be specified with group_vars."),
+    regexp = paste("Argument group_vars is NULL"),
     perl = TRUE
+  )
+
+
+  expect_warning(
+    expect_error({
+      res1 <-
+        acc_margins(resp_vars = "v00014", study_data = study_data,
+                    meta_data = meta_data, group_vars = "v00001")
+      },
+      regexp =
+        conditionMessage(attr(
+          try(
+            lm("Petal.Length ~ Sepal.Length + Species",
+               iris[iris$Species == "setosa", ]),
+            silent = TRUE
+          ),
+          "condition")),
+      fixed = TRUE
+    )
   )
 
   expect_warning(
@@ -99,8 +138,17 @@ test_that("acc_margins works without label_col", {
                   meta_data = meta_data, group_vars = "v00016",
                   min_obs_in_subgroup = NA),
     regexp =
-      paste("min_obs_in_subgroup is not integer: .+NA.+,",
-            "setting it to default value 5.")
+      sprintf("(%s|%s|%s|%s|%s)",
+        paste("No co_vars specified"),
+        paste("min_obs_in_subgroup is not integer: .+NA.+,",
+              "setting it to default value 5."),
+        paste("Due to missing values .+ observations were excluded."),
+        paste("No or many minimum observation count was",
+              "specified and is set to n=5"),
+        paste("No or many threshold type specified and set to empirical.")
+      ),
+    perl = TRUE,
+    all = TRUE
   )
 
   expect_warning(
@@ -119,13 +167,14 @@ test_that("acc_margins works without label_col", {
     regexp =
       sprintf(
         "(%s|%s|%s|%s|%s)",
-        paste("No minimum observation count was specified and is set to n=5"),
+        paste(
+      "No or many minimum observation count was specified and is set to n=5."),
         paste("No co_vars specified"),
         paste("Due to missing values in  or v00016 N=308",
               "observations were excluded."),
         paste("Due to missing values in v00014 N=131",
               "observations were excluded."),
-        paste("No threshold type specified and set to empirical.")
+        paste("No or many threshold type specified and set to empirical.")
       ),
     perl = TRUE,
     all = TRUE
@@ -162,7 +211,7 @@ test_that("acc_margins works with label_col", {
       acc_margins(resp_vars = "v00014", study_data = study_data,
                   meta_data = meta_data)
   },
-  regexp = paste(".*A group variable must be specified with group_vars."),
+  regexp = paste("Argument group_vars is NULL"),
   perl = TRUE
 )
 
@@ -192,13 +241,15 @@ expect_warning(
                 threshold_value = 1),
   regexp =
     sprintf(
-      "(%s|%s|%s|%s)",
-      paste("No minimum observation count was specified and is set to n=5"),
+      "(Due|%s|%s|%s|%ss|%s)",
+      paste(
+       "No or many minimum observation.+"),
       paste("No co_vars specified"),
-      paste("Due to missing values in  or DEV_NO_0 N=308",
+      paste("Due to missing values.+308",
             "observations were excluded."),
-      paste("Due to missing values in CRP_0 N=131",
-            "observations were excluded.")
+      paste("Due to missing values.+131",
+            "observations were excluded."),
+      paste("threshold_value is not numeric.+it to default value 1.")
     ),
   perl = TRUE,
   all = TRUE
@@ -212,7 +263,8 @@ expect_warning(
   regexp =
     sprintf(
       "(%s|%s|%s|%s)",
-      paste("No minimum observation count was specified and is set to n=5"),
+      paste(
+       "No or many minimum observation count was specified and is set to n=5."),
       paste("No co_vars specified"),
       paste("Due to missing values in  or DEV_NO_0 N=308",
             "observations were excluded."),
@@ -231,7 +283,8 @@ expect_warning(
   regexp =
     sprintf(
       "(%s|%s|%s|%s|%s)",
-      paste("No minimum observation count was specified and is set to n=5"),
+      paste(
+       "No or many minimum observation count was specified and is set to n=5."),
       paste("No co_vars specified"),
       paste("Due to missing values in  or DEV_NO_0 N=308",
             "observations were excluded."),
@@ -251,7 +304,8 @@ expect_warning(
   regexp =
     sprintf(
       "(%s|%s|%s|%s)",
-      paste("No minimum observation count was specified and is set to n=5"),
+      paste(
+       "No or many minimum observation count was specified and is set to n=5."),
       paste("No co_vars specified"),
       paste("Due to missing values in  or DEV_NO_0 N=308",
             "observations were excluded."),
@@ -269,14 +323,13 @@ expect_warning(
                   label_col = LABEL),
     regexp =
       sprintf(
-        "(%s|%s|%s|%s|%s)",
-        paste("No minimum observation count was specified and is set to n=5"),
+        "(%s|%s|%s|%s)",
+        paste(
+      "No or many minimum observation count was specified and is set to n=5."),
         paste("No co_vars specified"),
-        paste("Due to missing values in  or DEV_NO_0 N=308",
+        paste("Due to missing values .+",
               "observations were excluded."),
-        paste("Due to missing values in CRP_0 N=131",
-              "observations were excluded."),
-        paste("No threshold type specified and set to empirical.")
+        paste("No or many threshold type specified and set to empirical.")
       ),
     perl = TRUE,
     all = TRUE

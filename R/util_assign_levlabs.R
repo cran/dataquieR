@@ -46,16 +46,19 @@ util_assign_levlabs <- function(variable, string_of_levlabs, splitchar,
   # warnings:
   if (length(levs) != length(labs)) {
     # Dead code?
-    util_warning("Number of levels does not match number of labels.") # nocov
+    util_warning("Number of levels does not match number of labels.", # nocov
+                 applicability_problem = TRUE) # nocov
   }
 
   if (length(levs) < length(unique(variable[!(is.na(variable))]))) {
     util_warning(
-      "Number of levels in variable greater than in character string.")
+      "Number of levels in variable greater than in character string.",
+      applicability_problem = TRUE)
   }
 
   if (any(is.na(labs))) {
-    util_warning("No labels assigned for some levels, use levels as labels")
+    util_warning("No labels assigned for some levels, use levels as labels",
+                 applicability_problem = TRUE)
     labs[is.na(labs)] <- levs[is.na(labs)]
   }
 

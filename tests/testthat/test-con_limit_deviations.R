@@ -65,7 +65,7 @@ test_that("con_limit_deviations and timevars with < 20 integer sec-values ok", {
   skip_if_not_installed("vdiffr")
   suppressWarnings(
     vdiffr::expect_doppelganger(
-      "con_limit_deviations for timevar QUEST_DT_0 ok",
+      "con_limit_deviations QUEST_DT_0",
                                 MyValueLimits$SummaryPlotList$QUEST_DT_0)
   )
 
@@ -379,7 +379,7 @@ test_that("con_limit_deviations with constant data", {
   skip_if_not_installed("vdiffr")
   suppressWarnings(
     vdiffr::expect_doppelganger(
-      "con_limit_deviations for histgrms w/ only 1 value ok",
+      "con_limit_deviations 4 hists 1 val",
       MyValueLimits$SummaryPlotList$CRP_0)
   )
 })
@@ -439,7 +439,7 @@ test_that("con_limit_deviations does not crash with missing codes", {
                                            study_data = sd0,
                                            meta_data  = md0,
                                            limits     = "HARD_LIMITS"),
-    regexp = sprintf("(%s|%s|%s)",
+    regexp = sprintf("(%s|%s|%s|%s)",
                      paste("For .+SBP_0.+, I have 66507 breaks. Did you",
                            "forget to specify some missing codes .+1e.05.+",
                            "or .+97.+",
@@ -449,7 +449,8 @@ test_that("con_limit_deviations does not crash with missing codes", {
                            "of breaks to 8315 <= 10000 to avoid rendering",
                            "problems."),
                      paste("N = 1 values in SBP_0 have been above",
-                           "HARD_LIMIT_UP and were removed.")
+                           "HARD_LIMIT_UP and were removed."),
+                     "Removed 439 rows containing non-finite values .stat_bin.."
     ),
     perl = TRUE,
     all = TRUE
@@ -463,7 +464,7 @@ test_that("con_limit_deviations does not crash with missing codes", {
   skip_if_not_installed("vdiffr")
   suppressWarnings(
     vdiffr::expect_doppelganger(
-      "con_limit_deviations histgrms + misscds acceptable",
+      "con_limit_deviations histgrms + misscds",
       MyValueLimits$SummaryPlotList$SBP_0)
   )
 })

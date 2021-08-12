@@ -52,7 +52,7 @@ util_count_codes <- function(sdf, mdf, variables, list, name, warn = TRUE) {
       sprintf("Found %s in %s for %s, which is not numeric\n", row[[1]], list,
               row[[2]])
     })) {
-      util_warning(w)
+      util_warning(w, applicability_problem = FALSE)
     }
   }
 

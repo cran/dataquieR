@@ -10,14 +10,15 @@ dataquieR_resultset_verify <- function(list_to_verify) {
   if (!is.list(list_to_verify)) {
     util_error(
       "Tried to bless something else than a list in class %s. Internal error.",
-      dQuote("dataquieR_resultset"))
+      dQuote("dataquieR_resultset"), applicability_problem = FALSE)
   }
 
   for (slot in c("long_format", "app_mat")) {
     if (!is.list(list_to_verify[[slot]])) {
       util_error(
         "Not a list %s. Internal error.",
-        dQuote(slot))
+        dQuote(slot),
+        applicability_problem = FALSE)
     }
   }
 
@@ -31,12 +32,14 @@ dataquieR_resultset_verify <- function(list_to_verify) {
                "variable) in %s: %s. Internal error."),
                dQuote("long_format"),
                paste0(dQuote(names(is_dfrm[!is_dfrm & !is_list0])),
-                      collapse = ", "))
+                      collapse = ", "),
+               applicability_problem = FALSE)
   }
 
   if (!is.data.frame(list_to_verify$app_mat$SummaryTable)) {
     util_error("Not a data frame in %s. Internal error.",
-               dQuote("this$app_mat$SummaryTable"))
+               dQuote("this$app_mat$SummaryTable"),
+               applicability_problem = FALSE)
   }
 
   for (slot in c("study_data",
@@ -44,7 +47,8 @@ dataquieR_resultset_verify <- function(list_to_verify) {
     if (!is.data.frame(list_to_verify[[slot]])) {
       util_error(
         "Not a data frame %s. Internal error.",
-        dQuote(slot))
+        dQuote(slot),
+        applicability_problem = FALSE)
     }
   }
   if (list_to_verify$strata_attribute != KEY_STUDY_SEGMENT &&
@@ -52,20 +56,23 @@ dataquieR_resultset_verify <- function(list_to_verify) {
     util_error(
       "Not a supported %s: %s. Internal error.",
       sQuote("strata_attribute"),
-      dQuote(list_to_verify$strata_attribute))
+      dQuote(list_to_verify$strata_attribute),
+      applicability_problem = FALSE)
   }
   if (!is.null(list_to_verify$strata_vars) &&
       !is.character(list_to_verify$strata_vars)) {
     util_error(
       "All %s should be of type chracter. Internal error.",
-      sQuote("strata_vars"))
+      sQuote("strata_vars"),
+      applicability_problem = FALSE)
   }
   if (!is.character(list_to_verify$label_col) ||
       length(list_to_verify$label_col) != 1 ||
       !(list_to_verify$label_col %in%
        colnames(list_to_verify$meta_data))) {
     util_error("Invalid %s set.",
-               sQuote("label_col"))
+               sQuote("label_col"),
+               applicability_problem = FALSE)
 
   }
   if (!is.null(list_to_verify$strata_vars) &&
@@ -81,7 +88,8 @@ dataquieR_resultset_verify <- function(list_to_verify) {
       util_error(
         "All %s should name variables: %s don't. Internal error.",
         sQuote("strata_vars"),
-        paste(dQuote(list_to_verify$strata_vars[!vars_exist]), collapse = ", ")
+        paste(dQuote(list_to_verify$strata_vars[!vars_exist]), collapse = ", "),
+        applicability_problem = FALSE
       )
     }
   }

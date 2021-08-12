@@ -4,15 +4,35 @@
 \alias{util_check_data_type}
 \title{Support function to verify the data type of a value}
 \usage{
-util_check_data_type(x, type)
+util_check_data_type(
+  x,
+  type,
+  check_convertible = FALSE,
+  threshold_value = 0,
+  return_counts = FALSE
+)
 }
 \arguments{
 \item{x}{the value}
 
 \item{type}{expected data type}
+
+\item{check_convertible}{\link{logical} also try, if a conversion to the
+declared data type would work.}
+
+\item{threshold_value}{\link{numeric} from=0 to=100. percentage failing
+conversions allowed if \code{check_convertible}
+is \code{TRUE}.}
+
+\item{return_counts}{\link{logical} return the counts instead of logical values
+about threshold violations.}
 }
 \value{
+if \code{check_convertible} is \code{FALSE},
 \link{logical} whether x is of the expected type
+if \code{check_convertible} is \verb{TRUE`` [integer] with the states }0, 1, 2`: 0 = Mismatch, not convertible
+1 = Match
+2 = Mismatch, but convertible
 }
 \description{
 Function to verify the data type of a value.

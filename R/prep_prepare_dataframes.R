@@ -100,7 +100,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
                                       !is.logical(.replace_missings) ||
                                       is.na(.replace_missings))) {
     util_error(
-      "Called prepare_dataframes with .replace_missings not being logical(1)")
+      "Called prepare_dataframes with .replace_missings not being logical(1)",
+      applicability_problem = TRUE)
   }
 
   callfn <- caller_fn(1)
@@ -126,7 +127,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
         }
         if (inherits(.label_col, "try-error")) {
           util_error("Cannot resolve %s", dQuote(paste0("label_col", " = ",
-                                                        quoted_label_col)))
+                                                        quoted_label_col)),
+                     applicability_problem = TRUE)
         }
       } else if (caller_has_default[["label_col"]]) {
         .label_col <- eval(caller_defaults[["label_col"]],
@@ -179,7 +181,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
           c("Missing %s, try to guess a preliminary one from the data",
             "using %s. Please consider amending this minimum guess manually."),
           dQuote("meta_data"),
-          dQuote("prep_prepare_dataframes")
+          dQuote("prep_prepare_dataframes"),
+          applicability_problem = TRUE
         )
         .meta_data <- prep_study2meta(.study_data, level =
                                         VARATT_REQUIRE_LEVELS$REQUIRED)
@@ -191,7 +194,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
         c("Missing %s, try to guess a preliminary one from the data using %s.",
           "Please consider amending this minimum guess manually."),
         dQuote("meta_data"),
-        dQuote("prep_prepare_dataframes")
+        dQuote("prep_prepare_dataframes"),
+        applicability_problem = TRUE
       )
       .meta_data <- prep_study2meta(.study_data, level =
                                       VARATT_REQUIRE_LEVELS$REQUIRED)
@@ -200,7 +204,7 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
 
   # if no study_data have been provided -> error
   if (!is.data.frame(.meta_data)) {
-    util_error("Need meta data as a data frame")
+    util_error("Need meta data as a data frame", applicability_problem = TRUE)
   }
 
   if (is.null(.label_col)) {
@@ -234,7 +238,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
         dQuote("tibble"),
         dQuote("https://r4ds.had.co.nz/tibbles.html#tibbles-vs.data.frame"),
         dQuote("dataquieR"),
-        dQuote("study_data")
+        dQuote("study_data"),
+        applicability_problem = FALSE
       )
     }
     if (inherits(meta_data, "tbl_df")) {
@@ -251,7 +256,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
         dQuote("tibble"),
         dQuote("https://r4ds.had.co.nz/tibbles.html#tibbles-vs.data.frame"),
         dQuote("dataquieR"),
-        dQuote("meta_data")
+        dQuote("meta_data"),
+        applicability_problem = FALSE
       )
     }
   } # nocov end
@@ -306,7 +312,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
   if (var_names == "meta_data") {
     if (!"VAR_NAMES" %in% colnames(meta_data)) {
       util_error("'VAR_NAMES' not found in meta data [%s]",
-                 paste0(colnames(meta_data), collapse = ", "))
+                 paste0(colnames(meta_data), collapse = ", "),
+                 applicability_problem = TRUE)
     }
 
     study_data <- study_data[, order(colnames(study_data)), FALSE]
@@ -315,7 +322,7 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     ds1 <- util_map_all(label_col = label_col, study_data = study_data,
                         meta_data = meta_data)$df
     if (ncol(ds1) * nrow(ds1) == 0) {
-      util_error("No data left. Aborting.")
+      util_error("No data left. Aborting.", applicability_problem = FALSE)
     }
   } else { # nocov start
     # unsupported now
@@ -335,7 +342,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     # performs an analogous check and clears out the unannotated variables
     # from the study data.
     util_warning("Lost %d variables, that I could not map using %s",
-                 .all - .mapped, dQuote(label_col))
+                 .all - .mapped, dQuote(label_col),
+                 applicability_problem = TRUE)
   } # nocov end
   meta_data <- meta_data[meta_data[[label_col]] %in% colnames(ds1), , FALSE]
 

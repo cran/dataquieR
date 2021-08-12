@@ -38,6 +38,7 @@
 #'   - `ApplicabilityPlot`: [ggplot2] heatmap plot, graphical representation of
 #'                       `SummaryTable`
 #'   - `ApplicabilityPlotList`: [list] of plots per (maybe artificial) segment
+#'   - `ReportSummaryTable`: data frame underlying `ApplicabilityPlot`
 #' @export
 #' @importFrom ggplot2 ggplot aes_ geom_tile scale_fill_manual facet_wrap
 #'                     theme_minimal scale_x_discrete xlab guides
@@ -60,7 +61,7 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
     util_error(c(
       "max_vars_per_plot must be one strictly positive non-complex integer",
       "value, may be Inf."
-    ))
+    ), applicability_problem = TRUE)
   }
 
   util_prepare_dataframes(.replace_missings = FALSE)
@@ -77,23 +78,26 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
   if (!("DATA_TYPE" %in% names(meta_data))) {
     util_error(
       c("The attribute DATA_TYPE is not contained in the metadata but is",
-        "required for this function."))
+        "required for this function."), applicability_problem = TRUE)
   }
 
   # variables with missing DATA_TYPE?
   if (any(is.na(meta_data$DATA_TYPE))) {
     whichnot <- as.character(meta_data[[label_col]][is.na(meta_data$DATA_TYPE)])
     util_error(paste0("The DATA_TYPE for variable(s) <<", whichnot,
-                      ">> is not defined in the metadata."))
+                      ">> is not defined in the metadata."),
+               applicability_problem = TRUE)
   }
 
   # check whether data types adhere to conventions
   if (!all(unique(meta_data$DATA_TYPE) %in% DATA_TYPES)) {
     whichnot <- dplyr::setdiff(unique(meta_data$DATA_TYPE), DATA_TYPES)
     util_warning(paste0("The data type(s): <<", whichnot,
-                        ">> is not eligible in the metadata concept."))
+                        ">> is not eligible in the metadata concept."),
+                 applicability_problem = TRUE)
     util_error("Please map data types to: %s.", paste0(dQuote(DATA_TYPES),
-                                                       collapse = ", "))
+                                                       collapse = ", "),
+               applicability_problem = TRUE)
   }
 
   # DATA TYPE CONSISTENCY ------------------------------------------------------
@@ -136,7 +140,7 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
     util_warning(c(
       "Stratification for KEY_STUDY_SEGMENTS is not possible due to missing",
       "metadata. Will split arbitrarily avoiding too large figures"
-    ))
+    ), applicability_problem = TRUE)
     nvars <- nrow(meta_data)
     meta_data$KEY_STUDY_SEGMENT <- paste0("Block #", ceiling(1:nvars /
                                                              max_vars_per_plot))
@@ -144,7 +148,8 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
     if (any(is.na(meta_data$KEY_STUDY_SEGMENT))) {
       util_warning(c(
         "Some KEY_STUDY_SEGMENTS are NA. Will assign those to an artificial",
-        "segment %s"), dQuote("Other")
+        "segment %s"), dQuote("Other"),
+        applicability_problem = TRUE
       )
       meta_data$KEY_STUDY_SEGMENT[is.na(meta_data$KEY_STUDY_SEGMENT)] <- "Other"
     }
@@ -153,7 +158,8 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
     for (too_big_block in too_big_blocks) {
       util_warning(
         "Will split segemnt %s arbitrarily avoiding too large figures",
-        dQuote(too_big_block)
+        dQuote(too_big_block),
+        applicability_problem = FALSE
       )
       nvars <- sum(meta_data$KEY_STUDY_SEGMENT == too_big_block, na.rm = TRUE)
       meta_data$KEY_STUDY_SEGMENT[
@@ -187,8 +193,12 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
   # reorder according VARIABLE_ORDER (optional)
   if (VARIABLE_ORDER %in% colnames(meta_data)) {
     meta_data <- meta_data[order(meta_data$VARIABLE_ORDER), ]
-    app_matrix <- app_matrix[match(meta_data[[label_col]],
-                                   app_matrix$Variables), ]
+    meta_data[[VARIABLE_ORDER]][is.na(meta_data[[VARIABLE_ORDER]])] <-
+      max(meta_data[[VARIABLE_ORDER]], na.rm = TRUE)
+    meta_data[[VARIABLE_ORDER]][is.na(meta_data[[VARIABLE_ORDER]])] <-
+      1
+    app_matrix <- app_matrix[na.omit(match(meta_data[[label_col]],
+                                     app_matrix$Variables)), ]
   }
 
   # assign factor levels
@@ -216,6 +226,8 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
   # PLOT -----------------------------------------------------------------------
   colcode <- c("#B2182B", "#ef6548", "#92C5DE", "#2166AC", "#B0B0B0")
   names(colcode) <- levels(app_matrix_long$APP_SCORE)
+  colcode2 <- c("#B2182B", "#ef6548", "#92C5DE", "#2166AC", "#B0B0B0")
+  names(colcode2) <- 4:0
 
   ratio <- dim(app_matrix)[1] / dim(app_matrix)[2]
 
@@ -251,9 +263,32 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
     plot_me
   )
 
+
+  ReportSummaryTable <- app_matrix
+  ReportSummaryTable$KEY_STUDY_SEGMENT <- NULL
+
+  ReportSummaryTable[2:ncol(ReportSummaryTable)] <-
+    lapply(ReportSummaryTable[2:ncol(ReportSummaryTable)], util_as_numeric)
+
+  ReportSummaryTable[2:ncol(ReportSummaryTable)] <-
+    4 - ReportSummaryTable[2:ncol(ReportSummaryTable)]
+
+  ReportSummaryTable$N <- 4
+
+  attr(ReportSummaryTable, "higher_means") <- "better"
+  attr(ReportSummaryTable, "continuous") <- FALSE
+  attr(ReportSummaryTable, "colcode") <- rev(colcode2)
+  attr(ReportSummaryTable, "level_names") <-
+    setNames(nm = 0:4, levels(app_matrix_long$APP_SCORE))
+
+
+  class(ReportSummaryTable) <- union("ReportSummaryTable",
+                                     class(ReportSummaryTable))
+
   return(list(
     ApplicabilityPlot = p,
     ApplicabilityPlotList = pl,
-    SummaryTable = app_matrix
+    SummaryTable = app_matrix,
+    ReportSummaryTable = ReportSummaryTable
   ))
 }

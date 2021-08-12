@@ -13,12 +13,12 @@ citEntry(entry = "Manual",
 	                     as.person("Stephan Struckmann")),
          year = year,
          note = note,
-         url = "https://dfg-qa.ship-med.uni-greifswald.de/",
+         url = "https://dataquality.ship-med.uni-greifswald.de/",
 
          textVersion =
            paste("Adrian Richter, Carsten Oliver Schmidt, Stephan Struckmann",
      	       sprintf("(%s).", year),
                  "dataquieR: Data Quality in Epidemiological Research.",
   	       paste(note, ".", sep = ""),
-                 "URL https://dfg-qa.ship-med.uni-greifswald.de/")
+                 "URL https://dataquality.ship-med.uni-greifswald.de/")
 )

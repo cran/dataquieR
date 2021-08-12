@@ -4,16 +4,14 @@
 \alias{util_warning}
 \title{Produce a warning message with a useful short stack trace.}
 \usage{
-util_warning(m, ..., immediate. = FALSE)
+util_warning(m, ..., applicability_problem = NA)
 }
 \arguments{
 \item{m}{warning message or a \link{simpleWarning}}
 
 \item{...}{arguments for \link{sprintf} on m, if m is a character}
 
-\item{immediate.}{logical, indicating if the call should be output
-immediately, even if \code{getOption("warn") <= 0}.
-See also \link[base:warning]{base::warning}.}
+\item{applicability_problem}{\link{logical} warning indicates unsuitable resp_vars}
 }
 \value{
 invisible(NULL).

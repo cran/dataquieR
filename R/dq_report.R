@@ -174,7 +174,8 @@ dq_report <- function(study_data,
     # so don't test this explicitly.
     util_warning(
       "Don't know, how to compute the indicator(s) %s. Ignoring this function.",
-      paste0(dQuote(functions_to_trigger[!exstFns]), collapse = ", "))
+      paste0(dQuote(functions_to_trigger[!exstFns]), collapse = ", "),
+      applicability_problem = FALSE)
     functions_to_trigger <- functions_to_trigger[exstFns]
   } # nocov end
 
@@ -244,6 +245,13 @@ dq_report <- function(study_data,
         app_levels_to_use <- 2:3
       } else {
         app_levels_to_use <- 3
+      }
+
+      if (!("include_sysmiss" %in% names(args)) && # if include_sysmiss is unset
+            "include_sysmiss" %in% names(formals(fct))) { # and we call itemmiss
+        if (is.null(formals(fct)$include_sysmiss)) { # if default still NULL
+          args$include_sysmiss <- TRUE # switch default here TRUE for dq_report
+        }
       }
 
       if (!("resp_vars" %in% names(args))) {

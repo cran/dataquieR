@@ -20,7 +20,7 @@ DISTRIBUTIONS <- list(
 #' dimensions are Completeness, Consistency and Accuracy.
 #'
 #' @seealso [Data Quality Concept](
-#'   https://dfg-qa.ship-med.uni-greifswald.de/DQconceptNew.html)
+#'   https://dataquality.ship-med.uni-greifswald.de/DQconceptNew.html)
 #'
 #' @return Only a definition, not a function, so no return value
 #'
@@ -240,7 +240,8 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
   }
   for (name in names(WELL_KNOWN_META_VARIABLE_NAMES)) {
     if (exists(name, asNamespace("dataquieR"))) {
-      util_warning(sprintf("Variable %s is in dataquieR too!", name))
+      util_warning("Variable %s is in dataquieR too!", name,
+                   applicability_problem = FALSE)
     }
     assign(name, WELL_KNOWN_META_VARIABLE_NAMES[[name]],
            asNamespace("dataquieR"))
@@ -250,3 +251,6 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
   util_fix_rstudio_bugs()
 }
 # nocov end
+
+# name of the additional system missingness column in com_item_missingness
+.SM_LAB <- "ADDED: SysMiss"

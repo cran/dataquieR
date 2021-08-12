@@ -2,13 +2,14 @@
 #'
 #' @param m warning message or a [simpleWarning]
 #' @param ... arguments for [sprintf] on m, if m is a character
-#' @param immediate. logical, indicating if the call should be output
-#'                   immediately, even if `getOption("warn") <= 0`.
-#'                   See also [base::warning].
+#' @param applicability_problem [logical] warning indicates unsuitable resp_vars
 #'
 #' @return invisible(NULL).
 #'
-util_warning <- function(m, ..., immediate. = FALSE) {
+util_warning <- function(m, ...,
+                         applicability_problem = NA) {
+  stopifnot(length(applicability_problem) == 1 &&
+              is.logical(applicability_problem))
   start_from_call <- util_find_first_externally_called_functions_in_stacktrace()
   caller. <- as.character(sys.call(1 - start_from_call))[[1]]
   if (caller. == "do.call") {
@@ -29,13 +30,22 @@ util_warning <- function(m, ..., immediate. = FALSE) {
     if (m == "") {
       m <- "Warning"
     }
-    warning(paste0("In ", caller., ": ", m, "\n", stacktrace, "\n"),
-            call. = FALSE,
-            immediate. = immediate.)
+    wc <-
+      warningCondition(paste0("In ", caller., ": ", m, "\n", stacktrace, "\n"))
   } else {
-    warning(paste0("In ", caller., ": ", sprintf(paste0(m, collapse = " "),
-                                                 ...), "\n", stacktrace, "\n"),
-            call. = FALSE, immediate. = immediate.)
+    mm <- paste0(m,
+                 collapse =
+                   " ")
+    if (nchar(mm) > 8192) {
+      mm <- substr(mm, 1, 8192)
+      mm <- sub("(%[^%]$)", "\\1", mm, perl = TRUE)
+    }
+
+    wc <-
+      warningCondition(paste0("In ", caller., ": ", sprintf(mm,
+                                                 ...), "\n", stacktrace, "\n"))
   }
+  attr(wc, "applicability_problem") <- applicability_problem
+  warning(wc)
   invisible(NULL)
 }

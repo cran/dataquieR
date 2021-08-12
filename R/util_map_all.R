@@ -22,7 +22,7 @@ util_map_all <- function(label_col = VAR_NAMES,
   if (length(label_col) != 1 || !is.character(label_col)) {
     util_error(
       c("label_col must be exactly 1 meta data attribute,",
-        "neither a vector nor NULL."))
+        "neither a vector nor NULL."), applicability_problem = TRUE)
   }
 
   if (!label_col %in% colnames(meta_data)) {
@@ -36,11 +36,13 @@ util_map_all <- function(label_col = VAR_NAMES,
       ""
     )
     util_error("label_col %s not found in meta data. Did you mean %s?",
-               dQuote(label_col), dQuote(fuzzy_match))
+               dQuote(label_col), dQuote(fuzzy_match),
+               applicability_problem = TRUE)
   }
 
   if (!VAR_NAMES %in% colnames(meta_data)) {
-    util_error("VAR_NAMES not found in meta data.")
+    util_error("VAR_NAMES not found in meta data.",
+               applicability_problem = TRUE)
   }
 
   if (any(duplicated(meta_data[[VAR_NAMES]]), na.rm = TRUE)) {
@@ -49,7 +51,8 @@ util_map_all <- function(label_col = VAR_NAMES,
         "data and cannot be used as label therefore: %s"),
       paste0(collapse = ", ",
              dQuote(unique(meta_data[[VAR_NAMES]][(
-               duplicated(meta_data[[VAR_NAMES]]))])))
+               duplicated(meta_data[[VAR_NAMES]]))]))),
+      applicability_problem = TRUE
     )
   }
 
@@ -60,7 +63,8 @@ util_map_all <- function(label_col = VAR_NAMES,
       sQuote(label_col),
       paste0(collapse = ", ",
              dQuote(unique(meta_data[[label_col]][(
-               duplicated(meta_data[[label_col]]))])))
+               duplicated(meta_data[[label_col]]))]))),
+      applicability_problem = TRUE
     )
   }
 
@@ -69,7 +73,7 @@ util_map_all <- function(label_col = VAR_NAMES,
       c("For the following variables, some variable",
         "names are missing in the meta data: %s"),
       paste0("Variable No. #", which(is.na(meta_data[[VAR_NAMES]])),
-             collapse = ", ")
+             collapse = ", "), applicability_problem = TRUE
     )
   }
 
@@ -79,11 +83,12 @@ util_map_all <- function(label_col = VAR_NAMES,
         "cannot be used as label therefore: %s"),
       sQuote(label_col),
       paste0("Variable No. #", which(is.na(meta_data[[label_col]])),
-             collapse = ", ")
+             collapse = ", "),
+      applicability_problem = TRUE
     )
   }
 
-  ################# mappipng ##################
+  ################# mapping ##################
 
   # select only relevant variables from study_data
   lost <- sum(!(colnames(study_data) %in% meta_data[[VAR_NAMES]])) /
@@ -91,7 +96,8 @@ util_map_all <- function(label_col = VAR_NAMES,
   if (lost > 0) {
     util_warning(
       "Lost %g%% of the study data because of missing/not assignable meta-data",
-      round(lost * 100, 1), immediate. = TRUE)
+      round(lost * 100, 1),
+      applicability_problem = TRUE)
     message(sprintf(
       paste("Did not find any meta data for the following",
              "variables from the study data: %s"),
@@ -105,7 +111,8 @@ util_map_all <- function(label_col = VAR_NAMES,
   if (unlost > 0) {
     util_warning(
       "Lost %g%% of the meta data because of missing/not assignable study-data",
-      round(unlost * 100, 1), immediate. = TRUE)
+      round(unlost * 100, 1),
+      applicability_problem = TRUE)
     message(sprintf(
       paste("Found meta data for the following variables",
             "not found in the study data: %s"),
@@ -143,7 +150,7 @@ util_map_all <- function(label_col = VAR_NAMES,
   }
 
   if (length(e) > 0) {
-    util_error(paste0(e, collapse = "\n"))
+    util_error(paste0(e, collapse = "\n"), applicability_problem = TRUE)
   }
 
   colnames(ds1) <- cn

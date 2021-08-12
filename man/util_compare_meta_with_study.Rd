@@ -5,7 +5,13 @@
 \title{Compares study data data types with the ones expected according to the
 metadata}
 \usage{
-util_compare_meta_with_study(sdf, mdf, label_col)
+util_compare_meta_with_study(
+  sdf,
+  mdf,
+  label_col,
+  check_convertible = FALSE,
+  threshold_value = 0
+)
 }
 \arguments{
 \item{sdf}{the \link{data.frame} of study data}
@@ -14,9 +20,20 @@ util_compare_meta_with_study(sdf, mdf, label_col)
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
+
+\item{check_convertible}{\link{logical} also try, if a conversion to the
+declared data type would work.}
+
+\item{threshold_value}{\link{numeric} from=0 to=100. percentage failing
+conversions allowed if \code{check_convertible}
+is \code{TRUE}.}
 }
 \value{
-a binary vector \verb{(0, 1)} if data type applies
+if \code{check_convertible} is \code{FALSE},
+a binary vector \verb{(0, 1)} if data type applies,
+if \code{check_convertible} is \verb{TRUE`` a vector with the states }0, 1, 2`: 0 = Mismatch, not convertible
+1 = Match
+2 = Mismatch, but convertible
 }
 \description{
 Utility function to compare data type of study data with those defined

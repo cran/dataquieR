@@ -194,12 +194,13 @@ util_correct_variable_use <- function(arg_name,
         c("Missing argument %s without default value. Setting to NULL. As",
           "a dataquieR developer, please add a default value for %s to",
           "remove this warning."),
-        dQuote(arg_name), dQuote(arg_name))
+        dQuote(arg_name), dQuote(arg_name),
+        applicability_problem = TRUE)
     } else {
       util_warning(
         c("Could not get value of argument %s for unexpected reasons. Setting",
-          "to NULL."), arg_name)
-      util_warning(variable)
+          "to NULL."), arg_name, applicability_problem = TRUE)
+      util_warning(variable, applicability_problem = TRUE)
     }
     variable <- NULL
   }
@@ -240,7 +241,8 @@ util_correct_variable_use <- function(arg_name,
 
   if (!allow_null && is.null(variable)) {
     # if we need the argument in arg_name, but the user provided NULL
-    util_error("Argument %s is NULL", arg_name) # this is an error
+    util_error("Argument %s is NULL", arg_name,
+               applicability_problem = TRUE) # this is an error
   }
 
   if (allow_more_than_one) {
@@ -248,7 +250,8 @@ util_correct_variable_use <- function(arg_name,
     if (!allow_null && length(variable) == 0) {
       # and we do need at least one variable name here, but the user did not
       # provide any
-      util_error("Need at least one element in argument %s, got 0", arg_name)
+      util_error("Need at least one element in argument %s, got 0", arg_name,
+                 applicability_problem = TRUE)
       # this is an error
     }
   } else {# if we expect one value in the argument arg_name at most
@@ -257,13 +260,15 @@ util_correct_variable_use <- function(arg_name,
       # but the user gave more than one or none although
       # allow_null prohibits this
       util_error("Need excactly one element in argument %s, got %d: [%s]",
-                 arg_name, length(variable), paste0(variable, collapse = ", "))
+                 arg_name, length(variable), paste0(variable, collapse = ", "),
+                 applicability_problem = TRUE)
       # this is an error
     }
   }
   if (length(variable) > 0) { # if we have at least one variable name
     if (!all(is.character(variable))) { # and one name is not a character string
-      util_error("Need character variable names in argument %s", arg_name)
+      util_error("Need character variable names in argument %s", arg_name,
+                 applicability_problem = TRUE)
       # this is (at least up to now, may allow symbols here similar
       # to subset or with) an error
     }
@@ -275,7 +280,8 @@ util_correct_variable_use <- function(arg_name,
   if (!allow_na && any(is.na(variable))) {
     # if we have NAs in the list of variable names in `arg_name`
     # and this is not allowed
-    util_error("Missing entries not allowed in argument %s", arg_name)
+    util_error("Missing entries not allowed in argument %s", arg_name,
+               applicability_problem = FALSE)
     # then this is an error.
   }
   if (!all(na.omit(variable) %in% colnames(ds1))) {
@@ -297,7 +303,8 @@ util_correct_variable_use <- function(arg_name,
         # then emit an informative erorr message.
       paste0(non_matching_vars, collapse = ", "),
       arg_name,
-      paste0(fuzzy_match, collapse = ", ")
+      paste0(fuzzy_match, collapse = ", "),
+      applicability_problem = TRUE
     )
   }
 
@@ -305,14 +312,16 @@ util_correct_variable_use <- function(arg_name,
     if (!allow_all_obs_na && all(is.na(ds1[[v]]))) {
         # if all observations are NA and this is prohibited
       util_error("Variable '%s' (%s) has only NA observations",
-                 na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name)
+                 na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
+                 applicability_problem = FALSE)
         # this is an error
     }
 
     if (!allow_any_obs_na && any(is.na(ds1[[v]]))) {
       # if no NAs are allowed at all, but we have some
       util_error("Variable '%s' (%s) has NA observations, which is not allowed",
-                 na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name)
+                 na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
+                 applicability_problem = FALSE)
         # then this an error too.
     }
   }
@@ -336,7 +345,8 @@ util_correct_variable_use <- function(arg_name,
       dQuote(arg_name),
       dQuote(need_type),
       length(unique(variable[!is.na(variable)])),
-      length(types)
+      length(types),
+      applicability_problem = TRUE
     )
   }
 
@@ -359,13 +369,15 @@ util_correct_variable_use <- function(arg_name,
           # now check fo the allowed types
         util_error(
           "Argument %s: Variable '%s' (%s) does not have an allowed type (%s)",
-          dQuote(arg_name), ..vname, tolower(trimws(type)), need_type)
+          dQuote(arg_name), ..vname, tolower(trimws(type)), need_type,
+          applicability_problem = TRUE)
       }
       if ((length(not_type) > 0) && (tolower(trimws(type)) %in% not_type)) {
         # and for the disallowed types
         util_error(
           "Argument %s: Variable '%s' (%s) does not have an allowed type (%s)",
-          dQuote(arg_name), ..vname, tolower(trimws(type)), need_type)
+          dQuote(arg_name), ..vname, tolower(trimws(type)), need_type,
+          applicability_problem = TRUE)
       }
       # Check, if variable is really of declared data type.
       sd_type <- prep_datatype_from_data(..vname, ds1)
@@ -375,7 +387,8 @@ util_correct_variable_use <- function(arg_name,
             c("Argument %s: Variable '%s' (%s) does not have matching",
               "data type in the study data (%s)"),
             dQuote(arg_name), ..vname, tolower(trimws(type)),
-            tolower(DATA_TYPES_OF_R_TYPE[class(ds1[, ..vname, TRUE])]))
+            tolower(DATA_TYPES_OF_R_TYPE[class(ds1[, ..vname, TRUE])]),
+            applicability_problem = TRUE)
         }
       }
     } else { # nocov start
@@ -385,7 +398,8 @@ util_correct_variable_use <- function(arg_name,
       if (!is.na(need_type)) {
         util_warning(
           c("Argument %s: No data type found for '%s' in the",
-            "meta data, cannot check type"), dQuote(arg_name), variable)
+            "meta data, cannot check type"), dQuote(arg_name), variable,
+          applicability_problem = TRUE)
       }
     } # nocov end
   }

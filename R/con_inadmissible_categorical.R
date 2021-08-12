@@ -46,7 +46,7 @@
 #' @importFrom utils capture.output
 #' @seealso
 #' [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_con_impl_inadmissible_categorical.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_inadmissible_categorical.html
 #' )
 con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
                                          meta_data, label_col,
@@ -71,9 +71,11 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
   # no variables defined?
   if (length(rvs) == 0) {
     if (all(is.na(meta_data[[VALUE_LABELS]]))) {
-      util_error(paste0("No Variables with defined VALUE_LABELS."))
+      util_error(paste0("No Variables with defined VALUE_LABELS."),
+                 applicability_problem = TRUE)
     } else {
-      util_warning("All variables with VALUE_LABELS in the metadata are used.")
+      util_warning("All variables with VALUE_LABELS in the metadata are used.",
+                   applicability_problem = TRUE)
       rvs <-
         intersect(meta_data[[label_col]][!(is.na(meta_data[[VALUE_LABELS]]))],
                   colnames(ds1))
@@ -82,14 +84,16 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
     # limits defined at all?
     if (all(is.na(
           meta_data[[VALUE_LABELS]][meta_data[[label_col]] %in% rvs]))) {
-      util_error("No Variables with defined VALUE_LABELS.")
+      util_error("No Variables with defined VALUE_LABELS.",
+                 applicability_problem = TRUE)
     }
     # no limits for some variables?
     rvs2 <- meta_data[[label_col]][!(is.na(meta_data[[VALUE_LABELS]])) &
                                      meta_data[[label_col]] %in% rvs]
     if (length(rvs2) < length(rvs)) {
       util_warning(paste0("The variables ", rvs[!(rvs %in% rvs2)],
-                          " have no defined VALUE_LABELS."))
+                          " have no defined VALUE_LABELS."),
+                   applicability_problem = TRUE)
     }
     rvs <- rvs2
   }
@@ -174,7 +178,8 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
   if (length(checkIAV) > 0) {
     util_warning(paste0("The following variable(s): ",
                         paste0(checkIAV, collapse = ", "),
-                        " flag(s) inadmissible values."))
+                        " flag(s) inadmissible values."),
+                 applicability_problem = FALSE)
   }
 
   # attribute

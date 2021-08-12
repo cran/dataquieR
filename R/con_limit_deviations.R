@@ -55,11 +55,12 @@
 #'   - `ModifiedStudyData` [data.frame]  If the function identifies limit
 #'                                     deviations, the respective values are
 #'                                     removed in `ModifiedStudyData.`
+#'   - `ReportSummaryTable`: heatmap-like data frame about limit violations
 #'
 #' @seealso
 #' - [con_detection_limits]
 #' - [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_con_impl_limit_deviations.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_limit_deviations.html
 #' )
 #'
 #' @examples
@@ -122,23 +123,27 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
   # no variables defined?
   if (length(rvs) == 0) {
     if (all(is.na(meta_data[[LIMITS]]))) {
-      util_error(paste0("No Variables with defined ", LIMITS, "."))
+      util_error(paste0("No Variables with defined ", LIMITS, "."),
+                 applicability_problem = TRUE)
     } else {
       util_warning(paste0("All variables with ", LIMITS,
-                          " in the metadata are used."))
+                          " in the metadata are used."),
+                   applicability_problem = TRUE)
       rvs <- meta_data[[label_col]][!(is.na(meta_data[[LIMITS]]))]
     }
   } else {
     # limits defined at all?
     if (all(is.na(meta_data[[LIMITS]][meta_data[[label_col]] %in% rvs]))) {
-      util_error(paste0("No Variables with defined ", LIMITS, "."))
+      util_error(paste0("No Variables with defined ", LIMITS, "."),
+                 applicability_problem = TRUE)
     }
     # no limits for some variables?
     rvs2 <- meta_data[[label_col]][!(is.na(meta_data[[LIMITS]])) &
                                      meta_data[[label_col]] %in% rvs]
     if (length(rvs2) < length(unique(rvs))) {
       util_warning(paste0("The variables ", rvs[!(rvs %in% rvs2)],
-                          " have no defined limits."))
+                          " have no defined limits."),
+                   applicability_problem = TRUE)
     }
     rvs <- rvs2
   }
@@ -170,12 +175,13 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
     util_warning(paste0(
       "Variables ", paste0(rvs[!var_matches_datatype], collapse = ", "),
       " are neither numeric nor datetime and will be removed from analyses."
-    ))
+    ), applicability_problem = TRUE)
     rvs <- rvs[var_matches_datatype]
   }
 
   if (length(rvs) == 0) {
-    util_error("No variables left, no limit checks possible.")
+    util_error("No variables left, no limit checks possible.",
+               applicability_problem = TRUE)
   }
 
   # interpret limit intervals
@@ -340,7 +346,8 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
           "codes (%s)? Will arbitrarily reduce the number of breaks below",
           "10000 to avoid rendering problems."),
         dQuote(rv), length(unique(breaksX)), paste0(dQuote(likely
-                                                           ), collapse = " or ")
+                                                          ), collapse = " or "),
+        applicability_problem = FALSE
       )
       while (length(unique(breaksX)) > 10000) {
         breaksX <- breaksX[!is.na(breaksX)]
@@ -349,7 +356,8 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
       util_warning(
         c("For %s. Will arbitrarily reduced the number of breaks to",
           "%d <= 10000 to avoid rendering problems."),
-        dQuote(rv), length(unique(breaksX)))
+        dQuote(rv), length(unique(breaksX)),
+        applicability_problem = FALSE)
     }
 
     # Generate ggplot-objects for placing and annotation of lines --------------
@@ -449,10 +457,12 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
         breaks <- as.POSIXct(breaks, origin = min(as.POSIXct(Sys.Date()), 0))
         myxlim <- as.POSIXct(myxlim, origin = min(as.POSIXct(Sys.Date()), 0))
       }
+      # ds1 <- ds1[!is.na(ds1[[rv]]), , FALSE] -- too slow; NA observations
+      # removal postponed
       p <- ggplot(data = ds1, aes_string(x = ds1[[rv]], fill =
                                            factor(ds1[[OUT]]))) +
         geom_histogram(breaks = breaks) +
-        scale_fill_manual(values = out_cols, guide = FALSE) +
+        scale_fill_manual(values = out_cols, guide = "none") +
         coord_flip(xlim = myxlim) +
         labs(x = "", y = paste0(rv)) +
         theme_minimal() +
@@ -470,9 +480,10 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
         llu +
         tlu
     } else {
+      ds1 <- ds1[!is.na(ds1[[rv]]), , FALSE]
       p <- ggplot(ds1, aes_string(x = ds1[[rv]], fill = factor(ds1[[OUT]]))) +
         geom_bar() +
-        scale_fill_manual(values = out_cols, guide = FALSE) +
+        scale_fill_manual(values = out_cols, guide = "none") +
         coord_flip(xlim = c(floor(minx), ceiling(maxx))) +
         labs(x = "", y = paste0(rv)) +
         theme_minimal() +
@@ -491,6 +502,27 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
         tlu
     }
 
+    suppressWarnings({
+      # NA observations can be removed, but should not be checked twice, see
+      # above.
+      # https://stackoverflow.com/a/51795017
+      bp <- ggplot_build(p)
+      w <- 2 * length(bp$layout$panel_params[[1]]$x$get_labels())
+      if (w == 0) {
+        w <- 10
+      }
+      w <- w + 10 +
+        max(nchar(bp$layout$panel_params[[1]]$y$get_labels()),
+            na.rm = TRUE)
+      h <- 2 * length(bp$layout$panel_params[[1]]$y$get_labels())
+      if (h == 0) {
+        h <- 10
+      }
+      h <- h + 20
+
+      p <- util_set_size(p, width_em = w, height_em = h)
+    })
+
     return(p)
   }) # end lapply plot_list
 
@@ -508,7 +540,8 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
         msdf[[current_rv]][msdf[[current_rv]] < minx1] <- NA
         util_warning(paste0("N = ", n_below, " values in ", current_rv,
                             " have been below %s and were removed."),
-                     HARD_LIMIT_LOW)
+                     HARD_LIMIT_LOW,
+                     applicability_problem = FALSE)
       }
 
       # values above hard limit?
@@ -520,7 +553,8 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
         msdf[[current_rv]][msdf[[current_rv]] > maxx1] <- NA
         util_warning(paste0("N = ", n_above, " values in ", current_rv,
                             " have been above %s and were removed."),
-                     HARD_LIMIT_UP)
+                     HARD_LIMIT_UP,
+                     applicability_problem = FALSE)
       }
     }
   }
@@ -560,7 +594,20 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
   sumtab$GRADING <- ifelse((sumtab[[name_bel]] > 0) | (sumtab[[name_abo]] > 0),
                            1, 0)
 
-  return(list(FlaggedStudyData = fsd, SummaryTable = sumtab, SummaryPlotList =
+  heatmap_tab <- sumtab
+  to_remove <- grep('%', colnames(heatmap_tab), fixed = TRUE)
+  heatmap_tab <- heatmap_tab[, -to_remove]
+  heatmap_tab$GRADING <- NULL
+  colnames(heatmap_tab) <- gsub(" (N)", "", colnames(heatmap_tab),
+                                fixed = TRUE)
+  heatmap_tab$N <- vapply(rvs, function(rv) sum(!(is.na(fsd[[rv]]))),
+                          FUN.VALUE = integer(1))
+
+  class(heatmap_tab) <- union("ReportSummaryTable", class(heatmap_tab))
+
+  return(list(FlaggedStudyData = fsd, SummaryTable = sumtab,
+              ReportSummaryTable = heatmap_tab,
+              SummaryPlotList =
                 plot_list, ModifiedStudyData = msdf))
 }
 
@@ -570,7 +617,7 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
 #' @seealso
 #' - [con_limit_deviations]
 #' - [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_con_impl_limit_deviations.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_limit_deviations.html
 #' )
 
 con_detection_limits <- function(resp_vars = NULL, label_col, study_data,

@@ -36,7 +36,7 @@
 #'
 #' @seealso
 #' [Online Documentation](
-#' https://dfg-qa.ship-med.uni-greifswald.de/VIN_acc_impl_end_digits.html
+#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_end_digits.html
 #' )
 acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
                            label_col = VAR_NAMES) {
@@ -58,11 +58,12 @@ acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
       mode(ds1[[resp_vars]]) != "numeric") {
     # likely dead code
     util_error("%s must be a non-empty vector of names of numeric variables",
-               dQuote("resp_vars")) # nocov
+               dQuote("resp_vars"), applicability_problem = TRUE) # nocov
   }
 
   if (any(is.infinite(ds1[[resp_vars]]))) {
-    util_error("Values in 'resp_vars' must not contain infinite data")
+    util_error("Values in 'resp_vars' must not contain infinite data",
+               applicability_problem = TRUE)
   }
 
   rvs <- resp_vars
@@ -75,19 +76,24 @@ acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
     decs <- NA
   }
 
+  decs <- as.integer(decs)
+
   if (vtype == DATA_TYPES$FLOAT && (is.na(decs))) {
     util_error(
-      "The number of digits following the decimal point must be prespecified."
+      "The number of digits following the decimal point must be prespecified.",
+      applicability_problem = FALSE
     )
   }
 
   if (vtype == DATA_TYPES$FLOAT && all(util_is_integer(ds1[[rvs]]))) {
-    util_warning("The 'resp_vars' is of type integer.")
+    util_warning("The 'resp_vars' is of type integer.",
+                 applicability_problem = TRUE)
     vtype <- "integer"
   }
 
   if (vtype == DATA_TYPES$INTEGER && !(all(util_is_integer(ds1[[rvs]])))) {
-    util_error("The 'resp_vars' is not of type integer.")
+    util_error("The 'resp_vars' is not of type integer.",
+               applicability_problem = TRUE)
   }
 
   # create new row of metadata attributes for transformed variable of last
@@ -144,5 +150,21 @@ acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
   )
 
   # do not return simply res to make parsing out existing results easier
-  return(list(SummaryData = res$SummaryTable, SummaryPlot = res$SummaryPlot))
+  return(list(SummaryData = res$SummaryTable, SummaryPlot = util_set_size(
+    res$SummaryPlot,
+    width_em = 15
+  )))
+}
+
+#' @examples
+#' \dontrun{
+#'   x <- acc_end_digits(resp_vars = "v00041", study_data = study_data, meta_data = meta_data)
+#'   x <- acc_loess(resp_vars = "v00041", time_vars = "v00013", group_vars = "v00002", study_data = study_data, meta_data = meta_data)
+#'   w <- 30
+#'   h <- 15
+#'   ggplot2::ggsave(x$SummaryPlotList$v00041, width = ggplot2::unit(w * 0.15, units = "in"), height = ggplot2::unit(h * 0.15, units = "in"), filename = "/tmp/xxx.png"); system("open /tmp/xxx.png")
+#'   # .03 in is eta the default size of ggplot fonts ; http://sape.inf.usi.ch/quick-reference/ggplot2/size
+#' }
+xxxx <- function() {
+# and run check, changed some error messages.
 }

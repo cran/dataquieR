@@ -10,7 +10,8 @@ acc_robust_univariate_outlier(
   study_data,
   meta_data,
   exclude_roles,
-  n_rules = 4
+  n_rules = 4,
+  max_non_outliers_plot = 10000
 )
 }
 \arguments{
@@ -30,6 +31,12 @@ not included}
 
 \item{n_rules}{\link{integer} from=1 to=4. the no. of rules that must be violated
 to flag a variable as containing outliers. The default is 4, i.e. all.}
+
+\item{max_non_outliers_plot}{\link{integer} from=0. Maximum number of non-outlier
+points to be plot. If more
+points exist, a subsample will
+be plotted only. Note, that
+sampling is not deterministic.}
 }
 \value{
 a list with:
@@ -38,7 +45,7 @@ a list with:
 \code{Variables}, \code{Mean}, \code{SD}, \code{Median}, \code{Skewness}, \code{Tukey (N)},
 \code{6-Sigma (N)}, \code{Hubert (N)}, \code{Sigma-gap (N)}, \verb{Most likely (N)},
 \verb{To low (N)}, \verb{To high (N)} \code{Grading}
-\item \code{SummaryPlotList}: \code{\link{ggplot2}} univariate outlier plots
+\item \code{SummaryPlotList}: \code{\link{ggplot}} univariate outlier plots
 }
 }
 \description{
@@ -75,6 +82,9 @@ may
 than indicate a distortion of the data. For the heuristic definition of a
 large distance \eqn{1 * \sigma} has been been chosen.
 }
+
+Note, that the plots are not deterministic, because they use
+\link[ggplot2:geom_jitter]{ggplot2::geom_jitter}.
 }
 \section{ALGORITHM OF THIS IMPLEMENTATION:}{
 \itemize{

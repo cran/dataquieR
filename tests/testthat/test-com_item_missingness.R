@@ -10,6 +10,13 @@ test_that("com_item_missingness works", {
     com_item_missingness(study_data, md0, suppressWarnings = TRUE)
   ))
 
+  expect_equal(com_item_missingness(resp_vars = "v00001", study_data, md0,
+                                    suppressWarnings = TRUE,
+                                    threshold_value = 100,
+                                    include_sysmiss = FALSE,
+                                    show_causes = TRUE)$SummaryTable$GRADING,
+               0)
+
   expect_false(any(grepl("show_causes", capture_warnings(invisible(
     com_item_missingness(study_data, meta_data,
                          suppressWarnings = TRUE,
