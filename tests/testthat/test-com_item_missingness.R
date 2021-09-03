@@ -161,6 +161,7 @@ test_that("com_item_missingness works", {
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("item missingness plot without labels ok",
                               i1$SummaryPlot)
   vdiffr::expect_doppelganger("item missingness plot with labels ok",

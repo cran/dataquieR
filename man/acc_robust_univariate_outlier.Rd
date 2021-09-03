@@ -86,6 +86,9 @@ large distance \eqn{1 * \sigma} has been been chosen.
 Note, that the plots are not deterministic, because they use
 \link[ggplot2:geom_jitter]{ggplot2::geom_jitter}.
 }
+\details{
+\emph{\emph{Hint}: The function is designed for unimodal data only.}
+}
 \section{ALGORITHM OF THIS IMPLEMENTATION:}{
 \itemize{
 \item Select all variables of type float in the study data

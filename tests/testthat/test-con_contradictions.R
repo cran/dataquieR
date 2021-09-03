@@ -87,6 +87,7 @@ test_that("con_contradictions works", {
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("summary contradiction plot ok",
                               on$all_checks$SummaryPlot)
   vdiffr::expect_doppelganger("summary contradiction plot ok",

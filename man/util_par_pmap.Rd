@@ -8,7 +8,8 @@ util_par_pmap(
   .l,
   .f,
   ...,
-  cores = list(mode = "socket", logging = FALSE, load.balancing = TRUE),
+  cores = list(mode = "socket", cpus = util_detect_cores(), logging = FALSE,
+    load.balancing = TRUE),
   use_cache = FALSE
 )
 }

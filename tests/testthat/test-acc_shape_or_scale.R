@@ -293,6 +293,7 @@ test_that("acc_shape_or_scale works with label_col", {
   )
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("shape_or_scale plot for CRP_0 ok",
                               res1$SummaryPlot)
 })

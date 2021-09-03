@@ -221,7 +221,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     } else {
       .threshold_value <- NA
     }
-    if (length(threshold_value != 1) || is.na(.threshold_value)) {
+    if (length(threshold_value) != 1 || is.na(.threshold_value)) {
       util_warning(
         "threshold_value is not numeric(1): %s, setting it to default value 1.",
                    dQuote(head(try(as.character(threshold_value)), 1)),
@@ -423,7 +423,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     res_df$threshold <- threshold_value
 
     # select abnormalties
-    res_df$grading <- ifelse(res_df$margins < pars[1] |
+    res_df$GRADING <- ifelse(res_df$margins < pars[1] |
                                res_df$margins > pars[3], 1, 0)
   } else if (threshold_type == "user") {
     th <- threshold_value
@@ -438,7 +438,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     }
 
     # select abnormalties
-    res_df$grading <- mapply(
+    res_df$GRADING <- mapply(
       function(th, l, u) {
         ifelse(th >= l & th <= u, 0, 1)
       },
@@ -478,7 +478,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
           y = ~margins,
           ymin = ~LCL,
           ymax = ~UCL,
-          color = ~ as.factor(grading)
+          color = ~ as.factor(GRADING)
         ),
         shape = 18, size = 1,
         inherit.aes = FALSE,
@@ -515,7 +515,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
           y = ~margins,
           ymin = ~LCL,
           ymax = ~UCL,
-          color = ~ as.factor(grading)
+          color = ~ as.factor(GRADING)
         ),
         shape = 18, size = 1,
         inherit.aes = FALSE,
@@ -581,7 +581,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
                     subtitle = subtitle)
 
   SummaryTable <- data.frame(Variables = rvs, GRADING =
-                               as.numeric(any(res_df$grading > 0)))
+                               as.numeric(any(res_df$GRADING > 0)))
 
   # length(unique(fit_df$GROUP)))
   # output

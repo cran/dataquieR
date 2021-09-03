@@ -12,7 +12,8 @@ dq_report(
   dimensions = c("Completeness", "Consistency"),
   strata_attribute,
   strata_vars,
-  cores = list(mode = "socket", logging = FALSE, load.balancing = TRUE),
+  cores = list(mode = "socket", logging = FALSE, cpus = util_detect_cores(),
+    load.balancing = TRUE),
   specific_args = list()
 )
 }

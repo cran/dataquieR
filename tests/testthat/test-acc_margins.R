@@ -357,6 +357,7 @@ expect_warning(
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("margins plot for CRP_0 ok",
                               res1$SummaryPlot)
 })

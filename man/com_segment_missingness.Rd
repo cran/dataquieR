@@ -79,14 +79,14 @@ missingness rates.
 This implementation uses one threshold to discriminate critical from
 non-critical values. If direction is high than all values below the
 threshold_value are normal (displayed in dark blue in the plot and flagged
-with grading = 0 in the dataframe). All values above the threshold_value are
+with GRADING = 0 in the dataframe). All values above the threshold_value are
 considered critical. The more they deviate from the threshold the displayed
-color shifts to dark red. All critical values are highlighted with grading =
+color shifts to dark red. All critical values are highlighted with GRADING =
 1 in the summary data frame. By default, highest values are always shown in
 dark red irrespective of the absolute deviation.
 
 If direction is low than all values above the threshold_value are normal
-(displayed in dark blue, grading = 0).
+(displayed in dark blue, GRADING = 0).
 }
 
 \subsection{Hint}{

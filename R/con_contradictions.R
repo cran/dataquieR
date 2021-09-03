@@ -469,16 +469,16 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
     names(summary_df2) <- c(
       "Check ID", "Check type", "Variables A and B", "A Levels",
       "B Levels", "Contradictions (N)", "Contradictions (%)",
-      "Grading", "Label"
+      "GRADING", "Label"
     )
 
-    summary_df2$Grading <- ordered(summary_df2$Grading)
+    summary_df2$GRADING <- ordered(summary_df2$GRADING)
 
     x <- util_as_numeric(reorder(summary_df2[, 1], -summary_df2[, 1]))
     lbs <- as.character(reorder(summary_df2[, 9], -summary_df2[, 1]))
     # plot summary_df2
     p <- ggplot(summary_df2, aes_(x = ~x, y = ~ summary_df2[, 7], fill =
-                                    ~ as.ordered(Grading))) +
+                                    ~ as.ordered(GRADING))) +
       geom_bar(stat = "identity") +
       geom_text(
         y = round(summary_df2[, 7], 1) + 0.5,
@@ -510,7 +510,7 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
                                                            TRUE))[2]))
     st1$`Variables A and B` <- NULL
     st1 <- st1[, c(9, 10, 1:8)]
-    st1 <- dplyr::rename(st1, c("GRADING" = "Grading"))
+    #st1 <- dplyr::rename(st1, c("GRADING" = "Grading"))
 
     suppressWarnings({
       # suppress wrong warnings: https://github.com/tidyverse/ggplot2/pull/4439/commits

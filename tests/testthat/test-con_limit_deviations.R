@@ -63,6 +63,8 @@ test_that("con_limit_deviations and timevars with < 20 integer sec-values ok", {
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
+  skip_if_not(capabilities()["long.double"])
   suppressWarnings(
     vdiffr::expect_doppelganger(
       "con_limit_deviations QUEST_DT_0",
@@ -261,6 +263,7 @@ test_that("con_limit_deviations and values < 0", {
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   suppressWarnings(
     vdiffr::expect_doppelganger(
       "con_limit_deviations for reverse order ok",
@@ -297,6 +300,7 @@ test_that("con_limit_deviations and values < 0 with max -1", {
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   suppressWarnings(
     vdiffr::expect_doppelganger(
       "con_limit_deviations rev order w/ -1 ==> 0 max ok",
@@ -377,6 +381,7 @@ test_that("con_limit_deviations with constant data", {
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   suppressWarnings(
     vdiffr::expect_doppelganger(
       "con_limit_deviations 4 hists 1 val",
@@ -461,6 +466,7 @@ test_that("con_limit_deviations does not crash with missing codes", {
   expect_equal(MyValueLimits$SummaryTable$`Below HARD (N)`, 0)
 
   skip_on_cran()
+  skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
   suppressWarnings(
     vdiffr::expect_doppelganger(

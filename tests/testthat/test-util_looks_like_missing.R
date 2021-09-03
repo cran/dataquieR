@@ -13,7 +13,7 @@ test_that("util_looks_like_missing works", {
   expected <- rep(FALSE, 100)
   expect_equal(util_looks_like_missing(1:100),
                expected = expected)
-  expected <- c(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE)
+  expected <- c(TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE)
   expect_equal(
     util_looks_like_missing(c(99999, 99, 8, 888, -999, 9.99, 8.9898)),
     expected = expected

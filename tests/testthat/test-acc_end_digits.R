@@ -76,6 +76,7 @@ test_that("acc_end_digits works with label_col", {
 
 test_that("acc_end_digits works image check", {
   skip_on_cran()
+  skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
   load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
          environment())

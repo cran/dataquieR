@@ -143,6 +143,8 @@ AnyContradictions$SummaryPlot
 ## ----echo = TRUE--------------------------------------------------------------
 ruol <- dataquieR:::acc_robust_univariate_outlier(study_data = sd1, meta_data = md1, label_col = LABEL)
 
+ruol$SummaryPlotList
+
 ## ---- fig.height = 3, fig.width = 4-------------------------------------------
 myloess <- dataquieR::acc_loess(resp_vars = "SBP_0",
                                 group_vars = "USR_BP_0",
@@ -151,5 +153,5 @@ myloess <- dataquieR::acc_loess(resp_vars = "SBP_0",
                                 study_data = sd1,
                                 meta_data = md1)
 
-myloess$SummaryPlotList$Loess_fits_combined
+myloess$SummaryPlotList
 

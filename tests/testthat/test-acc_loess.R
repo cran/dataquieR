@@ -477,6 +477,7 @@ test_that("acc_loess output matches", {
     2
   )
   skip_on_cran()
+  skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
   vdiffr::expect_doppelganger("loess facets plot for CRP_0 ok",
                               res1$SummaryPlotList$Loess_fits_facets)
@@ -602,6 +603,7 @@ test_that("acc_loess with co-vars output matches", {
     2
   )
   skip_on_cran()
+  skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
   vdiffr::expect_doppelganger("loess facets plot for CRP_0 with Covars ok",
                               res1$SummaryPlotList$Loess_fits_facets)
@@ -816,6 +818,7 @@ test_that("acc_loess output matches plot_format=auto", {
   )
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("loess plot for CRP_0 AUTO1 ok",
                               res1$SummaryPlotList$CRP_0)
   vdiffr::expect_doppelganger("loess plot for CRP_0 AUTO2 ok",
@@ -854,6 +857,7 @@ test_that("acc_loess output matches plot_format=combined", {
   )
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("loess combined plot for CRP_0 COMBINED ok",
                               res1$SummaryPlotList$CRP_0)
 })
@@ -890,6 +894,7 @@ test_that("acc_loess output matches plot_format=facets", {
   )
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("loess facets plot for CRP_0 FACETS ok",
                               res1$SummaryPlotList$CRP_0)
 })
@@ -926,6 +931,7 @@ test_that("acc_loess output matches plot_format=both", {
   )
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("loess facets plot for CRP_0 BOTH ok",
                               res1$SummaryPlotList$Loess_fits_facets)
   vdiffr::expect_doppelganger("loess combined plot for CRP_0 BOTH ok",

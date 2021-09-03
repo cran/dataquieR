@@ -314,6 +314,7 @@ test_that("class ReportSummaryTable", {
                                           dt = FALSE))
 
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("app-ex-repsumtab", g1)
   vdiffr::expect_doppelganger("im-ex1-repsumtab", g2)
   vdiffr::expect_doppelganger("im-ex2-repsumtab", g3)

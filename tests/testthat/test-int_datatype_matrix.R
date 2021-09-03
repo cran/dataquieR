@@ -96,6 +96,7 @@ test_that("int_datatype_matrix works", {
   expect_true(all(appmatrix$ReportSummaryTable$MATCH == 1))
 
   skip_on_cran()
+  skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
 
   vdiffr::expect_doppelganger("integrity datatype",

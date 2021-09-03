@@ -135,6 +135,7 @@ test_that("pro_applicability_matrix works", {
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("appmatrix plot ok",
                               appmatrix$ApplicabilityPlot)
   vdiffr::expect_doppelganger("appmatrix plot for segment v10000 ok",

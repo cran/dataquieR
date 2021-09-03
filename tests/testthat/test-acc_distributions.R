@@ -184,6 +184,7 @@ test_that("acc_distributions works with group_vars", {
     length(res1$SummaryPlotList),
     39
   )
+  skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
   vdiffr::expect_doppelganger("ecdf plot for sbp0 ok",
                               res1$SummaryPlotList$SBP_0)

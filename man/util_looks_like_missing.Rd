@@ -4,7 +4,7 @@
 \alias{util_looks_like_missing}
 \title{Check for repetitive values using the digits 8 or 9 only}
 \usage{
-util_looks_like_missing(x, n_rules = 3)
+util_looks_like_missing(x, n_rules = 1)
 }
 \arguments{
 \item{x}{\code{\link{numeric}} vector to test}

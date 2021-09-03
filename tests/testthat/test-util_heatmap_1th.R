@@ -20,6 +20,7 @@ test_that("util_heatmap_1th works", {
   )
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   hm2 <- util_heatmap_1th(
     df = ds1,
     cat_vars = c("USR_BP_0"),

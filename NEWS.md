@@ -1,9 +1,18 @@
+# dataquieR 1.0.9
+  * Fixed bug in `sigmagap` and made missing guessing more robust.
+  * Fixed checks on missing code detection failing for `logical`.
+  * Fixed a damaged check for numeric threshold values in `acc_margins`.
+  * Fixed wrongly named `GRADING` columns.
+  * Improved parallel execution by automatic detection of cores.
+  * Tidy html dependency
+
 # dataquieR (1.0.8)
   * Removed formal arguments from `rbind.ReportSummaryTable` since these are
     not needed anyways and the inherited documentation for those arguments
     `rbind` from `base` contains an invalid URL triggering a `NOTE`.
 
 # dataquieR (1.0.7)
+  * ***Fixed bugs in example metadata.***
   * Figures now have size hints as attributes.
   * Added simple type conversion check indicator function of dimension 
     integrity, `int_datatype_matrix`.

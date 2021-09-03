@@ -20,12 +20,14 @@ util_sigmagap <- function(x) {
   ints$int <- c(0, diff(ints$VALUE))
   ints$sigmagap <- ifelse(ints$int > xsd, 1, 0)
 
-  if (max(ints$sigmagap, na.rm = TRUE) == 1) {
+  if (any(!is.na(ints$sigmagap)) && max(ints$sigmagap, na.rm = TRUE) == 1) {
     # if break is low
-    if (min(ints$VALUE[which(ints$sigmagap == 1)]) < xmu) {
-      ints$sigmagap[1:min(which(ints$sigmagap == 1))] <- 1
-    } else {
-      ints$sigmagap[min(which(ints$sigmagap == 1)):length(x)] <- 1
+    if (max(ints$VALUE[which(ints$sigmagap == 1)], na.rm = TRUE) < xmu) {
+      ints$sigmagap[1:min(which(ints$sigmagap == 1), na.rm = TRUE)] <- 1
+    }
+    if (min(ints$VALUE[which(ints$sigmagap == 1)], na.rm = TRUE) > xmu) {
+      ints$sigmagap[min(which(ints$sigmagap == 1), na.rm = TRUE):length(x)] <-
+        1
     }
   }
 

@@ -4,7 +4,14 @@
 \alias{print.ReportSummaryTable}
 \title{print implementation for the class \code{ReportSummaryTable}}
 \usage{
-\method{print}{ReportSummaryTable}(x, relative, dt = FALSE, fillContainer = FALSE, ...)
+\method{print}{ReportSummaryTable}(
+  x,
+  relative,
+  dt = FALSE,
+  fillContainer = FALSE,
+  displayValues = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{an object used to select a method.}
@@ -16,6 +23,9 @@ division by the \code{N} column.}
 
 \item{fillContainer}{\link{logical} if \code{dt} is \code{TRUE}, control table size,
 see \code{DT::datatables}.}
+
+\item{displayValues}{\link{logical} if \code{dt} is \code{TRUE}, also display the actual
+values}
 
 \item{...}{further arguments passed to or from other methods.}
 }

@@ -206,6 +206,7 @@ test_that("com_segment_missingness works", {
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("segment missingness plot ok",
                               r$SummaryPlot)
 })

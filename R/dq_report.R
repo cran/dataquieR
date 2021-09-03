@@ -102,6 +102,7 @@ dq_report <- function(study_data,
                       strata_vars,
                       cores = list(mode = "socket",
                                    logging = FALSE,
+                                   cpus = util_detect_cores(),
                                    load.balancing = TRUE),
                       specific_args = list()) {
   util_prepare_dataframes(.replace_missings = FALSE)

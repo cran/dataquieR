@@ -90,5 +90,5 @@ rbind.ReportSummaryTable <- function(...) {
                 # factor.exclude = TRUE
               ))
     )
-  } # TODO: xx copy attributes!!
+  }
 }

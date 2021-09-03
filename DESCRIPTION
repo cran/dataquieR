@@ -1,6 +1,6 @@
 Package: dataquieR
 Title: Data Quality in Epidemiological Research
-Version: 1.0.8
+Version: 1.0.9
 Authors@R: 
     c(person(given = "University Medicine Greifswald",
              role = "cph"),
@@ -29,18 +29,18 @@ Imports: patchwork, dplyr (>= 1.0.2), emmeans, ggplot2 (>= 2.1.0),
         R.devices, reshape, rlang, robustbase, utils
 Suggests: cowplot (>= 0.9.4), anytime, digest, DT (>= 0.15),
         flexdashboard, htmltools, knitr, rmarkdown, rstudioapi,
-        testthat (>= 2.3.2), tibble, vdiffr
+        testthat (>= 2.3.2), tibble, markdown, vdiffr, parallel
 VignetteBuilder: knitr
 Encoding: UTF-8
 KeepSource: TRUE
 Language: en-US
 RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2021-08-12 18:51:55 UTC; struckmanns
+Packaged: 2021-09-01 07:56:26 UTC; struckmanns
 Author: University Medicine Greifswald [cph],
   Adrian Richter [aut],
   Carsten Oliver Schmidt [aut],
   Stephan Struckmann [aut, cre]
 Maintainer: Stephan Struckmann <stephan.struckmann@uni-greifswald.de>
 Repository: CRAN
-Date/Publication: 2021-08-12 19:20:02 UTC
+Date/Publication: 2021-09-03 12:10:09 UTC

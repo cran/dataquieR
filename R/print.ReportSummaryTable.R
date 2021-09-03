@@ -9,13 +9,16 @@
 #' @param dt [logical] use `DT::datatables`, if installed
 #' @param fillContainer [logical] if `dt` is `TRUE`, control table size,
 #'        see `DT::datatables`.
+#' @param displayValues [logical] if `dt` is `TRUE`, also display the actual
+#'                                values
 #'
 #' @inherit base::print
 #' @importFrom grDevices colorRamp rgb col2rgb
 #' @export
 #' @return the printed object
 print.ReportSummaryTable <- function(x, relative, dt = FALSE,
-                                     fillContainer = FALSE, ...) {
+                                     fillContainer = FALSE,
+                                     displayValues = FALSE, ...) {
 
   higher_means <- attr(x, "higher_means")
   if (is.null(higher_means)) higher_means <- "worse"
@@ -101,8 +104,13 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
       }
       a <- apply(v, 1, function(cl) {
         paste0(
-          "<span style=\"width:100%;display:block;",
-          "overflow:hidden;background: ",
+          "<span style=\"width:100%;display:block;text-align:center;",
+          "color:",
+          rgb(255 - cl[[1]],
+              255 - cl[[2]],
+              255 - cl[[3]], maxColorValue = 255.0),
+          ";",
+          "overflow:hidden;background:",
           rgb(cl[[1]],
             cl[[2]],
             cl[[3]], maxColorValue = 255.0),
@@ -116,13 +124,27 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
       })
       cc <- apply(v, 1, function(cl) {
         paste0(
-          "\">&nbsp;</span>"
+          "\">"
         )
       })
-      if (relative) {
-        paste0(a, round(100 * values, 1), "%", b, values, cc)
+      d <- apply(v, 1, function(cl) {
+        paste0(
+          "</span>"
+        )
+      })
+      if (displayValues) {
+        if (relative) {
+          dv <- paste0(round(100 * values, 0), "%")
+        } else {
+          dv <- values
+        }
       } else {
-        paste0(a, round(values, 1), b, values, cc)
+        dv <- "&nbsp;"
+      }
+      if (relative) {
+        paste0(a, round(100 * values, 1), "%", b, values, cc, dv, d)
+      } else {
+        paste0(a, round(values, 1), b, values, cc, dv, d)
       }
     })
     x[, names(colors_of_hm)] <- colors_of_hm
@@ -162,14 +184,8 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
     # https://stackoverflow.com/a/35775262
     w$dependencies <- c(
       w$dependencies,
-      list(htmltools::htmlDependency(
-        name = "vertical-dt-style"
-        ,version = "0.0.1"
-        ,src = c(file = system.file("", package = "dataquieR"))
-        ,stylesheet = "vertical-dt-style.css"
-        ,script = "sort_heatmap_dt.js"
-      )
-    ))
+      list(html_dependency_vert_dt())
+    )
 
     print(w)
 

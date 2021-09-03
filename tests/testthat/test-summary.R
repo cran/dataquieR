@@ -154,7 +154,8 @@ test_that("summary for more than one SummaryTable per indicator", {
         label_col = LABEL,
         summarize_categories = TRUE,
         check_table = check_table,
-        dimensions = "Consistency"
+        dimensions = "Consistency",
+        cores = 1
       )
   )
   s1 <- summary(report1)
@@ -166,7 +167,8 @@ test_that("summary for more than one SummaryTable per indicator", {
         label_col = LABEL,
         summarize_categories = FALSE,
         check_table = check_table,
-        dimensions = "Consistency"
+        dimensions = "Consistency",
+        cores = 1
       )
   )
   s2 <- summary(report2)

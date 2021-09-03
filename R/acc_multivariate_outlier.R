@@ -186,7 +186,7 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
     SixSigma = sum(ds1plot$sixsigma),
     Hubert = sum(ds1plot$hubert),
     SigmaGap = sum(ds1plot$sigmagap),
-    Grading = grading
+    GRADING = grading
   )
 
 

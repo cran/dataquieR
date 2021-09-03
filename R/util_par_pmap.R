@@ -23,6 +23,7 @@
 #' @return [list] of results of the function calls
 util_par_pmap <- function(.l, .f, ...,
                           cores = list(mode = "socket",
+                                       cpus = util_detect_cores(),
                                        logging = FALSE,
                                        load.balancing = TRUE),
                           use_cache = FALSE) {

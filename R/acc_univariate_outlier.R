@@ -37,6 +37,9 @@
 #' [ggplot2::geom_jitter].
 #'
 #' @details
+#'
+#' **Hint*: The function is designed for unimodal data only.*
+#'
 #' # ALGORITHM OF THIS IMPLEMENTATION:
 #'
 #'  - Select all variables of type float in the study data
@@ -339,7 +342,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
                                  function(x) {
     sum(x == 1)
   })$x
-  st1$Grading <- ifelse(st1$"Most likely (N)" > 0, 1, 0)
+  st1$GRADING <- ifelse(st1$"Most likely (N)" > 0, 1, 0)
 
   # format output
   st1$Mean <- round(st1$Mean, digits = 2)

@@ -13,7 +13,11 @@
 #'
 #' @seealso [`acc_univariate_outlier`]
 #'
-util_looks_like_missing <- function(x, n_rules = 3) {
+util_looks_like_missing <- function(x, n_rules = 1) {
+  if (any(DATA_TYPES_OF_R_TYPE[[class(x)]] %in%
+          c(DATA_TYPES$INTEGER, DATA_TYPES$FLOAT))) {
+    x <- as.numeric(x)
+  }
   if (!is.numeric(x)) {
     util_error("%s works only on numeric vectors",
                dQuote("util_looks_like_missing"))
@@ -22,7 +26,7 @@ util_looks_like_missing <- function(x, n_rules = 3) {
   if (all(sysmiss)) {
     return(!logical(length = length(x)))
   }
-  x[sysmiss] <- mean(x[!sysmiss], na.rm = TRUE)
+#  x[sysmiss] <- mean(x[!sysmiss], na.rm = TRUE)
   TYPICAL_MISSINGCODES <- c(
     99, 999, 9999, 99999, 999999, 9999999, 999999999
   )
@@ -34,12 +38,21 @@ util_looks_like_missing <- function(x, n_rules = 3) {
   .x <- gsub("0+$", "", .x)
   r <- .x %in% TYPICAL_MISSINGCODES
 
+  tuk <- util_tukey(x)
+  tuk[sysmiss] <- 0
+  ssig <- util_sixsigma(x)
+  ssig[sysmiss] <- 0
+  hub <- util_hubert(x)
+  hub[sysmiss] <- 0
+  sigg <- util_sigmagap(x)
+  sigg[sysmiss] <- 0
+
   return(
     sysmiss | (r &
-      (util_tukey(x) +
-       util_sixsigma(x) +
-       util_hubert(x) +
-       util_sigmagap(x) >= n_rules))
+      (tuk +
+       ssig +
+       hub +
+       sigg >= n_rules))
   )
 
 }

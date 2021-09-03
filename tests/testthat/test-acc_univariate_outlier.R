@@ -134,7 +134,7 @@ test_that("acc_univariate_outlier works without label_col", {
                    c("Variables", "Mean", "SD", "Median", "Skewness",
                      "Tukey (N)",  "6-Sigma (N)", "Hubert (N)",
                      "Sigma-gap (N)", "Most likely (N)",  "To low (N)",
-                     "To high (N)", "Grading"))
+                     "To high (N)", "GRADING"))
 })
 
 test_that("acc_univariate_outlier works with label_col", {
@@ -267,7 +267,7 @@ test_that("acc_univariate_outlier works with label_col", {
     acc_univariate_outlier(resp_vars = "CRP_0", study_data = study_data,
                            meta_data = meta_data, label_col = LABEL,
                            n_rules = 1)
-  expect_identical(res1$SummaryTable$Grading, 1)
+  expect_identical(res1$SummaryTable$GRADING, 1)
 
   res1 <-
     acc_univariate_outlier(resp_vars = "CRP_0", study_data = study_data,
@@ -294,6 +294,6 @@ test_that("acc_univariate_outlier works with label_col", {
                    c("Variables", "Mean", "SD", "Median", "Skewness",
                      "Tukey (N)",  "6-Sigma (N)", "Hubert (N)",
                      "Sigma-gap (N)", "Most likely (N)",  "To low (N)",
-                     "To high (N)", "Grading"))
+                     "To high (N)", "GRADING"))
 
 })
