@@ -25,10 +25,10 @@ Guess a minimum meta data frame from study data. Minimum required variable
 attributes are:
 }
 \details{
-\if{html}{\out{<div class="r">}}\preformatted{dataquieR:::util_get_var_att_names_of_level(VARATT_REQUIRE_LEVELS$REQUIRED)
-}\if{html}{\out{</div>}}\preformatted{##      VAR_NAMES      DATA_TYPE   MISSING_LIST 
-##    "VAR_NAMES"    "DATA_TYPE" "MISSING_LIST"
-}
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{dataquieR:::util_get_var_att_names_of_level(VARATT_REQUIRE_LEVELS$REQUIRED)
+#>      VAR_NAMES      DATA_TYPE   MISSING_LIST 
+#>    "VAR_NAMES"    "DATA_TYPE" "MISSING_LIST"
+}\if{html}{\out{</div>}}
 
 The function also tries to detect missing codes.
 }

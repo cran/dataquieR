@@ -121,10 +121,7 @@ report <- dq_report(study_data, meta_data,
 }
 \seealso{
 \itemize{
-\item \link{as.data.frame.dataquieR_resultset}
-\item \link{as.list.dataquieR_resultset}
-\item \link{print.dataquieR_resultset}
-\item \link{summary.dataquieR_resultset}
+\item \link{as.data.frame.dataquieR_resultset},  * \link{as.list.dataquieR_resultset},  * \link{print.dataquieR_resultset},  * \link{summary.dataquieR_resultset}
 \item \link{dq_report_by}
 }
 }

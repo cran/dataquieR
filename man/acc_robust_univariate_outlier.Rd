@@ -87,7 +87,7 @@ Note, that the plots are not deterministic, because they use
 \link[ggplot2:geom_jitter]{ggplot2::geom_jitter}.
 }
 \details{
-\emph{\emph{Hint}: The function is designed for unimodal data only.}
+\emph{\strong{Hint}}: \emph{The function is designed for unimodal data only.}
 }
 \section{ALGORITHM OF THIS IMPLEMENTATION:}{
 \itemize{

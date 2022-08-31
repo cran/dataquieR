@@ -16,6 +16,6 @@ code conventions}
 with labels of variables}
 }
 \description{
-use the meta data attribute \code{RECODE} (=“recode”) to
+use the meta data attribute \code{RECODE} (="recode") to
 dichotomize the data
 }

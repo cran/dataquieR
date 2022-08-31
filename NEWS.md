@@ -1,3 +1,7 @@
+# dataquieR 1.0.10
+  * Fixed `NEWS.md` file
+  * Fixed documentation
+
 # dataquieR 1.0.9
   * Fixed bug in `sigmagap` and made missing guessing more robust.
   * Fixed checks on missing code detection failing for `logical`.
@@ -6,12 +10,12 @@
   * Improved parallel execution by automatic detection of cores.
   * Tidy html dependency
 
-# dataquieR (1.0.8)
+# dataquieR 1.0.8
   * Removed formal arguments from `rbind.ReportSummaryTable` since these are
     not needed anyways and the inherited documentation for those arguments
     `rbind` from `base` contains an invalid URL triggering a `NOTE`.
 
-# dataquieR (1.0.7)
+# dataquieR 1.0.7
   * ***Fixed bugs in example metadata.***
   * Figures now have size hints as attributes.
   * Added simple type conversion check indicator function of dimension 
@@ -24,7 +28,7 @@
   * Added new output slot with heat-map like tables. Implemented some generics
     for those.
 
-# dataquieR (1.0.6)
+# dataquieR 1.0.6
   * Robustness: Ensure `DT JS` is always loaded when a dq_report report is 
     rendered
   * Bug fix: More robust handling of DECIMALS variable attribute, if
@@ -86,5 +90,5 @@
    a full `devtools::check(cran = TRUE, env_vars = c(NOT_CRAN = "false"))`
    takes 2:22 minutes now.
   
-# dataquieR (1.0.0)
+# dataquieR 1.0.0
   * Initial CRAN release candidate

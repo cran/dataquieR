@@ -9,7 +9,7 @@
 version](https://img.shields.io/badge/R%3E%3D-3.6.0-6666ff.svg)](https://cran.r-project.org/)
 [![Pipeline
 Status](https://travis-ci.com/libreumg/dataquier.svg?branch=master)](https://app.travis-ci.com/gitlab/libreumg/dataquier)
-[![Coverage](https://codecov.io/gl/libreumg/dataquier/branch/master/graph/badge.svg?token=79TK6GQTMG)](https://codecov.io/gl/libreumg/dataquier)
+[![Coverage](https://codecov.io/gl/libreumg/dataquier/branch/master/graph/badge.svg?token=79TK6GQTMG)](https://app.codecov.io/gl/libreumg/dataquier)
 [![CRAN-Version](https://www.r-pkg.org/badges/version/dataquieR)](https://cran.r-project.org/package=dataquieR)
 [![CRAN-Downloads](https://cranlogs.r-pkg.org/badges/dataquieR)](https://cran.r-project.org/package=dataquieR)
 [![Project Status: Active – The project has reached a stable, usable

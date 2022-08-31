@@ -12,6 +12,6 @@ An object of class \code{character} of length 1.
 SPLIT_CHAR
 }
 \description{
-This 1 character is according to our metadata concept “|”.
+This 1 character is according to our metadata concept "|".
 }
 \keyword{datasets}

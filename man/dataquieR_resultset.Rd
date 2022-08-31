@@ -18,10 +18,7 @@ creates an object of the class \link{dataquieR_resultset}.
 \details{
 The class features the following methods:
 \itemize{
-\item \link{as.data.frame.dataquieR_resultset}
-\item \link{as.list.dataquieR_resultset}
-\item \link{print.dataquieR_resultset}
-\item \link{summary.dataquieR_resultset}`
+\item \link{as.data.frame.dataquieR_resultset},  * \link{as.list.dataquieR_resultset},  * \link{print.dataquieR_resultset},  * \link{summary.dataquieR_resultset}
 }
 }
 \seealso{

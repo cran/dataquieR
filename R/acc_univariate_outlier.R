@@ -38,7 +38,7 @@
 #'
 #' @details
 #'
-#' **Hint*: The function is designed for unimodal data only.*
+#' ***Hint***: *The function is designed for unimodal data only.*
 #'
 #' # ALGORITHM OF THIS IMPLEMENTATION:
 #'

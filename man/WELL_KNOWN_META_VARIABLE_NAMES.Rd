@@ -56,37 +56,7 @@ categories, missing lists and jump lists as CSV strings.
 all entries of this list will be mapped to the package's exported NAMESPACE
 environment directly, i.e. they are available directly by their names too:
 \itemize{
-\item \link{VAR_NAMES}
-\item \link{LABEL}
-\item \link{DATA_TYPE}
-\item \link{VALUE_LABELS}
-\item \link{MISSING_LIST}
-\item \link{JUMP_LIST}
-\item \link{HARD_LIMITS}
-\item \link{DETECTION_LIMITS}
-\item \link{SOFT_LIMITS}
-\item \link{CONTRADICTIONS}
-\item \link{DISTRIBUTION}
-\item \link{DECIMALS}
-\item \link{DATA_ENTRY_TYPE}
-\item \link{KEY_OBSERVER}
-\item \link{KEY_DEVICE}
-\item \link{KEY_DATETIME}
-\item \link{KEY_STUDY_SEGMENT}
-\item \link{VARIABLE_ROLE}
-\item \link{VARIABLE_ORDER}
-\item \link{LONG_LABEL}
-\item \link{SOFT_LIMIT_LOW}
-\item \link{SOFT_LIMIT_UP}
-\item \link{HARD_LIMIT_LOW}
-\item \link{HARD_LIMIT_UP}
-\item \link{DETECTION_LIMIT_LOW}
-\item \link{DETECTION_LIMIT_UP}
-\item \link{INCL_SOFT_LIMIT_LOW}
-\item \link{INCL_SOFT_LIMIT_UP}
-\item \link{INCL_HARD_LIMIT_LOW}
-\item \link{INCL_HARD_LIMIT_UP}
-\item \link{RECODE}
+\item \link{VAR_NAMES},  - \link{LABEL},  - \link{DATA_TYPE},  - \link{VALUE_LABELS},  - \link{MISSING_LIST},  - \link{JUMP_LIST},  - \link{HARD_LIMITS},  - \link{DETECTION_LIMITS},  - \link{SOFT_LIMITS},  - \link{CONTRADICTIONS},  - \link{DISTRIBUTION},  - \link{DECIMALS},  - \link{DATA_ENTRY_TYPE},  - \link{KEY_OBSERVER},  - \link{KEY_DEVICE},  - \link{KEY_DATETIME},  - \link{KEY_STUDY_SEGMENT},  - \link{VARIABLE_ROLE},  - \link{VARIABLE_ORDER},  - \link{LONG_LABEL},  - \link{SOFT_LIMIT_LOW},  - \link{SOFT_LIMIT_UP},  - \link{HARD_LIMIT_LOW},  - \link{HARD_LIMIT_UP},  - \link{DETECTION_LIMIT_LOW},  - \link{DETECTION_LIMIT_UP},  - \link{INCL_SOFT_LIMIT_LOW},  - \link{INCL_SOFT_LIMIT_UP},  - \link{INCL_HARD_LIMIT_LOW},  - \link{INCL_HARD_LIMIT_UP},  - \link{RECODE}
 }
 }
 \examples{
