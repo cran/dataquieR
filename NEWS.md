@@ -1,3 +1,7 @@
+# dataquieR 1.0.11
+  * Addressed a problem with some test platforms
+  * Added funding agencies in the manual
+
 # dataquieR 1.0.10
   * Fixed `NEWS.md` file
   * Fixed documentation
