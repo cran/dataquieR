@@ -66,6 +66,19 @@ For examples and additional documentation, please refer to our
 
 ## Funding
 
--   German Research Foundation (DFG: `SCHM 2744/3–1`)
--   European Union’s Horizon 2020 research and innovation program (grant
-    agreement No 825903.
+-   [German Research Foundation](https://www.dfg.de/) (DFG:
+    `SCHM 2744/3–1` – initial concept and dataquieR development,
+    `SCHM 2744/9-1` – `NFDI` Task Force `COVID-19` use case application;
+    `SCHM 2744/3-4` – concept extensions, ongoing )
+
+-   [European Union’s Horizon 2020 research and innovation
+    program](https://ec.europa.eu/info/research-and-innovation/funding/funding-opportunities/funding-programmes-and-open-calls/horizon-2020_en):
+    [euCanSHare, grant agreement No.825903](http://www.eucanshare.eu/) –
+    [dataquieR](https://cran.r-project.org/package=dataquieR)
+    refinements and implementations in the
+    [Square2](https://pubmed.ncbi.nlm.nih.gov/28423853/) web
+    application.
+
+-   [National Research Data Infrastructure for Personal Health
+    Data](https://www.nfdi4health.de/en/): `NFDI 13/1` – integration,
+    ongoing.

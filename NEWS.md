@@ -1,3 +1,11 @@
+# dataquieR 1.0.12
+  * Addressed a problem with the markdown template underlying the
+  `dq_report` reports with wrong brackets
+  * Addressed issue with `ggplot2`'s breaking changes for the release `3.4.0`
+  * Added `ORCIDs` for two authors
+  * Updated the `CITATION` file
+  * Updated the `README.md` file adding the funding sources.
+
 # dataquieR 1.0.11
   * Addressed a problem with some test platforms
   * Added funding agencies in the manual

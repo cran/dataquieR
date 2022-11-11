@@ -22,7 +22,7 @@
 #' @return a [list] with:
 #'   - `SummaryPlot`: [ggplot] object with the heatmap
 #'
-#' @importFrom ggplot2 ggplot aes_ geom_bar geom_text scale_fill_manual
+#' @importFrom ggplot2 ggplot aes geom_bar geom_text scale_fill_manual
 #'                     scale_y_discrete coord_flip facet_grid theme_minimal
 #'                     scale_x_discrete
 #'
@@ -116,8 +116,8 @@ util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
     }
 
     if (!missing(strata)) {
-      p <- ggplot(df, aes_(~x, ~y, fill = ~ df[[values]])) +
-        facet_grid(df[[strata]] ~ .) +
+      p <- ggplot(df, aes(x, y, fill = .data[[values]])) +
+        facet_grid(.data[[strata]] ~ .) +
         geom_tile(colour = "white", lwd = 0.8) +
         geom_text(label = paste0(round(df$z2, 2), " %")) +
         scale_fill_manual(values = disc_cols, name = " ") +
@@ -128,7 +128,7 @@ util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
                          limits = rev(levels(df$y))) +
         xlab("Study segments")
     } else {
-      p <- ggplot(df, aes_(~x, ~y, fill = ~ df[[values]])) +
+      p <- ggplot(df, aes(x, y, fill = .data[[values]])) +
         geom_tile(colour = "white", lwd = 0.8) +
         geom_text(label = paste0(round(df$z2, 2), " %")) +
         scale_fill_manual(values = disc_cols, name = " ") +
@@ -142,7 +142,7 @@ util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
   } else {
     namex <- cat_vars
 
-    p <- ggplot(df, aes_(~ df[[cat_vars]], y = ~z2, fill = ~ df[[values]])) +
+    p <- ggplot(df, aes(.data[[cat_vars]], y = z2, fill = .data[[values]])) +
       geom_bar(stat = "identity") +
       geom_text(y = ifelse(round(df$z2, 2) < 10, round(df$z2, 2) + 0.3,
                            round(df$z2, 2) - 1), label = round(df$z2, 2)) +

@@ -8,7 +8,10 @@ note <- sprintf("R package version %s", meta$Version)
 
 citEntry(entry = "Manual",
          title = "{dataquieR}: Data Quality in Epidemiological Research",
-         author = personList(as.person("Adrian Richter"),
+         author = personList(
+                       as.person("Elisa Kasbohm"),
+                       as.person("Joany Marino"),
+                       as.person("Adrian Richter"),
                        as.person("Carsten Oliver Schmidt"),
 	                     as.person("Stephan Struckmann")),
          year = year,
@@ -16,9 +19,56 @@ citEntry(entry = "Manual",
          url = "https://dataquality.ship-med.uni-greifswald.de/",
 
          textVersion =
-           paste("Adrian Richter, Carsten Oliver Schmidt, Stephan Struckmann",
+           paste("Elisa Kasbohm, Joany Marino, Adrian Richter, Carsten Oliver Schmidt, Stephan Struckmann",
      	       sprintf("(%s).", year),
                  "dataquieR: Data Quality in Epidemiological Research.",
   	       paste(note, ".", sep = ""),
                  "URL https://dataquality.ship-med.uni-greifswald.de/")
+)
+
+citEntry(entry = "Article",
+      title =
+        "{dataquieR}: assessment of data quality in epidemiological research",
+       author = personList(as.person("Adrian Richter"),
+               as.person("Carsten Oliver Schmidt"),
+               as.person('Markus Kr\\"{u}ger'),
+               as.person("Stephan Struckmann")),
+      journal = "Journal of Open Source",
+      year = 2021,
+      doi = "10.21105/joss.03093",
+      textVersion = paste(
+        'Richter A, Schmidt CO, Krüger M, Struckmann S (2021).',
+        '"dataquieR: assessment of data quality in epidemiological research."',
+        'Journal of Open Source. doi: 10.21105/joss.03093',
+        '(URL: https://doi.org/10.21105/joss.03093).'
+      )
+)
+
+citEntry(entry = "Article",
+         title = paste("Facilitating harmonized data quality assessments. A",
+                       "data quality framework for observational health",
+                       "research data collections with software",
+                       "implementations in R"),
+         author = personList(
+           as.person("Carsten Oliver Schmidt"),
+           as.person("Stephan Struckmann"),
+           as.person("Cornelia Enzenbach"),
+           as.person("Achim Reineke"),
+           as.person('J\\"{u}rgen Stausberg'),
+           as.person("Stefan Damerow"),
+           as.person("Marianne Huebner"),
+           as.person('B\\"{o}rge Schmidt'),
+           as.person("Willi Sauerbrei"),
+           as.person("Adrian Richter")),
+         year = "2021",
+         doi = "10.1186/s12874-021-01252-7",
+         journal = "BMC Med Res Methodol",
+         textVersion =
+           paste("Schmidt CO, Struckmann S, Enzenbach C, Reineke A,",
+           "Stausberg J, Damerow S, Huebner M, Schmidt B, Sauerbrei W,",
+           "Richter A (2021). \"Facilitating harmonized data quality",
+           "assessments. A data quality framework for observational health",
+           "research data collections with software implementations in R.\"",
+           "BMC Med Res Methodol. doi: 10.1186/s12874-021-01252-7 (URL:",
+           "https://doi.org/10.1186/s12874-021-01252-7).")
 )

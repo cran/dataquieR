@@ -46,17 +46,17 @@
 <polyline points='403.73,130.77 427.18,130.77 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
 <polyline points='403.73,93.79 427.18,93.79 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
 <polyline points='415.46,485.80 415.46,71.60 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<rect x='405.69' y='445.12' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='405.69' y='408.14' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='405.69' y='371.16' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='405.69' y='334.18' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='405.69' y='297.19' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='405.69' y='260.21' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='405.69' y='223.23' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='405.69' y='186.25' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='405.69' y='149.27' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='405.69' y='112.28' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='405.69' y='75.30' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='405.69' y='445.12' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='405.69' y='408.14' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='405.69' y='371.16' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='405.69' y='334.18' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='405.69' y='297.19' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='405.69' y='260.21' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='405.69' y='223.23' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='405.69' y='186.25' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='405.69' y='149.27' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='405.69' y='112.28' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='405.69' y='75.30' width='19.54' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
 <text transform='translate(415.46,66.67) rotate(-90)' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='31.29px' lengthAdjust='spacingAndGlyphs'>MATCH</text>
@@ -73,12 +73,8 @@
 <text x='398.80' y='97.23' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='87.80px' lengthAdjust='spacingAndGlyphs'>PART_INTERVIEW</text>
 <text transform='translate(300.39,278.70) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='61.16px' lengthAdjust='spacingAndGlyphs'>VARIABLES</text>
 <text x='330.58' y='537.43' style='font-size: 11.00px; font-family: sans;' textLength='3.06px' lengthAdjust='spacingAndGlyphs'> </text>
-<rect x='340.25' y='503.38' width='15.01' height='15.01' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #B2182B;' />
-<rect x='340.25' y='526.14' width='15.01' height='15.01' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='340.25' y='548.89' width='15.01' height='15.01' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: square; stroke-linejoin: miter; fill: #92C5DE;' />
-<text x='361.88' y='513.91' style='font-size: 8.80px; font-family: sans;' textLength='91.00px' lengthAdjust='spacingAndGlyphs'>Non-matching datatype</text>
-<text x='361.88' y='536.67' style='font-size: 8.80px; font-family: sans;' textLength='138.45px' lengthAdjust='spacingAndGlyphs'>Non-Matching datatype, convertible</text>
-<text x='361.88' y='559.43' style='font-size: 8.80px; font-family: sans;' textLength='71.92px' lengthAdjust='spacingAndGlyphs'>Matching datatype</text>
+<rect x='340.25' y='503.38' width='15.01' height='15.01' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<text x='361.88' y='513.91' style='font-size: 8.80px; font-family: sans;' textLength='138.45px' lengthAdjust='spacingAndGlyphs'>Non-Matching datatype, convertible</text>
 <text x='403.73' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='70.46px' lengthAdjust='spacingAndGlyphs'>intDtv10000</text>
 </g>
 </svg>

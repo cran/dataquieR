@@ -235,8 +235,39 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
 
 .onLoad <- function(...) { # nocov start
   if (getRversion() >= "2.15.1") {
-    utils::globalVariables(c(names(WELL_KNOWN_META_VARIABLE_NAMES),
-                             "ds1", "meta_data", "variable", "value", "Rules"))
+    utils::globalVariables(
+      c(
+        names(WELL_KNOWN_META_VARIABLE_NAMES),
+        "APP_SCORE",
+        "FITTED_VALUE",
+        "GRADING",
+        "IMPLEMENTATION",
+        "INTERVALS",
+        "LCL",
+        "LOWER_CL",
+        "PROB",
+        "TIME",
+        "UCL",
+        "UPPER_CL",
+        "VARIABLES",
+        "Variables",
+        "category",
+        "lwl",
+        "margins",
+        "percent",
+        "upl",
+        "x",
+        "y",
+        "z2",
+        "ds1",
+        "meta_data",
+        "variable",
+        "value",
+        "Rules",
+        "progress",
+        "progress_msg"
+      )
+    )
   }
   for (name in names(WELL_KNOWN_META_VARIABLE_NAMES)) {
     if (exists(name, asNamespace("dataquieR"))) {

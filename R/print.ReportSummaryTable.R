@@ -213,9 +213,9 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
       #    colcode <- c("#B2182B", "#ef6548", "#92C5DE", "#2166AC", "#B0B0B0")
       #    names(colcode) <- levels(tb$value)
 
-      print(ggplot(tb, aes_(
-        x = ~ variable, y = ~ Variables,
-        fill = ~ value
+      print(ggplot(tb, aes(
+        x = variable, y = Variables,
+        fill = value
       )) + geom_tile(colour = "white", lwd = 0.8) +
         theme_minimal() +
         (if (nrow(hm) > ncol(hm)) coord_flip()) +

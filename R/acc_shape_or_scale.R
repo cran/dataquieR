@@ -39,7 +39,7 @@
 #' @export
 #' @importFrom MASS fitdistr
 #' @importFrom MultinomialCI multinomialCI
-#' @importFrom ggplot2 ggplot theme_minimal geom_bar aes_ scale_fill_manual
+#' @importFrom ggplot2 ggplot theme_minimal geom_bar aes scale_fill_manual
 #'                     geom_line geom_hline xlab scale_color_manual
 #'                     geom_errorbar
 #' @importFrom stats dunif dgamma dnorm punif  pgamma pnorm median
@@ -301,25 +301,27 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
   grading_cols <- c("#2166AC", "#B2182B")
   names(grading_cols) <- c("0", "1")
 
-  p1 <- ggplot(df1, aes_(x = ~INTERVALS, y = ~PROB)) +
+  p1 <- ggplot(df1, aes(x = INTERVALS, y = PROB)) +
     theme_minimal() +
-    geom_bar(aes_(fill = ~GRADING), stat = "identity") +
+    geom_bar(aes(fill = GRADING), stat = "identity") +
     scale_fill_manual(values = grading_cols, guide = "none") +
-    geom_errorbar(aes_(ymin = ~LOWER_CL, ymax = ~UPPER_CL), width = 0.1) + {
+    geom_errorbar(aes(ymin = LOWER_CL, ymax = UPPER_CL), width = 0.1) + {
       if (!(end_digits) & dist != "uniform") {
-        geom_line(data = df2, aes_(x = ~x2, y = ~y_line, color = "#E69F00"),
-                  size = 2)
+        geom_line(data = df2, aes(x = x2, y = y_line, color = "#E69F00"),
+                  linewidth = 2)
       }
     } + {
       if (!(end_digits) & dist == "uniform") {
-        geom_hline(yintercept = unique(y_line), color = "#E69F00", size = 2)
+        geom_hline(yintercept = unique(y_line), color = "#E69F00",
+                   linewidth = 2)
       }
     } + {
       if (!(end_digits) & dist == "uniform") {
         xlab("Values")
       }
     } + {
-      if (end_digits) geom_hline(yintercept = 0.1, color = "#E69F00", size = 2)
+      if (end_digits) geom_hline(yintercept = 0.1, color = "#E69F00",
+                                 linewidth = 2)
     } + {
       if (end_digits) xlab("End digits")
     } + scale_color_manual(values = c("#E69F00"), guide = "none")

@@ -31,7 +31,7 @@
 #'                     `resp_vars`.
 #'
 #' @importFrom ggpubr ggarrange
-#' @importFrom ggplot2 ggplot aes_string geom_histogram coord_flip labs
+#' @importFrom ggplot2 ggplot aes geom_histogram coord_flip labs
 #'                     theme_minimal theme element_text scale_color_manual
 #'                     stat_ecdf labs element_blank geom_bar
 #' @importFrom stats na.omit
@@ -271,7 +271,7 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
     )
 
     if (!all(util_is_integer(ds1[[rv]]), na.rm = TRUE)) {
-      p <- ggplot(data = ds1, aes_string(x = rv)) +
+      p <- ggplot(data = ds1, aes(x = .data[[rv]])) +
         geom_histogram(breaks = unique(breaks_x), fill = "#B0B0B0",
                        color = "lightgrey") +
         coord_flip(xlim = c(floor(minx), ceiling(maxx))) +
@@ -286,7 +286,8 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
         )
 
       if (length(group_vars) > 0) {
-        pp <- ggplot(data = ds1, aes_string(x = rv, colour = group_vars)) + {
+        pp <- ggplot(data = ds1, aes(x = .data[[rv]], colour =
+                                       .data[[group_vars]])) + {
             if (length(unique(ds1[[group_vars]])) <= 10)
               scale_color_manual(values = hex_code)
           } +
@@ -310,7 +311,7 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
 
 
     if (all(util_is_integer(ds1[[rv]]), na.rm = TRUE)) {
-      p <- ggplot(ds1, aes_string(x = ds1[[rv]])) +
+      p <- ggplot(ds1, aes(x = .data[[rv]])) +
         geom_bar(fill = "gray") +
         coord_flip(xlim = c(floor(minx), ceiling(maxx))) +
         labs(x = paste0(rv), y = "") +
@@ -324,7 +325,8 @@ acc_distributions <- function(resp_vars = NULL, label_col, group_vars = NULL,
         )
 
       if (length(group_vars) > 0) {
-        pp <- ggplot(data = ds1, aes_string(x = rv, colour = group_vars)) + {
+        pp <- ggplot(data = ds1, aes(x = .data[[rv]],
+                                     colour = .data[[group_vars]])) + {
             if (length(unique(ds1[[group_vars]])) <= 10)
               scale_color_manual(values = hex_code)
           } +

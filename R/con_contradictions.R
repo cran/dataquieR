@@ -75,7 +75,7 @@
 #' @export
 #'
 #' @importFrom ggplot2 ggplot geom_bar scale_fill_manual theme_minimal
-#'                     scale_y_continuous geom_hline coord_flip theme aes_
+#'                     scale_y_continuous geom_hline coord_flip theme aes
 #'                     geom_text xlab scale_x_continuous sec_axis
 #' @importFrom stats setNames reorder
 #' @seealso
@@ -247,7 +247,7 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
     )
     result$SummaryData <- rx
     p <-
-      ggplot(rx, aes_(x = ~category, y = ~percent, fill = ~GRADING)) +
+      ggplot(rx, aes(x = category, y = percent, fill = GRADING)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = cols, name = " ", guide = "none") +
       theme_minimal() +
@@ -477,8 +477,9 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
     x <- util_as_numeric(reorder(summary_df2[, 1], -summary_df2[, 1]))
     lbs <- as.character(reorder(summary_df2[, 9], -summary_df2[, 1]))
     # plot summary_df2
-    p <- ggplot(summary_df2, aes_(x = ~x, y = ~ summary_df2[, 7], fill =
-                                    ~ as.ordered(GRADING))) +
+    p <- ggplot(summary_df2, aes(x = x, y = .data[["Contradictions (%)"]],
+                                 fill =
+                                    as.ordered(GRADING))) +
       geom_bar(stat = "identity") +
       geom_text(
         y = round(summary_df2[, 7], 1) + 0.5,

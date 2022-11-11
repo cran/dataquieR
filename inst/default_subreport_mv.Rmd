@@ -5,7 +5,7 @@
 if (is.list(resp_vars) && length(resp_vars) == 1 && is.character(resp_vars[[1]])) {
   resp_vars <- resp_vars[[1]]
 }
-if ((all(!is.na(resp_vars) && (length(resp_vars) == 1))) || outputSlot == "SummaryPlot") {
+if ((all(!is.na(resp_vars)) && (length(resp_vars) == 1)) || outputSlot == "SummaryPlot") {
   stop("Plot result")
 }
 if (outputSlot == "SummaryTable") {

@@ -1194,34 +1194,34 @@
 <text transform='translate(558.92,523.91) rotate(-45)' text-anchor='end' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='64.09px' lengthAdjust='spacingAndGlyphs'>MISSING 99995</text>
 <text transform='translate(591.95,523.91) rotate(-45)' text-anchor='end' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='50.88px' lengthAdjust='spacingAndGlyphs'>JUMP 88880</text>
 <text transform='translate(624.99,523.91) rotate(-45)' text-anchor='end' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='50.88px' lengthAdjust='spacingAndGlyphs'>JUMP 88890</text>
+<image width='17.28' height='86.40' x='656.97' y='161.94' preserveAspectRatio='none' xlink:href='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAEsCAYAAAACUNnVAAAA1klEQVQ4ja2PSXLFIAxEn/riOXSqMvibKAswRragkp9sunqSELyAywAJqGyUxjXNe3f5r4FPKgYyWQMqC14F64FFL5MXOMdSuKdkAclEvU/H4d3DwvXEI1tZsyCR5xZTlMn6bCLuo38BY/xvqxxe611kHNNvygm79VZj9G8NEH/ePOW90dNiH/aHBdMLzBAQZfjqM7J7P5bJGeuJjA1Sjdm0HHuLVYZAq3ez3qzy5YYeu6PHzsHKc7Kye2Urwdt6bysdetCko89yAuhjd/ReHL0VR6/F+QbM7W2JKhB9zwAAAABJRU5ErkJggg=='/>
+<text x='679.73' y='251.22' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='679.73' y='231.88' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>250</text>
+<text x='679.73' y='212.54' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>500</text>
+<text x='679.73' y='193.19' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>750</text>
+<text x='679.73' y='173.85' style='font-size: 8.80px; font-family: sans;' textLength='19.58px' lengthAdjust='spacingAndGlyphs'>1000</text>
 <text x='656.97' y='155.32' style='font-size: 11.00px; font-family: sans;' textLength='22.62px' lengthAdjust='spacingAndGlyphs'>Freq</text>
-<circle cx='670.48' cy='175.45' r='10.52' style='stroke-width: 0.71;' />
-<circle cx='670.48' cy='200.84' r='9.30' style='stroke-width: 0.71;' />
-<circle cx='670.48' cy='222.70' r='7.86' style='stroke-width: 0.71;' />
-<circle cx='670.48' cy='241.31' r='5.97' style='stroke-width: 0.71;' />
-<circle cx='670.48' cy='258.59' r='1.42' style='stroke-width: 0.71;' />
-<text x='689.46' y='178.47' style='font-size: 8.80px; font-family: sans;' textLength='19.58px' lengthAdjust='spacingAndGlyphs'>1000</text>
-<text x='689.46' y='203.87' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>750</text>
-<text x='689.46' y='225.73' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>500</text>
-<text x='689.46' y='244.33' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>250</text>
-<text x='689.46' y='261.61' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>0</text>
-<image width='17.28' height='86.40' x='656.97' y='304.48' preserveAspectRatio='none' xlink:href='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAEsCAYAAAACUNnVAAAA1klEQVQ4ja2PSXLFIAxEn/riOXSqMvibKAswRragkp9sunqSELyAywAJqGyUxjXNe3f5r4FPKgYyWQMqC14F64FFL5MXOMdSuKdkAclEvU/H4d3DwvXEI1tZsyCR5xZTlMn6bCLuo38BY/xvqxxe611kHNNvygm79VZj9G8NEH/ePOW90dNiH/aHBdMLzBAQZfjqM7J7P5bJGeuJjA1Sjdm0HHuLVYZAq3ez3qzy5YYeu6PHzsHKc7Kye2Urwdt6bysdetCko89yAuhjd/ReHL0VR6/F+QbM7W2JKhB9zwAAAABJRU5ErkJggg=='/>
-<text x='679.73' y='393.76' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>0</text>
-<text x='679.73' y='374.42' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>250</text>
-<text x='679.73' y='355.08' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>500</text>
-<text x='679.73' y='335.73' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>750</text>
-<text x='679.73' y='316.39' style='font-size: 8.80px; font-family: sans;' textLength='19.58px' lengthAdjust='spacingAndGlyphs'>1000</text>
-<text x='656.97' y='297.86' style='font-size: 11.00px; font-family: sans;' textLength='22.62px' lengthAdjust='spacingAndGlyphs'>Freq</text>
-<line x1='656.97' y1='390.73' x2='660.42' y2='390.73' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
-<line x1='656.97' y1='371.39' x2='660.42' y2='371.39' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
-<line x1='656.97' y1='352.05' x2='660.42' y2='352.05' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
-<line x1='656.97' y1='332.71' x2='660.42' y2='332.71' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
-<line x1='656.97' y1='313.36' x2='660.42' y2='313.36' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
-<line x1='670.79' y1='390.73' x2='674.25' y2='390.73' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
-<line x1='670.79' y1='371.39' x2='674.25' y2='371.39' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
-<line x1='670.79' y1='352.05' x2='674.25' y2='352.05' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
-<line x1='670.79' y1='332.71' x2='674.25' y2='332.71' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
-<line x1='670.79' y1='313.36' x2='674.25' y2='313.36' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
+<line x1='656.97' y1='248.19' x2='660.42' y2='248.19' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
+<line x1='656.97' y1='228.85' x2='660.42' y2='228.85' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
+<line x1='656.97' y1='209.51' x2='660.42' y2='209.51' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
+<line x1='656.97' y1='190.17' x2='660.42' y2='190.17' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
+<line x1='656.97' y1='170.82' x2='660.42' y2='170.82' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
+<line x1='670.79' y1='248.19' x2='674.25' y2='248.19' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
+<line x1='670.79' y1='228.85' x2='674.25' y2='228.85' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
+<line x1='670.79' y1='209.51' x2='674.25' y2='209.51' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
+<line x1='670.79' y1='190.17' x2='674.25' y2='190.17' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
+<line x1='670.79' y1='170.82' x2='674.25' y2='170.82' style='stroke-width: 0.38; stroke: #FFFFFF; stroke-linecap: butt;' />
+<text x='656.97' y='278.97' style='font-size: 11.00px; font-family: sans;' textLength='22.62px' lengthAdjust='spacingAndGlyphs'>Freq</text>
+<circle cx='670.48' cy='299.10' r='10.52' style='stroke-width: 0.71;' />
+<circle cx='670.48' cy='324.49' r='9.30' style='stroke-width: 0.71;' />
+<circle cx='670.48' cy='346.35' r='7.86' style='stroke-width: 0.71;' />
+<circle cx='670.48' cy='364.96' r='5.97' style='stroke-width: 0.71;' />
+<circle cx='670.48' cy='382.24' r='1.42' style='stroke-width: 0.71;' />
+<text x='689.46' y='302.13' style='font-size: 8.80px; font-family: sans;' textLength='19.58px' lengthAdjust='spacingAndGlyphs'>1000</text>
+<text x='689.46' y='327.52' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>750</text>
+<text x='689.46' y='349.38' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>500</text>
+<text x='689.46' y='367.98' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>250</text>
+<text x='689.46' y='385.26' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>0</text>
 <text x='39.29' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='227.47px' lengthAdjust='spacingAndGlyphs'>item missingness plot without labels ok</text>
 </g>
 </svg>

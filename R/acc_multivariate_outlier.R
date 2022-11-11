@@ -59,7 +59,7 @@
 #'
 #' @export
 #' @importFrom ggplot2 ggplot aes geom_path  scale_color_manual geom_point
-#'                     scale_size_manual theme_minimal scale_alpha_manual
+#'                     discrete_scale theme_minimal scale_alpha_manual
 #'
 #' @importFrom stats mahalanobis
 #' @importFrom rlang .data
@@ -201,7 +201,7 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
 
   # use ID/Rules as factor
   ds2plot[[id_vars]] <- factor(ds2plot[[id_vars]])
-  ds2plot$Rules <- factor(ds2plot$Rules)
+  ds2plot$Rules <- factor(ds2plot$Rules, ordered = TRUE)
 
 
   # transparency
@@ -219,11 +219,14 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
   # PLOT
   p <- ggplot(ds2plot, aes(x = variable, y = value, colour = Rules,
                            group = .data[[id_vars]])) +
-    geom_path(aes(alpha = Rules, size = Rules), position = "identity") +
+    geom_path(aes(alpha = Rules, linewidth = Rules), position = "identity") +
     scale_color_manual(values = disc_cols) +
     geom_point(aes(alpha = Rules)) +
     scale_alpha_manual(values = .a) +
-    scale_size_manual(values = .s) +
+    discrete_scale("linewidth", "outlier_rules_scale",
+                            function(n) {
+                              c(0.05, 0.2, 0.3, 0.4, 0.5)
+                            }) +
     theme_minimal()
 
   return(list(FlaggedStudyData = ds1plot,

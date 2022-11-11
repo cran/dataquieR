@@ -41,7 +41,7 @@
 #'   - `DataTypePlotList`: [list] of plots per (maybe artificial) segment
 #'   - `ReportSummaryTable`: data frame underlying `SummaryPlot`
 #' @export
-#' @importFrom ggplot2 ggplot aes_ geom_tile scale_fill_manual facet_wrap
+#' @importFrom ggplot2 ggplot aes geom_tile scale_fill_manual facet_wrap
 #'                     theme_minimal scale_x_discrete xlab guides
 #'                     guide_legend theme element_text
 #' @examples
@@ -229,9 +229,9 @@ int_datatype_matrix <- function(resp_vars = NULL,
   ratio <- dim(app_matrix)[1] / dim(app_matrix)[2]
 
   plot_me <- function(m) {
-    ggplot(m, aes_(
-      x = ~IMPLEMENTATION, y = ~VARIABLES,
-      fill = ~APP_SCORE
+    ggplot(m, aes(
+      x = IMPLEMENTATION, y = VARIABLES,
+      fill = APP_SCORE
     )) +
       geom_tile(colour = "white", lwd = 0.8) +
       scale_fill_manual(values = colcode, name = " ") +

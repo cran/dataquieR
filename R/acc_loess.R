@@ -77,7 +77,7 @@
 #' if the minimum of observations in one level of the group_vars is higher than
 #' `n=30`.
 #'
-#' @importFrom ggplot2 ggplot aes_ scale_color_manual xlab ylab geom_point
+#' @importFrom ggplot2 ggplot aes scale_color_manual xlab ylab geom_point
 #'                     geom_line facet_wrap theme_minimal ggtitle theme
 #'                     element_blank
 #' @importFrom stats as.formula lm loess predict na.omit glm binomial poisson sd
@@ -616,7 +616,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
     hex_code <- NULL
   }
 
-  p1 <- ggplot(fit_df, aes_(x = ~TIME, y = ~FITTED_VALUE, color = ~GROUP)) + {
+  p1 <- ggplot(fit_df, aes(x = TIME, y = FITTED_VALUE, color = GROUP)) + {
       if (!is.null(hex_code)) {
         scale_color_manual(values = hex_code)
       }
@@ -626,8 +626,8 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
     geom_dp +
     geom_line() +
     facet_wrap(~GROUP, ncol = 2) +
-    do.call(geom_line, c(list(aes_(y = ~lwl, group = NA)), se_line)) +
-    do.call(geom_line, c(list(aes_(y = ~upl, group = NA)), se_line)) +
+    do.call(geom_line, c(list(aes(y = lwl, group = NA)), se_line)) +
+    do.call(geom_line, c(list(aes(y = upl, group = NA)), se_line)) +
     theme_minimal() +
     ggtitle(paste("Effects of ", group_vars, " in ", resp_vars), subtitle) +
     theme(legend.title = element_blank())
@@ -635,8 +635,8 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
 
 
   # combined plot
-  p2 <- ggplot(fit_df, aes_(x = ~TIME, y = ~FITTED_VALUE, group = ~GROUP,
-                            color = ~GROUP)) + {
+  p2 <- ggplot(fit_df, aes(x = TIME, y = FITTED_VALUE, group = GROUP,
+                            color = GROUP)) + {
       if (!is.null(hex_code)) {
         scale_color_manual(values = hex_code)
       }
@@ -645,8 +645,8 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
     ylab("") +
     geom_dp +
     geom_line() +
-    do.call(geom_line, c(list(aes_(y = ~lwl, group = NA)), se_line)) +
-    do.call(geom_line, c(list(aes_(y = ~upl, group = NA)), se_line)) +
+    do.call(geom_line, c(list(aes(y = lwl, group = NA)), se_line)) +
+    do.call(geom_line, c(list(aes(y = upl, group = NA)), se_line)) +
     theme_minimal() +
     ggtitle(paste("Effects of ", group_vars, " in ", resp_vars), subtitle) +
     theme(legend.title = element_blank())

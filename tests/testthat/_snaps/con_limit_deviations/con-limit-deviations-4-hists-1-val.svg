@@ -41,11 +41,11 @@
 <polyline points='269.09,545.11 269.09,22.78 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
 <polyline points='476.26,545.11 476.26,22.78 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
 <polyline points='683.44,545.11 683.44,22.78 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<rect x='61.91' y='398.74' width='0.00' height='122.63' style='stroke-width: 1.07; stroke: none; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='61.91' y='394.71' width='0.00' height='4.04' style='stroke-width: 1.07; stroke: none; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='61.91' y='275.99' width='0.00' height='118.71' style='stroke-width: 1.07; stroke: none; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='61.91' y='272.08' width='621.54' height='3.92' style='stroke-width: 1.07; stroke: none; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
-<rect x='61.91' y='149.45' width='0.00' height='122.63' style='stroke-width: 1.07; stroke: none; stroke-linecap: square; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='61.91' y='398.74' width='0.00' height='122.63' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='61.91' y='394.71' width='0.00' height='4.04' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='61.91' y='275.99' width='0.00' height='118.71' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='61.91' y='272.08' width='621.54' height='3.92' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='61.91' y='149.45' width='0.00' height='122.63' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
 <line x1='30.83' y1='402.66' x2='714.52' y2='402.66' style='stroke-width: 1.07; stroke: #B2182B; stroke-linecap: butt;' />
 <text x='61.91' y='414.06' style='font-size: 11.04px; fill: #B2182B; font-family: sans;' textLength='148.51px' lengthAdjust='spacingAndGlyphs'>limit hard low=0; Obs &lt; LHL: 0</text>
 <line x1='30.83' y1='153.37' x2='714.52' y2='153.37' style='stroke-width: 1.07; stroke: #999999; stroke-dasharray: 1.42,4.27; stroke-linecap: butt;' />

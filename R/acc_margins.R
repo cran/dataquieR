@@ -71,7 +71,7 @@
 #'   - SummaryData: data frame
 #'   - SummaryPlot: ggplot2 margins plot
 #' @export
-#' @importFrom ggplot2 ggplot aes_ geom_violin geom_boxplot geom_pointrange
+#' @importFrom ggplot2 ggplot geom_violin geom_boxplot geom_pointrange
 #'                     element_blank element_text element_text
 #'                     geom_pointrange geom_density coord_flip annotate
 #'                     ggplot_build theme_minimal labs theme scale_colour_manual
@@ -468,19 +468,19 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     warn_code <- c("1" = "#B2182B", "0" = "#2166AC")
 
 
-    p1 <- ggplot(data = ds1, aes_(x = ~ .data[[group_vars]],
-                                  y = ~ .data[[rvs]])) +
+    p1 <- ggplot(data = ds1, aes(x = .data[[group_vars]],
+                                  y = .data[[rvs]])) +
       geom_violin(alpha = 0.9, draw_quantiles = TRUE, fill = "gray99") +
       geom_boxplot(width = 0.1, fill = "white", color = "gray", alpha = 0.5) +
       geom_pointrange(
-        data = res_df, aes_(
-          x = ~ factor(.data[[group_vars]]),
-          y = ~margins,
-          ymin = ~LCL,
-          ymax = ~UCL,
-          color = ~ as.factor(GRADING)
+        data = res_df, aes(
+          x = factor(.data[[group_vars]]),
+          y = margins,
+          ymin = LCL,
+          ymax = UCL,
+          color = as.factor(GRADING)
         ),
-        shape = 18, size = 1,
+        shape = 18, linewidth = 1,
         inherit.aes = FALSE,
         fatten = 5
       ) +
@@ -506,18 +506,18 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   if (seldist$IsInteger == 1 & seldist$NCategory <= 20) {
     warn_code <- c("1" = "#B2182B", "0" = "#2166AC")
 
-    p1 <- ggplot(data = ds1, aes_(x = ~ .data[[group_vars]],
-                                  y = ~ .data[[rvs]])) +
+    p1 <- ggplot(data = ds1, aes(x =  .data[[group_vars]],
+                                 y =  .data[[rvs]])) +
       geom_count(aes(alpha = 0.9), color = "gray") +
       geom_pointrange(
-        data = res_df, aes_(
-          x = ~ .data[[group_vars]],
-          y = ~margins,
-          ymin = ~LCL,
-          ymax = ~UCL,
+        data = res_df, aes(
+          x = .data[[group_vars]],
+          y = margins,
+          ymin = LCL,
+          ymax = UCL,
           color = ~ as.factor(GRADING)
         ),
-        shape = 18, size = 1,
+        shape = 18, linewidth = 1,
         inherit.aes = FALSE,
         fatten = 5
       ) +
@@ -542,12 +542,12 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   }
 
   # Plot 2: overall distributional plot flipped on y-axis of plot 1
-  get_y_scale <- ggplot(ds1, aes_(x = ~ .data[[rvs]])) +
+  get_y_scale <- ggplot(ds1, aes(x = .data[[rvs]])) +
     geom_density(alpha = 0.35)
   aty <- mean(range(ggplot_build(get_y_scale)$data[[1]]$y))
 
 
-  p2 <- ggplot(ds1, aes_(y = ~ .data[[rvs]])) +
+  p2 <- ggplot(ds1, aes(y = .data[[rvs]])) +
     geom_density(alpha = 0.35, orientation = "y") +
     theme_minimal() +
 #    coord_flip() +

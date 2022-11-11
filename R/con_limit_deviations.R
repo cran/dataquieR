@@ -459,8 +459,8 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
       }
       # ds1 <- ds1[!is.na(ds1[[rv]]), , FALSE] -- too slow; NA observations
       # removal postponed
-      p <- ggplot(data = ds1, aes_string(x = ds1[[rv]], fill =
-                                           factor(ds1[[OUT]]))) +
+      p <- ggplot(data = ds1, aes(x = .data[[rv]], fill =
+                                           factor(.data[[OUT]]))) +
         geom_histogram(breaks = breaks) +
         scale_fill_manual(values = out_cols, guide = "none") +
         coord_flip(xlim = myxlim) +
@@ -481,7 +481,7 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
         tlu
     } else {
       ds1 <- ds1[!is.na(ds1[[rv]]), , FALSE]
-      p <- ggplot(ds1, aes_string(x = ds1[[rv]], fill = factor(ds1[[OUT]]))) +
+      p <- ggplot(ds1, aes(x = .data[[rv]], fill = factor(.data[[OUT]]))) +
         geom_bar() +
         scale_fill_manual(values = out_cols, guide = "none") +
         coord_flip(xlim = c(floor(minx), ceiling(maxx))) +
