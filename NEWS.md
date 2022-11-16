@@ -1,3 +1,7 @@
+# dataquieR 1.0.13
+  * fixed a left-over `~` from the `ggplot2` updates causing `acc_margins` to
+    fail for categorical variables
+
 # dataquieR 1.0.12
   * Addressed a problem with the markdown template underlying the
   `dq_report` reports with wrong brackets

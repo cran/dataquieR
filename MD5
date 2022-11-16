@@ -1,12 +1,12 @@
-5ee40d71930dcdf05423984c78d410d5 *DESCRIPTION
+960118b6115677c4e5b5818e299e7acf *DESCRIPTION
 182d7434a22335207bc1dd8dc27c731e *LICENSE
 bd16d5421f1572d08b90203e9390dd8f *NAMESPACE
-f6d697b6f48bfd939a969f3a12136744 *NEWS.md
+7551643566dfb8d04f52b7eda744bac2 *NEWS.md
 ba25547c35a1ce7f607dbf218a22eed9 *R/000_globs.R
 bd9cd5e5a31d9fb53caae9d2b0201780 *R/acc_distributions.R
 d4dbbf6e464f6731ace1741c0fe0b1d9 *R/acc_end_digits.R
 b951ab95b909392d5dbacd117336fc24 *R/acc_loess.R
-272bee48b82e2ca37595fe07b56a6103 *R/acc_margins.R
+c2c52cef86d68265bf481b21888b3f5d *R/acc_margins.R
 6370b24090c57e09f1180e4f2b0a051a *R/acc_multivariate_outlier.R
 9387bde0e20b4f6388e7de42cc996374 *R/acc_shape_or_scale.R
 f7775f350db9e62090b97d207c41d7b2 *R/acc_univariate_outlier.R
@@ -119,7 +119,7 @@ c33d87fdc7add55c11bbce76b2bca5d4 *inst/CITATION
 7de39f8fbe8ea113074a6231f5afe6ff *inst/default_subreport_table.Rmd
 980dbf9c7200ffd6cb4d586951b46d6e *inst/doc/DQ-report-example.R
 f1a811708ab3ba9c7765b3f028e0f494 *inst/doc/DQ-report-example.Rmd
-b4a0e9ebe835b9d7f67a32be12b3000a *inst/doc/DQ-report-example.html
+70048d72fc5db4488ef28ea70d1597b5 *inst/doc/DQ-report-example.html
 c1f8c3a6f19ca10905da5e5d9c6ffad5 *inst/extdata/Missing-Codes-2020.csv
 8f811701036d64d3ab3d45a312feaa4b *inst/extdata/Missing-Codes-SHIP.csv
 e8f9ab1d23f5cd97a2360a919485e317 *inst/extdata/SHIP-sample-meta-data.csv

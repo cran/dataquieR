@@ -515,7 +515,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
           y = margins,
           ymin = LCL,
           ymax = UCL,
-          color = ~ as.factor(GRADING)
+          color = as.factor(GRADING)
         ),
         shape = 18, linewidth = 1,
         inherit.aes = FALSE,
