@@ -1,61 +1,81 @@
-test_that("acc_distributions works with 2 args", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+test_that("acc_distributions catches unsuitable input", {
+  skip_on_cran() # slow, errors obvious
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
+  # two string variables only
   md0 <- subset(meta_data, VAR_NAMES %in% c("v00001", "v00103"))
+  md0$KEY_STUDY_SEGMENT <- NA
+  sd0 <- study_data[, c("v00001", "v00103")]
   expect_error(
     suppressWarnings(suppressMessages(
     res1 <-
       acc_distributions(
-        study_data = study_data, meta_data = md0)
+        study_data = sd0, meta_data = md0)
     )),
     regexp =
-      "No suitable variables were defined."
+      "No suitable variables were defined for acc_distributions."
   )
 
+  # data type mismatch between study data and metadata
   sd0 <- study_data
   sd0$v00000 <- as.character(sd0$v00000)
   md0 <- meta_data
-  expect_warning(
+  expect_error(
     res1 <-
-      acc_distributions(
-        resp_vars <- "v00000",
-        study_data = sd0, meta_data = md0)
+      suppressWarnings(acc_distributions(
+        resp_vars ="v00000",
+        study_data = sd0, meta_data = md0))
     ,
     regexp =
-      "No variables left to analyse."
+      "Argument x must match the predicate"
   )
 
+  # all values NA
   sd0 <- study_data
   sd0$v00000 <- NA_real_
-  expect_warning(
+  expect_error(
       res1 <-
         acc_distributions(
           resp_vars <- "v00000",
           study_data = sd0, meta_data = md0)
     ,
     regexp =
-      paste("(No variables left to analyse.|contain",
-            "NAs only and will be removed from analyses.)")
+      "Variable .+v00000.+resp_vars.+ has only NA observations",
+    perl = TRUE
   )
 
+  # too few distinct values
   sd0 <- study_data
-  sd0$v00000 <- 42.0
+  sd0$v00000 <- 0
+  # error if there is only one variable
+  expect_error(
+    res1 <-
+      acc_distributions(
+       resp_vars <- "v00000",
+       study_data = sd0, meta_data = md0)
+   ,
+   regexp =
+     paste("Variable .+v00000.+resp_vars.+ has fewer distinct values",
+           "than required"),
+   perl = TRUE
+  )
+  # warning if there are other variables that can be used by the function
   expect_warning(
     res1 <-
       acc_distributions(
-        resp_vars <- "v00000",
-        study_data = sd0, meta_data = md0)
-    ,
-    regexp =
-      paste("(No variables left to analyse.|contain",
-            "only one value and will be removed from analyses.)")
-  )
+        resp_vars <- c("v00000", "v00002"),
+        study_data = sd0, meta_data = md0),
+  regexp =
+    sprintf(
+      "(%s|%s)",
+      paste("Variable .+v00000.+resp_vars.+ has fewer distinct values",
+          "than required"),
+      paste("In .+resp_vars.+ variables .+v00000.+ were excluded.")),
+  perl = TRUE, all = TRUE)
 
+  # more than one grouping variable
   md0 <- meta_data
-  # expect_warning(
   expect_error(
       res1 <-
         acc_distributions(resp_vars = head(meta_data$VAR_NAMES[
@@ -65,18 +85,11 @@ test_that("acc_distributions works with 2 args", {
                           group_vars =
                             c("v00012", "v00103")),
       regexp =
-        "Need excactly one element in argument group_vars, got 2: .v00012, v00103.",
-#        sprintf(
-#          "(%s|%s|%s)",
-#          paste("All variables defined to be integer or float",
-#                "in the metadata are used"),
-#          paste("Variables v10000, v20000, v30000 contain only",
-#                "one value and will be removed from analyses.")
-#        ),
-#      all = TRUE,
-      perl = TRUE
-    )
+        paste("Need exactly one element in argument group_vars,",
+              "got 2: .v00012, v00103.")
+  )
 
+  # unsuitable grouping variable
   md0 <- meta_data
   md0[meta_data$VAR_NAMES == "v00012", VALUE_LABELS] <- NA
   expect_warning(
@@ -88,103 +101,51 @@ test_that("acc_distributions works with 2 args", {
       group_vars =
         c("v00012")),
     regexp =
-      sprintf(
-        "(%s|%s|%s)",
-        paste("All variables defined to be integer or float",
-              "in the metadata are used"),
-        paste("Variables v10000, v20000, v30000 contain only",
-              "one value and will be removed from analyses."),
-        paste("v00012 have no assigned labels and levels.")
-      )
+      paste("Variables v00012 have no assigned labels and levels and can",
+            "therefore not be used as grouping variables in acc_distributions.")
   )
 
+  # check that only suitable variables are selected
   expect_warning(
     res1 <-
-      acc_distributions(study_data = study_data, meta_data = meta_data),
-      regexp =
-        sprintf(
-          "(%s|%s)",
-          paste("All variables defined to be integer or float",
-                "in the metadata are used"),
-          paste("Variables v10000, v20000, v30000 contain only",
-                "one value and will be removed from analyses.")
-        ),
-      perl = TRUE,
-      all = TRUE
-  )
-  expect_true("SummaryPlotList" %in% names(res1))
-  expect_equal(
-    length(res1$SummaryPlotList),
-    40
-  )
-  expect_lt(
-    suppressWarnings(abs(sum(as.numeric(
-      as.matrix(res1$SummaryPlotList$v00000$data)),
-        na.rm = TRUE) - 1125630)), 0.5
-  )
-})
-
-test_that("acc_distributions works with label_col", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
-  expect_warning(
-    res1 <-
-      acc_distributions(study_data = study_data, meta_data = meta_data,
-                        label_col = LABEL),
-    regexp =
-      sprintf(
-        "(%s|%s)",
-        paste("All variables defined to be integer or float",
-              "in the metadata are used"),
-        paste("Variables PART_STUDY, PART_PHYS_EXAM, PART_LAB contain only",
-              "one value and will be removed from analyses.")
-      ),
-    perl = TRUE,
-    all = TRUE
-  )
-  expect_true("SummaryPlotList" %in% names(res1))
-  expect_equal(
-    length(res1$SummaryPlotList),
-    40
-  )
-  expect_lt(
-    suppressWarnings(abs(sum(as.numeric(
-      as.matrix(res1$SummaryPlotList$ITEM_8_0$data)),
-      na.rm = TRUE) - 774242.4)), 0.5
-  )
-})
-
-test_that("acc_distributions works with group_vars", {
-  skip_on_cran() # slow test
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
-  expect_warning(
-    res1 <-
-      acc_distributions(study_data = study_data, meta_data = meta_data,
-                        label_col = LABEL, group_vars = "CENTER_0"),
-    regexp =
-      sprintf(
-        "(%s|%s|%s)",
-        paste("All variables defined to be integer or float",
-              "in the metadata are used"),
-        paste("Variables CENTER_0 are not of type float or integer",
-              "and will be removed from analyses."),
-        paste("Variables PART_STUDY, PART_PHYS_EXAM, PART_LAB contain only",
-              "one value and will be removed from analyses.")
-      ),
-    perl = TRUE,
-    all = TRUE
-  )
+      acc_distributions(study_data = study_data, meta_data = meta_data))
   expect_true("SummaryPlotList" %in% names(res1))
   expect_equal(
     length(res1$SummaryPlotList),
     39
   )
+})
+
+test_that("acc_distributions works with label_col", {
+  skip_on_cran() # slow, errors obvious
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
+  expect_warning(
+    res1 <-
+      acc_distributions(study_data = study_data, meta_data = meta_data,
+                        label_col = LABEL))
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_equal(
+    length(res1$SummaryPlotList),
+    39
+  )
+})
+
+test_that("acc_distributions works with group_vars", {
+  skip_on_cran() # slow test
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
+  expect_warning(
+    res1 <-
+      acc_distributions(study_data = study_data, meta_data = meta_data,
+                        label_col = LABEL, group_vars = "CENTER_0"))
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_equal(
+    length(res1$SummaryPlotList),
+    38
+  )
   skip_if_not(capabilities()["long.double"])
+  skip_on_cran()
   skip_if_not_installed("vdiffr")
   vdiffr::expect_doppelganger("ecdf plot for sbp0 ok",
                               res1$SummaryPlotList$SBP_0)
@@ -192,13 +153,11 @@ test_that("acc_distributions works with group_vars", {
 
 test_that("acc_distributions robust with miss-codes", {
   skip_on_cran() # slow test.
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   md0 <- meta_data
   sd0 <- study_data
-  sd0$v00003[8:50] <- 8:50 # ensure, that we get a histogram, either by
+  sd0$v00003[8:50] <- 8:50 # ensure that we get a histogram, either by
   # having > 30 values or fractions.
   sd0$v00003[[6]] <- 9999999
   expect_warning(
@@ -208,14 +167,10 @@ test_that("acc_distributions robust with miss-codes", {
       group_vars =
         c("v00012")),
     regexp =
-      sprintf(
-        "(%s|%s)",
-        paste("I have 13131879 breaks. Did you forget to specify some missing",
-              "codes .+9999999.+ Will arbitrarily reduce the number of breaks",
-              "below 10000 to avoid rendering problems."),
-        paste("For .+v00003.+. Will arbitrarily reduced the number of breaks",
-              "to 6415 <= 10000 to avoid rendering problems.")
-      ),
+      paste("The number of bins in the histogram were reduced below 100 bins.",
+            "Possible reasons for an excessive number of bins could be",
+            "unspecified missing codes .+perhaps .+9999999.+ or",
+            "misspecified limits in the metadata."),
     all = TRUE,
     perl = TRUE
   )
@@ -227,16 +182,49 @@ test_that("acc_distributions robust with miss-codes", {
                         group_vars =
                           c("v00012")),
     regexp =
-      sprintf(
-        "(%s|%s)",
-        paste("In acc_distributions: For .+v00003.+, I have 13131881 breaks.",
-              "Did you forget to specify some missing codes .+1e.07.+ or .+8.+",
-              "Will arbitrarily reduce the number of breaks below 10000 to",
-              "avoid rendering problems."),
-        paste("For .+v00003.+. Will arbitrarily reduced the number of breaks",
-              "to 6415 <= 10000 to avoid rendering problems.")
-      ),
+      paste("The number of bins in the histogram were reduced below 100 bins.",
+            "Possible reasons for an excessive number of bins could be",
+            "unspecified missing codes .+perhaps .+1e.07.+, .+8.+ or",
+            "misspecified limits in the metadata."),
     all = TRUE,
     perl = TRUE
   )
+})
+
+test_that("acc_distributions is robust to other issues", {
+  skip_on_cran() # slow, errors obvious
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
+  md0 <- meta_data
+  sd0 <- study_data
+  # drop the last category, which is given as value label - this should get
+  # caught by the function
+  sd0$v00000[which(sd0$v00000 == 5)] <- 2
+  res1 <-
+    acc_distributions(resp_vars = "v00000",
+                      study_data = sd0, meta_data = md0)
+  skip_if_not_installed("vdiffr")
+  skip_on_cran()
+  vdiffr::expect_doppelganger("empty_cat5",
+                              res1$SummaryPlotList$v00000)
+  # use non-consecutive codes for categories
+  sd0$v00000[which(sd0$v00000 == 3)] <- 33
+  sd0$v00000[which(sd0$v00000 %in% c(2,4))] <- 111
+  md0$VALUE_LABELS[which(md0$VAR_NAMES == "v00000")] <-
+    "1 = Berlin | 33 = Hamburg | 111 = Cologne"
+  res2 <- acc_distributions_prop(resp_vars = "v00000",
+                                 study_data = sd0, meta_data = md0)
+  skip_if_not_installed("vdiffr")
+  skip_on_cran()
+  vdiffr::expect_doppelganger("non_consecutive_codes_work",
+                              res2$SummaryPlotList$v00000)
+  # only few different float values, should still produce a histogram
+  # (here with four bars, a bar chart would have five bars)
+  sd0$v00009 <- rep(c(19.2, 19.9, 22.5, 25.7, 29.4), each = 600)
+  res3 <- acc_distributions_loc(resp_vars = "v00009",
+                                study_data = sd0, meta_data = md0)
+  skip_if_not_installed("vdiffr")
+  skip_on_cran()
+  vdiffr::expect_doppelganger("few_float_values",
+                              res3$SummaryPlotList$v00009)
 })

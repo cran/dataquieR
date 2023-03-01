@@ -1,4 +1,4 @@
-#' Function to check applicability of DQ functions on study data
+#' Check applicability of DQ functions on study data
 #'
 #' @description
 #' Checks applicability of DQ functions based on study data and metadata
@@ -24,6 +24,11 @@
 #'                                       with labels of variables
 #' @param max_vars_per_plot [integer] from=0. The maximum number of variables
 #'                                            per single plot.
+#' @param meta_data_segment [data.frame] -- optional: Segment level metadata
+#' @param meta_data_dataframe [data.frame] -- optional: Data frame level
+#'                                                                 metadata
+#'
+#' @inheritParams acc_distributions
 #'
 #' @return a list with:
 #'   - `SummaryTable`: data frame about the applicability of each indicator
@@ -44,6 +49,7 @@
 #'                     theme_minimal scale_x_discrete xlab guides
 #'                     guide_legend theme element_text
 #' @examples
+#' \dontrun{
 #' load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
 #'   environment())
 #' load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
@@ -51,9 +57,26 @@
 #' appmatrix <- pro_applicability_matrix(study_data = study_data,
 #'                                       meta_data = meta_data,
 #'                                       label_col = LABEL)
+#' }
 pro_applicability_matrix <- function(study_data, meta_data, split_segments =
                                      FALSE, label_col,
-                                     max_vars_per_plot = 20) {
+                                     max_vars_per_plot = 20,
+                                     meta_data_segment,
+                                     meta_data_dataframe,
+                                     flip_mode = "noflip") { # TODO: add meta_data_cross_item
+  if (!missing(meta_data_segment) && !is.null(meta_data_segment)) {
+    meta_data_segment <-
+      prep_check_meta_data_segment(meta_data_segment) # TODO: Which columns are mandatory
+    # TODO: If an alternative argument dq_control has been set, this may point to either something composed (e.g., excel workbook or rdata file) featuring all other standard data frames as sheets, or to a sheet naming all other standard data frames
+  } else {
+    meta_data_segment <- NULL # as.list(formals((function(x){})))[[1]] # after overwriting x, x is not missing(x) any more
+  }
+  if (!missing(meta_data_dataframe) && !is.null(meta_data_dataframe)) {
+    meta_data_dataframe <-
+      prep_check_meta_data_dataframe(meta_data_dataframe) # TODO: Which columns are mandatory # TODO: study data may be merged here
+  } else {
+    meta_data_dataframe <- NULL
+  }
 
   if (length(max_vars_per_plot) != 1 || !util_is_integer(max_vars_per_plot) ||
       is.na(max_vars_per_plot) || is.nan(max_vars_per_plot) ||
@@ -90,7 +113,7 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
   }
 
   # check whether data types adhere to conventions
-  if (!all(unique(meta_data$DATA_TYPE) %in% DATA_TYPES)) {
+  if (!all(unique(meta_data[[DATA_TYPE]]) %in% DATA_TYPES)) {
     whichnot <- dplyr::setdiff(unique(meta_data$DATA_TYPE), DATA_TYPES)
     util_warning(paste0("The data type(s): <<", whichnot,
                         ">> is not eligible in the metadata concept."),
@@ -107,19 +130,44 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
   dt_appl <- as.numeric(util_compare_meta_with_study(sdf = ds1, mdf = meta_data,
                                                      label_col = label_col))
 
+
+  # HINT: For each added function that returns MoifiedStudyData,
+  # check, if this should be used downstream the dq_report-pipeline. If not
+  # it must be added to the default values of the dont_modify_study_data_by
+  # argument of dq_report.
+
+  # INTEGRITY ---------------------------------------------------------------
+  # crude unit missingness always applicable
+  app_matrix$"int_all_datastructure_dataframe" <-
+    ifelse(is.null(meta_data_dataframe), 4, 3)
+  app_matrix$"int_all_datastructure_dataframe" <-
+    as.factor(app_matrix$"int_all_datastructure_dataframe")
+
+  app_matrix$"int_all_datastructure_segment" <-
+    ifelse(is.null(meta_data_segment), 4, 3)
+  app_matrix$"int_all_datastructure_segment" <-
+    as.factor(app_matrix$"int_all_datastructure_segment")
+
+  app_matrix$"int_datatype_matrix" <- 3
+  app_matrix$"int_datatype_matrix" <-
+    as.factor(app_matrix$"int_datatype_matrix")
+
   # COMPLETENESS ---------------------------------------------------------------
   # crude unit missingness always applicable
   app_matrix$"com_unit_missingness" <- 3
   app_matrix$"com_unit_missingness" <-
     as.factor(app_matrix$"com_unit_missingness")
-  app_matrix$"com_segment_missingness" <- util_app_sm(meta_data, dt_appl)
-  app_matrix$"com_item_missingness" <- util_app_im(meta_data, dt_appl)
+  app_matrix$"com_segment_missingness" <- util_app_sm(meta_data, dt_appl) # TODO: Rename all app functions to contain the full indicator name as for util_app_con_contradictions_redcap below
+  app_matrix$"com_item_missingness" <- util_app_im(meta_data, dt_appl) # TODO: Add com_qualified_item_missingness and com_qualified_segment_missingness
 
   # CONSISTENCY ----------------------------------------------------------------
-  app_matrix$"con_limit_deviations" <- util_app_iav(meta_data, dt_appl)
+  app_matrix$"con_hard_limits" <- util_app_hl(meta_data, dt_appl)
+  app_matrix$"con_soft_limits" <- util_app_sl(meta_data, dt_appl)
+  app_matrix$"con_detection_limits" <- util_app_dl(meta_data, dt_appl)
   app_matrix$"con_inadmissible_categorical" <- util_app_iac(meta_data, dt_appl)
   app_matrix$"con_contradictions" <- util_app_cd(meta_data, dt_appl)
-  app_matrix$"con_detection_limits" <- util_app_dl(meta_data, dt_appl)
+  app_matrix$"con_contradictions_redcap" <-
+    util_app_con_contradictions_redcap(meta_data, dt_appl)
 
   # ACCURACY -------------------------------------------------------------------
   app_matrix$"acc_univariate_outlier" <- util_app_ol(meta_data, dt_appl)
@@ -133,27 +181,28 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
 
   # SHOULD STRATIFICATION OF SEGMENTS BE USED? ---------------------------------
 
-  # is KEY_STUDY_SEGMENT in metadata and none of the entries has NA?
-  strata_defined <- KEY_STUDY_SEGMENT %in% names(meta_data)
+  # is STUDY_SEGMENT in metadata and none of the entries has NA?
+  strata_defined <- STUDY_SEGMENT %in% names(meta_data) &&
+    !all(util_empty(meta_data[[STUDY_SEGMENT]]))
 
   if (!strata_defined && split_segments) {
     util_warning(c(
-      "Stratification for KEY_STUDY_SEGMENTS is not possible due to missing",
+      "Stratification for STUDY_SEGMENT is not possible due to missing",
       "metadata. Will split arbitrarily avoiding too large figures"
     ), applicability_problem = TRUE)
     nvars <- nrow(meta_data)
-    meta_data$KEY_STUDY_SEGMENT <- paste0("Block #", ceiling(1:nvars /
+    meta_data$STUDY_SEGMENT <- paste0("Block #", ceiling(1:nvars /
                                                              max_vars_per_plot))
   } else if (strata_defined && split_segments) {
-    if (any(is.na(meta_data$KEY_STUDY_SEGMENT))) {
+    if (any(is.na(meta_data$STUDY_SEGMENT))) {
       util_warning(c(
-        "Some KEY_STUDY_SEGMENTS are NA. Will assign those to an artificial",
+        "Some STUDY_SEGMENT are NA. Will assign those to an artificial",
         "segment %s"), dQuote("Other"),
         applicability_problem = TRUE
       )
-      meta_data$KEY_STUDY_SEGMENT[is.na(meta_data$KEY_STUDY_SEGMENT)] <- "Other"
+      meta_data$STUDY_SEGMENT[is.na(meta_data$STUDY_SEGMENT)] <- "Other"
     }
-    too_big_blocks <- table(meta_data$KEY_STUDY_SEGMENT) > max_vars_per_plot
+    too_big_blocks <- table(meta_data$STUDY_SEGMENT) > max_vars_per_plot
     too_big_blocks <- names(too_big_blocks)[too_big_blocks]
     for (too_big_block in too_big_blocks) {
       util_warning(
@@ -161,11 +210,11 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
         dQuote(too_big_block),
         applicability_problem = FALSE
       )
-      nvars <- sum(meta_data$KEY_STUDY_SEGMENT == too_big_block, na.rm = TRUE)
-      meta_data$KEY_STUDY_SEGMENT[
-        meta_data$KEY_STUDY_SEGMENT == too_big_block] <-
+      nvars <- sum(meta_data$STUDY_SEGMENT == too_big_block, na.rm = TRUE)
+      meta_data$STUDY_SEGMENT[
+        meta_data$STUDY_SEGMENT == too_big_block] <-
         paste0(
-          meta_data$KEY_STUDY_SEGMENT[meta_data$KEY_STUDY_SEGMENT ==
+          meta_data$STUDY_SEGMENT[meta_data$STUDY_SEGMENT ==
                                         too_big_block],
           "#",
           ceiling(1:nvars / max_vars_per_plot)
@@ -173,13 +222,13 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
     }
   }
 
-  if (!(KEY_STUDY_SEGMENT %in% names(meta_data))) {
-    meta_data[[KEY_STUDY_SEGMENT]] <- "Study"
+  if (!(STUDY_SEGMENT %in% names(meta_data))) {
+    meta_data[[STUDY_SEGMENT]] <- "Study"
   }
 
   # merge relation to segments to app_matrix
-  app_matrix <- merge(app_matrix, meta_data[, intersect(c("VAR_NAMES", "LABEL",
-                                                          "KEY_STUDY_SEGMENT",
+  app_matrix <- merge(app_matrix, meta_data[, intersect(c(VAR_NAMES, LABEL,
+                                                          STUDY_SEGMENT,
                                                           label_col),
                                                         colnames(meta_data)),
                                             FALSE],
@@ -208,38 +257,53 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
 
   # reshape wide to long
   app_matrix_long <- melt(app_matrix, id.vars = c("Variables",
-                                                  KEY_STUDY_SEGMENT))
-  colnames(app_matrix_long) <- c("VARIABLES", "SEGMENT", "IMPLEMENTATION",
+                                                  STUDY_SEGMENT))
+  colnames(app_matrix_long) <- c("VARIABLES", "STUDY_SEGMENT", "IMPLEMENTATION",
                                  "APP_SCORE")
 
+
+  lbs <- c(
+    "Non-matching datatype + Incomplete metadata",
+    "Non-matching datatype + complete metadata",
+    "Matching datatype + Incomplete metadata",
+    "Matching datatype + complete metadata",
+    "Not applicable according to data type"
+  )
+  lvls <- c(
+    0,
+    1,
+    2,
+    3,
+    4
+  )
   # assign factor labels
   app_matrix_long$APP_SCORE <- factor(app_matrix_long$APP_SCORE,
-    levels = c(0:4),
-    labels = c(
-      "Non-matching datatype + Incomplete metadata",
-      "Non-matching datatype + complete metadata",
-      "Matching datatype + Incomplete metadata",
-      "Matching datatype + complete metadata",
-      "Not applicable according to data type"
-    )
+    levels = lvls,
+    labels = lbs
   )
   # PLOT -----------------------------------------------------------------------
-  colcode <- c("#B2182B", "#ef6548", "#92C5DE", "#2166AC", "#B0B0B0")
-  names(colcode) <- levels(app_matrix_long$APP_SCORE)
-  colcode2 <- c("#B2182B", "#ef6548", "#92C5DE", "#2166AC", "#B0B0B0")
-  names(colcode2) <- 4:0
+  dred  <- "#B2182B"
+  lred  <- "#EF6548"
+  lblue <- "#92C5DE"
+  dblue <- "#2166AC"
+  grey  <- "#B0B0B0"
+
+  colcode <- c(dred, lred, lblue, dblue, grey)
+  names(colcode) <- lbs
 
   ratio <- dim(app_matrix)[1] / dim(app_matrix)[2]
+
+  ref_env <- environment()
 
   plot_me <- function(m) {
     ggplot(m, aes(
       x = IMPLEMENTATION, y = VARIABLES,
       fill = APP_SCORE
     )) +
-      geom_tile(colour = "white", lwd = 0.8) +
+      geom_tile(colour = "white", linewidth = 0.8) + # https://github.com/tidyverse/ggplot2/issues/5051
       scale_fill_manual(values = colcode, name = " ") +
       {
-        if (split_segments) facet_wrap(~SEGMENT, scales = "free_y")
+        if (split_segments) facet_wrap(~SEGMENT, scales = "free_y")# TODO: check ~
       } +
       theme_minimal() +
       scale_x_discrete(position = "top") +
@@ -253,31 +317,31 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
         axis.text.x = element_text(angle = 90, hjust = 0),
         axis.text.y = element_text(size = 10),
         aspect.ratio = ratio
-      )
+      ) + util_coord_flip(ref_env = ref_env)
   }
 
   p <- plot_me(app_matrix_long)
 
   pl <- lapply(
-    split(app_matrix_long, app_matrix_long$SEGMENT),
+    split(app_matrix_long, app_matrix_long$STUDY_SEGMENT),
     plot_me
   )
 
 
   ReportSummaryTable <- app_matrix
-  ReportSummaryTable$KEY_STUDY_SEGMENT <- NULL
+  ReportSummaryTable$STUDY_SEGMENT <- NULL
 
   ReportSummaryTable[2:ncol(ReportSummaryTable)] <-
     lapply(ReportSummaryTable[2:ncol(ReportSummaryTable)], util_as_numeric)
 
-  ReportSummaryTable[2:ncol(ReportSummaryTable)] <-
-    4 - ReportSummaryTable[2:ncol(ReportSummaryTable)]
+#  ReportSummaryTable[2:ncol(ReportSummaryTable)] <-
+#    4 - ReportSummaryTable[2:ncol(ReportSummaryTable)]
 
   ReportSummaryTable$N <- 4
 
   attr(ReportSummaryTable, "higher_means") <- "better"
   attr(ReportSummaryTable, "continuous") <- FALSE
-  attr(ReportSummaryTable, "colcode") <- rev(colcode2)
+  attr(ReportSummaryTable, "colcode") <- colcode
   attr(ReportSummaryTable, "level_names") <-
     setNames(nm = 0:4, levels(app_matrix_long$APP_SCORE))
 

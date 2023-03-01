@@ -30,16 +30,47 @@
 #' @param show_causes [logical] if TRUE, then the distribution of missing codes
 #'                              is shown
 #' @param cause_label_df [data.frame] missing code table. If missing codes have
-#'                                    labels the respective data frame must be
-#'                                    specified here
+#'                                    labels the respective data frame can be
+#'                                    specified here or in the metadata as
+#'                                    assignments, see [cause_label_df]
 #' @param include_sysmiss [logical] Optional, if TRUE system missingness (NAs)
 #'                                  is evaluated in the summary plot
 #' @param threshold_value [numeric] from=0 to=100. a numerical value ranging
 #'                                                 from 0-100
-#' @param suppressWarnings [logical] warn about mixed missing and jump code
-#'                                   lists
+#' @param suppressWarnings [logical] warn about consistency issues with missing
+#'                                   and jump lists
+#' @param assume_consistent_codes [logical] if TRUE and no labels are given and
+#'                                          the same missing/jump code is used
+#'                                          for more than one variable, the
+#'                                          labels assigned for this code are
+#'                                          treated as being be the same for
+#'                                          all variables.
+#' @param expand_codes [logical] if TRUE, code labels are copied from other
+#'                               variables, if the code is the same and the
+#'                               label is set somewhere
+#'@param drop_levels [logical] if TRUE, do not display unused missing codes in
+#'                             the figure legend.
 #'
-#' @importFrom ggpubr ggballoonplot
+#' @param expected_observations [enum] HIERARCHY | ALL | SEGMENT. If ALL, all
+#'                                     observations are expected to comprise
+#'                                     all study segments. If SEGMENT, the
+#'                                     `PART_VAR` is expected to point
+#'                                     to a variable with values of 0 and 1,
+#'                                     indicating whether the variable was
+#'                                     expected to be observed for each data
+#'                                     row. If HIERARCHY, this is also
+#'                                     checked recursively, so, if a variable
+#'                                     points to such a participation variable,
+#'                                     and that other variable does has also
+#'                                     a `PART_VAR` entry pointing
+#'                                     to a variable, the observation of the
+#'                                     initial variable is only
+#'                                     expected, if both segment variables are
+#'                                     1.
+#' @param pretty_print [logical] If FALSE, produce a table that can easily
+#'                               be processed further, because some cells
+#'                               feature two numbers (absolute and percentage)
+#'                               otherwise.
 #'
 #' @return a list with:
 #'   - `SummaryTable`: data frame about item missingness per response variable
@@ -53,101 +84,34 @@
 #' [Online Documentation](
 #' https://dataquality.ship-med.uni-greifswald.de/VIN_com_impl_item_missingness.html
 #' )
-com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
-                                 label_col, show_causes = TRUE,
-                                 cause_label_df, include_sysmiss = NULL,
-                                 threshold_value, suppressWarnings = FALSE) {
-  if (missing(suppressWarnings) || length(suppressWarnings) != 1 ||
-      is.na(as.logical(suppressWarnings))) {
-    suppressWarnings <- FALSE
-    if (!missing(suppressWarnings)) {
-      util_warning(
-        "Setting suppressWarnings to its default FALSE",
-        applicability_problem = TRUE)
-    }
-  } else {
-    suppressWarnings <- as.logical(suppressWarnings)
-    if (is.na(suppressWarnings)) {
-      suppressWarnings <- FALSE
-      util_warning(
-        "suppressWarnings should be a scalar logical value. Setting FALSE",
-        applicability_problem = TRUE)
-    }
-  }
+com_item_missingness  <- function(study_data,
+                                  meta_data,
+                                  resp_vars = NULL,
+                                  label_col,
+                                  show_causes = TRUE,
+                                  cause_label_df,
+                                  include_sysmiss = TRUE,
+                                  threshold_value,
+                                  suppressWarnings = FALSE,
+                                  assume_consistent_codes = TRUE,
+                                  expand_codes = assume_consistent_codes,
+                                  drop_levels = TRUE,
+                                  expected_observations = c("HIERARCHY",
+                                                            "ALL",
+                                                            "SEGMENT"),
+                                  pretty_print = TRUE) {
 
-  # Map meta to study data
-  util_prepare_dataframes(.replace_missings = FALSE)
+  util_expect_scalar(expected_observations, allow_more_than_one = TRUE)
+  expected_observations <- match.arg(expected_observations)
+  util_expect_scalar(expected_observations)
 
-  # table of missing codes
-  if (missing(cause_label_df) || is.null(cause_label_df) ||
-      !is.data.frame(cause_label_df)) {
-    if (!missing(cause_label_df) && !is.null(cause_label_df) &&
-        !is.data.frame(cause_label_df)) {
-      util_warning(
-        "If given, cause_label_df must be a data frame. Ignored the argument.",
-        applicability_problem = TRUE)
-    }
-    all_missing_codes <- unique(sort(unlist(lapply(
-      as.character(meta_data[[MISSING_LIST]]),
-      function(alist) {
-        codes <- suppressWarnings(as.numeric(unlist(strsplit(alist, SPLIT_CHAR,
-                                                             fixed = TRUE))))
-      }
-    ))))
+  util_expect_scalar(assume_consistent_codes, check_type = is.logical)
+  util_expect_scalar(include_sysmiss, check_type = is.logical)
+  util_expect_scalar(suppressWarnings, check_type = is.logical)
+  util_expect_scalar(drop_levels, check_type = is.logical)
+  util_expect_scalar(pretty_print, check_type = is.logical)
 
-    all_jump_codes <- unique(sort(unlist(lapply(
-      as.character(meta_data[[JUMP_LIST]]),
-      function(alist) {
-        codes <- suppressWarnings(as.numeric(unlist(strsplit(alist, SPLIT_CHAR,
-                                                             fixed = TRUE))))
-      }
-    ))))
-
-    if (length(all_missing_codes) > 0) {
-      ml <-
-        paste("MISSING",
-              all_missing_codes,
-              sep = " "
-        )
-    } else {
-      ml <- character(0)
-    }
-
-    if (length(all_jump_codes) > 0) {
-      jl <-
-        paste("JUMP",
-              all_jump_codes,
-              sep = " "
-        )
-    } else {
-      jl <- character(0)
-    }
-
-
-    code_labels <- c(ml, jl)
-
-    # invent labels (if none were supplied)
-    cause_label_df <- data.frame(
-      CODE_VALUE = as.numeric(c(all_missing_codes, all_jump_codes)),
-      CODE_LABEL = code_labels
-    )
-  }
-
-  mc_lab <- cause_label_df
-
-  mc_lab$CODE_VALUE <- util_as_numeric(mc_lab$CODE_VALUE)
-
-  # special code for SysMiss
-  sm_code <- suppressWarnings(max(mc_lab[FALSE, ]$CODE_VALUE,
-                                  na.rm = TRUE) + 1)
-  sm <- data.frame(CODE_VALUE = sm_code, CODE_LABEL = .SM_LAB)
-  # add new missing code for sysmiss to table
-  mc_lab <- dplyr::bind_rows(mc_lab, sm)
-
-  if (!suppressWarnings && any(duplicated(cause_label_df$CODE_VALUE))) {
-    util_warning("There are codes used for missings and jumps.",
-                 applicability_problem = TRUE)
-  }
+  prep_prepare_dataframes(.replace_missings = FALSE)
 
   if (missing(threshold_value)) {
     util_warning(
@@ -156,7 +120,7 @@ com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
       applicability_problem = TRUE)
     threshold_value <- 90
   }
-  .threshold_value <- as.numeric(threshold_value)
+  .threshold_value <- suppressWarnings(as.numeric(threshold_value))
   if (is.na(.threshold_value)) {
     util_warning(
       c("Could not convert threshold_value %s to a number.",
@@ -169,331 +133,282 @@ com_item_missingness <- function(study_data, meta_data, resp_vars = NULL,
     threshold_value <- .threshold_value
   }
 
-  # correct variable use?
-  util_correct_variable_use("resp_vars",
-    allow_more_than_one = TRUE,
-    allow_null          = TRUE,
-    allow_any_obs_na    = TRUE
-  )
 
-  # if no resp_vars specified use all columns of studydata
-  if (length(resp_vars) == 0) {
-    resp_vars <- names(ds1)
+  if (!missing(show_causes) &&
+      length(show_causes) == 1 &&
+      is.logical(show_causes) &&
+      !show_causes) {
+    util_warning(c("The argument %s has been deprecated. It will be ignored",
+                   "and in a future version be removed."),
+                 dQuote("show_causes"))
   }
 
-
-  j_for_vars <- meta_data[meta_data[[label_col]] %in%
-                            resp_vars, JUMP_LIST, drop = TRUE]
-  m_for_vars <- meta_data[meta_data[[label_col]] %in%
-                            resp_vars, MISSING_LIST, drop = TRUE]
-
-  j_for_vars <- suppressWarnings(as.numeric(unlist(strsplit(
-    as.character(j_for_vars), SPLIT_CHAR,
-    fixed = TRUE
-  ))))
-
-  m_for_vars <- suppressWarnings(as.numeric(unlist(strsplit(
-    as.character(m_for_vars), SPLIT_CHAR,
-    fixed = TRUE
-  ))))
-
-  mc_lab <- mc_lab[ mc_lab$CODE_LABEL == .SM_LAB |
-                   (mc_lab$CODE_VALUE %in% c(j_for_vars, m_for_vars)),
-                   , drop = FALSE]
-
-  # initialize result dataframe
-  result_table <- data.frame(Variables = resp_vars)
-#browser()
-  # compute no of observations according a participation variable
-  if ("KEY_STUDY_SEGMENT" %in% names(meta_data)) {
-
-    # which study segments are used in resp_vars
-    kss <- meta_data$VAR_NAMES %in%
-      unique(meta_data$KEY_STUDY_SEGMENT[meta_data[[label_col]] %in% resp_vars])
-
-    # if some VAR_NAMES indicate segments and these are used in resp_vars they
-    # might be nested
-    if (any(kss)) {
-
-      part_vars <- meta_data[[label_col]][kss]
-      n_part_vars <- vapply(FUN.VALUE = numeric(1), ds1[, part_vars,
-                                                        drop = FALSE], sum,
-                            na.rm = TRUE)
-
-      No_obs <- rep(as.numeric(n_part_vars), times = as.numeric(
-        table(meta_data$KEY_STUDY_SEGMENT[meta_data[[label_col]] %in%
-                                            resp_vars])
-      ))
-
-
-    } else {
-      No_obs <- rep(dim(ds1)[1], length(resp_vars))
-    }
-
-  } else {
-    No_obs <- rep(dim(ds1)[1], length(resp_vars))
+  if (!missing(cause_label_df)) {
+    util_expect_data_frame(cause_label_df, c("CODE_VALUE", "CODE_LABEL"))
+    util_warning(c("The argument %s has been deprecated. It will be",
+                   "in a future version be removed."),
+                 dQuote("cause_label_df"))
+    meta_data <-
+      prep_add_cause_label_df(meta_data = meta_data,
+                              cause_label_df = cause_label_df,
+                              label_col = label_col,
+                              assume_consistent_codes = assume_consistent_codes)
   }
 
-
-  # compute sysmiss
-  SysMiss <- vapply(FUN.VALUE = integer(1), ds1[, resp_vars, FALSE],
-                    util_count_NA)
-  # data values
-  N_no_SysMiss <- No_obs - SysMiss
-  # No of missing codes
-  N_MC_RES_AND_N <- util_count_codes(
-    sdf = ds1[, resp_vars, FALSE], mdf = meta_data,
-    variables = resp_vars, name = label_col,
-    list = "MISSING_LIST", warn = FALSE
-  )
-  N_MC <- N_MC_RES_AND_N[[1]]
-
-  # No of jump codes
-  N_JC_RES_AND_N <- util_count_codes(
-    sdf = ds1[, resp_vars, FALSE],
-    mdf = meta_data, variables = resp_vars,
-    name = label_col, list = "JUMP_LIST", warn = FALSE
-  )
-  N_JC <- N_JC_RES_AND_N[[1]]
-  # No of measurements
-  N_measures <- (No_obs - N_JC) - (SysMiss + N_MC)
-
-  # checks regarding codes
-  N_class_MC <- util_count_code_classes(
-    sdf = ds1[, resp_vars, FALSE], mdf = meta_data,
-    variables = resp_vars, name = label_col,
-    list = "MISSING_LIST", warn = FALSE
-  )
-  N_MC_avail <- N_MC_RES_AND_N[[2]]
-
-  N_class_JC <- util_count_code_classes(
-    sdf = ds1[, resp_vars, FALSE], mdf = meta_data,
-    variables = resp_vars, name = label_col,
-    list = "JUMP_LIST", warn = FALSE
-  )
-  N_JC_avail <- N_JC_RES_AND_N[[2]]
-
-  # ???
-  rownames(meta_data) <- meta_data[[label_col]]
-
-  if (LABEL %in% colnames(meta_data) && missing(label_col)) {
-    # dead code, should be handeled by util_prepare_dataframes already
-    result_table$Label <- meta_data[resp_vars, LABEL] # nocov
-  }
-
-  # calculations of missings
-  result_table$No_obs <- No_obs
-  result_table$SysMiss <-
-    paste0(SysMiss, " (", round(SysMiss / No_obs * 100, digits = 2), ")")
-  result_table$N_no_SysMiss <-
-    paste0(N_no_SysMiss, " (", round(N_no_SysMiss / No_obs * 100,
-                                     digits = 2), ")")
-  result_table$N_MC <-
-    paste0(N_MC, " (", round(N_MC / No_obs * 100, digits = 2), ")")
-  result_table$N_JC <-
-    paste0(N_JC, " (", round(N_JC / No_obs * 100, digits = 2), ")")
-  result_table$N_measures <-
-    paste0(N_measures, " (", round(N_measures / (No_obs - N_JC) * 100,
-                                   digits = 2), ")")
-  result_table$GRADING <-
-    ifelse(round(N_measures / (No_obs - N_JC) * 100, digits = 2) <
-             threshold_value, 1, 0)
-
-
-  result_table$check_MC <- paste0(N_class_MC, " (", N_MC_avail, ")")
-  result_table$check_JC <- paste0(N_class_JC, " (", N_JC_avail, ")")
-
-  if (LABEL %in% colnames(meta_data) && missing(label_col)) { # nocov start
-    # dead code, should be handeled by util_prepare_dataframes already
-    colnames(result_table) <- c(
-      "Variables", "Label", "Observations N",
-      "Sysmiss N (%)", "Datavalues N (%)",
-      "Missing codes N (%)", "Jumps N (%)",
-      "Measurements N (%)", "GRADING",
-      "Used (available) missing codes N",
-      "Used (available) jump codes N"
-    )
-  } else { # nocov end
-    colnames(result_table) <- c(
-      "Variables", "Observations N",
-      "Sysmiss N (%)", "Datavalues N (%)",
-      "Missing codes N (%)", "Jumps N (%)",
-      "Measurements N (%)", "GRADING",
-      "Used (available) missing codes N",
-      "Used (available) jump codes N"
+  if (!suppressWarnings) {
+    util_validate_missing_lists(meta_data = meta_data,
+                                cause_label_df = cause_label_df,
+                                assume_consistent_codes =
+                                  assume_consistent_codes,
+                                expand_codes = FALSE,
+                                suppressWarnings = suppressWarnings,
+                                label_col = label_col
     )
   }
 
-  # Temporary edit based on decision 2019-09-05
-  result_table <- result_table[, !(names(result_table) %in% c(
-    "Used (available) missing codes N",
-    "Used (available) jump codes N"
-  ))]
-
-
-  if (missing(include_sysmiss) || length(include_sysmiss) != 1) {
-    if (missing(include_sysmiss)) {
-      util_warning("include_sysmiss set to FALSE",
-                   applicability_problem = FALSE)
-    } else {
-      util_warning("include_sysmiss cannot be a vector. Set it to FALSE",
-                   applicability_problem = TRUE)
-    }
-    include_sysmiss <- FALSE
-  } else {
-    include_sysmiss <- as.logical(include_sysmiss)[[1]]
-    if (is.na(include_sysmiss)) {
-      util_warning(
-        "Cannot parse include_sysmiss as a logical value. Set it to FALSE",
-        applicability_problem = TRUE)
-      include_sysmiss <- FALSE
-    }
+  if (missing(resp_vars)) {
+    resp_vars <- meta_data[[label_col]]
   }
 
-  if (missing(show_causes) || length(show_causes) != 1) {
-    if (length(show_causes) == 1) {
-      util_warning("show_causes set to TRUE",
-                   applicability_problem = TRUE)
-    } else {
-      util_warning("show_causes cannot be a vector. Set it to TRUE",
-                   applicability_problem = TRUE)
-    }
-    show_causes <- TRUE
-  } else {
-    show_causes <- as.logical(show_causes)[[1]]
-    if (is.na(show_causes)) {
-      util_warning(
-        "Cannot parse show_causes as a logical value. Set it to TRUE",
-        applicability_problem = TRUE)
-      show_causes <- TRUE
-    }
+  if (expected_observations != "ALL" && !(PART_VAR %in%
+                                          colnames(meta_data))) {
+    util_warning(c("For %s = %s, a column %s is needed in %s. Falling",
+                   "back to %s = %s."),
+                 sQuote("expected_observations"),
+                 dQuote(expected_observations),
+                 dQuote(PART_VAR),
+                 sQuote("meta_data"),
+                 sQuote("expected_observations"),
+                 dQuote("ALL"),
+                 applicability_problem = TRUE
+    )
+    expected_observations <- "ALL"
   }
 
-  if (show_causes) {
-    # solve issue of melt() with date variables
-    # copy
-    ds2 <- ds1
-    # which are date?
-    inT <- vapply(FUN.VALUE = logical(1), ds2, function(x) inherits(x,
-                                                                    "Date") ||
-                    inherits(x, "POSIXt"))
-    # convert to character
-    if (sum(inT) > 0) {
-      ds2[, inT] <- lapply(ds2[, inT, drop = FALSE], as.character)
-    }
+  if (expand_codes) {
+    meta_data <- prep_expand_codes(meta_data,
+                                   suppressWarnings,
+                                   mix_jumps_and_missings = FALSE)
+  }
 
+  {
+    r <- util_study_var2factor(study_data = study_data, meta_data = meta_data,
+                               resp_vars = resp_vars, label_col = label_col,
+                               assume_consistent_codes = assume_consistent_codes,
+                               have_cause_label_df = !missing(cause_label_df),
+                               code_name = MISSING_LIST,
+                               include_sysmiss = FALSE)
+    colnames(r) <-
+      util_map_labels(colnames(r),
+                      meta_data,
+                      to = VAR_NAMES,
+                      from = label_col)
 
-    # wide to long
-    ds3 <- suppressMessages(melt(ds2[, resp_vars, FALSE],
-                                 measure.vars = resp_vars))
+    m <- vapply(lapply(util_seg_table(r, study_data, meta_data, expected_observations = expected_observations), `[[`, "Freq"), sum, FUN.VALUE = integer(1))
+  }
+  {
+    r <- util_study_var2factor(study_data = study_data, meta_data = meta_data,
+                               resp_vars = resp_vars, label_col = label_col,
+                               assume_consistent_codes = assume_consistent_codes,
+                               have_cause_label_df = !missing(cause_label_df),
+                               code_name = JUMP_LIST,
+                               include_sysmiss = FALSE)
+    colnames(r) <-
+      util_map_labels(colnames(r),
+                      meta_data,
+                      to = VAR_NAMES,
+                      from = label_col)
+    j <- vapply(lapply(util_seg_table(r, study_data, meta_data, expected_observations = expected_observations), `[[`, "Freq"), sum, FUN.VALUE = integer(1))
+  }
+  SysMiss <- vapply(prep_map_labels(resp_vars,
+                                    meta_data =
+                                      meta_data,
+                                    to =
+                                      VAR_NAMES,
+                                    from =
+                                      label_col),
+                    function(rv) {
+                      sum(is.na(study_data[[rv]][
+                        util_observation_expected(rv = rv,
+                                                  study_data = study_data,
+                                                  meta_data = meta_data,
+                                                  label_col = VAR_NAMES,
+                                                  expected_observations = expected_observations)]))
+                    },
+                    FUN.VALUE = integer(1))
 
-    # include sysmiss with special code
-    if (!missing(include_sysmiss) && isTRUE(include_sysmiss)) {
-      # insert missing code for sysmiss
-      ds3$value[is.na(ds3$value)] <- sm_code
-    } else {
-      # omit sysmiss
-      ds3 <- ds3[!(is.na(ds3$value)), , drop = FALSE]
-      mc_lab <- mc_lab[mc_lab$CODE_LABEL != .SM_LAB, ]
-      mc_lab$CODE_LABEL <- factor(mc_lab$CODE_LABEL)
-    }
+  N_obs <- util_count_expected_observations(resp_vars,
+                                            study_data = ds1,
+                                            meta_data = meta_data,
+                                            label_col = label_col,
+                                            expected_observations = expected_observations)
 
-    # delete measurements
-    ds3 <- ds3[ds3$value %in% mc_lab$CODE_VALUE, ]
-
-    # factor codes with labels
-    # select only codes with presentation in the data
-    # (the table of codes might be longer than those in the data)
-    ds3$value <- factor(ds3$value, levels = mc_lab$CODE_VALUE, labels =
-                          mc_lab$CODE_LABEL)
-
-    # plot usual ggplot
-    # ggplot(ds2, aes(x=value)) + facet_wrap(variable ~ ., ncol = 1) +
-    # geom_bar() + theme_minimal() +
-    #  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-
-    my_cols <- c("#7f0000", "#b30000", "#d7301f", "#ef6548", "#fc8d59",
-                 "#fdbb84", "#fdd49e", "#fee8c8", "#2166AC")
-
-    ctab1 <- as.data.frame(table(ds3$value, ds3$variable))
-    if (nrow(ctab1) * ncol(ctab1) == 0) {
-      ctab1 <- data.frame(Var1 = NA, Var2 = NA, Freq = NA)[FALSE, , FALSE]
-      p <- ggplot() +
-        annotate("text", x = 0, y = 0, label = "No missing reported.") +
-        theme(
-          axis.line = element_blank(),
-          axis.text.x = element_blank(),
-          axis.text.y = element_blank(),
-          axis.ticks = element_blank(),
-          axis.title.x = element_blank(),
-          axis.title.y = element_blank(),
-          legend.position = "none",
-          panel.background = element_blank(),
-          panel.border = element_blank(),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          plot.background = element_blank()
-        )
-      p <- util_set_size(p)
-    } else {
-      if (length(unique(ctab1$Var1)) > length(unique(ctab1$Var2))) {
-        p <- ggballoonplot(ctab1, x = "Var2", y = "Var1", fill = "Freq",
-                           ggtheme = theme_minimal()) +
-          scale_fill_gradientn(colors = rev(my_cols))
-        p <- util_set_size(p,
-                           width_em  = length(unique(ctab1$Var2)) + 20,
-                           height_em = length(unique(ctab1$Var1)) + 5)
-      } else {
-        p <- ggballoonplot(ctab1, x = "Var1", y = "Var2", fill = "Freq",
-                           ggtheme = theme_minimal()) +
-          scale_fill_gradientn(colors = rev(my_cols))
-        p <- util_set_size(p,
-                           width_em  = length(unique(ctab1$Var1)) + 20,
-                           height_em = length(unique(ctab1$Var2)) + 5)
+  DV_N <- vapply(
+    resp_vars,
+    function(rv) {
+      in_seg <- util_observation_expected(rv = rv,
+                                          study_data = ds1,
+                                          meta_data = meta_data,
+                                          label_col = label_col,
+                                          expected_observations = expected_observations)
+      {
+        vn <- util_map_labels(rv, meta_data,
+                              VAR_NAMES, label_col)
+        vals <- study_data[!in_seg, vn, drop = FALSE]
+        vals <- util_replace_codes_by_NA(
+          study_data = vals, meta_data = meta_data)[[vn]]
+        have_data_not_expected <- !util_is_na_0_empty_or_false(vals)
+        # also allow 0/FALSE, if no data is expected
+        if (any(have_data_not_expected) && !suppressWarnings) {
+          segvars <- util_all_intro_vars_for_rv(rv,
+                                                ds1, meta_data,
+                                                label_col,
+                                                expected_observations =
+                                                  expected_observations)
+          util_warning(
+            c("There are %d meassurements of %s for participants",
+              "not being part of one of the segments %s"),
+            sum(have_data_not_expected),
+            dQuote(rv),
+            paste(dQuote(util_map_labels(
+              x = util_map_labels(segvars, meta_data, from = label_col,
+                                  to = VAR_NAMES),
+              meta_data = meta_data,
+                                         from = PART_VAR, to = STUDY_SEGMENT)),
+                  collapse = ", "),
+            applicability_problem = TRUE)
+        }
       }
-    }
+      sum(!is.na(study_data[in_seg, util_map_labels(rv, meta_data,
+                                                    VAR_NAMES, label_col)]))
+    }, FUN.VALUE = integer(1))
+
+  N_meas <-
+    DV_N -
+    m -
+    j
+
+  SummaryTable <- data.frame(check.names = FALSE,
+                             Variables = resp_vars,
+                             `Observations N` = N_obs,
+                             `Sysmiss N` = SysMiss,
+                             `Datavalues N` = DV_N,
+                             `Missing codes N` = m,
+                             `Jumps N` = j,
+                             `Measurements N` = N_meas
+  )
+
+  rownames(SummaryTable) <- NULL
+
+  SysMissP <- round(SysMiss / N_obs * 100, digits = 2)
+  DV_N_P <- round(DV_N / N_obs * 100, digits = 2)
+  m_P <- round(m / N_obs * 100, digits = 2)
+  j_P <- round(j / N_obs * 100, digits = 2)
+  N_meas_P <- round(N_meas / (N_obs - j) * 100, digits = 2)
+
+  SummaryTable$GRADING <- ifelse(N_meas_P < threshold_value, 1, 0)
+
+
+  if (pretty_print) {
+
+    SummaryTable$`Sysmiss N` <- paste0(SysMiss, " (", SysMissP, ")")
+    colnames(SummaryTable)[colnames(SummaryTable) == "Sysmiss N"] <-
+      "Sysmiss N (%)"
+
+    SummaryTable$`Datavalues N` <- paste0(DV_N, " (", DV_N_P, ")")
+    colnames(SummaryTable)[colnames(SummaryTable) == "Datavalues N"] <-
+      "Datavalues N (%)"
+
+    SummaryTable$`Missing codes N` <- paste0(m, " (", m_P, ")")
+    colnames(SummaryTable)[colnames(SummaryTable) == "Missing codes N"] <-
+      "Missing codes N (%)"
+
+    SummaryTable$`Jumps N` <- paste0(j, " (", j_P, ")")
+    colnames(SummaryTable)[colnames(SummaryTable) == "Jumps N"] <-
+      "Jumps N (%)"
+
+    SummaryTable$`Measurements N` <-
+      paste0(N_meas, " (", N_meas_P, ")")
+    colnames(SummaryTable)[colnames(SummaryTable) == "Measurements N"] <-
+      "Measurements N (%)"
+
   } else {
-    p <- ggplot() +
-      annotate("text", x = 0, y = 0, label = "show_causes was FALSE") +
-      theme(
-        axis.line = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        legend.position = "none",
-        panel.background = element_blank(),
-        panel.border = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.background = element_blank()
-      )
-    p <- util_set_size(p)
+
+    SummaryTable$`Sysmiss %` <- SysMissP
+    SummaryTable$`Datavalues %` <- DV_N_P
+    SummaryTable$`Missing codes %` <- m_P
+    SummaryTable$`Jumps %` <- j_P
+    SummaryTable$`Measurements %` <- N_meas_P
+
+    pc <- grep(' %$', colnames(SummaryTable), perl = TRUE, value = TRUE)
+    nc <- grep(' N$', colnames(SummaryTable), perl = TRUE, value = TRUE)
+
+    npc <-
+      intersect(sub(" %$", "", pc, perl = TRUE),
+                sub(" N$", "", nc, perl = TRUE))
+
+    st <- SummaryTable[,
+                       setdiff(colnames(SummaryTable),
+                               c(
+                                 paste(npc, 'N'),
+                                 paste(npc, '%'),
+                                 "GRADING"
+                               )), drop = FALSE]
+
+    st <- cbind(st, SummaryTable[,
+                                 c(
+                                   unlist(lapply(npc, paste, c('N', '%')),
+                                          recursive = FALSE),
+                                   "GRADING"
+                                 ), drop = FALSE])
+
+    SummaryTable <- st
+
   }
 
+  #  result_table$check_MC <- paste0(N_class_MC, " (", N_MC_avail, ")")
+  #  result_table$check_JC <- paste0(N_class_JC, " (", N_JC_avail, ")")
 
-  plot_data <- p$data
-
-  if (is.null(dim(plot_data))) {
-    plot_data <- as.data.frame(matrix(ncol = 3), stringsAsFactors = FALSE)
+  r <- util_study_var2factor(study_data = study_data, meta_data = meta_data,
+                             resp_vars = resp_vars, label_col = label_col,
+                             assume_consistent_codes = assume_consistent_codes,
+                             have_cause_label_df = !missing(cause_label_df),
+                             include_sysmiss = include_sysmiss)
+  colnames(r) <-
+    util_map_labels(colnames(r),
+                    meta_data,
+                    to = VAR_NAMES,
+                    from = label_col)
+  r <- util_seg_table(r, study_data, meta_data, expected_observations = expected_observations)
+  r <- r[vapply(r, ncol, FUN.VALUE = integer(1)) == 2]
+  r <- lapply(names(r), function(nm) setNames(r[[nm]], c("CODES", nm)))
+  mctab <- Reduce(function(dtf1, dtf2) merge(dtf1, dtf2, by = "CODES", all = TRUE), r)
+  rownames(mctab) <- mctab$CODES
+  mctab$CODES <- NULL
+  mctab <- t(mctab)
+  mctab[is.na(mctab)] <- 0
+  mctab <- data.frame(mctab, check.names = FALSE)
+  if (drop_levels) {
+    mctab <- mctab[, colSums(mctab) != 0, drop = FALSE]
   }
-
-  ReportSummaryTable <-
-    merge(reshape::cast(value = "Freq", setNames(plot_data,
-                                                 c("Var1", "Variables",
-                                                   "Freq")),
-                        formula = Variables ~ Var1),
-          data.frame(
-            Variables = result_table$Variables,
-            N = (if (!include_sysmiss)
-              N_no_SysMiss else No_obs)
-          )
-    )
-
-  class(ReportSummaryTable) <- union("ReportSummaryTable",
-                                     class(ReportSummaryTable))
-
-  return(list(SummaryTable = result_table, SummaryPlot = p,
-              ReportSummaryTable = ReportSummaryTable))
+  if (!ncol(mctab)) {
+    mctab <- data.frame(check.names = FALSE,
+                        Variables = resp_vars,
+                        stringsAsFactors = FALSE)
+  } else {
+    mctab$Variables <- prep_map_labels(rownames(mctab),
+                                       meta_data = meta_data,
+                                       to = label_col,
+                                       from = VAR_NAMES)
+  }
+  rownames(mctab) <- NULL
+  mctab$N <- util_count_expected_observations(mctab$Variables,
+                                              study_data = ds1,
+                                              meta_data = meta_data,
+                                              label_col = label_col,
+                                              expected_observations = expected_observations)
+  class(mctab) <- union("ReportSummaryTable", class(mctab))
+  list(SummaryTable = SummaryTable,
+       SummaryPlot = print(mctab, view = FALSE, relative = FALSE),
+       ReportSummaryTable = mctab)
 }

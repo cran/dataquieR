@@ -1,4 +1,9 @@
 test_that("prep_datatype_from_data works", {
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
   expect_warning(
     prep_valuelabels_from_data(c("Species", "xzy", "Sepal.Width"), iris),
     all = TRUE,

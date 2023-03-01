@@ -13,6 +13,29 @@ dataquieR_resultset_verify <- function(list_to_verify) {
       dQuote("dataquieR_resultset"), applicability_problem = FALSE)
   }
 
+  if (!is.null(list_to_verify$meta_data_segment)) {
+      prep_check_meta_data_segment(list_to_verify$meta_data_segment)
+  }
+
+  if (!is.null(list_to_verify$meta_data_dataframe)) {
+    prep_check_meta_data_dataframe(list_to_verify$meta_data_dataframe)
+  }
+
+  if (!(length(list_to_verify$author) %in% 0:1)) {
+    util_error(
+      "%s must be of length 0 or 1. Internal error.",
+      dQuote("author"),
+      applicability_problem = FALSE)
+  }
+
+  if (length(list_to_verify$author) == 1 &&
+      !is.character(list_to_verify$author)) {
+    util_error(
+      "%s must be a character. Internal error.",
+      dQuote("author"),
+      applicability_problem = FALSE)
+  }
+
   for (slot in c("long_format", "app_mat")) {
     if (!is.list(list_to_verify[[slot]])) {
       util_error(
@@ -51,7 +74,7 @@ dataquieR_resultset_verify <- function(list_to_verify) {
         applicability_problem = FALSE)
     }
   }
-  if (list_to_verify$strata_attribute != KEY_STUDY_SEGMENT &&
+  if (list_to_verify$strata_attribute != STUDY_SEGMENT &&
       !is.na(list_to_verify$strata_attribute)) {
     util_error(
       "Not a supported %s: %s. Internal error.",

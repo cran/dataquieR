@@ -1,4 +1,5 @@
 test_that("util_make_function works", {
+  skip_on_cran() # used by deprecated dq_report
   acc_test <- function(resp_vars, s, w, m) {
     if (!missing(w)) warning(w)
     if (!missing(m)) message(m)

@@ -27,7 +27,10 @@
 #' @export
 #'
 prep_add_to_meta <- function(VAR_NAMES, DATA_TYPE, LABEL, VALUE_LABELS,
-                             meta_data, ...) {
+                             meta_data = "item_level", ...) {
+
+  util_expect_data_frame(meta_data)
+
   mini_md <- prep_create_meta(
     level = NULL,
     "VAR_NAMES" = VAR_NAMES,

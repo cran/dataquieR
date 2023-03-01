@@ -1,4 +1,4 @@
-#' Function to estimate marginal means, see [emmeans::emmeans]
+#' Estimate marginal means, see [emmeans::emmeans]
 #'
 #' @description
 #' margins does calculations for quality indicator
@@ -90,7 +90,7 @@
 #' group_vars <- prep_map_labels(rvs, meta_data = meta_data, from = label_col,
 #'   to = VAR_NAMES)
 #' group_vars <- prep_map_labels(group_vars, meta_data = meta_data,
-#'   to = KEY_OBSERVER)
+#'   to = GROUP_VAR_OBSERVER)
 #' group_vars <- prep_map_labels(group_vars, meta_data = meta_data)
 #' acc_margins(resp_vars = rvs,
 #'             study_data = study_data,
@@ -106,11 +106,13 @@
 acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
                         threshold_type = NULL, threshold_value,
                         min_obs_in_subgroup,
-                        study_data, meta_data, label_col) {
+                        study_data, meta_data, label_col
+                          # TODO: flip_mode =
+                        ) {
 
-  # map meta to study
-  util_prepare_dataframes()
-
+  # preps ----------------------------------------------------------------------
+  # map metadata to study data
+  prep_prepare_dataframes(.replace_hard_limits = TRUE)
 
   util_correct_variable_use("resp_vars", need_type = "integer|float")
   util_correct_variable_use("group_vars",
@@ -121,10 +123,29 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     allow_more_than_one = TRUE,
     allow_null = TRUE
   )
+  if (is.null(co_vars)) {
+    co_vars <- NA
+  }
+
+  dollar <- "\uFE69"
+
+  colnames(ds1) <- gsub("$", dollar, fixed = TRUE, colnames(ds1))
+  if (any(grepl('$', fixed = TRUE, c(resp_vars, group_vars, co_vars)))) {
+    util_warning(c("emmeans used by acc_margins does not support variable",
+                   "names containing %s, replacing this symbol by an",
+                   "equivalent unicode character %s"),
+                 dQuote("$"),
+                 dQuote(dollar), applicability_problem = TRUE)
+  }
+  resp_vars <- gsub("$", dollar, fixed = TRUE, resp_vars)
+  group_vars <- gsub("$", dollar, fixed = TRUE, group_vars)
+  co_vars <- gsub("$", dollar, fixed = TRUE, co_vars)
+
 
   rvs <- resp_vars
 
   # no minimum observations specified
+  # TODO: util_expect_scalar(min_obs_in_subgroup, is.integer, ...)
   if (missing(min_obs_in_subgroup) || length(min_obs_in_subgroup) != 1) {
     min_obs_in_subgroup <- 5
     util_warning(
@@ -150,12 +171,6 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
                  applicability_problem = TRUE)
   }
 
-  # co_vars optional but warn if missing
-  if (is.null(co_vars)) {
-    co_vars <- NA
-#    util_warning("No co_vars specified",
-#                 applicability_problem = FALSE)
-  }
 
   # Label assignment -----------------------------------------------------------
   # temporary study data
@@ -261,7 +276,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
 
   # summary data frame of observations by level of random effect and non-missing
   # values in rvs
-  check_df <- data.frame(table(ds1[[group_vars]]))
+  check_df <- util_table_of_vct(ds1[[group_vars]])
 
   # Consider remaining obs/level after na.rm() ---------------------------------
   # too few observations in >1 level of group_vars
@@ -282,6 +297,8 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   # if no co_vars are defined for adjustment only the intercept is modelled
   if (length(co_vars) == 1 & is.na(co_vars)[1]) {
     co_vars <- "1"
+  } else {
+    co_vars <- util_bQuote(co_vars)
   }
 
   #############
@@ -291,13 +308,17 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   # determine distributional approximation
   seldist <- util_dist_selection(ds1[[rvs]], meta_data = meta_data)
 
+  if (!(prod(dim(ds1)))) {
+    util_error("No data left")
+  }
+
   # build model formula
   fmla <- as.formula(paste0(
-    paste0(rvs, "~"),
+    paste0(util_bQuote(rvs), "~"),
     paste0(
       paste0(co_vars, collapse = " + "),
       " + ",
-      group_vars
+      util_bQuote(group_vars)
     )
   ))
 
@@ -346,7 +367,8 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   # the package assumes an interaction term although there isn't.
   # browser()
   # call emmeans::emmeans ------------------------------------------------------
-  res_df <- data.frame(emmeans::emmeans(model, group_vars, type = "response"))
+  res_df <- data.frame(emmeans::emmeans(model, group_vars, type = "response"),
+                       check.names = FALSE)
   if (seldist$IsInteger == FALSE | seldist$IsInteger == TRUE &
       seldist$NCategory > 20) {
     res_df <- dplyr::rename(res_df, c("margins" = "emmean", "LCL" = "lower.CL",
@@ -547,8 +569,9 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   aty <- mean(range(ggplot_build(get_y_scale)$data[[1]]$y))
 
 
-  p2 <- ggplot(ds1, aes(y = .data[[rvs]])) +
-    geom_density(alpha = 0.35, orientation = "y") +
+  p2 <- ggplot(ds1, aes(.data[[rvs]])) +
+    geom_density(alpha = 0.35) +
+    coord_flip() +
     theme_minimal() +
 #    coord_flip() +
     labs(x = NULL, y = NULL) +
@@ -557,21 +580,21 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   if (threshold_type != "none") {
     p2 <-
       p2 +
-      annotate(geom = "text", y = pars + offs, x = aty, label = parn) +
-      geom_hline(yintercept = pars[2], color = "red") +
-      geom_hline(yintercept = pars[-2], color = "red", linetype = 2)
+      annotate(geom = "text", x = pars + offs, y = aty, label = parn) +
+      geom_vline(xintercept = pars[2], color = "red") +
+      geom_vline(xintercept = pars[-2], color = "red", linetype = 2)
   } else {
     p2 <-
       p2 +
-      annotate(geom = "text", y = pars + offs, x = aty,
+      annotate(geom = "text", x = pars + offs, y = aty,
                label = c("", parn[2], "")) +
-      geom_hline(yintercept = pars[2], color = "red")
+      geom_vline(xintercept = pars[2], color = "red")
   }
 
 
   # combine plots
   # and add the title
-  res_plot <-
+  res_plot <- # TODO: For all patchwork-calls, add information to reproduce the layout in plot.ly
     p1 +
     p2 +
     plot_layout(nrow = 1,
@@ -585,11 +608,39 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
 
   # length(unique(fit_df$GROUP)))
   # output
-  return(list(
+  return(util_attach_attr(list(
     SummaryData = res_df,
     SummaryTable = SummaryTable,
     SummaryPlot = util_set_size(res_plot, width_em = 25 +
                                   1.2 * length(unique(ds1[[group_vars]])),
                                 height_em = 25)
-  ))
+  ), as_plotly = "util_as_plotly_acc_margins"))
+}
+
+util_as_plotly_acc_margins <- function(res, ...) {
+  res$SummaryPlot <- util_remove_dataquieR_result_class(res$SummaryPlot)
+  # use res$SummaryPlot, not res_plot to avoid dependeing on the enclosure
+  # of the result, that may contain study data.
+  util_ensure_suggested("plotly")
+  util_stop_if_not(inherits(res$SummaryPlot, "patchwork"))
+  rel_w <- res$SummaryPlot$patches$layout$widths /
+    sum(res$SummaryPlot$patches$layout$widths, na.rm = TRUE)
+  py1 <- try(plotly::ggplotly(res$SummaryPlot[[1]],
+                              ...), silent = TRUE)
+  py1$x$data[[2]]$mode <- NULL # suppress a warning on print (https://github.com/plotly/plotly.R/issues/2242)
+  py2 <- try(plotly::ggplotly(res$SummaryPlot[[2]],
+                              ...), silent = TRUE)
+  util_stop_if_not(!inherits(py1, "try-error"))
+  util_stop_if_not(!inherits(py2, "try-error"))
+  # https://plotly.com/r/subplots/#subplots-with-shared-yaxes
+  plotly::layout(plotly::subplot(py1,
+                                 py2,
+                                 nrows =
+                                   res$SummaryPlot$patches$layout$nrow,
+                                 shareY = TRUE,
+                                 widths =
+                                   rel_w),
+                 title = list(text =
+                                res$SummaryPlot$patches$annotation$title),
+                 margin = 0.01)
 }

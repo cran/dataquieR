@@ -1,0 +1,23 @@
+{{ page_menu }}
+<h4 style = "margin-top: 3em">
+<!-- space needed to prevent plot.ly's overlap -->
+  <a target="_blank" href="{{online_ref(fkt)}}">{{title}}</a>
+</h4>
+
+<h5>
+  {{ paste(unique(c(fkt, fkt_name)), collapse = ": ") }}
+</h5>
+
+<p>
+  {{ description }}
+</p>
+
+<h7>
+  Concept relations:
+</h7>
+
+<p>
+   {{ items_indicators }}
+</p>
+
+ {{ page }}

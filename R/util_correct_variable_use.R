@@ -40,6 +40,8 @@
 #'                                                   being all `NA`
 #' @param allow_any_obs_na [logical] default = TRUE. check observations for
 #'                                               being complete without any `NA`
+#' @param min_distinct_values [integer] Minimum number of distinct observed
+#'                              values of a study variable
 #' @param need_type [character] if not `NA`, variables must be of data type
 #'                                       `need_type` according to the meta data,
 #'                                       can be a pipe (`|`) separated list of
@@ -64,6 +66,15 @@
 #'                         `arg_name` as default for `role`.
 #'                         See [.variable_arg_roles] for currently available
 #'                         variable-argument roles.
+#' @param overwrite [logical] overwrite vector of variable names
+#'                         to match the labels given in `label_col`.
+#' @param do_not_stop [logical] do not throw an error, if one of the variables
+#'                         violates `allow_all_obs_na`, `allow_any_obs_na` or
+#'                         `min_distinct_values`. Instead, the variable will be
+#'                         removed from `arg_name` in the parent environment
+#'                         with a warning. This is helpful for functions which
+#'                         work with multiple variables.
+#' @param remove_not_found TODO: Not yet implemented
 #'
 #' @seealso [.variable_arg_roles]
 #' @importFrom stats na.omit
@@ -74,8 +85,12 @@ util_correct_variable_use <- function(arg_name,
                                       allow_null,
                                       allow_all_obs_na,
                                       allow_any_obs_na,
+                                      min_distinct_values,
                                       need_type,
-                                      role = "") {
+                                      role = "",
+                                      overwrite = TRUE,
+                                      do_not_stop = FALSE,
+                                      remove_not_found = TRUE) { # TODO: Remove not found must be implemented
   # interpret the arg_name argument
   try({
       arg_name <- as.character(substitute(arg_name))
@@ -122,11 +137,16 @@ util_correct_variable_use <- function(arg_name,
       allow_any_obs_na <- subset(.variable_arg_roles, get("name") == role,
                                  "allow_any_obs_na", drop = TRUE)
     } # fetch it from the role's defaults
+    if (missing(min_distinct_values)) {
+      # if missing the min_distinct_values argument
+      min_distinct_values <- subset(.variable_arg_roles, get("name") == role,
+                                 "min_distinct_values", drop = TRUE)
+    } # fetch it from the role's defaults
     if (missing(need_type)) { # if missing the need_type argument
       need_type <- subset(.variable_arg_roles, get("name") == role,
                           "need_type", drop = TRUE)
     } # fetch it from the role's defaults
-  } else {# no known variable-argument in argument `role`
+  } else { # no known variable-argument in argument `role`
     if (role != "") { # if role is not empty
       util_error(
         c("Unknown variable-argument role: %s for argument %s,",
@@ -153,6 +173,10 @@ util_correct_variable_use <- function(arg_name,
     if (missing(allow_any_obs_na)) {
       # set the default for allow_any_obs_na if it has not been given
       allow_any_obs_na <- TRUE
+    }
+    if (missing(min_distinct_values)) {
+      # set the default for min_distinct_values if it has not been given
+      min_distinct_values <- 0
     }
     if (missing(need_type)) {
       # set the default for need_type if it has not been given
@@ -183,8 +207,7 @@ util_correct_variable_use <- function(arg_name,
     # calling function does not support label_col, so use VAR_NAMES as default
   }
 
-  missing_in_parent <- eval.parent(parse(text = sprintf("missing(%s)",
-                                                        arg_name)))
+  missing_in_parent <- eval.parent(call("missing", as.symbol(arg_name)))
 
   variable <- try(get(arg_name, envir = p), silent = TRUE)
   # try to get the value of the callers argument called `arg_name`.
@@ -206,7 +229,7 @@ util_correct_variable_use <- function(arg_name,
   }
 
   if (!exists("ds1", envir = p)) {
-    # if the calling function does not have a ds1, this is a rong use of
+    # if the calling function does not have a ds1, this is a wrong use of
     # util_correct_variable_use
     util_error(c(
       "Did not find merged study data and meta data ds1.",
@@ -214,7 +237,7 @@ util_correct_variable_use <- function(arg_name,
   }
 
   if (!exists("meta_data", envir = p)) {
-    # if the calling function does not have a meta_data, this is a rong use of
+    # if the calling function does not have a meta_data, this is a wrong use of
     # util_correct_variable_use
     util_error(
       "Did not find meta data. Wrong use of util_correct_variable_use?")
@@ -254,12 +277,12 @@ util_correct_variable_use <- function(arg_name,
                  applicability_problem = TRUE)
       # this is an error
     }
-  } else {# if we expect one value in the argument arg_name at most
+  } else { # if we expect one value in the argument arg_name at most
     if ((!allow_null && length(variable) != 1) ||
         (allow_null && length(variable) > 1)) {
       # but the user gave more than one or none although
       # allow_null prohibits this
-      util_error("Need excactly one element in argument %s, got %d: [%s]",
+      util_error("Need exactly one element in argument %s, got %d: [%s]",
                  arg_name, length(variable), paste0(variable, collapse = ", "),
                  applicability_problem = TRUE)
       # this is an error
@@ -281,51 +304,159 @@ util_correct_variable_use <- function(arg_name,
     # if we have NAs in the list of variable names in `arg_name`
     # and this is not allowed
     util_error("Missing entries not allowed in argument %s", arg_name,
-               applicability_problem = FALSE)
+               applicability_problem = TRUE)
     # then this is an error.
   }
-  if (!all(na.omit(variable) %in% colnames(ds1))) {
-    # if we have variable names in the caller's variable arguemnt `arg_name`
+
+  # Check whether variables can be found in the data (using all possible label columns).
+  possible_vars <- unique(c(meta_data[[VAR_NAMES]],
+                            meta_data[[LABEL]],
+                            meta_data[[LONG_LABEL]],
+                            meta_data[[label_col]]))
+  if (!all(na.omit(variable) %in% possible_vars)) {
+    # if we have variable names in the caller's variable argument `arg_name`
     # missing in the data
     non_matching_vars <-
-      na.omit(variable)[!na.omit(variable) %in% colnames(ds1)] # find them
-    fuzzy_match <- vapply(
-      # and try to guess, what the user wanted to put there
+      na.omit(variable)[!(na.omit(variable) %in% possible_vars)] # find them
+    fuzzy_match <- vapply( # and try to guess what the user wanted to put there
       non_matching_vars,
       function(v) {
-        colnames(ds1)[which.min(adist(trimws(v), trimws(colnames(ds1)),
-                                      ignore.case = TRUE, fixed = TRUE))]
-      },
-      ""
-    )
+        unique(possible_vars)[which.min(adist(
+          trimws(v),
+          trimws(unique(possible_vars)),
+          ignore.case = TRUE,
+          fixed = TRUE
+        ))]
+      }, "")
     util_error(
       "Variable '%s' (%s) not found in study data. Did you mean '%s'?",
-        # then emit an informative erorr message.
+        # then emit an informative error message.
       paste0(non_matching_vars, collapse = ", "),
       arg_name,
       paste0(fuzzy_match, collapse = ", "),
       applicability_problem = TRUE
     )
+  } else {
+    # If users mix VAR_NAMES and LABELs (and maybe also LONG_LABELs), we need to
+    # map the variable names to the column names of ds1.
+    if (!all(na.omit(variable) %in% colnames(ds1))) {
+      non_matching_ind <- intersect(which(!(variable %in% colnames(ds1))),
+                                    which(!is.na(variable)))
+      non_matching_vars <- variable[non_matching_ind]
+      other_col <- setdiff(c(VAR_NAMES, LABEL, LONG_LABEL), label_col)
+      map_res <- lapply(setNames(nm = other_col), function(oc) {
+        unname(
+          util_map_labels(
+            non_matching_vars,
+            warn_ambiguous = TRUE,
+            meta_data = meta_data,
+            to = label_col,
+            from = oc,
+            ifnotfound = NA_character_
+          )
+        )
+      })
+      map_res <- as.data.frame(map_res)
+      # check whether the user-specified variable could not be found in any of the other columns:
+      map_res_NA <- vapply(
+        1:nrow(map_res),
+        FUN.VALUE = logical(1),
+        FUN = function(i) {
+          all(is.na(map_res[i, ]))
+        }
+      )
+      if (any(map_res_NA)) { # may be dead code?
+        util_error("Variable '%s' (%s) not found in the metadata.",
+                   paste0(non_matching_vars[map_res_NA],
+                          collapse = ", "),
+                   arg_name,
+                   applicability_problem = TRUE)
+      }
+      # check whether the user-specified variable was found in different label columns and maps to different variables (= ambiguity)
+      map_res_ambiguous <- vapply(
+        1:nrow(map_res),
+        FUN.VALUE = logical(1),
+        FUN = function(i) {
+          length(unique(na.omit(as.character(map_res[i, ])))) > 1
+        }
+      )
+      if (any(map_res_ambiguous)) {
+        util_warning("Variable '%s' (%s) is ambiguous in the metadata.",
+                     paste0(non_matching_vars[map_res_ambiguous],
+                            collapse = ", "),
+                     arg_name,
+                     applicability_problem = TRUE)
+      }
+
+      variable[non_matching_ind] <- vapply(
+          1:nrow(map_res),
+          FUN.VALUE = character(1),
+          FUN = function(i) {
+            unique(na.omit(as.character(map_res[i, ])))[1]
+            # We select here the first element, such that in case of ambiguities
+            # VAR_NAME is preferred over LABEL and LONG_LABEL, and LABEL over LONG_LABEL.
+            # If there are no ambiguities, this works as well.
+          }
+        )
+      # The 'variable' vector contains now all variable names according to label_col.
+      if (overwrite) {
+      # Pass the 'variable' vector to the environment to use it within the calling function.
+        assign(arg_name, variable, envir = parent.frame())
+      }
+    }
   }
 
+  record_problem <- ifelse(do_not_stop, util_warning, util_error)
+  empty_container <- new.env(parent = emptyenv())
   for (v in variable) { # now, check all variable values from the data
     if (!allow_all_obs_na && all(is.na(ds1[[v]]))) {
-        # if all observations are NA and this is prohibited
-      util_error("Variable '%s' (%s) has only NA observations",
-                 na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
-                 applicability_problem = FALSE)
-        # this is an error
+      # if all observations are NA and this is prohibited
+      record_problem("Variable '%s' (%s) has only NA observations",
+                     na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
+                     applicability_problem = FALSE)
+      empty_container[[v]] <- TRUE
     }
-
+# names(empty_containter) gibt die geflaggten Variablen
     if (!allow_any_obs_na && any(is.na(ds1[[v]]))) {
       # if no NAs are allowed at all, but we have some
-      util_error("Variable '%s' (%s) has NA observations, which is not allowed",
-                 na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
-                 applicability_problem = FALSE)
-        # then this an error too.
+      record_problem("Variable '%s' (%s) has NA observations, which is not allowed",
+                     na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
+                     applicability_problem = FALSE)
+      empty_container[[v]] <- TRUE
+    }
+
+    uniq_rv <- unique(ds1[[v]])
+    uniq_rv <- uniq_rv[!util_empty(uniq_rv)]
+    n_distinct_values <- length(uniq_rv)
+    if (n_distinct_values < min_distinct_values) {
+      # if we have fewer distinct values than required
+      record_problem("Variable '%s' (%s) has fewer distinct values than required",
+                     na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
+                     applicability_problem = FALSE)
+      empty_container[[v]] <- TRUE
     }
   }
 
+  if (length(names(empty_container)) > 0) {
+    variable <- setdiff(variable, names(empty_container))
+    if (length(variable) == 0) {
+      util_error(
+        "In %s, none of the specified variables matches the requirements.",
+        dQuote(arg_name),
+        applicability_problem = FALSE
+      )
+    } else {
+      util_warning(
+        c("In %s, variables %s were excluded."),
+        dQuote(arg_name),
+        paste(dQuote(names(empty_container)), collapse = ", "),
+        applicability_problem = FALSE
+      )
+      assign(arg_name, variable, envir = p)
+    }
+  }
+
+  # data type given in metadata? (similar to util_get_meta_from_var ...)
   if (DATA_TYPE %in% colnames(meta_data)) {
     types <- meta_data[meta_data[[label_col]] %in% variable, DATA_TYPE]
       # try to fetch the types from the meta data.
@@ -361,12 +492,53 @@ util_correct_variable_use <- function(arg_name,
                                                    fixed = TRUE),
                                           recursive = TRUE)))
         # parse the type (split at pipes |)
-      not_type <- trimws(substring(need_type.[startsWith(need_type., "!")], 2))
+      not_type <-
+        tolower(trimws(substring(need_type.[startsWith(need_type., "!")], 2)))
         # and parse the type for negation (e.g. *not* INTEGER)
-      well_type <- trimws(need_type.[!startsWith(need_type., "!")])
+      well_type <-
+        tolower(trimws(need_type.[!startsWith(need_type., "!")]))
         # and parse the type for no negation resp. (e.g. INTEGER)
+
+      if ((length(well_type) > 0) &&
+          (!all(well_type %in%
+                tolower(trimws(names(DATA_TYPES)))))) {
+        util_error(c(
+          "Internal error:",
+          "%s's %s contains invalid type names %s (allowed are %s).",
+          "As a dataquieR developer, you should fix your call of %s."
+          ),
+         sQuote(arg_name),
+         sQuote("need_type"),
+         paste(dQuote(
+           well_type[!(well_type %in%
+             tolower(trimws(names(DATA_TYPES))))]
+         ), collapse = ", "),
+         paste(dQuote(tolower(trimws(names(DATA_TYPES)))), collapse = ", "),
+         sQuote(sys.call()[[1]])
+         )
+      }
+
+      if ((length(not_type) > 0) &&
+         (!all(not_type %in%
+               tolower(trimws(names(DATA_TYPES)))))) {
+        util_error(c(
+          "Internal error:",
+          "%s's %s contains invalid !type names %s (allowed are %s).",
+          "As a dataquieR developer, you should fix your call of %s."
+        ),
+        sQuote(arg_name),
+        sQuote("need_type"),
+        paste(dQuote(
+          not_type[!(not_type %in%
+                        tolower(trimws(names(DATA_TYPES))))]
+        ), collapse = ", "),
+        paste(dQuote(tolower(trimws(names(DATA_TYPES)))), collapse = ", "),
+        sQuote(sys.call()[[1]])
+        )
+      }
+
       if ((length(well_type) > 0) && (!tolower(trimws(type)) %in% well_type)) {
-          # now check fo the allowed types
+          # now check for the allowed types
         util_error(
           "Argument %s: Variable '%s' (%s) does not have an allowed type (%s)",
           dQuote(arg_name), ..vname, tolower(trimws(type)), need_type,
@@ -387,7 +559,7 @@ util_correct_variable_use <- function(arg_name,
             c("Argument %s: Variable '%s' (%s) does not have matching",
               "data type in the study data (%s)"),
             dQuote(arg_name), ..vname, tolower(trimws(type)),
-            tolower(DATA_TYPES_OF_R_TYPE[class(ds1[, ..vname, TRUE])]),
+            prep_dq_data_type_of(ds1[, ..vname, TRUE]),
             applicability_problem = TRUE)
         }
       }
@@ -424,21 +596,21 @@ util_correct_variable_use <- function(arg_name,
 .variable_arg_roles <-
   dplyr::tribble(
     ~name, ~allow_na, ~allow_more_than_one, ~allow_null, ~allow_all_obs_na,
-    ~allow_any_obs_na, ~need_type,
-    "resp_var", FALSE, FALSE, FALSE, FALSE, TRUE, NA,
-    "response_var", FALSE, FALSE, FALSE, FALSE, TRUE, NA,
-    "resp_vars", FALSE, TRUE, FALSE, FALSE, TRUE, NA,
-    "response_vars", FALSE, TRUE, FALSE, FALSE, TRUE, NA,
-    "control_vars", TRUE, TRUE, TRUE, FALSE, TRUE, NA,
-    "co_vars", TRUE, TRUE, TRUE, FALSE, TRUE, NA,
-    "cluster_vars", FALSE, TRUE, FALSE, FALSE, FALSE, NA,
-    "group_vars", FALSE, TRUE, FALSE, FALSE, FALSE, NA,
-    "level_vars", FALSE, TRUE, FALSE, FALSE, FALSE, NA,
-    "cluster_var", FALSE, FALSE, TRUE, FALSE, TRUE, NA,
-    "level_var", FALSE, FALSE, TRUE, FALSE, TRUE, NA,
-    "strata_vars", FALSE, FALSE, TRUE, FALSE, TRUE, NA,
-    "time_vars", FALSE, FALSE, FALSE, FALSE, FALSE, NA,
-    "id_vars", FALSE, FALSE, FALSE, FALSE, FALSE, NA
+    ~allow_any_obs_na, ~min_distinct_values, ~need_type,
+    "resp_var", FALSE, FALSE, FALSE, FALSE, TRUE, 0, NA,
+    "response_var", FALSE, FALSE, FALSE, FALSE, TRUE, 0, NA,
+    "resp_vars", FALSE, TRUE, FALSE, FALSE, TRUE, 0, NA,
+    "response_vars", FALSE, TRUE, FALSE, FALSE, TRUE, 0, NA,
+    "control_vars", TRUE, TRUE, TRUE, FALSE, TRUE, 0, NA,
+    "co_vars", TRUE, TRUE, TRUE, FALSE, TRUE, 0, NA,
+    "cluster_vars", FALSE, TRUE, FALSE, FALSE, FALSE, 0, NA,
+    "group_vars", FALSE, TRUE, FALSE, FALSE, FALSE, 0, NA,
+    "level_vars", FALSE, TRUE, FALSE, FALSE, FALSE, 0, NA,
+    "cluster_var", FALSE, FALSE, TRUE, FALSE, TRUE, 0, NA,
+    "level_var", FALSE, FALSE, TRUE, FALSE, TRUE, 0, NA,
+    "strata_vars", FALSE, FALSE, TRUE, FALSE, TRUE, 0, NA,
+    "time_vars", FALSE, FALSE, FALSE, FALSE, FALSE, 0, NA,
+    "id_vars", FALSE, FALSE, FALSE, FALSE, FALSE, 0, NA
   )
 # "process_vars",
 # "key_segment_vars"

@@ -15,8 +15,7 @@ test_that("util_parse_assignments works", {
 test_that(paste("util_parse_assignments equivalent with an old independent",
                 "development from con inadmissible categories"), {
 
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"),
-       envir = environment())
+  meta_data <- prep_get_data_frame("meta_data")
 
   got <- lapply(lapply(setNames(meta_data[[VALUE_LABELS]], nm =
                                   meta_data$VAR_NAMES),
@@ -57,7 +56,8 @@ test_that(paste("util_parse_assignments equivalent with an old independent",
       unlist
     )
 
-  expected <- lapply(expected, function(x) setNames(paste(x), paste(names(x))))
+  expected[vapply(expected, identical, c("NA" = NA_character_),
+                  FUN.VALUE = logical(1))] <- list(NULL)
 
   expect_equal(got, expected)
 

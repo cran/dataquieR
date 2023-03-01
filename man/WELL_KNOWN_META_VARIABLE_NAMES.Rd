@@ -9,6 +9,7 @@
 \alias{VALUE_LABELS}
 \alias{MISSING_LIST}
 \alias{JUMP_LIST}
+\alias{MISSING_LIST_TABLE}
 \alias{HARD_LIMITS}
 \alias{DETECTION_LIMITS}
 \alias{SOFT_LIMITS}
@@ -16,9 +17,15 @@
 \alias{DISTRIBUTION}
 \alias{DECIMALS}
 \alias{DATA_ENTRY_TYPE}
+\alias{CO_VARS}
+\alias{GROUP_VAR_OBSERVER}
+\alias{GROUP_VAR_DEVICE}
 \alias{KEY_OBSERVER}
 \alias{KEY_DEVICE}
+\alias{TIME_VAR}
 \alias{KEY_DATETIME}
+\alias{PART_VAR}
+\alias{STUDY_SEGMENT}
 \alias{KEY_STUDY_SEGMENT}
 \alias{VARIABLE_ROLE}
 \alias{VARIABLE_ORDER}
@@ -33,10 +40,21 @@
 \alias{INCL_SOFT_LIMIT_UP}
 \alias{INCL_HARD_LIMIT_LOW}
 \alias{INCL_HARD_LIMIT_UP}
+\alias{LOCATION_RANGE}
+\alias{LOCATION_METRIC}
+\alias{PROPORTION_RANGE}
+\alias{LOCATION_LIMIT_LOW}
+\alias{LOCATION_LIMIT_UP}
+\alias{INCL_LOCATION_LIMIT_LOW}
+\alias{INCL_LOCATION_LIMIT_UP}
+\alias{PROPORTION_LIMIT_LOW}
+\alias{PROPORTION_LIMIT_UP}
+\alias{INCL_PROPORTION_LIMIT_LOW}
+\alias{INCL_PROPORTION_LIMIT_UP}
 \alias{RECODE}
 \title{Well-known metadata column names, names of metadata columns}
 \format{
-An object of class \code{list} of length 31.
+An object of class \code{list} of length 49.
 }
 \usage{
 WELL_KNOWN_META_VARIABLE_NAMES
@@ -56,11 +74,15 @@ categories, missing lists and jump lists as CSV strings.
 all entries of this list will be mapped to the package's exported NAMESPACE
 environment directly, i.e. they are available directly by their names too:
 \itemize{
-\item \link{VAR_NAMES},  - \link{LABEL},  - \link{DATA_TYPE},  - \link{VALUE_LABELS},  - \link{MISSING_LIST},  - \link{JUMP_LIST},  - \link{HARD_LIMITS},  - \link{DETECTION_LIMITS},  - \link{SOFT_LIMITS},  - \link{CONTRADICTIONS},  - \link{DISTRIBUTION},  - \link{DECIMALS},  - \link{DATA_ENTRY_TYPE},  - \link{KEY_OBSERVER},  - \link{KEY_DEVICE},  - \link{KEY_DATETIME},  - \link{KEY_STUDY_SEGMENT},  - \link{VARIABLE_ROLE},  - \link{VARIABLE_ORDER},  - \link{LONG_LABEL},  - \link{SOFT_LIMIT_LOW},  - \link{SOFT_LIMIT_UP},  - \link{HARD_LIMIT_LOW},  - \link{HARD_LIMIT_UP},  - \link{DETECTION_LIMIT_LOW},  - \link{DETECTION_LIMIT_UP},  - \link{INCL_SOFT_LIMIT_LOW},  - \link{INCL_SOFT_LIMIT_UP},  - \link{INCL_HARD_LIMIT_LOW},  - \link{INCL_HARD_LIMIT_UP},  - \link{RECODE}
+\item \link{VAR_NAMES},  - \link{LABEL},  - \link{DATA_TYPE},  - \link{VALUE_LABELS},  - \link{MISSING_LIST},  - \link{JUMP_LIST},  - \link{MISSING_LIST_TABLE},  - \link{HARD_LIMITS},  - \link{DETECTION_LIMITS},  - \link{SOFT_LIMITS},  - \link{CONTRADICTIONS},  - \link{DISTRIBUTION},  - \link{DECIMALS},  - \link{DATA_ENTRY_TYPE},  - \link{CO_VARS},  - \link{GROUP_VAR_OBSERVER},  - \link{GROUP_VAR_DEVICE},  - \link{KEY_OBSERVER},  - \link{KEY_DEVICE},  - \link{TIME_VAR},  - \link{KEY_DATETIME},  - \link{PART_VAR},  - \link{STUDY_SEGMENT},  - \link{KEY_STUDY_SEGMENT},  - \link{VARIABLE_ROLE},  - \link{VARIABLE_ORDER},  - \link{LONG_LABEL},  - \link{SOFT_LIMIT_LOW},  - \link{SOFT_LIMIT_UP},  - \link{HARD_LIMIT_LOW},  - \link{HARD_LIMIT_UP},  - \link{DETECTION_LIMIT_LOW},  - \link{DETECTION_LIMIT_UP},  - \link{INCL_SOFT_LIMIT_LOW},  - \link{INCL_SOFT_LIMIT_UP},  - \link{INCL_HARD_LIMIT_LOW},  - \link{INCL_HARD_LIMIT_UP},  - \link{LOCATION_RANGE},  - \link{LOCATION_METRIC},  - \link{PROPORTION_RANGE},  - \link{LOCATION_LIMIT_LOW},  - \link{LOCATION_LIMIT_UP},  - \link{INCL_LOCATION_LIMIT_LOW},  - \link{INCL_LOCATION_LIMIT_UP},  - \link{PROPORTION_LIMIT_LOW},  - \link{PROPORTION_LIMIT_UP},  - \link{INCL_PROPORTION_LIMIT_LOW},  - \link{INCL_PROPORTION_LIMIT_UP},  - \link{RECODE}
 }
 }
 \examples{
-print(VAR_NAMES)
+print(WELL_KNOWN_META_VARIABLE_NAMES$VAR_NAMES)
+# print(VAR_NAMES) # should usually also work
+}
+\seealso{
+\link{meta_data_segment} for \code{STUDY_SEGMENT}
 }
 \keyword{datasets}
 \alias{variable attribute}

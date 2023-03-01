@@ -1,11 +1,14 @@
 test_that("com_segment_missingness works", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = FALSE,
+                   dataquieR.ERRORS_WITH_CALLER = FALSE,
+                   dataquieR.WARNINGS_WITH_CALLER = FALSE,
+                   dataquieR.MESSAGES_WITH_CALLER = FALSE)
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
-                               threshold_value = NA, direction = "high",
+                               threshold_value = NA, color_gradient_direction = "above",
                                exclude_roles = VARIABLE_ROLES$PROCESS),
     regexp = sprintf("%s|%s",
                      paste("Study variables: .+ARM_CUFF_0.+,",
@@ -23,7 +26,7 @@ test_that("com_segment_missingness works", {
 
   expect_warning(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
-                                 threshold_value = NA, direction = "high"),
+                                 threshold_value = NA, color_gradient_direction = "above"),
     regexp = sprintf("%s|%s|%s",
                      paste("Study variables: .+ARM_CUFF_0.+,",
                            ".+USR_VO2_0.+, .+USR_BP_0.+,",
@@ -42,7 +45,7 @@ test_that("com_segment_missingness works", {
 
   expect_warning(
     r <- com_segment_missingness(study_data, meta_data,
-                                 threshold_value = NA, direction = "high"),
+                                 threshold_value = NA, color_gradient_direction = "above"),
     regexp = sprintf("%s|%s|%s",
                      paste("Study variables: .+v00010.+,",
                            ".+v00011.+, .+v00012.+,",
@@ -61,7 +64,7 @@ test_that("com_segment_missingness works", {
 
   expect_warning(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
-                                 threshold_value = NA, direction = "high",
+                                 threshold_value = NA, color_gradient_direction = "above",
                                  strata_vars = "CENTER_0"),
     regexp = sprintf("%s|%s|%s",
                      paste("Study variables: .+ARM_CUFF_0.+,",
@@ -81,14 +84,15 @@ test_that("com_segment_missingness works", {
 
   meta_data2 <- meta_data
   meta_data2$KEY_STUDY_SEGMENT <- NULL
+  meta_data2$STUDY_SEGMENT <- NULL
   expect_error(suppressWarnings(
     r <- com_segment_missingness(study_data, meta_data2,
-                                 threshold_value = 10, direction = "high",
+                                 threshold_value = 10, color_gradient_direction = "above",
                                  exclude_roles = c(VARIABLE_ROLES$PROCESS,
                                                    "invalid"))
     ),
-    regexp = paste("In suppressWarnings: Metadata do not contain",
-                   "the column KEY_STUDY_SEGMENT"),
+    regexp = paste(".*Metadata do not contain",
+                   "the column STUDY_SEGMENT"),
     perl = TRUE
   )
 
@@ -96,7 +100,7 @@ test_that("com_segment_missingness works", {
   meta_data2$LONG_LABEL <- NA
   expect_warning(
     r <- com_segment_missingness(study_data, meta_data2,
-                                 threshold_value = 10, direction = "high",
+                                 threshold_value = 10, color_gradient_direction = "above",
                                  exclude_roles = c(VARIABLE_ROLES$PROCESS,
                                                    "invalid")),
     regexp = sprintf("%s|%s",
@@ -113,7 +117,7 @@ test_that("com_segment_missingness works", {
 
   expect_warning(
     r <- com_segment_missingness(study_data, meta_data,
-                                 threshold_value = 10, direction = "high",
+                                 threshold_value = 10, color_gradient_direction = "above",
                                  exclude_roles = c(VARIABLE_ROLES$PROCESS,
                                                    "invalid")),
     regexp = sprintf("%s|%s",
@@ -130,7 +134,7 @@ test_that("com_segment_missingness works", {
 
   expect_warning(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
-                                 threshold_value = 10, direction = "high",
+                                 threshold_value = 10, color_gradient_direction = "above",
                                  exclude_roles = c(VARIABLE_ROLES$PROCESS,
                                                    "invalid")),
     regexp = sprintf("%s|%s",
@@ -150,27 +154,27 @@ test_that("com_segment_missingness works", {
 
   expect_error(suppressWarnings(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
-                                 threshold_value = 10, direction = "invalid",
+                                 threshold_value = 10, color_gradient_direction = "invalid",
                                  exclude_roles = VARIABLE_ROLES$PROCESS)
     ),
-    regexp = paste("Parameter .+direction.+ should be either .+low.+ or",
-                   ".+high.+, but not .+invalid.+."),
+    regexp = paste("Parameter .+color_gradient_direction.+ should be either .+above.+ or",
+                   ".+below.+, but not .+invalid.+."),
     perl = TRUE
   )
 
   expect_error(suppressWarnings(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
-                                 threshold_value = 10, direction = 1:2,
+                                 threshold_value = 10, color_gradient_direction = 1:2,
                                  exclude_roles = VARIABLE_ROLES$PROCESS)
     ),
-    regexp = paste("Parameter .+direction.+ should be of length",
+    regexp = paste("Parameter .+color_gradient_direction.+ should be of length",
                    "1, but not 2."),
     perl = TRUE
   )
 
   expect_warning(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
-                                 threshold_value = 10, direction = "high",
+                                 threshold_value = 10, color_gradient_direction = "above",
                                  exclude_roles = VARIABLE_ROLES$PROCESS),
     regexp = paste("Study variables: .+ARM_CUFF_0.+,",
                    ".+USR_VO2_0.+, .+USR_BP_0.+,",
@@ -182,7 +186,7 @@ test_that("com_segment_missingness works", {
   )
   expect_warning(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
-                                 threshold_value = 10, direction = "low",
+                                 threshold_value = 10, color_gradient_direction = "below",
                                  exclude_roles = VARIABLE_ROLES$PROCESS),
     regexp = paste("Study variables: .+ARM_CUFF_0.+,",
                    ".+USR_VO2_0.+, .+USR_BP_0.+,",
@@ -195,18 +199,63 @@ test_that("com_segment_missingness works", {
   expect_equal(
     length(intersect(
       names(r),
-      c("SummaryData", "SummaryPlot")
+      c("SummaryData", "SummaryPlot", "ReportSummaryTable")
     )), length(union(
       names(r),
-      c("SummaryData", "SummaryPlot")
+      c("SummaryData", "SummaryPlot", "ReportSummaryTable")
     ))
   )
   expect_true(abs(suppressWarnings(sum(as.numeric(as.matrix(
-    r$SummaryData)), na.rm = TRUE)) - 16027.23) < 2)
+    r$SummaryData)), na.rm = TRUE)) - 15292.63) < 2)
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
   skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("segment missingness plot ok",
                               r$SummaryPlot)
+})
+
+test_that("com_segment_missingness works w/g (group|strata)_vars", {
+  skip_on_cran() # slow and not frequently used
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = FALSE,
+                   dataquieR.ERRORS_WITH_CALLER = FALSE,
+                   dataquieR.WARNINGS_WITH_CALLER = FALSE,
+                   dataquieR.MESSAGES_WITH_CALLER = FALSE)
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
+  expect_warning({
+    r1 <- com_segment_missingness(study_data, meta_data, strata_vars = "CENTER_0",
+                                  threshold_value = 5,
+                                  color_gradient_direction = "above",
+                                  exclude_roles = VARIABLE_ROLES$PROCESS)
+    r2 <- com_segment_missingness(study_data, meta_data, strata_vars = "CENTER_0",
+                                  group_vars = "SEX_0",
+                                  threshold_value = 5,
+                                  color_gradient_direction = "above",
+                                  exclude_roles = VARIABLE_ROLES$PROCESS)
+    r3 <- com_segment_missingness(study_data, meta_data, group_vars = "SEX_0",
+                                  threshold_value = 5,
+                                  color_gradient_direction = "above",
+                                  exclude_roles = VARIABLE_ROLES$PROCESS)
+    },
+    regexp = "Study variables: .+ are not considered due to their VARIABLE_ROLE.",
+    perl = TRUE
+  )
+  testthat::local_edition(3)
+  expect_snapshot_value(style = "deparse",
+                        r1$SummaryData)
+  expect_snapshot_value(style = "deparse",
+                        r2$SummaryData)
+  expect_snapshot_value(style = "deparse",
+                        r3$SummaryData)
+  skip_on_cran()
+  skip_if_not_installed("vdiffr")
+  skip_if_not(capabilities()["long.double"])
+  vdiffr::expect_doppelganger("segment missingness plot r1 ok",
+                              r1$SummaryPlot)
+  vdiffr::expect_doppelganger("segment missingness plot r2 ok",
+                              r2$SummaryPlot)
+  vdiffr::expect_doppelganger("segment missingness plot r3 ok",
+                              r3$SummaryPlot)
 })

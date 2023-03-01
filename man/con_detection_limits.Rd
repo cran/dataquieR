@@ -2,14 +2,15 @@
 % Please edit documentation in R/con_limit_deviations.R
 \name{con_detection_limits}
 \alias{con_detection_limits}
-\title{con_detection_limits}
+\title{Detects variable values exceeding detection limits}
 \usage{
 con_detection_limits(
   resp_vars = NULL,
   label_col,
   study_data,
   meta_data,
-  limits = c("DETECTION_LIMITS", "HARD_LIMITS", "SOFT_LIMITS")
+  limits = c("DETECTION_LIMITS", "HARD_LIMITS", "SOFT_LIMITS"),
+  flip_mode = "flip"
 )
 }
 \arguments{
@@ -25,6 +26,15 @@ attributes of study data}
 
 \item{limits}{\link{enum} HARD_LIMITS | SOFT_LIMITS | DETECTION_LIMITS. what
 limits from metadata to check for}
+
+\item{flip_mode}{\link{enum} default | flip | noflip | auto. Should the plot be
+in default orientation, flipped, not flipped or
+auto-flipped. Not all options are always supported.
+In general, this con be controlled by
+setting the \code{roptions(dataquieR.flip_mode = ...)}. If
+called from \code{dq_report}, you can also pass
+\code{flip_mode} to all function calls or set them
+specifically using \code{specific_args}.}
 }
 \value{
 a list with:
@@ -45,8 +55,6 @@ removed in \code{ModifiedStudyData.}
 }
 }
 \description{
-\subsection{APPROACH}{
-
 Inadmissible numerical values can be of type integer or float. This
 implementation requires the definition of intervals in the metadata to
 examine the admissibility of numerical study data.
@@ -54,9 +62,8 @@ examine the admissibility of numerical study data.
 This helps identify inadmissible measurements according to
 hard limits (for multiple variables).
 }
-}
 \details{
-\subsection{ALGORITHM OF THIS IMPLEMENTATION:}{
+\subsection{Algorithm of this implementation:}{
 \itemize{
 \item Remove missing codes from the study data (if defined in the metadata)
 \item Interpretation of variable specific intervals as supplied in the metadata.
@@ -75,37 +82,6 @@ as deviations.
 For \link{con_detection_limits}, The default for the limits argument differs and
 is here "DETECTION_LIMITS"
 }
-}
-\examples{
-load(system.file("extdata", "study_data.RData", package = "dataquieR"))
-load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
-
-# make things a bit more complicated for the function, giving datetimes
-# as numeric
-study_data[,
-  vapply(study_data, inherits, "POSIXct", FUN.VALUE = logical(1))] <-
-  lapply(study_data[, vapply(study_data, inherits, "POSIXct",
-  FUN.VALUE = logical(1))], as.numeric)
-
-MyValueLimits <- con_limit_deviations(
-  resp_vars = NULL,
-  label_col = "LABEL",
-  study_data = study_data,
-  meta_data = meta_data,
-  limits = "HARD_LIMITS"
-)
-
-names(MyValueLimits$SummaryPlotList)
-
-MyValueLimits <- con_limit_deviations(
-  resp_vars = c("QUEST_DT_0"),
-  label_col = "LABEL",
-  study_data = study_data,
-  meta_data = meta_data,
-  limits = "HARD_LIMITS"
-)
-
-MyValueLimits$SummaryPlotList$QUEST_DT_0
 }
 \seealso{
 \itemize{

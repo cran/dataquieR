@@ -18,8 +18,8 @@ util_warn_unordered <- function(x, varname) {
       warn <- TRUE
     }
   } else if (!is.numeric(x)) {
-    if (all(DATA_TYPES_OF_R_TYPE[class(x)] !=
-        DATA_TYPES$DATETIME)) {
+    if (!identical(prep_dq_data_type_of(x),
+        tolower(DATA_TYPES$DATETIME))) {
       warn <- TRUE
     }
   }

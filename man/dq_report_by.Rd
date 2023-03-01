@@ -8,9 +8,10 @@ dq_report_by(
   study_data,
   meta_data,
   label_col,
-  meta_data_split = KEY_STUDY_SEGMENT,
+  meta_data_split = STUDY_SEGMENT,
   study_data_split,
-  ...
+  ...,
+  v1.0 = FALSE
 )
 }
 \arguments{
@@ -26,24 +27,26 @@ metadata with labels of variables}
 split the report in sections of
 variables, e.g. all blood-
 pressure. By default, reports are
-split by \link{KEY_STUDY_SEGMENT}
+split by \link{STUDY_SEGMENT}
 if available.}
 
 \item{study_data_split}{\link{variable} Name of a study variable to stratify the
 report by, e.g. the study centers.}
 
 \item{...}{passed through to \link{dq_report}}
+
+\item{v1.0}{\link{logical} if \code{TRUE}, create old \code{dq_report} reports, use
+\code{dq_report2}, otherwise}
 }
 \description{
 Generate a stratified full DQ report
 }
 \examples{
 \dontrun{ # really long-running example.
-load(system.file("extdata", "study_data.RData", package = "dataquieR"))
-load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
-rep <- dq_report_by(study_data, meta_data, label_col =
+prep_load_workbook_like_file("inst/extdata/meta_data_extended.xlsx")
+rep <- dq_report_by("study_data", label_col =
   LABEL, study_data_split = "CENTER_0")
-rep <- dq_report_by(study_data, meta_data,
+rep <- dq_report_by("study_data",
   label_col = LABEL, study_data_split = "CENTER_0",
   meta_data_split = NULL
 )

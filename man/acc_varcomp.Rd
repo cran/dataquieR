@@ -31,14 +31,14 @@ adjustment}
 specifies the minimum no. of observations
 that is required to include a subgroup
 (level) of the "group_var" in the analysis.
-Subgroups with less observations are
+Subgroups with fewer observations are
 excluded. The default is 30.}
 
 \item{min_subgroups}{\link{integer} from=0. optional argument if a "group_var" is
 used. This argument specifies the
 minimum no. of subgroups (levels)
 included "group_var". If the variable
-defined in "group_var" has less
+defined in "group_var" has fewer
 subgroups it is not used for analysis.
 The default is 5.}
 
@@ -101,7 +101,7 @@ rvs <- c("DBP_0", "SBP_0")
 group_vars <- prep_map_labels(rvs, meta_data = meta_data, from = label_col,
   to = VAR_NAMES)
 group_vars <- prep_map_labels(group_vars, meta_data = meta_data,
-  to = KEY_OBSERVER)
+  to = GROUP_VAR_OBSERVER)
 group_vars <- prep_map_labels(group_vars, meta_data = meta_data)
 acc_varcomp(
   resp_vars = rvs, group_vars = group_vars, co_vars = co_vars,

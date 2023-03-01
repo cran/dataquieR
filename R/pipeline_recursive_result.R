@@ -1,4 +1,4 @@
-#' Function to convert a pipeline result data frame to named encapsulated lists
+#' Convert a pipeline result data frame to named encapsulated lists
 #'
 #' @description
 #' This function converts a data frame to a recursive list structure based on
@@ -21,6 +21,7 @@
 #' @importFrom stats setNames
 #'
 #' @examples
+#' \dontrun{
 #' call_plan_with_results <- structure(list(
 #'   resp_vars =
 #'     c(
@@ -42,6 +43,7 @@
 #'   colnames(call_plan_with_results)[2:(ncol(call_plan_with_results) - 1)]
 #' pipeline_recursive_result(call_plan_with_results, result_groups)
 #' pipeline_recursive_result(call_plan_with_results, rev(result_groups))
+#' }
 pipeline_recursive_result <- function(call_plan_with_results,
                                       result_groups =
                                         setdiff(

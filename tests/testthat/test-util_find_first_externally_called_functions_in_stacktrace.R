@@ -25,6 +25,6 @@ test_that("util_find_first_externally_called_functions_in_stacktrace works", {
     util_find_first_externally_called_functions_in_stacktrace(
       sfs = NULL,
       cls = NULL),
-    -1
+    NA_integer_
   )
 })

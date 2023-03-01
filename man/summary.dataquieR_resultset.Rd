@@ -4,10 +4,20 @@
 \alias{summary.dataquieR_resultset}
 \title{Summarize a \link{dataquieR} report}
 \usage{
-\method{summary}{dataquieR_resultset}(object, ...)
+\method{summary}{dataquieR_resultset}(
+  object,
+  aspect = c("issue", "applicability", "error"),
+  return_the_value = TRUE,
+  ...
+)
 }
 \arguments{
 \item{object}{\link[=dq_report]{dataquieR report}.}
+
+\item{aspect}{what sort of issues to summarize}
+
+\item{return_the_value}{\link{logical} return the \code{GRADING} or error message,
+a color otherwise.}
 
 \item{...}{not used yet.}
 }

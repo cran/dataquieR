@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA='>
+    <rect x='0.00' y='0.00' width='720.00' height='576.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+</g>
+<defs>
+  <clipPath id='cpNjYuNjZ8NTgwLjU5fDMyLjQ2fDUzMC42MA=='>
+    <rect x='66.66' y='32.46' width='513.93' height='498.14' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpNjYuNjZ8NTgwLjU5fDMyLjQ2fDUzMC42MA==)'>
+<polyline points='167.89,530.60 167.89,32.46 ' style='stroke-width: 0.53; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='323.63,530.60 323.63,32.46 ' style='stroke-width: 0.53; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='479.37,530.60 479.37,32.46 ' style='stroke-width: 0.53; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='66.66,281.53 580.59,281.53 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='90.02,530.60 90.02,32.46 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='245.76,530.60 245.76,32.46 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='401.50,530.60 401.50,32.46 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='557.23,530.60 557.23,32.46 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<rect x='90.02' y='55.10' width='389.34' height='452.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #B2182B;' />
+<text x='479.37' y='285.33' style='font-size: 11.04px; font-family: sans;' textLength='19.02px' lengthAdjust='spacingAndGlyphs'> 5%</text>
+<line x1='167.89' y1='530.60' x2='167.89' y2='32.46' style='stroke-width: 1.07; stroke: #FF0000; stroke-dasharray: 5.69,5.69; stroke-linecap: butt;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+<text x='61.73' y='287.03' text-anchor='end' style='font-size: 16.00px; fill: #4D4D4D; font-family: sans;' textLength='35.60px' lengthAdjust='spacingAndGlyphs'>1001</text>
+<text x='585.53' y='287.03' style='font-size: 16.00px; fill: #4D4D4D; font-family: sans;' textLength='129.00px' lengthAdjust='spacingAndGlyphs'>Becomes younger</text>
+<text x='90.02' y='546.54' text-anchor='middle' style='font-size: 16.00px; fill: #4D4D4D; font-family: sans;' textLength='8.90px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='245.76' y='546.54' text-anchor='middle' style='font-size: 16.00px; fill: #4D4D4D; font-family: sans;' textLength='8.90px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text x='401.50' y='546.54' text-anchor='middle' style='font-size: 16.00px; fill: #4D4D4D; font-family: sans;' textLength='8.90px' lengthAdjust='spacingAndGlyphs'>4</text>
+<text x='557.23' y='546.54' text-anchor='middle' style='font-size: 16.00px; fill: #4D4D4D; font-family: sans;' textLength='8.90px' lengthAdjust='spacingAndGlyphs'>6</text>
+<text x='323.63' y='566.37' text-anchor='middle' style='font-size: 20.00px; font-family: sans;' textLength='31.10px' lengthAdjust='spacingAndGlyphs'>(%)</text>
+<text transform='translate(19.24,281.53) rotate(-90)' text-anchor='middle' style='font-size: 20.00px; font-family: sans;' textLength='190.14px' lengthAdjust='spacingAndGlyphs'>IDs of applied checks</text>
+<text x='66.66' y='22.00' style='font-size: 24.00px; font-family: sans;' textLength='460.35px' lengthAdjust='spacingAndGlyphs'>con_contradictions logical age checks, only</text>
+</g>
+</svg>

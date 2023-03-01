@@ -60,21 +60,50 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
 
   cl <- c_list[[1]] # ?
 
-  if (is.character(cl) && length(cl) == 1) {
-    res <- unlist(strsplit(cl, split_char, fixed = TRUE))
-    res[res == ""] <- NA
+  if (length(cl) != 1) { # nocov start
+    util_error(c("Internal error: Have more than one codelist for a",
+                 "variable in the metadata -- this should not happen."))
+  }  # nocov end
+
+  # res <- unlist(strsplit(cl, split_char, fixed = TRUE))
+  r <- util_parse_assignments(cl, split_char = SPLIT_CHAR)
+  if (length(r) == 0) {
+    r <- setNames(character(0), character(0))
+  } else {
+    r <- setNames(unlist(r, recursive = FALSE), nm = names(r))
+  }
+  res <- names(r)
+  res[util_empty(res)] <- NA
+  if (DATA_TYPE %in% colnames(mdf) &&
+      any(!is.na(mdf[[DATA_TYPE]])) &&
+      all(na.rm = TRUE, mdf[[DATA_TYPE]][
+        !is.na(mdf[[label_col]]) & mdf[[label_col]] == x] ==
+      DATA_TYPES$DATETIME)) {
+    dt_res <- suppressWarnings(lubridate::as_datetime(res))
+    if (sum(is.na(res)) < sum(is.na(dt_res))) {
+      util_warning(
+"Some codes (%s) were not datetime/assignment for %s: %s, these will be ignored",
+        dQuote(code_name),
+        dQuote(x),
+        paste(sQuote(res[is.na(dt_res) != is.na(res)]),
+              collapse = ", "),
+        applicability_problem = TRUE)
+    }
+    names(dt_res) <- r
+    r <- dt_res[!is.na(dt_res)]
+  } else {
     numeric_res <- suppressWarnings(as.numeric(res))
     if (sum(is.na(res)) < sum(is.na(numeric_res))) {
       util_warning(
-        "Some codes (%s) were not numeric for %s: %s, these will be ignored",
-         dQuote(code_name),
-         dQuote(x),
-         paste(sQuote(res[is.na(numeric_res) != is.na(res)]),
-               collapse = ", "),
+"Some codes (%s) were not numeric/assignment for %s: %s, these will be ignored",
+        dQuote(code_name),
+        dQuote(x),
+        paste(sQuote(res[is.na(numeric_res) != is.na(res)]),
+              collapse = ", "),
         applicability_problem = TRUE)
     }
-    numeric_res
-  } else {
-    cl
+    names(numeric_res) <- r
+    r <- numeric_res[!is.na(numeric_res)]
   }
+  r
 }

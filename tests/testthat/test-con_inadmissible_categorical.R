@@ -1,8 +1,7 @@
 test_that("con_inadmissible_categorical works", {
-  load(system.file("extdata", "study_data.RData", package = "dataquieR"),
-       envir = environment())
-  load(system.file("extdata", "meta_data.RData", package = "dataquieR"),
-       envir = environment())
+  skip_on_cran() # slow
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     IAVCatAll <- con_inadmissible_categorical(study_data = study_data,
                                               meta_data  = meta_data,

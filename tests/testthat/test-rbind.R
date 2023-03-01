@@ -1,9 +1,7 @@
 test_that("rbind.ReportSummaryTable works", {
 
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   md0 <- meta_data
 
@@ -21,13 +19,15 @@ test_that("rbind.ReportSummaryTable works", {
                               suppressWarnings = TRUE,
                               threshold_value = 100,
                               include_sysmiss = FALSE,
-                              show_causes = TRUE)
+                              show_causes = TRUE,
+                              drop_levels = TRUE,
+                              assume_consistent_codes = TRUE,
+                              expand_codes = TRUE)
 
   expect_equal(
     rbind.ReportSummaryTable(im1$ReportSummaryTable),
     structure(
       list(
-        Variables = structure(1L, .Label = "SBP_0", class = "factor"),
         "MISSING 99980" = 1L,
         "MISSING 99981" = 5L,
         "MISSING 99982" = 3L,
@@ -44,11 +44,14 @@ test_that("rbind.ReportSummaryTable works", {
         "MISSING 99993" = 2L,
         "MISSING 99994" = 9L,
         "MISSING 99995" = 1L,
-        N = 2641
+        Variables = "SBP_0",
+        N = 2940L
       ),
       row.names = c(NA,-1L),
+      class = c("ReportSummaryTable", "data.frame")
+    ),
+    row.names = c(NA,-1L),
       class = c("ReportSummaryTable",  "data.frame")
-    )
   )
 
   im2 <- com_item_missingness(resp_vars = "DBP_0", study_data, md0,
@@ -56,13 +59,15 @@ test_that("rbind.ReportSummaryTable works", {
                               suppressWarnings = TRUE,
                               threshold_value = 100,
                               include_sysmiss = FALSE,
-                              show_causes = TRUE)
+                              show_causes = TRUE,
+                              drop_levels = TRUE,
+                              assume_consistent_codes = TRUE,
+                              expand_codes = TRUE)
 
   expect_equal(
     rbind.ReportSummaryTable(im2$ReportSummaryTable),
     structure(
       list(
-        Variables = structure(1L, .Label = "DBP_0", class = "factor"),
         "MISSING 99980" = 3L,
         "MISSING 99981" = 3L,
         "MISSING 99982" = 4L,
@@ -79,10 +84,11 @@ test_that("rbind.ReportSummaryTable works", {
         "MISSING 99993" = 4L,
         "MISSING 99994" = 3L,
         "MISSING 99995" = 4L,
-        N = 2647
+        Variables = "DBP_0",
+        N = 2940L
       ),
       row.names = c(NA,-1L),
-      class = c("ReportSummaryTable",  "data.frame")
+      class = c("ReportSummaryTable", "data.frame")
     )
   )
 
@@ -91,13 +97,20 @@ test_that("rbind.ReportSummaryTable works", {
                               suppressWarnings = TRUE,
                               threshold_value = 100,
                               include_sysmiss = FALSE,
-                              show_causes = TRUE)
+                              show_causes = TRUE,
+                              drop_levels = TRUE,
+                              assume_consistent_codes = TRUE,
+                              expand_codes = TRUE)
   expect_equal(
     rbind.ReportSummaryTable(im3$ReportSummaryTable),
-    structure(list(),
-              .Names = character(0),
-              class = c("ReportSummaryTable",  "data.frame"),
-              row.names = integer(0))
+    structure(
+      list(
+        Variables = c("AGE_0", "AGE_1"),
+        N = c(2940L,  2940L)
+      ),
+      row.names = c(NA,-2L),
+      class = c("ReportSummaryTable",  "data.frame")
+    )
   )
 
   expect_equal(rbind.ReportSummaryTable(im2$ReportSummaryTable,
@@ -105,27 +118,28 @@ test_that("rbind.ReportSummaryTable works", {
                                         im1$ReportSummaryTable),
                structure(
                  list(
-                   Variables = structure(1:2, .Label = c("DBP_0",  "SBP_0"), class = "factor"),
-                   "MISSING 99980" = c(3L, 1L),
-                   "MISSING 99981" = c(3L,  5L),
-                   "MISSING 99982" = 4:3,
-                   "MISSING 99983" = c(6L, 4L),
-                   "MISSING 99984" = c(7L,  4L),
-                   "MISSING 99985" = c(12L, 3L),
-                   "MISSING 99986" = 5:4,
-                   "MISSING 99987" = c(3L,  6L),
-                   "MISSING 99988" = c(4L, 4L),
-                   "MISSING 99989" = 5:4,
-                   "MISSING 99990" = c(85L,  82L),
-                   "MISSING 99991" = c(10L, 6L),
-                   "MISSING 99992" = c(5L, 2L),
-                   "MISSING 99993" = c(4L, 2L),
-                   "MISSING 99994" = c(3L, 9L),
-                   "MISSING 99995" = c(4L, 1L),
-                   N = c(2647, 2641)
+                   "MISSING 99980" = c(3, 0, 0, 1),
+                   "MISSING 99981" = c(3,  0, 0, 5),
+                   "MISSING 99982" = c(4, 0, 0, 3),
+                   "MISSING 99983" = c(6,  0, 0, 4),
+                   "MISSING 99984" = c(7, 0, 0, 4),
+                   "MISSING 99985" = c(12,  0, 0, 3),
+                   "MISSING 99986" = c(5, 0, 0, 4),
+                   "MISSING 99987" = c(3,  0, 0, 6),
+                   "MISSING 99988" = c(4, 0, 0, 4),
+                   "MISSING 99989" = c(5,  0, 0, 4),
+                   "MISSING 99990" = c(85, 0, 0, 82),
+                   "MISSING 99991" = c(10,  0, 0, 6),
+                   "MISSING 99992" = c(5, 0, 0, 2),
+                   "MISSING 99993" = c(4,  0, 0, 2),
+                   "MISSING 99994" = c(3, 0, 0, 9),
+                   "MISSING 99995" = c(4,  0, 0, 1),
+                   Variables = c("DBP_0", "AGE_0", "AGE_1", "SBP_0"),
+                   N = c(2940L, 2940L, 2940L, 2940L)
                  ),
-                 row.names = c(NA,-2L),
+                 row.names = c(NA,-4L),
                  class = c("ReportSummaryTable", "data.frame")
-               ))
+               )
+  )
 
 })

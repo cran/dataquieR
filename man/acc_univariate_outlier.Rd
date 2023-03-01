@@ -2,7 +2,7 @@
 % Please edit documentation in R/acc_univariate_outlier.R
 \name{acc_univariate_outlier}
 \alias{acc_univariate_outlier}
-\title{Function to identify univariate outliers by four different approaches}
+\title{Identify univariate outliers by four different approaches}
 \usage{
 acc_univariate_outlier(
   resp_vars = NULL,
@@ -10,8 +10,9 @@ acc_univariate_outlier(
   study_data,
   meta_data,
   exclude_roles,
-  n_rules = 4,
-  max_non_outliers_plot = 10000
+  n_rules = length(unique(criteria)),
+  max_non_outliers_plot = 10000,
+  criteria = c("tukey", "sixsigma", "hubert", "sigmagap")
 )
 }
 \arguments{
@@ -37,6 +38,9 @@ points to be plot. If more
 points exist, a subsample will
 be plotted only. Note, that
 sampling is not deterministic.}
+
+\item{criteria}{\link{set} tukey | sixsigma | hubert | sigmagap. a vector with
+methods to be used for detecting outliers.}
 }
 \value{
 a list with:
@@ -54,7 +58,7 @@ boxplot method introduced by Tukey 1977. The boxplot is a simple graphical
 tool to display information about continuous univariate data (e.g., median,
 lower and upper quartile). Outliers are defined as values deviating more
 than \eqn{1.5 \times IQR} from the 1st (Q25) or 3rd (Q75) quartile. The
-strength of Tukey’s method is that it makes no distributional assumptions
+strength of Tukey's method is that it makes no distributional assumptions
 and thus is also applicable to skewed or non mound-shaped data
 Marsh and Seo, 2006. Nevertheless, this method tends to identify frequent
 measurements which are falsely interpreted as true outliers.

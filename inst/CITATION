@@ -6,9 +6,9 @@ if (is.null(meta$Date)) meta$Date <- Sys.Date()
 year <- format(as.Date(meta$Date), "%Y")
 note <- sprintf("R package version %s", meta$Version)
 
-citEntry(entry = "Manual",
+bibentry(bibtype = "Manual",
          title = "{dataquieR}: Data Quality in Epidemiological Research",
-         author = personList(
+         author = c(
                        as.person("Elisa Kasbohm"),
                        as.person("Joany Marino"),
                        as.person("Adrian Richter"),
@@ -26,10 +26,10 @@ citEntry(entry = "Manual",
                  "URL https://dataquality.ship-med.uni-greifswald.de/")
 )
 
-citEntry(entry = "Article",
+bibentry(bibtype = "Article",
       title =
         "{dataquieR}: assessment of data quality in epidemiological research",
-       author = personList(as.person("Adrian Richter"),
+       author = c(as.person("Adrian Richter"),
                as.person("Carsten Oliver Schmidt"),
                as.person('Markus Kr\\"{u}ger'),
                as.person("Stephan Struckmann")),
@@ -44,12 +44,12 @@ citEntry(entry = "Article",
       )
 )
 
-citEntry(entry = "Article",
+bibentry(bibtype = "Article",
          title = paste("Facilitating harmonized data quality assessments. A",
                        "data quality framework for observational health",
                        "research data collections with software",
                        "implementations in R"),
-         author = personList(
+         author = c(
            as.person("Carsten Oliver Schmidt"),
            as.person("Stephan Struckmann"),
            as.person("Cornelia Enzenbach"),

@@ -1,4 +1,5 @@
 test_that("util_app_ed works", {
+  skip_on_cran() # deprecated
   md <- prep_create_meta(
     VAR_NAMES = letters,
     DATA_TYPE = c(rep(DATA_TYPES$FLOAT, 13), rep(DATA_TYPES$INTEGER, 10),

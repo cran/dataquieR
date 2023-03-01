@@ -38,7 +38,7 @@ util_dichotomize <- function(study_data,
   }
 
   if (vrcnt > 0) {
-    message(sprintf("Recoded %d variables (%d not NA values)", vrcnt, vlcnt))
+    util_message(sprintf("Recoded %d variables (%d not NA values)", vrcnt, vlcnt))
   }
 
   return(study_data)

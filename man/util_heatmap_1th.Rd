@@ -37,7 +37,8 @@ vice versa.}
 \item{cols}{deprecated, ignored.}
 
 \item{strata}{\link{variable} optional, the name of a variable
-used for stratification}
+used for stratification
+\code{inheritParams} \code{acc_distributions}}
 }
 \value{
 a \link{list} with:

@@ -3,13 +3,17 @@
 #' @param resp_vars [variable] names of the variables to fetch the data type
 #'                             from the data
 #' @param study_data [data.frame] the data frame that contains the measurements
+#'                                Hint: Only data frames supported, no URL
+#'                                or file names.
 #'
 #' @return vector of data types
 #' @export
 #' @importFrom stats setNames
 #'
 #' @examples
+#' \dontrun{
 #' dataquieR::prep_datatype_from_data(cars)
+#' }
 prep_datatype_from_data <-
   function(resp_vars = colnames(study_data), study_data) {
   if (!missing(resp_vars) && is.data.frame(resp_vars) && missing(study_data)) {
@@ -64,21 +68,9 @@ prep_datatype_from_data <-
   types <- vapply(setNames(nm = resp_vars), FUN.VALUE = character(1),
                   function(variable) {
     if (variable %in% colnames(study_data)) {
-      cl <- class(study_data[[variable]])[1]
-      if (cl == "numeric") {
-        if (all(util_is_integer(study_data[[variable]]))) {
-          cl <- "integer"
-        }
-      }
-      r <- DATA_TYPES_OF_R_TYPE[[cl]]
+      r <- prep_dq_data_type_of(study_data[[variable]])
       if (length(r) == 0) {
         r <- DATA_TYPES$STRING
-      }
-
-      if (length(r) > 1) {
-        r <- r[[1]] # nocov
-        # this should never happen, since DATA_TYPES_OF_R_TYPE points to
-        # scalars only
       }
       r
     } else {

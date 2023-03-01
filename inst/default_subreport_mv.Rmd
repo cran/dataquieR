@@ -1,4 +1,4 @@
-```{r include=FALSE}
+```{r echo=FALSE}
 #if (any(grepl("Limit", title))) {
 #  save(resp_vars, outputSlot, current_results, file = "/tmp/con.RData")
 #}
@@ -12,13 +12,40 @@ if (outputSlot == "SummaryTable") {
   stop("Not a table result")
 }
 all_res <- lapply(current_results, `[[`, outputSlot)
+if (chunk_error) {
+  errors <- lapply(current_results, attr, "error")
+  invisible(lapply(errors, function(e) {
+    if (length(e) == 1) if (inherits(e[[1]], "error")) {
+      cond <- simpleError(conditionMessage(e[[1]]), call(iform, variable)); 
+      try(stop(cond))
+    }
+  }))
+}
+if (chunk_warning) {
+  errors <- lapply(current_results, attr, "warning")
+  invisible(lapply(errors, function(e) {
+    if (length(e) == 1) if (inherits(e[[1]], "warning")) {
+      cond <- simpleWarning(conditionMessage(e[[1]]), call(iform, variable)); 
+      try(warning(cond))
+    }
+  }))
+}
+if (chunk_message) {
+  errors <- lapply(current_results, attr, "message")
+  invisible(lapply(errors, function(e) {
+    if (length(e) == 1) if (inherits(e[[1]], "message")) {
+      cond <- simpleMessage(conditionMessage(e[[1]]), call(iform, variable)); 
+      try(message(cond))
+    }
+  }))
+}
 have_a_result <- any(unlist(lapply(all_res, function(r) variable %in% names(r))))
 if (!have_a_result) {
   stop("No results here")
 }
 ```
 ```{r results='asis', eval=have_a_result}
-cat(sprintf(title, dQuote(variable)))
+cat(sprintf(title, dQuote(dataquieR::prep_title_escape(variable, html = FALSE))))
 cat("\n")
 ```
 ```{r echo=FALSE, eval=have_a_result}

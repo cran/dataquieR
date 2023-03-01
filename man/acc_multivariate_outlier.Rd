@@ -2,20 +2,24 @@
 % Please edit documentation in R/acc_multivariate_outlier.R
 \name{acc_multivariate_outlier}
 \alias{acc_multivariate_outlier}
-\title{Function to calculate and plot Mahalanobis distances}
+\title{Calculate and plot Mahalanobis distances}
 \usage{
 acc_multivariate_outlier(
-  resp_vars,
+  variable_group = NULL,
   id_vars = NULL,
   label_col,
   n_rules = 4,
+  max_non_outliers_plot = 10000,
+  criteria = c("tukey", "sixsigma", "hubert", "sigmagap"),
   study_data,
   meta_data
 )
 }
 \arguments{
-\item{resp_vars}{\link{variable list} the name of the continuous
-measurement variables}
+\item{variable_group}{\link{variable list} the names of the continuous
+measurement variables building
+a group, for that multivariate outliers
+make sense.}
 
 \item{id_vars}{\link{variable} optional, an ID variable of
 the study data. If not specified row numbers are used.}
@@ -25,6 +29,15 @@ with labels of variables}
 
 \item{n_rules}{\link{numeric} from=1 to=4. the no. of rules that must be violated
 to classify as outlier}
+
+\item{max_non_outliers_plot}{\link{integer} from=0. Maximum number of non-outlier
+points to be plot. If more
+points exist, a subsample will
+be plotted only. Note, that
+sampling is not deterministic.}
+
+\item{criteria}{\link{set} tukey | sixsigma | hubert | sigmagap. a vector with
+methods to be used for detecting outliers.}
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
@@ -71,7 +84,7 @@ For further details, please see the vignette for univariate outlier.
 \itemize{
 \item Implementation is restricted to variables of type float
 \item Remove missing codes from the study data (if defined in the metadata)
-\item The covariance matrix is estimated for all resp_vars
+\item The covariance matrix is estimated for all variables from \code{variable_group}
 \item The Mahalanobis distance of each observation is calculated
 \eqn{MD^2_i  = (x_i - \mu)^T \Sigma^{-1} (x_i -  \mu)}
 \item The four rules mentioned above are applied on this distance for

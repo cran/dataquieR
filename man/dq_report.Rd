@@ -8,13 +8,18 @@ dq_report(
   study_data,
   meta_data,
   label_col = NULL,
+  meta_data_segment = "segment_level",
+  meta_data_dataframe = "dataframe_level",
   ...,
   dimensions = c("Completeness", "Consistency"),
+  dont_modify_study_data_by = c("con_soft_limits", "con_detection_limits"),
   strata_attribute,
   strata_vars,
   cores = list(mode = "socket", logging = FALSE, cpus = util_detect_cores(),
     load.balancing = TRUE),
-  specific_args = list()
+  specific_args = list(),
+  author = prep_get_user_name(),
+  debug_parallel = FALSE
 )
 }
 \arguments{
@@ -25,6 +30,11 @@ attributes of study data}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
+
+\item{meta_data_segment}{\link{data.frame} -- optional: Segment level metadata}
+
+\item{meta_data_dataframe}{\link{data.frame} -- optional: Data frame level
+metadata}
 
 \item{...}{arguments to be passed to all called indicator functions if
 applicable.}
@@ -38,12 +48,17 @@ Completeness should be included, if Consistency is
 included, and Consistency should be included, if Accuracy
 is included to avoid misleading detections of e.g. missing
 codes as outliers, please refer to the data quality concept
-for more details.}
+for more details. Integrity is always included.}
+
+\item{dont_modify_study_data_by}{\link{character} list of functions, which are
+not allowed to modify study data downstream
+the pipeline, e.g., to avoid, that even soft
+limit violations are removed.}
 
 \item{strata_attribute}{\link{character} variable of a variable attribute coding
 study segments.
 Values other than leaving this empty or passing
-KEY_STUDY_SEGMENT are not yet supported.
+STUDY_SEGMENT are not yet supported.
 Stratification is not yet fully supported, please
 use \link{dq_report_by}.}
 
@@ -60,6 +75,10 @@ the called functions, the of the list elements
 correspond to the indicator functions whose calls
 should be modified. The elements are lists of
 arguments.}
+
+\item{author}{\link{character} author for the report documents.}
+
+\item{debug_parallel}{\link{logical} print blocks currently evaluated in parallel}
 }
 \value{
 a \link{dataquieR_resultset}. Can be printed creating a RMarkdown-report.
@@ -84,10 +103,7 @@ report <- dq_report(study_data, meta_data,
     package = "dataquieR"
   ), header = TRUE, sep = "#"),
   show_causes = TRUE,
-  cause_label_df = read.csv(
-    system.file("extdata", "Missing-Codes-2020.csv", package = "dataquieR"),
-    header = TRUE, sep = ";"
-  )
+  cause_label_df = prep_get_data_frame("meta_data_v2|missing_table")
 )
 save(report, file = "report.RData") # careful, this contains the study_data
 report <- dq_report(study_data, meta_data,
@@ -117,6 +133,10 @@ report <- dq_report(study_data, meta_data,
   specific_args = list(acc_univariate_outlier = list(resp_vars = "DBP_0")),
   resp_vars = "SBP_0", cores = NULL
 )
+rp1 <- dq_report("ship", "ship_meta",
+  meta_data_segment = "meta_data_segment",
+  meta_data_dataframe = "meta_data_dataframe",
+  label_col = LABEL)
 }
 }
 \seealso{

@@ -1,4 +1,9 @@
 test_that("prep_check_meta_names works", {
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                  dataquieR.ERRORS_WITH_CALLER = TRUE,
+                  dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                  dataquieR.MESSAGES_WITH_CALLER = TRUE)
  expect_silent(prep_check_meta_names(data.frame(), level = NULL))
 
  expect_silent( prep_check_meta_names(data.frame(VAR_NAMES = 1, DATA_TYPE = 2,
@@ -9,9 +14,17 @@ test_that("prep_check_meta_names works", {
       VAR_NAMES = 1, DATA_TYPE = 2, MISSING_LIST = 3,
       LABEL = "LABEL", VALUE_LABELS = "VALUE_LABELS",
       JUMP_LIST = "JUMP_LIST", HARD_LIMITS = "HARD_LIMITS",
-      KEY_OBSERVER = "KEY_OBSERVER", KEY_DEVICE = "KEY_DEVICE",
-      KEY_DATETIME = "KEY_DATETIME",
-      KEY_STUDY_SEGMENT = "KEY_STUDY_SEGMENT"
+      GROUP_VAR_OBSERVER = "GROUP_VAR_OBSERVER",
+      GROUP_VAR_DEVICE = "GROUP_VAR_DEVICE",
+      TIME_VAR = "TIME_VAR",
+      STUDY_SEGMENT = "STUDY_SEGMENT",
+      PART_VAR = "PART_VAR",
+      LOCATION_RANGE = "LOCATION_RANGE",
+      LOCATION_METRIC = "LOCATION_METRIC",
+      PROPORTION_RANGE = "PROPORTION_RANGE",
+      MISSING_LIST_TABLE = "MISSING_LIST_TABLE",
+      LONG_LABEL = "LONG_LABEL",
+      CO_VARS = "CO_VARS"
     ),
     RECOMMENDED
   ))
@@ -21,15 +34,22 @@ test_that("prep_check_meta_names works", {
       VAR_NAMES = 1, DATA_TYPE = 2, MISSING_LIST = 3,
       LABEL = "LABEL", VALUE_LABELS = "VALUE_LABELS",
       JUMP_LIST = "JUMP_LIST", HARD_LIMITS = "HARD_LIMITS",
-      KEY_OBSERVER = "KEY_OBSERVER", KEY_DEVICE = "KEY_DEVICE",
-      KEY_DATETIME = "KEY_DATETIME", KEY_STUDY_SEGMENT =
-        "KEY_STUDY_SEGMENT",
+      GROUP_VAR_OBSERVER = "GROUP_VAR_OBSERVER",
+      GROUP_VAR_DEVICE = "GROUP_VAR_DEVICE",
+      TIME_VAR = "TIME_VAR",
+      STUDY_SEGMENT = "STUDY_SEGMENT",
+      PART_VAR = "PART_VAR",
       DETECTION_LIMITS = "DETECTION_LIMITS", SOFT_LIMITS = "SOFT_LIMITS",
       CONTRADICTIONS = "CONTRADICTIONS", DISTRIBUTION = "DISTRIBUTION",
       DECIMALS = "DECIMALS", VARIABLE_ROLE = "VARIABLE_ROLE",
       DATA_ENTRY_TYPE = "DATA_ENTRY_TYPE",
       VARIABLE_ORDER = "VARIABLE_ORDER", LONG_LABEL =
-        "LONG_LABEL", recode = "recode"
+        "LONG_LABEL", recode = "recode",
+      LOCATION_RANGE = "LOCATION_RANGE",
+      LOCATION_METRIC = "LOCATION_METRIC",
+      PROPORTION_RANGE = "PROPORTION_RANGE",
+      MISSING_LIST_TABLE = "MISSING_LIST_TABLE",
+      CO_VARS = "CO_VARS"
     ),
     OPTIONAL
   ))
@@ -63,8 +83,8 @@ test_that("prep_check_meta_names works", {
     prep_check_meta_names(meta_data = list(VAR_NAMES = 1, DATA_TYPE = 2,
                                            MISSING_LIST = 3), "TECHNICAL",
                           character.only = TRUE),
-    regexp = paste("In prep_check_meta_names: meta data",
-                   "is not a data frame at all"),
+    regexp = paste(".+meta_data.+",
+                   "is not a data frame"),
     perl = TRUE
   )
 
@@ -74,9 +94,11 @@ test_that("prep_check_meta_names works", {
         VAR_NAMES = 1, DATA_TYPE = 2, MISSING_LIST = 3,
         LABEL = "LABEL", VALUE_LABELS = "VALUE_LABELS",
         JUMP_LIST = "JUMP_LIST", HARD_LIMITS = "HARD_LIMITS",
-        KEY_OBSERVER = "KEY_OBSERVER", KEY_DEVICE = "KEY_DEVICE",
-        KEY_DATETIME = "KEY_DATETIME", KEY_STUDY_SEGMENT =
-          "KEY_STUDY_SEGMENT",
+        GROUP_VAR_OBSERVER = "GROUP_VAR_OBSERVER",
+        GROUP_VAR_DEVICE = "GROUP_VAR_DEVICE",
+        TIME_VAR = "TIME_VAR",
+        STUDY_SEGMENT = "STUDY_SEGMENT",
+        PART_VAR = "PART_VAR",
         DETECTION_LIMITS = "DETECTION_LIMITS", SOFT_LIMITS = "SOFT_LIMITS",
         CONTRADICTIONS = "CONTRADICTIONS", DISTRIBUTION = "DISTRIBUTION",
         DECIMALS = "DECIMALS", VARIABLE_ROLE = "VARIABLE_ROLE",
@@ -90,7 +112,6 @@ test_that("prep_check_meta_names works", {
       "Found the following addtional metadata columns,",
       "which look like typos of defined names: .+VARNAMES.+ -> .+VAR_NAMES.+"
     ),
-    perl  = TRUE,
-    all = TRUE
+    perl  = TRUE
   )
 })

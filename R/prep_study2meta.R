@@ -10,7 +10,8 @@
 #' The function also tries to detect missing codes.
 #'
 #' @param study_data [data.frame] the data frame that contains the measurements
-#' @param level [enum] level to provide (see also [VARATT_REQUIRE_LEVELS])
+#' @param level [enum] levels to provide (see also [VARATT_REQUIRE_LEVELS])
+#' @param cumulative [logical] include attributes of all levels up to level
 #' @param convert_factors [logical] convert the
 #'
 #' @return a meta_data data frame
@@ -19,9 +20,11 @@
 #'
 prep_study2meta <- function(study_data, level = c(
                               VARATT_REQUIRE_LEVELS$REQUIRED,
-                              VARATT_REQUIRE_LEVELS$OPTIONAL
+                              VARATT_REQUIRE_LEVELS$RECOMMENDED
                             ),
+                            cumulative = TRUE,
                             convert_factors = FALSE) {
+  util_expect_data_frame(study_data)
   if (missing(study_data) || !is.data.frame(study_data)) {
     util_error("Need study data as a data frame")
   }
@@ -56,6 +59,7 @@ prep_study2meta <- function(study_data, level = c(
   util_get_var_att_names_of_level(VARATT_REQUIRE_LEVELS$REQUIRED)
 
   var_names <- colnames(study_data)
+  var_labels <- var_names # TODO: maybe do something nicer here, e.g., SNAKE_CASE -> Snake Case, or so.
 
   if (length(var_names) == 0) {
     util_error("No study variables found -- cannot proceed.")
@@ -67,12 +71,15 @@ prep_study2meta <- function(study_data, level = c(
   missing_list <-
     mapply(function(x, dt) {
       if (dt %in% c(DATA_TYPES$INTEGER, DATA_TYPES$FLOAT)) {
-        paste(unique(
+        r <- paste(unique(
           sort(suppressWarnings(as.numeric(x[util_looks_like_missing(x)])))),
           collapse = SPLIT_CHAR)
       } else {
-        ""
+        r <- ""
       }
+      if (length(r) == 1 && util_empty(r))
+        r <- SPLIT_CHAR # missing on purpose
+      r
     }, study_data, datatypes)
 
   if (convert_factors) {
@@ -86,6 +93,8 @@ prep_study2meta <- function(study_data, level = c(
   if (convert_factors) {
     res <- prep_create_meta(
       VAR_NAMES = var_names,
+      LABEL = var_labels,
+      LONG_LABEL = var_labels,
       DATA_TYPE = datatypes,
       VALUE_LABELS = valuelabels[[VALUE_LABELS]],
       MISSING_LIST = missing_list
@@ -93,12 +102,15 @@ prep_study2meta <- function(study_data, level = c(
   } else {
     res <- prep_create_meta(
       VAR_NAMES = var_names,
+      LABEL = var_labels,
+      LONG_LABEL = var_labels,
       DATA_TYPE = datatypes,
       MISSING_LIST = missing_list
     )
   }
 
-  generated_atts <- util_get_var_att_names_of_level(level)
+  generated_atts <- util_get_var_att_names_of_level(level,
+                                                    cumulative = cumulative)
   missing_atts <- setdiff(generated_atts, colnames(res))
 
   if (length(missing_atts) > 0) {
@@ -112,6 +124,8 @@ prep_study2meta <- function(study_data, level = c(
 
     res <- cbind.data.frame(res, empty_cols)
   }
+
+  res <- res[, intersect(generated_atts, colnames(res))]
 
   if (!all(generated_atts %in% colnames(res))) {
     util_error(

@@ -4,10 +4,13 @@
 \alias{util_make_function}
 \title{Make a function capturing errors and other conditions for parallelization}
 \usage{
-util_make_function(fct)
+util_make_function(fct, caller.)
 }
 \arguments{
 \item{fct}{\link{function} to prepare}
+
+\item{caller.}{\link{call} for error messages, default is the caller of
+\code{util_make_function}}
 }
 \value{
 decorated \link{function}

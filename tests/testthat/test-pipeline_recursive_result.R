@@ -1,4 +1,10 @@
 test_that("pipeline_recursive_result works", {
+  skip_on_cran() # deprecated
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
   expect_error(
     pipeline_recursive_result(42),
     regexp =
@@ -85,13 +91,12 @@ test_that("pipeline_recursive_result works", {
       paste("Not each parameter has been selected to create a recursion level.",
             "You may miss some results with identical names. Please check your",
             ".+result_groups.+-argument."),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
   expect_error(
     pipeline_recursive_result(call_plan_with_results, head(result_groups, -3)),
     regexp =
-      paste("In pipeline_recursive_result: argument",
+      paste("argument",
             "result_groups must be character and length > 0"),
     fixed = TRUE
   )
@@ -100,8 +105,7 @@ test_that("pipeline_recursive_result works", {
                               c(result_groups, "xyz")),
     regexp = paste("Not all desired result groups correspond to",
                    "columns in the call_plan. Remove the unknowns."),
-    fixed = TRUE,
-    all = TRUE
+    fixed = TRUE
   )
   expect_warning(
     expect_error(pipeline_recursive_result(call_plan_with_results,
@@ -112,14 +116,12 @@ test_that("pipeline_recursive_result works", {
                  ),
     regexp = paste("Not all desired result groups correspond to",
                    "columns in the call_plan. Remove the unknowns."),
-    fixed = TRUE,
-    all = TRUE
+    fixed = TRUE
   )
   result_groups <- colnames(call_plan_with_results)
   expect_warning(pipeline_recursive_result(call_plan_with_results,
                             result_groups = result_groups),
                  regexp =
                    "resp_vars and results cannot be used as result_groups.",
-                 fixed = TRUE,
-                 all = TRUE)
+                 fixed = TRUE)
 })

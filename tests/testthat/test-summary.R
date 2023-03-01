@@ -1,8 +1,8 @@
 test_that("summary.dataquieR_resultset works", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # deprecated
+
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   # don't include huge reports as RData in the package
   # Suppress warnings since we do not test dq_report
@@ -19,17 +19,13 @@ test_that("summary.dataquieR_resultset works", {
                                                       package = "dataquieR"
                                        ), header = TRUE, sep = "#"),
                                        show_causes = TRUE,
-                                       cause_label_df = read.csv(
-                                         system.file("extdata",
-                                                     "Missing-Codes-2020.csv",
-                                                     package = "dataquieR"),
-                                         header = TRUE, sep = ";"
-                                       )
+                                       cause_label_df = prep_get_data_frame(
+                                         "meta_data_v2|missing_table")
   ))
 
   x <- summary(report)
 
-  expect_equal(dim(x), c(53, 8))
+  expect_equal(dim(x), c(53, 9))
   expect_equal(
     colnames(x),
     c(
@@ -37,9 +33,10 @@ test_that("summary.dataquieR_resultset works", {
       "com_item_missingness",
       "con_contradictions",
       "con_detection_limits",
+      "con_hard_limits",
       "con_inadmissible_categorical",
-      "con_limit_deviations",
-      "KEY_STUDY_SEGMENT",
+      "con_soft_limits",
+      "STUDY_SEGMENT",
       "AnyProblem"
     )
   )
@@ -48,7 +45,7 @@ test_that("summary.dataquieR_resultset works", {
                  FALSE,
                  TRUE,
                  FALSE,
-                 TRUE,
+                 FALSE,
                  TRUE,
                  TRUE,
                  TRUE,
@@ -56,7 +53,7 @@ test_that("summary.dataquieR_resultset works", {
                  FALSE,
                  TRUE,
                  TRUE,
-                 TRUE,
+                 FALSE,
                  TRUE,
                  TRUE,
                  TRUE,
@@ -103,6 +100,8 @@ test_that("summary.dataquieR_resultset works", {
 })
 
 test_that("empty report summary works", {
+  skip_on_cran() # deprecated
+
   empty_report <- as.data.frame.dataquieR_resultset(list(long_format = list()))
   class(empty_report) <- "dataquieR_resultset"
   expect_warning(sr <- summary(empty_report),
@@ -113,12 +112,11 @@ test_that("empty report summary works", {
 })
 
 test_that("summary for more than one SummaryTable per indicator", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"),
-       envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"),
-       envir =
-         environment())
+  skip_on_cran() # deprecated
+
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
+
   check_table <- read.csv(
     system.file("extdata",
                 "contradiction_checks.csv",

@@ -5,13 +5,14 @@ test_that("prep_create_meta works", {
       VAR_NAMES = letters,
       DATA_TYPE = DATA_TYPES$INTEGER,
       LABEL = LETTERS,
-      MISSING_LIST = "999|998",
+      MISSING_LIST = "999 = a|998 = b",
       XYZ = character(0),
       level = l,
       character.only = TRUE
     ),
-    regexp =
-      "The following variable attributes are NULL, will ignore these: .+XYZ.+",
+    regexp = sprintf("(%s)",
+      "The following variable attributes are NULL, will ignore these: .+XYZ.+"
+    ),
     perl = TRUE,
     all = TRUE
   )
@@ -20,14 +21,14 @@ test_that("prep_create_meta works", {
     VAR_NAMES = letters,
     DATA_TYPE = DATA_TYPES$INTEGER,
     LABEL = LETTERS,
-    MISSING_LIST = "999|998"
+    MISSING_LIST = "999 = a|998 = b"
   )
   expc <- data.frame(
     stringsAsFactors = FALSE,
     VAR_NAMES = letters,
     DATA_TYPE = DATA_TYPES$INTEGER,
     LABEL = LETTERS,
-    MISSING_LIST = "999|998"
+    MISSING_LIST = "999 = a|998 = b"
   )
   expect_identical(meta_data1, expc)
   expect_identical(meta_data, expc)

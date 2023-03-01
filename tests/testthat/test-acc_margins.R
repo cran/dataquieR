@@ -1,8 +1,12 @@
 test_that("acc_margins works without label_col", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   expect_error({# STRING not allowed
     res1 <-
@@ -56,7 +60,7 @@ test_that("acc_margins works without label_col", {
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = c("DEV_NO_0", "USR_BP_0"),
                 label_col = LABEL),
-    regexp = paste("Need excactly one element in argument group_vars,",
+    regexp = paste("Need exactly one element in argument group_vars,",
                    "got 2: .DEV_NO_0, USR_BP_0."),
     perl = TRUE
   )
@@ -93,7 +97,7 @@ test_that("acc_margins works without label_col", {
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 threshold_value = data.frame(l = letters, L = LETTERS),
                 label_col = LABEL),
-    regexp = "acc_margins: threshold_value is not numeric.1.: .+,",
+    regexp = "threshold_value is not numeric.1.: .+,",
     perl = TRUE,
     all = FALSE
   )
@@ -121,13 +125,7 @@ test_that("acc_margins works without label_col", {
                     meta_data = meta_data, group_vars = "v00001")
       },
       regexp =
-        conditionMessage(attr(
-          try(
-            lm("Petal.Length ~ Sepal.Length + Species",
-               iris[iris$Species == "setosa", ]),
-            silent = TRUE
-          ),
-          "condition")),
+        "No data left",
       fixed = TRUE
     )
   )
@@ -157,7 +155,7 @@ test_that("acc_margins works without label_col", {
                   meta_data = meta_data, group_vars = "v00016",
                   min_obs_in_subgroup = 2),
     regexp =
-      paste("In acc_margins: min_obs_in_subgroup cannot be set below 5.")
+      paste("min_obs_in_subgroup cannot be set below 5.")
   )
 
   expect_warning(
@@ -202,10 +200,14 @@ test_that("acc_margins works without label_col", {
 })
 
 test_that("acc_margins works with label_col", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_error({
     res1 <-
       acc_margins(resp_vars = "v00014", study_data = study_data,

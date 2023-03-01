@@ -11,30 +11,24 @@
 #' - 1 data type mismatches but applicable
 #' - 2 data type matches but not applicable
 #' - 3 data type matches and applicable
+#' - 4 not applicable because of not suitable data type
 util_app_loess <- function(x, dta) {
-  if ("KEY_OBSERVER" %in% names(x)) {
-    c1 <- ifelse(is.na(x[["KEY_OBSERVER"]]), 0, 1)
-  } else {
-    c1 <- rep(0, times = dim(x)[1])
-  }
+  c1 <- rowSums(!is.na(x[, grep("^GROUP_VAR_", colnames(x),
+                                        perl = TRUE, value = TRUE),
+                         drop = FALSE])) > 0
 
-  if ("KEY_DEVICE" %in% names(x)) {
-    c2 <- ifelse(is.na(x[["KEY_DEVICE"]]), 0, 1)
-  } else {
-    c2 <- rep(0, times = dim(x)[1])
-  }
-
-  if ("KEY_DATETIME" %in% names(x)) {
-    c3 <- ifelse(is.na(x[["KEY_DATETIME"]]), 0, 1)
+  if (TIME_VAR %in% names(x)) {
+    c3 <- ifelse(is.na(x[[TIME_VAR]]), 0, 1)
   } else {
     c3 <- rep(0, times = dim(x)[1])
   }
 
-  c4 <- pmax(c1, c2, c3)
+  c4 <- pmax(c1, c3)
   aa <- paste0(dta, c4)
   score <- as.numeric(recode(as.factor(aa), "00" = 0, "01" = 1,
                              "10" = 2, "11" = 3))
-  score <- ifelse(x[["DATA_TYPE"]] %in% c("integer", "float"), score, 4)
+  score <- ifelse(x[[DATA_TYPE]] %in% c(DATA_TYPES$INTEGER,
+                                        DATA_TYPES$FLOAT), score, 4)
   score <- as.factor(score)
   return(score)
 }

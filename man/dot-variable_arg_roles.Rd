@@ -5,7 +5,7 @@
 \alias{.variable_arg_roles}
 \title{Variable-argument roles}
 \format{
-An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 14 rows and 7 columns.
+An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 14 rows and 8 columns.
 }
 \usage{
 .variable_arg_roles

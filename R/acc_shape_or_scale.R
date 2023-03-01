@@ -1,4 +1,4 @@
-#' Function to compare observed versus expected distributions
+#' Compare observed versus expected distributions
 #'
 #' @description
 #' This implementation contrasts the empirical distribution of a measurement
@@ -30,6 +30,7 @@
 #'                               attributes of study data
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
+#' @inheritParams acc_distributions
 #'
 #' @return a list with:
 #'   - `SummaryData`: [data.frame] underlying the plot
@@ -48,14 +49,12 @@
 #' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_shape_or_scale.html
 #' )
 acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
-                               end_digits, label_col, study_data, meta_data) {
-
-  ###########################
-  # STOPS, PREPS AND CHECKS #
-  ###########################
-
-  # map meta to study
-  util_prepare_dataframes()
+                               end_digits, label_col, study_data, meta_data,
+                               flip_mode = "noflip") {
+  # TODO: remove dist_col, expect column "DISTRIBUTIONS"
+  # preps ----------------------------------------------------------------------
+  # map metadata to study data
+  prep_prepare_dataframes(.replace_hard_limits = TRUE)
 
   # correct variable use?
   util_correct_variable_use("resp_vars")
@@ -326,6 +325,8 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
       if (end_digits) xlab("End digits")
     } + scale_color_manual(values = c("#E69F00"), guide = "none")
 
+
+  p1 <- p1 + util_coord_flip(p = p1) # TODO: estimate w and h, since p is not using discrete axes
 
   p1 <- util_set_size(p1);
 

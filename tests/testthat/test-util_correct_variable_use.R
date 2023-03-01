@@ -1,4 +1,5 @@
 test_that("util_correct_variable_use works", {
+  skip_on_cran() # slow and implicitly tested by other tests
   acc_test <- function(resp_variable, aux_variable, time_variable,
                        co_variables, group_vars, study_data, meta_data,
                        label_col) {
@@ -85,10 +86,8 @@ test_that("util_correct_variable_use works", {
       allow_more_than_one = TRUE)
   }
   environment(acc_test_type) <- asNamespace("dataquieR")
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     expect_error(
       acc_test(study_data = study_data, meta_data = meta_data),
@@ -226,8 +225,11 @@ test_that("util_correct_variable_use works", {
       meta_data = meta_data, need_type = "integer|xxx"
     ),
     regexp = paste(
-      "Argument .+resp_variable.+: Variable .+v00001.+ \\(string\\) does",
-      "not have an allowed type \\(integer\\|xxx\\)"
+      "Internal error: .+resp_variable.+s .+need_type.+ contains invalid type",
+      "names .+xxx.+allowed are .+integer.+,",
+      ".+string.+, .+float.+, .+datetime.+.",
+      "As a dataquieR developer, you should fix your call of",
+      ".+util_correct_variable_use.+."
     ),
     perl = TRUE
   )
@@ -353,13 +355,13 @@ test_that("util_correct_variable_use works", {
     acc_test6(resp_variable = letters, study_data = study_data,
               meta_data = meta_data,
               cmd = function() { }),
-    regexp = paste("Need excactly one element in argument resp_variable, got",
+    regexp = paste("Need exactly one element in argument resp_variable, got",
                    "26: .a, b, c, d,.+x, y, z."),
     perl = TRUE
   )
 
   md0 <- meta_data
-  md0$DATA_TYPE <- NULL
+  md0$DATA_TYPE <- NA
   expect_warning(
     acc_test6(resp_variable = "v00001", study_data = study_data,
               meta_data = md0,

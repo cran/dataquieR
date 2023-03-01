@@ -1,4 +1,5 @@
 test_that("prep_pmap works", {
+  skip_on_cran() # deprecated
   df <- data.frame(
     x = c("apple", "banana", "cherry"),
     pattern = c("p", "n", "h"),

@@ -19,6 +19,10 @@ util_map_all <- function(label_col = VAR_NAMES,
 
   ################# checks ##################
 
+  if (!nrow(meta_data)) {
+    util_error("%s is empty", sQuote("meta_data"))
+  }
+
   if (length(label_col) != 1 || !is.character(label_col)) {
     util_error(
       c("label_col must be exactly 1 meta data attribute,",
@@ -91,35 +95,58 @@ util_map_all <- function(label_col = VAR_NAMES,
   ################# mapping ##################
 
   # select only relevant variables from study_data
-  lost <- sum(!(colnames(study_data) %in% meta_data[[VAR_NAMES]])) /
-    ncol(study_data)
-  if (lost > 0) {
+  counter <- sum(!(colnames(study_data) %in% meta_data[[VAR_NAMES]]))
+  if (ncol(study_data) > 0) {
+    lost <- counter / ncol(study_data)
+  } else {
+    if (counter > 0) {
+      lost <- Inf
+    } else {
+      lost <- 0
+    }
+  }
+
+  if (lost > 0 && !getOption("dataquieR.RECORD_MISSMATCH_CHECKTYPE", # TODO: This may not be a suitable option name
+                             "exact") %in%
+      c("none", "subset_m")) {
     util_warning(
       "Lost %g%% of the study data because of missing/not assignable meta-data",
       round(lost * 100, 1),
-      applicability_problem = TRUE)
-    message(sprintf(
+      applicability_problem = TRUE, integrity_indicator = "int_sts_element")
+    util_message(
       paste("Did not find any meta data for the following",
              "variables from the study data: %s"),
       paste0(dQuote(colnames(study_data)[!(colnames(study_data) %in%
                                              meta_data[[VAR_NAMES]])]),
-             collapse = ", ")
-    ))
+             collapse = ", "), integrity_indicator = "int_sts_element"
+    )
   }
-  unlost <- sum(!(meta_data[[VAR_NAMES]] %in% colnames(study_data))) /
-    nrow(meta_data)
-  if (unlost > 0) {
+
+  counter <- sum(!(meta_data[[VAR_NAMES]] %in% colnames(study_data)))
+  if (nrow(meta_data) > 0) {
+    unlost <- counter / nrow(meta_data)
+  } else {
+    if (counter > 0) {
+      unlost <- Inf
+    } else {
+      unlost <- 0
+    }
+  }
+
+  if (unlost > 0 && !getOption("dataquieR.RECORD_MISSMATCH_CHECKTYPE",
+                               "exact") %in%
+      c("none", "subset_u")) {
     util_warning(
       "Lost %g%% of the meta data because of missing/not assignable study-data",
       round(unlost * 100, 1),
-      applicability_problem = TRUE)
-    message(sprintf(
+      applicability_problem = TRUE, integrity_indicator = "int_sts_element")
+    util_message(
       paste("Found meta data for the following variables",
             "not found in the study data: %s"),
       paste0(dQuote(meta_data[[VAR_NAMES]][!(meta_data[[VAR_NAMES]] %in%
                                                colnames(study_data))]),
-             collapse = ", ")
-    ))
+             collapse = ", "), integrity_indicator = "int_sts_element"
+    )
   }
 
   ds1 <- study_data[, colnames(study_data) %in% meta_data[[VAR_NAMES]],

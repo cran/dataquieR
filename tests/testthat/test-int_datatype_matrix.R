@@ -1,8 +1,7 @@
 test_that("int_datatype_matrix works", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-    environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-    environment())
+  skip_on_cran() # slow and not so complicated. also, errors will be obvious.
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   expect_error({
     appmatrix <- int_datatype_matrix(study_data = study_data,
@@ -21,8 +20,7 @@ test_that("int_datatype_matrix works", {
                                                       "DATA_TYPE")],
                         label_col = LABEL),
     regexp =
-      paste("The attribute DATA_TYPE is not contained in the metadata but",
-            "is required for this function.")
+      paste("Missing columns .+DATA_TYPE.+ from .+meta_data.+.")
   )
 
   md0 <- meta_data
@@ -63,13 +61,14 @@ test_that("int_datatype_matrix works", {
                                    meta_data = meta_data[,
                                                          setdiff(
                                                            colnames(meta_data),
-                                                           KEY_STUDY_SEGMENT
+                                                           c(STUDY_SEGMENT,
+                                                             KEY_STUDY_SEGMENT)
                                                          ),
                                                          drop = FALSE],
                                    label_col = LABEL,
                                    split_segments = TRUE),
     all = TRUE,
-    regexp =  paste("Stratification for KEY_STUDY_SEGMENTS is not possible",
+    regexp =  paste("Stratification for STUDY_SEGMENT is not possible",
                     "due to missing metadata.",
                     "Will split arbitrarily avoiding too large figures")
   )
@@ -81,7 +80,7 @@ test_that("int_datatype_matrix works", {
                                    meta_data = meta_data,
                                    label_col = LABEL)
 
-  expect_true(all(appmatrix$ReportSummaryTable$MATCH == 1))
+  expect_true(all(appmatrix$ReportSummaryTable$MATCH == 0))
   expect_equal(nrow(appmatrix$ReportSummaryTable), 1)
   expect_equal(ncol(appmatrix$ReportSummaryTable), 3)
   expect_identical(colnames(appmatrix$ReportSummaryTable),
@@ -93,7 +92,7 @@ test_that("int_datatype_matrix works", {
 
   expect_equal(nrow(appmatrix$ReportSummaryTable), 53)
   expect_equal(ncol(appmatrix$ReportSummaryTable), 3)
-  expect_true(all(appmatrix$ReportSummaryTable$MATCH == 1))
+  expect_true(all(appmatrix$ReportSummaryTable$MATCH == 0))
 
   skip_on_cran()
   skip_if_not(capabilities()["long.double"])

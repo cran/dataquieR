@@ -1,4 +1,4 @@
-#' Support function to verify the data type of a value
+#' Verify the data type of a value
 #'
 #' Function to verify the data type of a value.
 #'
@@ -14,7 +14,7 @@
 #'
 #' @return if `check_convertible` is `FALSE`,
 #'         [logical] whether x is of the expected type
-#'         if `check_convertible` is `TRUE``
+#'         if `check_convertible` is `TRUE`
 #'         [integer] with the states `0, 1, 2`: 0 = Mismatch, not convertible
 #'                                              1 = Match
 #'                                              2 = Mismatch, but convertible
@@ -66,8 +66,8 @@ util_check_data_type <- function(x, type, check_convertible = FALSE,
                  applicability_problem = TRUE)
     }
     x2 <- suppressWarnings(lapply(x, .as))
-    if (any(!vapply(x, is.na, FUN.VALUE = logical(1)) &&
-            all(vapply(x2, is.na, FUN.VALUE = logical(1))))) {
+    if (any(!vapply(x, is.na, FUN.VALUE = logical(1))) &&
+            all(vapply(x2, is.na, FUN.VALUE = logical(1)))) {
       result <- 0
     } else if (100 * sum(any(vapply(x, is.na, FUN.VALUE = logical(1)) !=
                              vapply(x2, is.na, FUN.VALUE = logical(1)))) /

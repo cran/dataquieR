@@ -11,21 +11,28 @@
 #' - 1 data type mismatches but applicable
 #' - 2 data type matches but not applicable
 #' - 3 data type matches and applicable
+#' - 4 not applicable because of not suitable data type
 util_app_iac <- function(x, dta) {
-  if ("VALUE_LABELS" %in% names(x)) {
-    c1 <- ifelse(!is.na(x[["VALUE_LABELS"]]) &
+  if (VALUE_LABELS %in% names(x)) {
+    c1 <- ifelse(!is.na(x[[VALUE_LABELS]]), 1, 0)
+  } else {
+    c1 <- rep(0, times = dim(x)[1])
+  }
+
+  if (DATA_TYPE %in% names(x)) {
+    c2 <- ifelse(!is.na(x[[DATA_TYPE]]) &
                    (x[[DATA_TYPE]] %in% c(DATA_TYPES$INTEGER,
                                           DATA_TYPES$STRING))
                  , 1, 0)
   } else {
-    c1 <- rep(0, times = dim(x)[1])
+    c2 <- rep(0, times = dim(x)[1])
   }
 
 
   aa <- paste0(dta, c1)
   score <- as.numeric(recode(as.factor(aa), "00" = 0, "01" = 1,
                              "10" = 2, "11" = 3))
-  # score <- ifelse(!(x[["VALUE_LABELS"]] == ""), score, 4)
+  score[c2 == 0] <- 4
   score <- as.factor(score)
   return(score)
 }

@@ -1,0 +1,31 @@
+ {{
+ util_float_index_menu(
+   data.frame(links = c("report.html#ismat",
+                        "report.html#apmat",
+                        "report.html#ermat"),
+              hovers = c("Overview on Data Quality Issues",
+                         "Overview on Applicability Problems",
+                         "Overview on Other Errors"),
+              texts = c("Issue Matrix",
+                        "Applicability Matrix",
+                        "Error Matrix"))
+  )
+}}
+<h1>
+  Summary overview
+</h1>
+<h2>
+  Issue Matrix
+</h2>
+<a id="ismat"></a>
+ {{ ismat }}
+<h2>
+  Applicability Matrix
+</h2>
+<a id="apmat"></a>
+ {{ apmat }}
+<h2>
+  Error Matrix
+</h2>
+<a id="ermat"></a>
+ {{ ermat }}

@@ -16,17 +16,24 @@
 #' all `HARD_LIMITS` from the metadata.
 #'
 #' @param x [character] variable names, character vector, see parameter from
-#' @param meta_data [data.frame] meta data frame
+#' @param meta_data [data.frame] meta data frame, if, as a `dataquieR`
+#'                               developer, you do not have
+#'                               **item-level-metadata**, you should use
+#'                               [util_map_labels] instead to avoid consistency
+#'                               checks on for item-level `meta_data`.
 #' @param to [character] variable attribute to map to
 #' @param from [character] variable identifier to map from
 #' @param ifnotfound [list] A list of values to be used if the item is not
 #'                          found: it will be coerced to a list if necessary.
+#' @param warn_ambiguous [logical] print a warning if mapping variables from
+#'                            `from` to `to` produces ambiguous identifiers.
 #'
 #' @return a character vector with:
 #'   - mapped values
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' meta_data <- prep_create_meta(
 #'   VAR_NAMES = c("ID", "SEX", "AGE", "DOE"),
 #'   LABEL = c("Pseudo-ID", "Gender", "Age", "Examination Date"),
@@ -36,8 +43,13 @@
 #' )
 #' stopifnot(all(prep_map_labels(c("AGE", "DOE"), meta_data) == c("Age",
 #'                                                  "Examination Date")))
-prep_map_labels <- function(x, meta_data = NULL,
-                            to = LABEL, from = VAR_NAMES, ifnotfound) {
+#' }
+prep_map_labels <- function(x, meta_data = "item_level",
+                            to = LABEL, from = VAR_NAMES, ifnotfound,
+                            warn_ambiguous = FALSE) {
+  util_expect_data_frame(meta_data)
+  meta_data <- prep_meta_data_v1_to_item_level_meta_data(
+    meta_data = meta_data, verbose = TRUE, label_col = LABEL)
   if (!is.data.frame(meta_data)) {
     util_error(
       c("Need meta data as a data frame for mapping",
@@ -45,11 +57,12 @@ prep_map_labels <- function(x, meta_data = NULL,
       applicability_problem = TRUE
     )
   }
-  x <- try(as.character(x), silent = TRUE)
-  if (inherits(x, "try-error") || any(is.na(x))) {
+  .x <- try(as.character(x), silent = TRUE)
+  if (inherits(.x, "try-error") || any(is.na(x) != is.na(.x))) {
     util_error("all variable source names must be characters",
                applicability_problem = TRUE)
   }
+  x <- .x
   if (!is.character(to) || length(to) != 1 || !(to %in% colnames(meta_data))) {
     util_error(
       "Need exactly one existing variable attribute name to map variables to",
@@ -61,5 +74,6 @@ prep_map_labels <- function(x, meta_data = NULL,
       c("Need exactly one variable attribute name",
         "to use as variable name on mapping"), applicability_problem = TRUE)
   }
-  util_map_labels(x, meta_data, to, from, ifnotfound)
+  util_expect_scalar(warn_ambiguous, check_type = is.logical)
+  util_map_labels(x, meta_data, to, from, ifnotfound, warn_ambiguous)
 }

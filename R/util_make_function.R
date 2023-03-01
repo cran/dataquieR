@@ -1,10 +1,14 @@
 #' Make a function capturing errors and other conditions for parallelization
 #'
 #' @param fct [function] to prepare
+#' @param caller. [call] for error messages, default is the caller of
+#'                       `util_make_function`
 #'
 #' @return decorated [function]
-util_make_function <- function(fct) {
-  try(caller. <- sys.call(1), silent = TRUE)
+util_make_function <- function(fct, caller.) {
+  if (missing(caller.)) {
+    try(caller. <- sys.call(1), silent = TRUE)
+  }
   if (is.character(fct)) {
     .fct_name <- fct
   } else {

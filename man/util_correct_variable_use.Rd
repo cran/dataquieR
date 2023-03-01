@@ -12,8 +12,12 @@ util_correct_variable_use(
   allow_null,
   allow_all_obs_na,
   allow_any_obs_na,
+  min_distinct_values,
   need_type,
-  role = ""
+  role = "",
+  overwrite = TRUE,
+  do_not_stop = FALSE,
+  remove_not_found = TRUE
 )
 
 util_correct_variable_use2(
@@ -23,8 +27,12 @@ util_correct_variable_use2(
   allow_null,
   allow_all_obs_na,
   allow_any_obs_na,
+  min_distinct_values,
   need_type,
-  role = arg_name
+  role = arg_name,
+  overwrite = TRUE,
+  do_not_stop = FALSE,
+  remove_not_found = TRUE
 )
 }
 \arguments{
@@ -45,6 +53,9 @@ being all \code{NA}}
 
 \item{allow_any_obs_na}{\link{logical} default = TRUE. check observations for
 being complete without any \code{NA}}
+
+\item{min_distinct_values}{\link{integer} Minimum number of distinct observed
+values of a study variable}
 
 \item{need_type}{\link{character} if not \code{NA}, variables must be of data type
 \code{need_type} according to the meta data,
@@ -71,6 +82,18 @@ Use \link{util_correct_variable_use2} for using the
 \code{arg_name} as default for \code{role}.
 See \link{.variable_arg_roles} for currently available
 variable-argument roles.}
+
+\item{overwrite}{\link{logical} overwrite vector of variable names
+to match the labels given in \code{label_col}.}
+
+\item{do_not_stop}{\link{logical} do not throw an error, if one of the variables
+violates \code{allow_all_obs_na}, \code{allow_any_obs_na} or
+\code{min_distinct_values}. Instead, the variable will be
+removed from \code{arg_name} in the parent environment
+with a warning. This is helpful for functions which
+work with multiple variables.}
+
+\item{remove_not_found}{TODO: Not yet implemented}
 }
 \description{
 This function operates in the environment of its caller

@@ -92,11 +92,19 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
                                                                   linetype = 2),
                       plot_data_time, plot_format = "AUTO") {
 
-  ###########################
-  # STOPS, PREPS AND CHECKS #
-  ###########################
-
-  util_prepare_dataframes()
+  # preps ----------------------------------------------------------------------
+  study_data <- util_ensure_data_type(
+    variables = c(
+      ifelse(!missing(resp_vars), resp_vars, NA),
+      ifelse(!missing(group_vars), group_vars, NA),
+      ifelse(!missing(time_vars), time_vars, NA),
+      co_vars),
+    study_data = study_data,
+    meta_data = meta_data,
+    label_col = label_col
+  )
+  # map metadata to study data
+  prep_prepare_dataframes(.replace_hard_limits = TRUE)
 
   if (missing(min_obs_in_subgroup)) {
     min_obs_in_subgroup <- 30
@@ -130,9 +138,9 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
   }
 
   # correct variable use?
-  util_correct_variable_use("resp_vars")
+  util_correct_variable_use("resp_vars", need_type = "!string")
   util_correct_variable_use("group_vars")
-  util_correct_variable_use("time_vars")
+  util_correct_variable_use("time_vars", need_type = DATA_TYPES$DATETIME)
 
   if (length(resolution) != 1 ||
       !is.numeric(resolution) ||
@@ -194,39 +202,39 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
   }
 
   # unparseable time values in time_vars?
-  if (is.character(ds1[[time_vars]]) || is.factor(ds1[[time_vars]])) {
-    before <- sum(is.na(ds1[[time_vars]]))
-    if (util_anytime_installed()) {
-      ds1[[time_vars]] <- anytime::anytime(ds1[[time_vars]])
-    } else {
-      message(sprintf(
-        paste("Package %s is not installed. Trying conversion with base",
-              "as.POSIXct function.", collapse = " "),
-        dQuote("anytime")))
-      ds1[[time_vars]] <- suppressWarnings(as.POSIXct(ds1[[time_vars]],
-                                                      optional = TRUE))
-    }
-    after <- sum(is.na(ds1[[time_vars]]))
-    if (before < after) {
-      util_warning(
-        "Converting %s to DATETIME, %d values could not be converted",
-        dQuote(time_vars), after - before,
-        applicability_problem = FALSE)
-    }
-    if (all(is.na(ds1[[time_vars]]))) {
-      util_error("No not-missing value in DATETIME variable %s",
-                 dQuote(time_vars),
-                 applicability_problem = FALSE)
-    }
-    n_prior <- dim(ds1)[1]
-    ds1 <- ds1[!(is.na(ds1[[time_vars]])), ]
-    n_post <- dim(ds1)[1]
-    if (n_post < n_prior) {
-      util_warning(paste0("Due to invalid time formats in ", time_vars, " ",
-                          n_prior - n_post, " observations were deleted."),
-                   applicability_problem = FALSE)
-    }
-  }
+  # if (is.character(ds1[[time_vars]]) || is.factor(ds1[[time_vars]])) {
+  #   before <- sum(is.na(ds1[[time_vars]]))
+  #   if (util_anytime_installed()) {
+  #     ds1[[time_vars]] <- anytime::anytime(ds1[[time_vars]])
+  #   } else {
+  #     util_message(sprintf(
+  #       paste("Package %s is not installed. Trying conversion with base",
+  #             "as.POSIXct function.", collapse = " "),
+  #       dQuote("anytime")))
+  #     ds1[[time_vars]] <- suppressWarnings(as.POSIXct(ds1[[time_vars]],
+  #                                                     optional = TRUE))
+  #   }
+  #   after <- sum(is.na(ds1[[time_vars]]))
+  #   if (before < after) { # FIXME: (EK) This is called after prep_prepare_dataframes, so it won't be reached, since the preparation needs already dates to check for limit violoations
+  #     util_warning(
+  #       "Converting %s to DATETIME, %d values could not be converted",
+  #       dQuote(time_vars), after - before,
+  #       applicability_problem = FALSE)
+  #   }
+  #   if (all(is.na(ds1[[time_vars]]))) {
+  #     util_error("No not-missing value in DATETIME variable %s",
+  #                dQuote(time_vars),
+  #                applicability_problem = FALSE)
+  #   }
+  #   n_prior <- dim(ds1)[1]
+  #   ds1 <- ds1[!(is.na(ds1[[time_vars]])), ]
+  #   n_post <- dim(ds1)[1]
+  #   if (n_post < n_prior) {
+  #     util_warning(paste0("Due to invalid time formats in ", time_vars, " ",
+  #                         n_prior - n_post, " observations were deleted."),
+  #                  applicability_problem = FALSE)
+  #   }
+  # }
 
   # missings in co_vars?
   n_prior <- dim(ds1)[1]
@@ -356,10 +364,11 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
 
   # build model formula
   if (length(co_vars) > 0) {
-    fmla <- as.formula(paste0(paste0(resp_vars, "~"), paste0(co_vars,
-                                                             collapse = " + ")))
+    fmla <- as.formula(paste0(paste0(util_bQuote(resp_vars), "~"),
+                              paste0(util_bQuote(co_vars),
+                                     collapse = " + ")))
   } else {
-    fmla <- as.formula(paste0(paste0(resp_vars, "~"), 1))
+    fmla <- as.formula(paste0(paste0(util_bQuote(resp_vars), "~"), 1))
   }
 
   # Linear model
@@ -482,7 +491,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
   #                                                              units = "day"))
 
   ds3_reduced <- aggregate(
-    as.formula(sprintf(". ~ %s", time_vars)),
+    as.formula(sprintf(". ~ %s", util_bQuote(time_vars))),
     ds3,
     dplyr::first,
     simplify = FALSE,
@@ -591,7 +600,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
     if (length(plot_data_time) != 1 ||
         is.na(plot_data_time) ||
         !is.logical(plot_data_time)) {
-          util_error("Argument %s must be a sclar logical value.",
+          util_error("Argument %s must be a scalar logical value.",
                      dQuote("plot_data_time"),
                      applicability_problem = TRUE)
         }
@@ -625,7 +634,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
     ylab("") +
     geom_dp +
     geom_line() +
-    facet_wrap(~GROUP, ncol = 2) +
+    facet_wrap(~GROUP, ncol = 2) + # TODO: What about this ~?
     do.call(geom_line, c(list(aes(y = lwl, group = NA)), se_line)) +
     do.call(geom_line, c(list(aes(y = upl, group = NA)), se_line)) +
     theme_minimal() +

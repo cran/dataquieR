@@ -14,7 +14,9 @@
 #' @importFrom stats setNames
 #'
 #' @examples
+#' \dontrun{
 #' dataquieR::prep_datatype_from_data(iris)
+#' }
 prep_valuelabels_from_data <-
   function(resp_vars = colnames(study_data), study_data) {
   if (!missing(resp_vars) && is.data.frame(resp_vars) && missing(study_data)) {
@@ -24,6 +26,8 @@ prep_valuelabels_from_data <-
     util_error("Need study data as a data frame in the argument %s",
                dQuote("study_data"))
   }
+
+  util_expect_data_frame(study_data)
 
   if (requireNamespace("tibble", quietly = TRUE)) {
     if (tibble::is_tibble(study_data)) {

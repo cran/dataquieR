@@ -4,7 +4,14 @@
 \alias{prep_add_to_meta}
 \title{Support function to augment metadata during data quality reporting}
 \usage{
-prep_add_to_meta(VAR_NAMES, DATA_TYPE, LABEL, VALUE_LABELS, meta_data, ...)
+prep_add_to_meta(
+  VAR_NAMES,
+  DATA_TYPE,
+  LABEL,
+  VALUE_LABELS,
+  meta_data = "item_level",
+  ...
+)
 }
 \arguments{
 \item{VAR_NAMES}{\link{character} Names of the Variables to add}

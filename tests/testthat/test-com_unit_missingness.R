@@ -1,8 +1,7 @@
 test_that("com_unit_missingness works", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran()
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   r <- com_unit_missingness(study_data, meta_data, label_col = LABEL,
                        id_vars = "PSEUDO_ID", strata_vars = "CENTER_0")
   expect_equal(

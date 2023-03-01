@@ -4,13 +4,14 @@
 \alias{prep_check_meta_names}
 \title{Checks the validity of meta data w.r.t. the provided column names}
 \usage{
-prep_check_meta_names(meta_data, level, character.only = FALSE)
+prep_check_meta_names(meta_data = "item_level", level, character.only = FALSE)
 }
 \arguments{
 \item{meta_data}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
-\item{level}{\link{enum} level of requirement (see also \link{VARATT_REQUIRE_LEVELS})}
+\item{level}{\link{enum} level of requirement (see also \link{VARATT_REQUIRE_LEVELS}).
+set to \code{NULL} to deactivate the check of richness.}
 
 \item{character.only}{\link{logical} a logical indicating whether level can be
 assumed to be character strings.}
@@ -31,6 +32,7 @@ Note, that only the given level is checked despite, levels are somehow
 hierarchical.
 }
 \examples{
+\dontrun{
 prep_check_meta_names(data.frame(VAR_NAMES = 1, DATA_TYPE = 2,
                       MISSING_LIST = 3))
 
@@ -39,9 +41,17 @@ prep_check_meta_names(
     VAR_NAMES = 1, DATA_TYPE = 2, MISSING_LIST = 3,
     LABEL = "LABEL", VALUE_LABELS = "VALUE_LABELS",
     JUMP_LIST = "JUMP_LIST", HARD_LIMITS = "HARD_LIMITS",
-    KEY_OBSERVER = "KEY_OBSERVER", KEY_DEVICE = "KEY_DEVICE",
-    KEY_DATETIME = "KEY_DATETIME",
-    KEY_STUDY_SEGMENT = "KEY_STUDY_SEGMENT"
+    GROUP_VAR_OBSERVER = "GROUP_VAR_OBSERVER",
+    GROUP_VAR_DEVICE = "GROUP_VAR_DEVICE",
+    TIME_VAR = "TIME_VAR",
+    PART_VAR = "PART_VAR",
+    STUDY_SEGMENT = "STUDY_SEGMENT",
+    LOCATION_RANGE = "LOCATION_RANGE",
+    LOCATION_METRIC = "LOCATION_METRIC",
+    PROPORTION_RANGE = "PROPORTION_RANGE",
+    MISSING_LIST_TABLE = "MISSING_LIST_TABLE",
+    CO_VARS = "CO_VARS",
+    LONG_LABEL = "LONG_LABEL"
   ),
   RECOMMENDED
 )
@@ -51,15 +61,22 @@ prep_check_meta_names(
     VAR_NAMES = 1, DATA_TYPE = 2, MISSING_LIST = 3,
     LABEL = "LABEL", VALUE_LABELS = "VALUE_LABELS",
     JUMP_LIST = "JUMP_LIST", HARD_LIMITS = "HARD_LIMITS",
-    KEY_OBSERVER = "KEY_OBSERVER", KEY_DEVICE = "KEY_DEVICE",
-    KEY_DATETIME = "KEY_DATETIME", KEY_STUDY_SEGMENT =
-      "KEY_STUDY_SEGMENT",
+    GROUP_VAR_OBSERVER = "GROUP_VAR_OBSERVER",
+    GROUP_VAR_DEVICE = "GROUP_VAR_DEVICE",
+    TIME_VAR = "TIME_VAR",
+    PART_VAR = "PART_VAR",
+    STUDY_SEGMENT = "STUDY_SEGMENT",
+    LOCATION_RANGE = "LOCATION_RANGE",
+    LOCATION_METRIC = "LOCATION_METRIC",
+    PROPORTION_RANGE = "PROPORTION_RANGE",
     DETECTION_LIMITS = "DETECTION_LIMITS", SOFT_LIMITS = "SOFT_LIMITS",
     CONTRADICTIONS = "CONTRADICTIONS", DISTRIBUTION = "DISTRIBUTION",
     DECIMALS = "DECIMALS", VARIABLE_ROLE = "VARIABLE_ROLE",
     DATA_ENTRY_TYPE = "DATA_ENTRY_TYPE",
+    CO_VARS = "CO_VARS",
     VARIABLE_ORDER = "VARIABLE_ORDER", LONG_LABEL =
-      "LONG_LABEL", recode = "recode"
+      "LONG_LABEL", recode = "recode",
+      MISSING_LIST_TABLE = "MISSING_LIST_TABLE"
   ),
   OPTIONAL
 )
@@ -69,4 +86,5 @@ try(
   prep_check_meta_names(data.frame(VAR_NAMES = 1, DATA_TYPE = 2,
     MISSING_LIST = 3), TECHNICAL)
 )
+}
 }

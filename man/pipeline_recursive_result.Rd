@@ -2,7 +2,7 @@
 % Please edit documentation in R/pipeline_recursive_result.R
 \name{pipeline_recursive_result}
 \alias{pipeline_recursive_result}
-\title{Function to convert a pipeline result data frame to named encapsulated lists}
+\title{Convert a pipeline result data frame to named encapsulated lists}
 \usage{
 pipeline_recursive_result(
   call_plan_with_results,
@@ -32,6 +32,7 @@ the calling plan translate to levels in the encapsulated list hierarchy.
 The order of the levels can be specified in the \code{result_groups} argument.
 }
 \examples{
+\dontrun{
 call_plan_with_results <- structure(list(
   resp_vars =
     c(
@@ -53,4 +54,5 @@ result_groups <-
   colnames(call_plan_with_results)[2:(ncol(call_plan_with_results) - 1)]
 pipeline_recursive_result(call_plan_with_results, result_groups)
 pipeline_recursive_result(call_plan_with_results, rev(result_groups))
+}
 }

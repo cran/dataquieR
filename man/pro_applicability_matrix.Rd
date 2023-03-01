@@ -2,14 +2,17 @@
 % Please edit documentation in R/pro_applicability_matrix.R
 \name{pro_applicability_matrix}
 \alias{pro_applicability_matrix}
-\title{Function to check applicability of DQ functions on study data}
+\title{Check applicability of DQ functions on study data}
 \usage{
 pro_applicability_matrix(
   study_data,
   meta_data,
   split_segments = FALSE,
   label_col,
-  max_vars_per_plot = 20
+  max_vars_per_plot = 20,
+  meta_data_segment,
+  meta_data_dataframe,
+  flip_mode = "noflip"
 )
 }
 \arguments{
@@ -25,6 +28,20 @@ with labels of variables}
 
 \item{max_vars_per_plot}{\link{integer} from=0. The maximum number of variables
 per single plot.}
+
+\item{meta_data_segment}{\link{data.frame} -- optional: Segment level metadata}
+
+\item{meta_data_dataframe}{\link{data.frame} -- optional: Data frame level
+metadata}
+
+\item{flip_mode}{\link{enum} default | flip | noflip | auto. Should the plot be
+in default orientation, flipped, not flipped or
+auto-flipped. Not all options are always supported.
+In general, this con be controlled by
+setting the \code{roptions(dataquieR.flip_mode = ...)}. If
+called from \code{dq_report}, you can also pass
+\code{flip_mode} to all function calls or set them
+specifically using \code{specific_args}.}
 }
 \value{
 a list with:
@@ -61,6 +78,7 @@ In addition, the data type defined in the metadata is compared with the
 observed data type in the study data.
 }
 \examples{
+\dontrun{
 load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
   environment())
 load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
@@ -68,4 +86,5 @@ load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
 appmatrix <- pro_applicability_matrix(study_data = study_data,
                                       meta_data = meta_data,
                                       label_col = LABEL)
+}
 }

@@ -11,23 +11,11 @@
 #' - 1 data type mismatches but applicable
 #' - 2 data type matches but not applicable
 #' - 3 data type matches and applicable
-#'
+#' - 4 not applicable because of not suitable data type
 util_app_mar <- function(x, dta) {
-  if ("KEY_OBSERVER" %in% names(x)) {
-    c1 <- ifelse(is.na(x[["KEY_OBSERVER"]]), 0, 1)
-  } else {
-    c1 <- rep(0, times = dim(x)[1])
-  }
-
-  if ("KEY_DEVICE" %in% names(x)) {
-    c2 <- ifelse(is.na(x[["KEY_DEVICE"]]), 0, 1)
-  } else {
-    c2 <- rep(0, times = dim(x)[1])
-  }
-
-
-  c3 <- pmax(c1, c2)
-  aa <- paste0(dta, c3)
+  c1 <- rowSums(!is.na(x[, grep("^GROUP_VAR_", colnames(x),
+         perl = TRUE, value = TRUE), drop = FALSE])) > 0
+  aa <- paste0(dta, as.integer(c1))
   score <- as.numeric(recode(as.factor(aa), "00" = 0, "01" = 1, "10" = 2,
                              "11" = 3))
   score <- ifelse(x[["DATA_TYPE"]] %in% c("integer", "float"), score, 4)

@@ -1,9 +1,7 @@
 test_that("util_assign_levlabs works", {
-     load(system.file("extdata/meta_data.RData", package = "dataquieR"),
-       envir = environment())
-     load(system.file("extdata/study_data.RData", package = "dataquieR"),
-       envir = environment())
-     vname <- "v50000"
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
+  vname <- "v50000"
      labelled_var <-
        dataquieR:::util_assign_levlabs(
          variable = study_data[[vname]],

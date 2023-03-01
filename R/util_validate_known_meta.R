@@ -8,10 +8,12 @@
 #'
 #' @return invisible(NULL)
 util_validate_known_meta <- function(meta_data) {
+  # TODO: use redcap parser instead, include tests for LOCATION columns and PROPORTIONS columns
   if (!VAR_NAMES %in% colnames(meta_data)) { # avoid errors in checks, if
     # not a complete metadata frame is being checked.
     meta_data[[VAR_NAMES]] <- paste0("v", seq_len(nrow(meta_data)))
   }
+  util_validate_missing_lists(meta_data)
   env <- new.env(environment())
   if (any(grepl("^(HARD|SOFT|DETECTION)_LIMITS$", colnames(meta_data)))) {
     env$error <- character(0)
@@ -68,13 +70,20 @@ util_validate_known_meta <- function(meta_data) {
       notnum <- !grepl(sprintf(
         "^[%s0-9\\s\\-\\.]*$",
         SPLIT_CHAR), perl = TRUE, vl)
-      if (any(!util_empty(vl) & notnum)) {
+      not_assign <- vapply(vl, FUN.VALUE = logical(1),
+                           function(x) {
+                             if (is.na(x)) return(FALSE);
+                             v <- names(util_parse_assignments(x))
+                             any(is.na(v) != suppressWarnings(
+                                 is.na(as.numeric(v))))
+                           })
+      if (any(!util_empty(vl) & notnum & not_assign)) {
         env$error <- c(env$error,
                    sprintf(
-                     "Suspicious %s: not numeric: %s",
+                     "Suspicious %s: not numeric/assignment: %s",
                      sQuote(l),
                      paste(dQuote(unique(sort(
-                       as.character(vl[!util_empty(vl) & notnum])))),
+                       as.character(vl[!util_empty(vl) & notnum & not_assign])))),
                        collapse = ", ")))
       } else {
         vlc <- as.character(vl)

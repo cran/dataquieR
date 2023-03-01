@@ -2,7 +2,7 @@
 % Please edit documentation in R/util_check_data_type.R
 \name{util_check_data_type}
 \alias{util_check_data_type}
-\title{Support function to verify the data type of a value}
+\title{Verify the data type of a value}
 \usage{
 util_check_data_type(
   x,
@@ -30,7 +30,8 @@ about threshold violations.}
 \value{
 if \code{check_convertible} is \code{FALSE},
 \link{logical} whether x is of the expected type
-if \code{check_convertible} is \verb{TRUE`` [integer] with the states }0, 1, 2`: 0 = Mismatch, not convertible
+if \code{check_convertible} is \code{TRUE}
+\link{integer} with the states \verb{0, 1, 2}: 0 = Mismatch, not convertible
 1 = Match
 2 = Mismatch, but convertible
 }

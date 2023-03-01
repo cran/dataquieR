@@ -1,8 +1,13 @@
 test_that("util_warning works", {
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
   expect_warning(util_warning("The one and everything is %d (%s).", 42,
                               "Douglas Adams"),
-                 regexp = "The one and everything is 42 (Douglas Adams).",
-                 fixed = TRUE)
+                 regexp = ".*The one and everything is 42 .Douglas Adams.*",
+                 perl = TRUE)
 
   testenv <- new.env(parent = baseenv())
 
@@ -25,23 +30,25 @@ test_that("util_warning works", {
                     "Douglas Adams"),
                  regexp =
                    paste(
-                     "(?s)In g: The one and everything is",
-                     "42 \\(Douglas Adams\\)\\.\\s+\\>\\s+g\\(\\.\\.\\.\\)"
+                     ".*The one and everything is",
+                     "42 \\(Douglas Adams\\).*"
                    ),
-                 perl = TRUE,
-                 all = TRUE)
+                 perl = TRUE)
   expect_warning(h("The one and everything is %d (%s).", 42,
                    "Douglas Adams"),
                  regexp =
                    paste(
-                     "(?s)In do\\.call \\(g\\): The one and everything is",
-                     "42 \\(Douglas Adams\\)\\.\\s+\\>\\s+do\\.call\\(g,",
-                     "list\\(\\.\\.\\.\\)\\)"
+                     ".*The one and everything is",
+                     "42 \\(Douglas Adams\\).*"
                    ),
-                 perl = TRUE,
-                 all = TRUE)
+                 perl = TRUE)
 })
 test_that("util_warning works", {
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
   expect_warning(util_warning("The one and everything is %d (%s).", 42,
                               "Douglas Adams"),
                  regexp = "The one and everything is 42 (Douglas Adams).",
@@ -67,23 +74,21 @@ test_that("util_warning works", {
 
   expect_warning(f("The one and everything is %d (%s).", 42,
           "Douglas Adams"),
-       regexp =
-         paste(
-           "(?s)In gg: The one and everything is",
-          "42 \\(Douglas Adams\\)\\.\\s+\\>\\s+gg\\(\\.\\.\\.\\)"
-         ),
-       perl = TRUE,
-       all = TRUE)
+          regexp =
+            paste(
+              ".*The one and everything is",
+              "42 \\(Douglas Adams\\).*"
+            ),
+          perl = TRUE)
   expect_warning(h("The one and everything is %d (%s).", 42,
          "Douglas Adams"),
-       regexp =
-         paste(
-          "(?s)In do\\.call \\(gg\\): The one and everything is",
-           "42 \\(Douglas Adams\\)\\.\\s+\\>\\s+do\\.call\\(gg,",
-           "list\\(\\.\\.\\.\\)\\)"
-         ),
-       perl = TRUE,
-       all = TRUE)
+         regexp =
+           paste(
+             ".*The one and everything is",
+             "42 \\(Douglas Adams\\).*"
+           ),
+         ,
+       perl = TRUE)
 
   x <- function(m) {
     warning(m)

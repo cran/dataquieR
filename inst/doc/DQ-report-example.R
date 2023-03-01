@@ -1,7 +1,7 @@
 ## ----include=FALSE------------------------------------------------------------
 library(knitr)
 library(DT)
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, dpi = 54)
 if (rmarkdown::pandoc_available(version = "1.12.3")) {
   knit_print.data.frame <- function(x, ...) {
     knit_print(DT::datatable(head(x, 10)), ...)
@@ -88,12 +88,7 @@ MissSegs <- com_segment_missingness(
 MissSegs$SummaryPlot
 
 ## ----message=FALSE, warning=FALSE---------------------------------------------
-code_labels <- read.csv2(system.file("extdata",
-  "Missing-Codes-2020.csv",
-  package = "dataquieR"
-),
-stringsAsFactors = FALSE, na.strings = c()
-)
+code_labels <- prep_get_data_frame("meta_data_v2|missing_table")
 
 ## ----message = FALSE, warning = FALSE-----------------------------------------
 item_miss <- com_item_missingness(
@@ -128,8 +123,8 @@ MyValueLimits$SummaryTable
 # select variables with deviations
 whichdeviate <- as.character(MyValueLimits$SummaryTable$Variables)[MyValueLimits$SummaryTable$GRADING == 1]
 
-## ----message=FALSE, echo=TRUE, warning=FALSE, results = 'hide', fig.keep = 'all', fig.align="center", fig.height = 3, fig.width = 4----
-ggpubr::ggarrange(plotlist = MyValueLimits$SummaryPlotList[whichdeviate], ncol = 2)
+## ----message=FALSE, echo=TRUE, warning=FALSE, results = 'hide', fig.keep = 'all', fig.align="center", fig.height = 5, fig.width = 7----
+patchwork::wrap_plots(plotlist = MyValueLimits$SummaryPlotList[whichdeviate], ncol = 2) 
 
 ## ----message=FALSE, warning=FALSE---------------------------------------------
 IAVCatAll <- con_inadmissible_categorical(
@@ -164,7 +159,10 @@ AnyContradictions$SummaryPlot
 ## ----echo = TRUE--------------------------------------------------------------
 ruol <- dataquieR:::acc_robust_univariate_outlier(study_data = sd1, meta_data = md1, label_col = LABEL)
 
-ruol$SummaryPlotList
+c(
+  head(ruol$SummaryPlotList, 2),
+  tail(ruol$SummaryPlotList, 2)
+)
 
 ## ---- fig.height = 3, fig.width = 4-------------------------------------------
 myloess <- dataquieR::acc_loess(

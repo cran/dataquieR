@@ -1,4 +1,4 @@
-#' Function to calculate and plot Mahalanobis distances
+#' Calculate and plot Mahalanobis distances
 #'
 #' @description
 #' A standard tool to detect multivariate outliers is the Mahalanobis distance.
@@ -22,7 +22,7 @@
 #' # ALGORITHM OF THIS IMPLEMENTATION:
 #' - Implementation is restricted to variables of type float
 #' - Remove missing codes from the study data (if defined in the metadata)
-#' - The covariance matrix is estimated for all resp_vars
+#' - The covariance matrix is estimated for all variables from `variable_group`
 #' - The Mahalanobis distance of each observation is calculated
 #'   \eqn{MD^2_i  = (x_i - \mu)^T \Sigma^{-1} (x_i -  \mu)}
 #' - The four rules mentioned above are applied on this distance for
@@ -32,12 +32,21 @@
 #'
 #' List function.
 #'
-#' @param resp_vars [variable list] the name of the continuous
-#'                                           measurement variables
+#' @param variable_group [variable list] the names of the continuous
+#'                                       measurement variables building
+#'                                       a group, for that multivariate outliers
+#'                                       make sense.
 #' @param id_vars [variable] optional, an ID variable of
 #'                        the study data. If not specified row numbers are used.
 #' @param n_rules [numeric] from=1 to=4. the no. of rules that must be violated
 #'                                       to classify as outlier
+#' @param max_non_outliers_plot [integer] from=0. Maximum number of non-outlier
+#'                                                points to be plot. If more
+#'                                                points exist, a subsample will
+#'                                                be plotted only. Note, that
+#'                                                sampling is not deterministic.
+#' @param criteria [set] tukey | sixsigma | hubert | sigmagap. a vector with
+#'                       methods to be used for detecting outliers.
 #' @param study_data [data.frame] the data frame that contains the measurements
 #' @param meta_data [data.frame] the data frame that contains metadata
 #'                               attributes of study data
@@ -67,11 +76,45 @@
 #' [Online Documentation](
 #' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_multivariate_outlier.html
 #' )
-acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
-                                     n_rules = 4, study_data, meta_data) {
-  rvs <- resp_vars
+acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
+                                     label_col,
+                                     n_rules = 4,
+                                     max_non_outliers_plot = 10000,
+                                     criteria = c("tukey", "sixsigma",
+                                                  "hubert", "sigmagap"),
+                                     study_data, meta_data) { # TODO: see univ.out to select criteria to use
 
-  # rules in 1:4?
+  # preps ----------------------------------------------------------------------
+  if (length(unique(criteria)) < 1 ||
+      length(unique(criteria)) >
+      length(eval(formals(acc_multivariate_outlier)$criteria)) ||
+      !all(criteria %in% eval(formals(acc_multivariate_outlier)$criteria))) {
+    util_warning(c("The formal criteria must have > 0 and < %d entries.",
+                   "Allowed values are %s.",
+                   "I was called with %s, falling back to default %s."),
+                 length(eval(formals(acc_multivariate_outlier)$criteria)),
+                 paste(dQuote(eval(formals(acc_multivariate_outlier)$criteria)),
+                       collapse = ", "),
+                 paste(dQuote(unique(criteria)), collapse = ", "),
+                 paste(dQuote(eval(formals(acc_multivariate_outlier)$criteria)),
+                       collapse = ", "))
+    criteria <- eval(formals(acc_multivariate_outlier)$criteria)
+  }
+
+  if (length(n_rules) != 1 || !is.numeric(n_rules) ||
+      !all(util_is_integer(n_rules)) ||
+      !(n_rules %in% seq_len(length(unique(criteria))))) {
+    util_warning(
+      "The formal n_rules is not an integer between 1 and %d, default (%d) is used.",
+      length(unique(criteria)),
+      min(eval(formals(acc_multivariate_outlier)$n_rules),
+          length(unique(criteria))),
+      applicability_problem = TRUE)
+    n_rules <- min(eval(formals(acc_multivariate_outlier)$n_rules),
+                   length(unique(criteria)))
+
+  }
+    # rules in 1:4?
   if (n_rules != 4) {
     if (!(n_rules %in% 1:4)) {
       util_warning(
@@ -81,16 +124,29 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
     }
   }
 
-  # map meta to study
-  util_prepare_dataframes()
+  if (length(max_non_outliers_plot) != 1 ||
+      !is.numeric(max_non_outliers_plot) ||
+      !all(util_is_integer(max_non_outliers_plot)) ||
+      (max_non_outliers_plot < 0)) {
+    util_warning(
+      c("The formal max_non_outliers_plot is not an integer >= 0,",
+        "default (%d) is used."),
+      formals(acc_multivariate_outlier)$max_non_outliers_plot,
+      applicability_problem = TRUE)
+    max_non_outliers_plot <-
+      formals(acc_multivariate_outlier)$max_non_outliers_plot
+  }
 
-  util_correct_variable_use("resp_vars",
+  # map metadata to study data
+  prep_prepare_dataframes(.replace_hard_limits = TRUE)
+
+  util_correct_variable_use("variable_group",
     allow_more_than_one = TRUE,
     allow_any_obs_na = TRUE,
     need_type = "integer | float"
   )
 
-  if (length(resp_vars) == 1) {
+  if (length(variable_group) == 1) {
     util_error("Need at least two variables for multivariate outliers.",
                applicability_problem = TRUE)
   }
@@ -99,7 +155,7 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
   util_correct_variable_use("id_vars",
     allow_any_obs_na = TRUE,
     allow_null = TRUE,
-    need_type = "character | integer"
+    need_type = "string | integer"
   )
 
   # no use of id_vars?
@@ -115,7 +171,7 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
   }
 
   # missing data in any of the variables?
-  vars <- c(resp_vars, id_vars)
+  vars <- c(variable_group, id_vars)
   vars <- vars[!is.na(vars)]
 
   n_prior <- dim(ds1)[1]
@@ -132,28 +188,34 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
 
   if (n_post < n_prior) {
     util_warning(paste0(
-      "Due to missing values in ", paste0(rvs, collapse = ", "),
+      "Due to missing values in ", paste0(variable_group, collapse = ", "),
       " or ", id_vars, " N=", n_prior - n_post,
       " observations were excluded."
     ), applicability_problem = FALSE)
   }
 
-  rvs <-
+  variable_group <-
     util_no_value_labels(
-      resp_vars = rvs,
+      resp_vars = variable_group,
       meta_data = meta_data,
       label_col = label_col,
       warn = TRUE,
       stop = TRUE
     )
 
+  if (length(variable_group) < 2) {
+    util_error(
+      "Fewer than two variables left, no multivariate analysis possible.")
+  }
+
   # Mahalanobis ----------------------------------------------------------------
 
   # Estimate covariance of response variables
-  Sx <- cov(ds1plot[, rvs, drop = FALSE])
+  Sx <- cov(ds1plot[, variable_group, drop = FALSE])
 
   # Calculation of the Mahalanobis distance
-  ds1plot$MD <- mahalanobis(ds1plot[, rvs], colMeans(ds1plot[, rvs]), Sx)
+  ds1plot$MD <- mahalanobis(ds1plot[, variable_group], colMeans(ds1plot[, variable_group,
+                                                             drop = FALSE]), Sx)
 
   # browser()
 
@@ -173,7 +235,33 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
 
   # calculate summary of all outlier definitions
   ds1plot$Rules <-
-    apply(ds1plot[, c("tukey", "sixsigma", "hubert", "sigmagap")], 1, sum)
+    apply(ds1plot[, criteria, drop = FALSE], 1, sum)
+
+  n_non_ol <- sum(ds1plot$Rules == 0)
+
+  ### remove non-outliers, if too many
+  if (max_non_outliers_plot < n_non_ol) {
+
+    dsi_non_ol <- ds1plot[ds1plot$Rules == 0, , FALSE]
+    dsi_ol <- ds1plot[ds1plot$Rules > 0, , FALSE]
+
+    subsel_non_ol <- sample(seq_len(nrow(dsi_non_ol)),
+                            size =
+                              min(max_non_outliers_plot, nrow(dsi_non_ol)))
+
+    ds1plot <- rbind.data.frame(dsi_non_ol[subsel_non_ol, , FALSE], dsi_ol)
+
+    util_warning(
+      c("For %s, %d from %d non-outlier data values were",
+        "sampled to avoid large plots."),
+      sQuote(sprintf("acc_multivariate_outlier(%s)",
+                     paste0(dQuote(variable_group), collapse = ", "))),
+      max_non_outliers_plot,
+      n_non_ol,
+      applicability_problem = FALSE
+    )
+  }
+  ###
 
   # create summary table
   # outlier deviating according to all rules?
@@ -181,7 +269,7 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
   grading <- max(n_devs, na.rm = TRUE)
 
   st1 <- data.frame(
-    Variables = paste0(rvs, collapse = " | "),
+    Variables = paste0(variable_group, collapse = " | "),
     Tukey = sum(ds1plot$tukey),
     SixSigma = sum(ds1plot$sixsigma),
     Hubert = sum(ds1plot$hubert),
@@ -192,7 +280,7 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
 
   # reshape wide to long
   ds2plot <-
-    melt(ds1plot[, c(rvs, id_vars, "Rules")], measure.vars = rvs, id.vars =
+    melt(ds1plot[, c(variable_group, id_vars, "Rules")], measure.vars = variable_group, id.vars =
            c(id_vars, "Rules"))
 
   # use neamed color vector
@@ -230,11 +318,11 @@ acc_multivariate_outlier <- function(resp_vars, id_vars = NULL, label_col,
     theme_minimal()
 
   return(list(FlaggedStudyData = ds1plot,
-              SummaryTable = st1,
+              SummaryTable = st1,  # TODO: VariableGroupTable, maybe other functions, too?
               SummaryPlot =
                 util_set_size(p,
                               width_em = 25 +
-                                1.2 * length(rvs),
+                                1.2 * length(variable_group),
                               height_em = 25
                               )))
 }

@@ -4,17 +4,29 @@
 \alias{util_warning}
 \title{Produce a warning message with a useful short stack trace.}
 \usage{
-util_warning(m, ..., applicability_problem = NA)
+util_warning(
+  m,
+  ...,
+  applicability_problem = NA,
+  integrity_indicator = "none",
+  level = 0
+)
 }
 \arguments{
-\item{m}{warning message or a \link{simpleWarning}}
+\item{m}{warning message or a \link{condition}}
 
 \item{...}{arguments for \link{sprintf} on m, if m is a character}
 
 \item{applicability_problem}{\link{logical} warning indicates unsuitable resp_vars}
+
+\item{integrity_indicator}{\link{character} the warning is an integrity problem,
+here is the indicator abbreviation..}
+
+\item{level}{\link{integer} level of the warning message (defaults to 0). Higher
+levels are more severe.}
 }
 \value{
-invisible(NULL).
+\link{condition} the condition object, if the execution is not stopped
 }
 \description{
 Produce a warning message with a useful short stack trace.

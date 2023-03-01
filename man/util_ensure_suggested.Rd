@@ -4,14 +4,41 @@
 \alias{util_ensure_suggested}
 \title{Support function to stop, if an optional package is not installed}
 \usage{
-util_ensure_suggested(pkg, goal)
+util_ensure_suggested(
+  pkg,
+  goal = ifelse(is.null(rlang::caller_call()), "work", paste("call",
+    sQuote(rlang::call_name(rlang::caller_call())))),
+  err = TRUE,
+  and_import = c()
+)
 }
 \arguments{
 \item{pkg}{needed package}
 
 \item{goal}{feature description for error message.}
+
+\item{err}{\link{logical} Should the function throw an error (default) or a
+warning?}
+
+\item{and_import}{import the listed function to the caller's environment}
+}
+\value{
+\code{TRUE} if all packages in \code{pkg} are available, \code{FALSE} if at least
+one of the packages is missing.
 }
 \description{
 This function stops, if a package is not installed but needed for using an
 optional feature of \code{dataquieR}.
+}
+\examples{
+\dontrun{ # internal use, only
+f <- function() {
+  util_ensure_suggested <- get("util_ensure_suggested",
+    asNamespace("dataquieR"))
+  util_ensure_suggested("ggplot2", "Test",
+      and_import = "(ggplot|geom_.*|aes)")
+  print(ggplot(cars, aes(x = speed)) + geom_histogram())
+}
+f()
+}
 }

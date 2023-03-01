@@ -1,9 +1,9 @@
 test_that("con_contradictions works", {
-  Sys.setenv(TZ = 'CET')
-  load(system.file("extdata", "study_data.RData", package = "dataquieR"),
-       envir = environment())
-  load(system.file("extdata", "meta_data.RData", package = "dataquieR"),
-       envir = environment())
+  skip_on_cran() # slow and deprecated, use redcap rules, now
+  skip_if_not_installed("withr")
+  withr::local_timezone('CET')
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   check_table <- read.csv(
     system.file("extdata",
       "contradiction_checks.csv",

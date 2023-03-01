@@ -1,8 +1,12 @@
 test_that("dq_report works", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow, deprecated
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   sd0 <- study_data[, 1:5]
   sd0$v00012 <- study_data$v00012
@@ -10,7 +14,7 @@ test_that("dq_report works", {
 
   # don't include huge reports as RData in the package
   # Suppress warnings since we do not test dq_report
-  # here in the first place
+  # here in the first place, it has been declared deprecated
   report <- suppressWarnings(dq_report(sd0, md0,
                                        cores = 1,
                                        label_col = LABEL,
@@ -25,13 +29,8 @@ test_that("dq_report works", {
                                            package = "dataquieR"
                                          ), header = TRUE, sep = "#"),
                                        show_causes = TRUE,
-                                       cause_label_df = read.csv(
-                                         system.file(
-                                           "extdata",
-                                           "Missing-Codes-2020.csv",
-                                           package = "dataquieR"),
-                                         header = TRUE, sep = ";"
-                                       )
+                                       cause_label_df = prep_get_data_frame(
+                                         "meta_data_v2|missing_table")
   ))
   expect_equal(sum(report$long_format$com_item_missingness$results[[
     1]]$SummaryTable$GRADING, na.rm = TRUE), 1)
@@ -60,13 +59,8 @@ test_that("dq_report works", {
                                      package = "dataquieR"
                                    ), header = TRUE, sep = "#"),
                                  show_causes = TRUE,
-                                 cause_label_df = read.csv(
-                                     system.file(
-                                       "extdata",
-                                       "Missing-Codes-2020.csv",
-                                       package = "dataquieR"),
-                                     header = TRUE, sep = ";"
-                                   )
+                                 cause_label_df = prep_get_data_frame(
+                                   "meta_data_v2|missing_table")
                                  )
                        ),
                        regexp =
@@ -88,13 +82,8 @@ test_that("dq_report works", {
                                      package = "dataquieR"
                                    ), header = TRUE, sep = "#"),
                                  show_causes = TRUE,
-                                 cause_label_df = read.csv(
-                                   system.file(
-                                     "extdata",
-                                     "Missing-Codes-2020.csv",
-                                     package = "dataquieR"),
-                                   header = TRUE, sep = ";"
-                                 )
+                                 cause_label_df = prep_get_data_frame(
+                                   "meta_data_v2|missing_table")
       )
       ),
     regexp =
@@ -110,7 +99,7 @@ test_that("dq_report works", {
       suppressWarnings(dq_report(sd0, md0,
                                  cores = 1,
                                  label_col = LABEL,
-                                 strata_attribute = "KEY_XXX",
+                                 strata_attribute = "GROUP_VAR_XXX",
                                  dimensions = c("Completeness"),
                                  check_table =
                                    read.csv(system.file(
@@ -119,19 +108,14 @@ test_that("dq_report works", {
                                      package = "dataquieR"
                                    ), header = TRUE, sep = "#"),
                                  show_causes = TRUE,
-                                 cause_label_df = read.csv(
-                                   system.file(
-                                     "extdata",
-                                     "Missing-Codes-2020.csv",
-                                     package = "dataquieR"),
-                                   header = TRUE, sep = ";"
-                                 )
+                                 cause_label_df = prep_get_data_frame(
+                                   "meta_data_v2|missing_table")
       )
       ),
     regexp =
       paste(
-        "(?ms).segment attributes other than",
-        "KEY_STUDY_SEGMENT are unsupported yet"
+        "(?ms)segment attributes other than",
+        "STUDY_SEGMENT are unsupported yet"
       ),
     perl = TRUE
   )
@@ -150,13 +134,8 @@ test_that("dq_report works", {
                                      package = "dataquieR"
                                    ), header = TRUE, sep = "#"),
                                  show_causes = TRUE,
-                                 cause_label_df = read.csv(
-                                   system.file(
-                                     "extdata",
-                                     "Missing-Codes-2020.csv",
-                                     package = "dataquieR"),
-                                   header = TRUE, sep = ";"
-                                 )
+                                 cause_label_df = prep_get_data_frame(
+                                   "meta_data_v2|missing_table")
       )
       ),
     regexp =
@@ -166,7 +145,7 @@ test_that("dq_report works", {
     perl = TRUE
   )
 
-  md0$KEY_STUDY_SEGMENT <- NULL
+  md0$STUDY_SEGMENT <- NULL
   report <- NULL
   report <-
     suppressWarnings(dq_report(sd0, md0,
@@ -180,13 +159,8 @@ test_that("dq_report works", {
                                    package = "dataquieR"
                                  ), header = TRUE, sep = "#"),
                                show_causes = TRUE,
-                               cause_label_df = read.csv(
-                                 system.file(
-                                   "extdata",
-                                   "Missing-Codes-2020.csv",
-                                   package = "dataquieR"),
-                                 header = TRUE, sep = ";"
-                               )
+                               cause_label_df = prep_get_data_frame(
+                                 "meta_data_v2|missing_table")
     )
     )
 
@@ -204,15 +178,9 @@ test_that("dq_report works", {
                                           list(min_obs_in_subgroup = 40),
                                         com_item_missingness = list(
                                           show_causes = TRUE,
-                                          cause_label_df = read.csv(
-                                            system.file(
-                                              "extdata",
-                                              "Missing-Codes-2020.csv",
-                                              package = "dataquieR"),
-                                            header = TRUE, sep = ";"
-                                          )
-                                        )
-                                       )
+                                          cause_label_df = prep_get_data_frame(
+                                            "meta_data_v2|missing_table")
+                                       ))
   ))
 
   sd0 <- study_data[, 1:5]
@@ -230,15 +198,9 @@ test_that("dq_report works", {
                                            list(min_obs_in_subgroup = 40),
                                          com_item_missingness = list(
                                            show_causes = TRUE,
-                                           cause_label_df = read.csv(
-                                             system.file(
-                                               "extdata",
-                                               "Missing-Codes-2020.csv",
-                                               package = "dataquieR"),
-                                             header = TRUE, sep = ";"
-                                           )
-                                         )
-                                       )
+                                           cause_label_df = prep_get_data_frame(
+                                             "meta_data_v2|missing_table")
+                                       ))
   ))
 
   expect_equal(length(report$long_format$com_item_missingness$results), 1)

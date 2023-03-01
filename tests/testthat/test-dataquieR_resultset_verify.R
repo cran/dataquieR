@@ -1,8 +1,7 @@
 test_that("dataquieR_resultset_verify works", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # deprecated
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   # don't include huge reports as RData in the package
   # Suppress warnings since we do not test dq_report
@@ -20,13 +19,8 @@ test_that("dataquieR_resultset_verify works", {
                                            package = "dataquieR"
                                          ), header = TRUE, sep = "#"),
                                        show_causes = TRUE,
-                                       cause_label_df = read.csv(
-                                         system.file(
-                                           "extdata",
-                                           "Missing-Codes-2020.csv",
-                                           package = "dataquieR"),
-                                         header = TRUE, sep = ";"
-                                       )
+                                       cause_label_df = prep_get_data_frame(
+                                         "meta_data_v2|missing_table")
   ))
   expect_silent(dataquieR:::dataquieR_resultset_verify(report))
   expect_error(dataquieR:::dataquieR_resultset_verify("Nothing"),
@@ -132,7 +126,7 @@ test_that("dataquieR_resultset_verify works", {
                perl = TRUE
   )
   h <- report
-  h$strata_attribute <- "KEY_STUDY_SEGMENT"
+  h$strata_attribute <- "STUDY_SEGMENT"
   expect_silent(dataquieR:::dataquieR_resultset_verify(h))
   i <- report
   i$strata_attribute <- NA

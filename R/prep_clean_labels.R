@@ -41,6 +41,7 @@
 #' @importFrom stats setNames
 #'
 #' @examples
+#' \dontrun{
 #' meta_data1 <- data.frame(
 #'   LABEL =
 #'     c(
@@ -53,17 +54,19 @@
 #' print(prep_clean_labels(meta_data1$LABEL))
 #' meta_data1 <- prep_clean_labels("LABEL", meta_data1)
 #' print(meta_data1)
-prep_clean_labels <- function(label_col, meta_data, no_dups = FALSE) {
+#' }
+prep_clean_labels <- function(label_col, meta_data = "item_level",
+                              no_dups = FALSE) {
   if (missing(label_col)) {
     util_error("Need at least on paramter")
   }
   if (is.factor(label_col)) {
     label_col <- as.character(label_col)
   }
-  stopifnot((is.character(label_col) && missing(meta_data)) ||
+  util_stop_if_not((is.character(label_col) && missing(meta_data)) ||
               is.data.frame(meta_data))
   if (!missing(meta_data)) {
-    stopifnot(label_col %in% colnames(meta_data))
+    util_expect_data_frame(meta_data, c(label_col))
     orig_col <- meta_data[[label_col]]
   } else {
     orig_col <- label_col

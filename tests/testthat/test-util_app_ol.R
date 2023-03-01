@@ -1,10 +1,11 @@
 test_that("util_app_ol works", {
+  skip_on_cran() # deprecated
   md <- prep_create_meta(
     VAR_NAMES = letters,
     DATA_TYPE = c(rep(DATA_TYPES$FLOAT, 13), rep(DATA_TYPES$INTEGER, 10),
                   DATA_TYPES$STRING, DATA_TYPES$DATETIME, DATA_TYPES$STRING),
     MISSING_LIST = "",
-    KEY_OBSERVER = "a",
+    GROUP_VAR_OBSERVER = "a",
     DETECTION_LIMITS =
       c(rep("[0;9)", 10), rep(NA, 6), rep("", 10))
   )

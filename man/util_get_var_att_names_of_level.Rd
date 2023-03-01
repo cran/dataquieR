@@ -4,10 +4,12 @@
 \alias{util_get_var_att_names_of_level}
 \title{Get variable attributes of a certain provision level}
 \usage{
-util_get_var_att_names_of_level(level)
+util_get_var_att_names_of_level(level, cumulative = TRUE)
 }
 \arguments{
 \item{level}{level(s) of requirement}
+
+\item{cumulative}{include all names from more basic levels}
 }
 \value{
 all matching variable attribute names

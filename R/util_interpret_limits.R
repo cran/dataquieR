@@ -9,7 +9,9 @@
 #'
 #' @return augments metadata by interpretable limit columns
 #'
-util_interpret_limits <- function(mdata) {
+util_interpret_limits <- function(mdata) { # TODO: Use the redcap parser, instead
+
+  report_generation_time <- as.character(Sys.time())
 
   # grep all columns of data with the notation of LIMITS
   lv <- colnames(mdata[grep("LIMIT", colnames(mdata))])
@@ -61,13 +63,13 @@ util_interpret_limits <- function(mdata) {
                        }
                        xs1 <- xs[[1]]
                        xs2 <- xs[[2]]
-                       if (xs1 %in% c("", "Inf", "+Inf", "-Inf")) {
+                       if (xs1 %in% c("", "Inf", "+Inf", "-Inf", "today")) {
                          a <- TRUE
                        } else {
                          a <- !inherits(try(as.POSIXct(xs1), silent = TRUE),
                                         "try-error")
                        }
-                       if (xs2 %in% c("", "Inf", "+Inf", "-Inf")) {
+                       if (xs2 %in% c("", "Inf", "+Inf", "-Inf", "today")) {
                          b <- TRUE
                        } else {
                          b <- !inherits(try(as.POSIXct(xs2), silent = TRUE),
@@ -78,7 +80,7 @@ util_interpret_limits <- function(mdata) {
 
     valid <- valid1 | valid2
 
-    if (any(!valid & !util_empty(mdata[[lv[i]]]))) {
+    if (any(!valid & !util_empty(mdata[[lv[i]]]))) { # TODO: Would we allow [1; 12[ ??
       util_warning(
         "Found invalid limits for %s: %s%s -- will ignore these",
         sQuote(lv[i]),
@@ -123,6 +125,13 @@ util_interpret_limits <- function(mdata) {
       VAL_LOWER_INF <- X_LOWER[date_vars][IS_LOWER_INF]
       VAL_UPPER_INF <- X_UPPER[date_vars][IS_UPPER_INF]
 
+      IS_LOWER_NOW <- grepl(perl = TRUE, ignore.case = TRUE,
+                            "^\\s*today\\s*$", X_LOWER[date_vars])
+      IS_UPPER_NOW <- grepl(perl = TRUE, ignore.case = TRUE,
+                            "^\\s*today\\s*$", X_UPPER[date_vars])
+
+      X_LOWER[date_vars][IS_LOWER_NOW] <- report_generation_time
+      X_UPPER[date_vars][IS_UPPER_NOW] <- report_generation_time
       X_LOWER[date_vars][IS_LOWER_INF] <- NA
       X_UPPER[date_vars][IS_UPPER_INF] <- NA
       X_LOWER[date_vars][trimws(X_LOWER[date_vars]) == ""] <- NA

@@ -13,8 +13,9 @@
 #' - 3 data type matches and applicable
 #'
 util_app_sm <- function(x, dta) {
-  if ("KEY_STUDY_SEGMENT" %in% names(x)) {
-    c1 <- ifelse(is.na(x[["KEY_STUDY_SEGMENT"]]), 0, 1)
+  if (all(c(PART_VAR, STUDY_SEGMENT) %in% names(x))) {
+    c1 <- ifelse(is.na(x[[STUDY_SEGMENT]]) |
+                   is.na(x[[PART_VAR]]), 0, 1)
   } else {
     c1 <- rep(0, times = dim(x)[1])
   }

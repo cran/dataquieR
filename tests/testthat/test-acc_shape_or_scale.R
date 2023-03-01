@@ -1,9 +1,7 @@
 test_that("acc_shape_or_scale works with 3 args", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
-
+  skip_on_cran() # slow
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   expect_warning(
     res1 <-
@@ -239,10 +237,9 @@ expect_error(
 })
 
 test_that("acc_shape_or_scale works with label_col", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     expect_error(
       res1 <-

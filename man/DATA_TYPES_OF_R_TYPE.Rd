@@ -6,7 +6,7 @@
 \title{All available data types, mapped from their respective
 R types}
 \format{
-An object of class \code{list} of length 13.
+An object of class \code{list} of length 14.
 }
 \usage{
 DATA_TYPES_OF_R_TYPE
@@ -14,5 +14,8 @@ DATA_TYPES_OF_R_TYPE
 \description{
 All available data types, mapped from their respective
 R types
+}
+\seealso{
+\code{\link{prep_dq_data_type_of}}
 }
 \keyword{datasets}

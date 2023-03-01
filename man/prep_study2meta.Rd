@@ -6,14 +6,17 @@
 \usage{
 prep_study2meta(
   study_data,
-  level = c(VARATT_REQUIRE_LEVELS$REQUIRED, VARATT_REQUIRE_LEVELS$OPTIONAL),
+  level = c(VARATT_REQUIRE_LEVELS$REQUIRED, VARATT_REQUIRE_LEVELS$RECOMMENDED),
+  cumulative = TRUE,
   convert_factors = FALSE
 )
 }
 \arguments{
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{level}{\link{enum} level to provide (see also \link{VARATT_REQUIRE_LEVELS})}
+\item{level}{\link{enum} levels to provide (see also \link{VARATT_REQUIRE_LEVELS})}
+
+\item{cumulative}{\link{logical} include attributes of all levels up to level}
 
 \item{convert_factors}{\link{logical} convert the}
 }

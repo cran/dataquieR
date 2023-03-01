@@ -17,7 +17,7 @@
 #' @importFrom stats setNames
 util_no_value_labels <- function(resp_vars, meta_data, label_col, warn = TRUE,
                                  stop = TRUE) {
-  stopifnot(ncol(meta_data) > 1)
+  util_stop_if_not(ncol(meta_data) > 1)
   matching_vars <- vapply(FUN.VALUE = logical(1), X = setNames(nm = resp_vars),
                           FUN = function(rv) {
     row <- meta_data[meta_data[[label_col]] == rv, , TRUE]

@@ -39,13 +39,13 @@
 #'                                   specifies the minimum no. of observations
 #'                                   that is required to include a subgroup
 #'                                   (level) of the "group_var" in the analysis.
-#'                                   Subgroups with less observations are
+#'                                   Subgroups with fewer observations are
 #'                                   excluded. The default is 30.
 #' @param min_subgroups [integer] from=0. optional argument if a "group_var" is
 #'                                        used. This argument specifies the
 #'                                        minimum no. of subgroups (levels)
 #'                                        included "group_var". If the variable
-#'                                        defined in "group_var" has less
+#'                                        defined in "group_var" has fewer
 #'                                        subgroups it is not used for analysis.
 #'                                        The default is 5.
 #' @param threshold_value [numeric] from=0 to=1. a numerical value ranging
@@ -80,7 +80,7 @@
 #' group_vars <- prep_map_labels(rvs, meta_data = meta_data, from = label_col,
 #'   to = VAR_NAMES)
 #' group_vars <- prep_map_labels(group_vars, meta_data = meta_data,
-#'   to = KEY_OBSERVER)
+#'   to = GROUP_VAR_OBSERVER)
 #' group_vars <- prep_map_labels(group_vars, meta_data = meta_data)
 #' acc_varcomp(
 #'   resp_vars = rvs, group_vars = group_vars, co_vars = co_vars,
@@ -93,10 +93,11 @@
 acc_varcomp <-
   function(resp_vars = NULL, group_vars, co_vars = NULL,
            min_obs_in_subgroup = 30, min_subgroups = 5, label_col = NULL,
-           threshold_value = 0.05, study_data, meta_data) {
+           threshold_value = 0.05, study_data, meta_data) { # TODO: does this function remove observers w/o observations?
 
-  # map meta to study
-  util_prepare_dataframes()
+  # preps ----------------------------------------------------------------------
+  # map metadata to study data
+  prep_prepare_dataframes(.replace_hard_limits = TRUE)
 
   .min_obs_in_subgroup <- suppressWarnings(as.integer(min_obs_in_subgroup))
   if (is.na(.min_obs_in_subgroup)) {
@@ -134,7 +135,7 @@ acc_varcomp <-
   util_correct_variable_use("group_vars",
     allow_null = TRUE,
     allow_any_obs_na = TRUE,
-    allow_more_than_one = TRUE,
+    allow_more_than_one = !TRUE, # TODO: Remove the whole functionallity.
     need_type = "!float"
   )
 
@@ -144,7 +145,7 @@ acc_varcomp <-
     allow_null = TRUE
   )
 
-  rvs <- resp_vars
+  rvs <- resp_vars # TODO: Fix rvs <-> resp_vars
 
   if (length(rvs) == 0) {
     rvs <- colnames(ds1[, vapply(ds1, is.numeric, FUN.VALUE = logical(1))])
@@ -158,7 +159,7 @@ acc_varcomp <-
 
   if (length(group_vars) == 1 && length(rvs) > 1) {
     group_vars <- rep(group_vars, length(rvs))
-    message(sprintf("using the same group var %s for all resp_vars",
+    util_message(sprintf("using the same group var %s for all resp_vars",
                     dQuote(group_vars[[1]])
                     ))
   }
@@ -178,6 +179,10 @@ acc_varcomp <-
   #     modelled
   if (is.null(co_vars) || length(co_vars) == 0) {
     co_vars <- "1"
+    cv <- character(0)
+  } else {
+    cv <- co_vars
+    co_vars <- util_bQuote(co_vars)
   }
 
   # missing checks
@@ -190,26 +195,29 @@ acc_varcomp <-
     rv <- row[[1]]
     group_var <- row[[2]]
 
-    check_df <- data.frame(table(ds1[[group_var]]))
+    check_df <- util_table_of_vct(ds1[[group_var]])
 
     # too few observations in >1 level of the random effect
     critical_levels <- levels(check_df$Var1)[check_df$Freq <
                                                min_obs_in_subgroup]
     if (length(critical_levels) > 0) {
       util_warning("Levels %s were excluded due to less than %d observations.",
-                   paste0(vapply(critical_levels, dQuote, ""), collapse = ", "),
+                   paste0(c(vapply(head(critical_levels, 10), dQuote, ""),
+                            if (length(critical_levels) <= 10)
+                              character(0) else "..."),
+                          collapse = ", "),
                    min_obs_in_subgroup,
                    applicability_problem = FALSE)
-      # exclude levels with too less observations
+      # exclude levels with too few observations
       ds1 <- ds1[!(ds1[[group_var]] %in% critical_levels), ]
       # dropping unused levels
       ds1[[group_var]] <- factor(ds1[[group_var]])
     }
 
     check_df <-
-      data.frame(table(ds1[[group_var]])) # number of observers may have changed
+      util_table_of_vct(ds1[[group_var]]) # number of observers may have changed
 
-    # less than min_subgroups levels of random effect
+    # fewer than min_subgroups levels of random effect
     if (length(check_df[, 1]) < min_subgroups) {
       util_warning("%d < %d levels in %s. Will not compute ICCs for %s.",
                    length(check_df[, 1]),
@@ -251,14 +259,14 @@ acc_varcomp <-
     res_df[1, 1] <- rv
     res_df[1, 2] <- group_var
     # create model formula from function arguments
-    fmla <- as.formula(paste0(paste0(rv, "~"),
-                              paste0(c(co_vars, paste0("(1|", group_var, ")")),
+    fmla <- as.formula(paste0(paste0(util_bQuote(rv), "~"),
+                              paste0(c(co_vars, paste0("(1|", util_bQuote(group_var), ")")),
                                      collapse = "+")))
     # save formula for results
     res_df[1, 3] <- Reduce(paste, deparse(fmla))
 
     # remove misisng in used variables
-    subdf <- na.omit(ds1[, c(rv, co_vars[co_vars %in% colnames(ds1)],
+    subdf <- na.omit(ds1[, c(rv, intersect(cv, colnames(ds1)),
                              group_var), drop = FALSE])
     # drop unused levels (https://stackoverflow.com/a/1197154)
     subdf[] <- lapply(subdf, function(x) if (is.factor(x)) factor(x) else x)
@@ -276,7 +284,7 @@ acc_varcomp <-
              trimws(conditionMessage(m))))) {
           env$convergence.problem <- TRUE
         } else {
-          message(m) # nocov
+          util_message(m) # nocov
           # This is to handle other possible problems with the model
           # Since it is for unexpected problems, I cannot write a test
         }
@@ -318,7 +326,7 @@ acc_varcomp <-
       res_df[1, 4] <- round(v_tab$vcov[1] / (v_tab$vcov[1] + v_tab$vcov[2]), 3)
     }
 
-    class_sizes <- as.data.frame(table(subdf[, group_var]))
+    class_sizes <- util_table_of_vct(subdf[, group_var])
     res_df <- within(res_df, {
       Mean.Class.Size[[1]] <- mean(class_sizes$Freq)
       Median.Class.Size[[1]] <- median(class_sizes$Freq)

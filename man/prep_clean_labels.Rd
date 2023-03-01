@@ -4,7 +4,7 @@
 \alias{prep_clean_labels}
 \title{Support function to scan variable labels for applicability}
 \usage{
-prep_clean_labels(label_col, meta_data, no_dups = FALSE)
+prep_clean_labels(label_col, meta_data = "item_level", no_dups = FALSE)
 }
 \arguments{
 \item{label_col}{\link{character} label attribute to adjust or character vector to
@@ -50,6 +50,7 @@ case, a \code{stop} call is possible, controlled by the \code{no_dups} argument.
 A warning is emitted, if modifications were necessary.
 }
 \examples{
+\dontrun{
 meta_data1 <- data.frame(
   LABEL =
     c(
@@ -62,4 +63,5 @@ print(meta_data1)
 print(prep_clean_labels(meta_data1$LABEL))
 meta_data1 <- prep_clean_labels("LABEL", meta_data1)
 print(meta_data1)
+}
 }

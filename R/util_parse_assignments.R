@@ -8,19 +8,42 @@
 #'
 #' @param text Text to be parsed
 #' @param split_char Character separating assignments
+#' @param multi_variate_text don't paste text but parse element-wise
 #'
 #' @return the parsed assignments as a named list
 #'
 #' @importFrom stats setNames
 #'
-util_parse_assignments <- function(text, split_char = SPLIT_CHAR) {
-  text <- paste0(text, collapse = "\n")
-  assignments <- base::strsplit(x = text, split = SPLIT_CHAR, fixed = TRUE)[[1]]
+util_parse_assignments <- function(text, split_char = SPLIT_CHAR,
+                                   multi_variate_text = FALSE) { # Dont change default here, many calls of this function rely on a non-list-result
+  if (!multi_variate_text) {
+    if (all(util_empty(text))) {
+      text <- NA_character_
+    } else {
+      text <- paste0(text, collapse = "\n")
+    }
+  }
+  res <- lapply(text, function(x) {
+    if (all(util_empty(gsub(split_char, "", fixed = TRUE, x)))) {
+      return(setNames(list(), nm = character(0)))
+    }
+    assignments <- base::strsplit(x = as.character(x),
+                                  split = split_char, fixed = TRUE)[[1]]
 
-  keys <- trimws(gsub(pattern = "(?ms)\\s*=\\s*.*$", replacement = "",
-                      x = assignments, perl = TRUE))
-  values <- trimws(gsub(pattern = "(?ms)^.*?\\s*=\\s*", replacement = "\\1",
+    keys <- trimws(gsub(pattern = "(?ms)\\s*=\\s*.*$", replacement = "",
                         x = assignments, perl = TRUE))
-
-  return(as.list(setNames(values, keys)))
+    values <- trimws(gsub(pattern = "(?ms)^.*?\\s*=\\s*", replacement = "\\1",
+                          x = assignments, perl = TRUE))
+    as.list(setNames(values, keys))
+  })
+  if (!multi_variate_text) {
+    if (length(res) != 1) { # nocov start
+      util_error(c("univariate use of util_parse_assignments returned %d",
+                   "results. Sorry, this should not happen, internal error."),
+                 length(res))
+    } # nocov end
+    return(res[[1]])
+  } else {
+    return(res)
+  }
 }

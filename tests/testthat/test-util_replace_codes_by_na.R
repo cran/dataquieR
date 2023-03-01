@@ -1,13 +1,10 @@
 test_that("util_replace_codes_by_na works", {
   local({
-    load(system.file("extdata", "study_data.RData", package = "dataquieR"),
-         envir = environment())
-    load(system.file("extdata", "meta_data.RData", package = "dataquieR"),
-         envir = environment())
+    meta_data <- prep_get_data_frame("meta_data")
+    study_data <- prep_get_data_frame("study_data")
     sd0 <- study_data[1:30, 30:35, FALSE]
     md0 <- meta_data[meta_data$VAR_NAMES %in% colnames(sd0), , FALSE]
-    expected <- list(
-      study_data = structure(list(v00024 = c(
+    expected <- structure(list(v00024 = c(
         0, 1, 0, NA, NA,
         1, 0, 0, 1, 0, NA, 1, 1, 0, 0, 1, NA, 0, 1, 0, NA, 0, 0, 0, 1,
         0, NA, 1, 1, 0
@@ -29,15 +26,7 @@ test_that("util_replace_codes_by_na works", {
         0, 0, NA, 0, NA,
         NA, NA, NA, 0, 0, NA, NA, 0, 0, 1, 0, NA, NA, NA, NA, NA, 0,
         NA, 0, 1, NA, NA, 0, NA, 0
-      )), row.names = c(NA, 30L), class = "data.frame", Codes_to_NA = TRUE),
-      list_N_MC_replaced = list(
-        v00024 = 5L, v00025 = 7L, v00026 = 6L,
-        v00027 = 7L, v00028 = 5L, v00029 = 8L
-      ), list_N_JC_replaced = list(
-        v00024 = 0L, v00025 = 0L, v00026 = 0L, v00027 = 8L, v00028 = 0L,
-        v00029 = 7L
-      )
-    )
+      )), row.names = c(NA, 30L), class = "data.frame", Codes_to_NA = TRUE)
     got <- dataquieR:::util_replace_codes_by_NA(
       study_data = sd0, meta_data = md0)
     expect_equal(got, expected)

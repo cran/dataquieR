@@ -1,11 +1,34 @@
+# dataquieR 2.0.0
+  * `dq_report2` replaces `dq_report`. Please use `dq_report2` from now on.
+  * Full new reporting engine (needs `htmtools` and supports `plotly`)
+  * Better report layout and improved functionality 
+  * Support for reading and referring to data in files/URLs
+  * Support for the integrity dimension in data quality report
+  * Included distribution and multivariate outlier (provide cross-item level metadata for the latter) plots in data quality report
+  * Metadata scheme update (segment, `data.frame`, and cross-item levels). No required action by user, previous version still supported
+  * `REDCap` rules for contradictions (cross-item level metadata), previous contradictions function still supported
+  * Support metadata describing segment data and study data tables (segment and `data.frame`-level metadata)
+  * New item-level metadata version (backwards compatible)
+  * Support for computation of qualified missingness based on labels from the `AAPOR` concept
+  * `acc_univariate_outlier` and `acc_multivariate_outlier` now allow selecting the methods used to flag `outliers`
+  * Included distributional checks in the accuracy dimension for location and proportion
+  * Rotation of plots can now be controlled
+  * Improved many figures
+  * Better control over warnings
+  * If `whoami` is installed, reports now show a more suitable user name
+  * Many minor improvements
+  * Updated citations
+
 # dataquieR 1.0.13
   * fixed a left-over `~` from the `ggplot2` updates causing `acc_margins` to
     fail for categorical variables
 
 # dataquieR 1.0.12
+
+# dataquieR 1.0.12
   * Addressed a problem with the markdown template underlying the
   `dq_report` reports with wrong brackets
-  * Addressed issue with `ggplot2`'s breaking changes for the release `3.4.0`
+  * Addressed deprecations from `ggplot2 3.4.0`
   * Added `ORCIDs` for two authors
   * Updated the `CITATION` file
   * Updated the `README.md` file adding the funding sources.
@@ -13,7 +36,7 @@
 # dataquieR 1.0.11
   * Addressed a problem with some test platforms
   * Added funding agencies in the manual
-
+  
 # dataquieR 1.0.10
   * Fixed `NEWS.md` file
   * Fixed documentation

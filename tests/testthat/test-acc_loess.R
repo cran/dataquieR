@@ -1,10 +1,16 @@
 test_that("acc_loess works without label_col", {
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
   skip_on_cran() # slow test
   skip_if_translated()
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     expect_error({
       res1 <-
@@ -94,70 +100,12 @@ test_that("acc_loess works without label_col", {
   sd1 <- study_data
   sd1[["v00017"]] <- as.character(sd1[["v00017"]])
   sd1[["v00017"]][1:1000] <- "2001-02-29"
-  expect_warning(
+  expect_error(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = sd1,
                 meta_data = meta_data, group_vars = "v00016",
-                time_vars = "v00017") # ===> "LAB_DT_0"
-    ,
-    regexp =
-      sprintf(
-        "(%s|%s|%s|%s|%s|%s)",
-        paste("No min_obs_in_subgroup was set. Default n=30 per",
-              "level is used."),
-        paste("301 observations were omitted due to missing values",
-              "in .+v00014.+"),
-        paste("Due to missing values in v00016",
-              "138 observations were deleted."),
-        paste("Converting .+v00017.+ to DATETIME,",
-              "886 values could not be converted"),
-        paste("Due to missing values in v00017",
-              "886 observations were deleted."),
-        paste("Due to invalid time formats in v00017",
-              "886 observations were deleted.")
-      ),
-    perl = TRUE,
-    all = TRUE
-  )
-
-  # test with mocked absence of anytime: https://community.rstudio.com/t/how-can-i-make-testthat-think-i-dont-have-a-package-installed/33441/2
-  expect_warning(
-    testthat::expect_message(
-      expect_error(
-        with_mock(
-          "dataquieR:::util_anytime_installed" = function() FALSE,
-          res1 <-
-            acc_loess(resp_vars = "v00014", study_data = sd1,
-                    meta_data = meta_data, group_vars = "v00016",
-                    time_vars = "v00017") # ===> "LAB_DT_0"
-        ),
-        regexp =
-          paste("In acc_loess: No not-missing value in",
-                  "DATETIME variable .+v00017.+"),
-        perl = TRUE
-      ),
-      paste("Package .+anytime.+ is not installed.",
-        "Trying conversion with base as.POSIXct function.")
-    )
-    ,
-    regexp =
-      sprintf(
-        "(%s|%s|%s|%s|%s|%s)",
-        paste("No min_obs_in_subgroup was set. Default n=30 per",
-              "level is used."),
-        paste("301 observations were omitted due to missing values",
-              "in .+v00014.+"),
-        paste("Due to missing values in v00016",
-              "138 observations were deleted."),
-        paste("Converting .+v00017.+ to DATETIME,",
-              "2561 values could not be converted"),
-        paste("Due to missing values in v00017",
-              "886 observations were deleted."),
-        paste("Due to invalid time formats in v00017",
-              "886 observations were deleted.")
-      ),
-    perl = TRUE,
-    all = TRUE
+                time_vars = "v00017"), # ===> "LAB_DT_0"
+    regexp = "Data type transformation of.*NAs"
   )
 
   expect_error(
@@ -168,7 +116,7 @@ test_that("acc_loess works without label_col", {
                 time_vars = "v00017") # ===> "LAB_DT_0"
     ,
     regexp =
-      paste("In acc_loess: .+min_obs_in_subgroup.+ should",
+      paste(".+min_obs_in_subgroup.+ should",
             "be a scalar integer value, not 2 values."),
     perl = TRUE
   )
@@ -182,7 +130,7 @@ test_that("acc_loess works without label_col", {
                 time_vars = "v00017") # ===> "LAB_DT_0"
     ,
     regexp =
-      paste("In acc_loess: .+resolution.+ needs to be a",
+      paste(".+resolution.+ needs to be a",
             "single finite numeric value."),
     perl = TRUE
   )
@@ -196,7 +144,7 @@ test_that("acc_loess works without label_col", {
                 time_vars = "v00017") # ===> "LAB_DT_0"
     ,
     regexp =
-      paste("In acc_loess: .+resolution.+ needs to be a",
+      paste(".+resolution.+ needs to be a",
             "single finite numeric value."),
     perl = TRUE
   )
@@ -210,7 +158,7 @@ test_that("acc_loess works without label_col", {
                 time_vars = "v00017") # ===> "LAB_DT_0"
     ,
     regexp =
-      paste("In acc_loess: .+resolution.+ needs to be a",
+      paste(".+resolution.+ needs to be a",
             "single finite numeric value."),
     perl = TRUE
   )
@@ -226,7 +174,7 @@ test_that("acc_loess works without label_col", {
       ,
       regexp =
         paste("Argument .+plot_data_time.+ must be",
-              "a sclar logical value."),
+              "a scalar logical value."),
       perl = TRUE
     )
   )
@@ -250,28 +198,17 @@ test_that("acc_loess works without label_col", {
 
   sd0 <- study_data
   sd0$v00017 <- "XXXX"
-  expect_warning(
-    expect_error(
-      res1 <-
-        acc_loess(resp_vars = "v00014", study_data = sd0,
-                  meta_data = meta_data, group_vars = "v00016",
-                  plot_data_time = TRUE,
-                  min_obs_in_subgroup = 30,
-                  time_vars = "v00017") # ===> "LAB_DT_0"
-      ,
-      regexp =
-        paste("No not-missing value in DATETIME variable .+v00017.+"),
-      perl = TRUE
-    ),
-    perl = TRUE,
-    all = TRUE,
-    regexp = sprintf("(%s|%s|%s)",
-                     paste("Converting .+v00017.+ to DATETIME,",
-                           "2561 values could not be converted"),
-                     paste("301 observations were omitted due to",
-                           "missing values in 'v00014'"),
-                     paste("Due to missing values in v00016 138",
-                           "observations were deleted."))
+  expect_error(
+    res1 <-
+      acc_loess(resp_vars = "v00014", study_data = sd0,
+                meta_data = meta_data, group_vars = "v00016",
+                plot_data_time = TRUE,
+                min_obs_in_subgroup = 30,
+                time_vars = "v00017") # ===> "LAB_DT_0"
+    ,
+    regexp =
+      paste("Data type transformation.*additional NAs"),
+    perl = TRUE
   )
 
   suppressWarnings(
@@ -285,7 +222,7 @@ test_that("acc_loess works without label_col", {
       ,
       regexp =
         paste("Argument .+plot_data_time.+ must be",
-              "a sclar logical value."),
+              "a scalar logical value."),
       perl = TRUE
     )
   )
@@ -364,10 +301,16 @@ test_that("acc_loess works without label_col", {
 })
 
 test_that("acc_loess works with label_col", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     expect_error({
       res1 <-
@@ -447,10 +390,16 @@ test_that("acc_loess works with label_col", {
 })
 
 test_that("acc_loess output matches", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
@@ -478,6 +427,7 @@ test_that("acc_loess output matches", {
   )
   skip_on_cran()
   skip_if_not(capabilities()["long.double"])
+  # skip_on_travis() # vdiffr fails
   skip_if_not_installed("vdiffr")
   vdiffr::expect_doppelganger("loess facets plot for CRP_0 ok",
                               res1$SummaryPlotList$Loess_fits_facets)
@@ -486,10 +436,16 @@ test_that("acc_loess output matches", {
 })
 
 test_that("acc_loess min_obs_in_subgroups with label_col", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     expect_error({
       res1 <-
@@ -517,10 +473,16 @@ test_that("acc_loess min_obs_in_subgroups with label_col", {
 })
 
 test_that("acc_loess with co-vars output matches", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   sd0 <- study_data
   sd0$v00003[1:10] <- NA
@@ -559,7 +521,7 @@ test_that("acc_loess with co-vars output matches", {
     ,
     regexp =
       sprintf(
-        "(%s|%s|%s|%s|%s)",
+        "(%s|%s|%s|%s|%s|%s|%s)",
         paste(".+CRP_0.+ is a categorial but not an ordinal variable.",
               "I.ll use the levels as ordinals, but this may lead to",
               "wrong conclusions."),
@@ -571,7 +533,11 @@ test_that("acc_loess with co-vars output matches", {
         paste("301 observations were omitted due to missing values",
               "in .+CRP_0.+"),
         paste("Due to missing values in DEV_NO_0",
-              "138 observations were deleted.")
+              "138 observations were deleted."),
+        paste("For .*I have .*HARD_LIMITS.* but the column is of type",
+              ".*string.*metadata say .*float.*"),
+        paste("Argument.*resp_vars.*Variable.*CRP_0.*float.*does not have",
+              "matching data type in the study data.*string.*")
       ),
     perl = TRUE,
     all = TRUE
@@ -604,6 +570,7 @@ test_that("acc_loess with co-vars output matches", {
   )
   skip_on_cran()
   skip_if_not(capabilities()["long.double"])
+  # skip_on_travis() # vdiffr fails
   skip_if_not_installed("vdiffr")
   vdiffr::expect_doppelganger("loess facets plot for CRP_0 with Covars ok",
                               res1$SummaryPlotList$Loess_fits_facets)
@@ -612,11 +579,17 @@ test_that("acc_loess with co-vars output matches", {
 })
 
 test_that("acc_loess works for all time span ranges", {
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
   skip_on_cran() # slow test
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   sd0 <- study_data
   v <- subset(meta_data, LABEL == "LAB_DT_0", VAR_NAMES, TRUE)
   sd0[[v]] <- min(sd0[[v]], na.rm = TRUE)
@@ -701,10 +674,12 @@ test_that("acc_loess works for all time span ranges", {
                      mean = mean(sd0[[v]], na.rm = TRUE)),
                origin = as.POSIXct(as.POSIXct("1970-01-01")))
 
+  md0 <- meta_data
+  md0[md0$LABEL == "LAB_DT_0", HARD_LIMITS] <- NA
   expect_warning(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
-                meta_data = meta_data, group_vars = "DEV_NO_0",
+                meta_data = md0, group_vars = "DEV_NO_0",
                 time_vars = "LAB_DT_0",
                 resolution = 10000,
                 label_col = LABEL),
@@ -757,12 +732,17 @@ test_that("acc_loess works for all time span ranges", {
   expect_equal(got0, ggs_default)
 })
 
-
 test_that("acc_loess output matches plot_format=auto", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
@@ -817,6 +797,7 @@ test_that("acc_loess output matches plot_format=auto", {
     1
   )
   skip_on_cran()
+  # skip_on_travis() # vdiffr fails
   skip_if_not_installed("vdiffr")
   skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("loess plot for CRP_0 AUTO1 ok",
@@ -826,10 +807,16 @@ test_that("acc_loess output matches plot_format=auto", {
 })
 
 test_that("acc_loess output matches plot_format=combined", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
@@ -856,6 +843,7 @@ test_that("acc_loess output matches plot_format=combined", {
     1
   )
   skip_on_cran()
+  # skip_on_travis() # vdiffr fails
   skip_if_not_installed("vdiffr")
   skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("loess combined plot for CRP_0 COMBINED ok",
@@ -863,10 +851,16 @@ test_that("acc_loess output matches plot_format=combined", {
 })
 
 test_that("acc_loess output matches plot_format=facets", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
@@ -893,6 +887,7 @@ test_that("acc_loess output matches plot_format=facets", {
     1
   )
   skip_on_cran()
+  # skip_on_travis() # vdiffr fails
   skip_if_not_installed("vdiffr")
   skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("loess facets plot for CRP_0 FACETS ok",
@@ -900,10 +895,16 @@ test_that("acc_loess output matches plot_format=facets", {
 })
 
 test_that("acc_loess output matches plot_format=both", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
@@ -930,6 +931,7 @@ test_that("acc_loess output matches plot_format=both", {
     2
   )
   skip_on_cran()
+  # skip_on_travis() # vdiffr fails
   skip_if_not_installed("vdiffr")
   skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("loess facets plot for CRP_0 BOTH ok",
@@ -939,10 +941,16 @@ test_that("acc_loess output matches plot_format=both", {
 })
 
 test_that("acc_loess output matches plot_format=invalid1", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
@@ -973,10 +981,16 @@ test_that("acc_loess output matches plot_format=invalid1", {
 })
 
 test_that("acc_loess output matches plot_format=invalid2", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,

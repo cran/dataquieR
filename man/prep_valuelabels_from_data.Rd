@@ -23,5 +23,7 @@ a \link{list} with:
 Detects factors and converts them to compatible metadata/study data.
 }
 \examples{
+\dontrun{
 dataquieR::prep_datatype_from_data(iris)
+}
 }

@@ -1,6 +1,5 @@
 test_that("prep_add_to_meta works", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"),
-       envir = environment())
+  meta_data <- prep_get_data_frame("meta_data")
   md <- prep_add_to_meta(VAR_NAMES = c("X", "Y"),
                          LABEL = c("x", "y"),
                          DATA_TYPE = c(DATA_TYPES$INTEGER, DATA_TYPES$FLOAT),

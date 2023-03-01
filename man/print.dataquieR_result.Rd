@@ -19,13 +19,3 @@ see print
 \description{
 Print a \link{dataquieR} result returned by pipeline_vectorized
 }
-\examples{
-load(system.file("extdata", "study_data.RData", package = "dataquieR"))
-load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
-result <- pipeline_vectorized(acc_margins, cores = list(mode = "local"),
-  resp_vars = "SBP_0", group_vars = "USR_BP_0",
-  study_data = study_data, meta_data = meta_data, label_col = LABEL
-)
-single_result <- result$`group_vars = USR_BP_0`$`resp_vars = SBP_0`
-print(single_result, slot = "SummaryPlot")
-}

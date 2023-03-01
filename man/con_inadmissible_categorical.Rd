@@ -9,7 +9,7 @@ con_inadmissible_categorical(
   study_data,
   meta_data,
   label_col,
-  threshold = NULL
+  threshold_value = 0
 )
 }
 \arguments{
@@ -23,13 +23,13 @@ attributes of study data}
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
 
-\item{threshold}{\link{numeric} from=0 to=100. a numerical value ranging
-from 0-100. Not yet implemented.}
+\item{threshold_value}{\link{numeric} from=0 to=100. a numerical value ranging
+from 0-100.}
 }
 \value{
 a list with:
 \itemize{
-\item \code{SummaryTable}: data frame summarizing inadmissible categories with the
+\item \code{SummaryData}: data frame summarizing inadmissible categories with the
 columns:
 \itemize{
 \item \code{Variables}: variable name/label
@@ -37,9 +37,13 @@ columns:
 \item \code{DEFINED_CATEGORIES}: the categories defined in the metadata
 \item \code{NON_MATCHING}: the categories observed but not defined
 \item \code{NON_MATCHING_N}: the number of observations with categories not defined
+\item \code{NON_MATCHING_N_PER_CATEGORY}: the number of observations for each of the
+unexpected categories
 \item \code{GRADING}: indicator TRUE/FALSE if inadmissible categorical values were
-observed
+observed (more than indicated by the \code{threshold_value})
 }
+\item \code{SummaryTable}: data frame for the \code{dataquieR} pipeline reporting the number
+and percentage of inadmissible categorical values
 \item \code{ModifiedStudyData}: study data having inadmissible categories removed
 \item \code{FlaggedStudyData}: study data having cases with inadmissible categories
 flagged
@@ -51,7 +55,7 @@ This implementation will examine, if all observed levels in the study data
 are valid.
 }
 \details{
-\subsection{ALGORITHM OF THIS IMPLEMENTATION:}{
+\subsection{Algorithm of this implementation:}{
 \itemize{
 \item Remove missing codes from the study data (if defined in the metadata)
 \item Interpretation of variable specific VALUE_LABELS as supplied in the

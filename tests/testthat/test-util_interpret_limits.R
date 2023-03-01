@@ -1,11 +1,17 @@
 test_that("posix offset is 1970-01-01 01:00:00 CET)", {
-  Sys.setenv(TZ = 'CET')
+  skip_if_not_installed("withr")
+  withr::local_timezone("CET")
   expect_equal(as.POSIXct(as.numeric(as.POSIXct("1975-12-16 03:46:00 CET")),
                           origin = min(as.POSIXct(Sys.Date()), 0)),
                as.POSIXct("1975-12-16 03:46:00 CET"))
 })
 test_that("util_interpret_limits works", {
-  Sys.setenv(TZ = 'CET')
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  withr::local_timezone("CET")
   meta <- prep_create_meta(
     VAR_NAMES = 1:26,
     DATA_TYPE = c(rep(DATA_TYPES$INTEGER, 13), rep(DATA_TYPES$FLOAT, 9),
@@ -74,7 +80,7 @@ test_that("util_interpret_limits works", {
   meta[[WELL_KNOWN_META_VARIABLE_NAMES$HARD_LIMITS]][2] <- "[3-3;Inf)"
   expect_warning(m3 <- util_interpret_limits(meta),
                  regexp =
-                   paste0("In util_interpret_limits: Damaged (lower|upper)",
+                   paste0("Damaged (lower|upper)",
                           ".+HARD_LIMITS.+: .+(3-3|0-0).+ in .+[12].+"),
                  all = TRUE,
                  perl = TRUE

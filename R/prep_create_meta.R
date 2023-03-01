@@ -120,6 +120,9 @@ prep_create_meta <- function(..., stringsAsFactors = FALSE,
   # level <- VARATT_REQUIRE_LEVELS[[level]]
 
   prep_check_meta_names(metas, level = level, character.only = TRUE)
-  util_validate_known_meta(metas)
+  if (any(c(JUMP_LIST, MISSING_LIST) %in%
+      util_get_var_att_names_of_level(level))) {
+    util_validate_known_meta(metas)
+  }
   return(metas)
 }

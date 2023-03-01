@@ -3,7 +3,7 @@ library(ggplot2)
 if ((all(is.na(variable) || (length(variable) != 1))) || outputSlot != "") {
   stop("Not a meta_miss result")
 }
-all_res <- current_results[resp_vars == variable]
+all_res <- current_results[variable %in% resp_vars$resp_vars]
 if (!chunk_error) {
   all_res <- all_res[(vapply(all_res, length, FUN.VALUE = integer(1)) > 0)]
 }
@@ -12,7 +12,7 @@ have_a_result <- length(all_res) > 0
 ::: {style="height: 3em;"}
 :::
 ```{r results='asis', eval=TRUE}
-cat(sprintf(title, dQuote(variable)))
+cat(sprintf(title, dQuote(dataquieR::prep_title_escape(variable, html = FALSE))))
 cat("\n")
 cat("\n#### Metadata\n")
 cat("\n")
@@ -20,45 +20,21 @@ md <- report$meta_data[report$meta_data[[report$label_col]] == variable, , drop 
 md <- unlist(md[1, , drop = TRUE])
 md <- cbind(`Variable Attribute` = names(md), `Attribute Value` = md)
 rownames(md) <- NULL
-DT::datatable(md, filter = "top", options = list(pageLength = 4,
-                                                 scrollCollapse = TRUE, scrollY = "75vh")) # nrow(md)))
+util_html_table(md, filter = "top", options = list(pageLength = 4,
+                                                 scrollCollapse = TRUE, scrollY = "75vh"), output_format = "RMD") # nrow(md)))
 ```
 
 #### Completeness
 
-```{r echo=FALSE, eval=TRUE||have_a_result}
-DT::datatable(subset(current_results[[1]]$SummaryTable, 
+```{r echo=FALSE, eval=have_a_result}
+util_html_table(subset(current_results[[1]]$SummaryTable, 
                      Variables == variable,
                      drop = FALSE), filter = "top", 
-              options = list(scrollCollapse = TRUE, scrollY = "75vh"))
+              options = list(scrollCollapse = TRUE, scrollY = "75vh"), output_format = "RMD")
 # invisible(lapply(all_res, print, slot = "SummaryPlot"))
 ```
 
-```{r echo=FALSE, eval=TRUE||have_a_result}
-bp_data <- 
-  current_results[[1]]$SummaryPlot$data[
-    current_results[[1]]$SummaryPlot$data$Var2 == variable, 
-    c("Var1", "Freq")]
-
-n_obs <- subset(current_results[[1]]$SummaryTable, 
-                Variables == variable, 
-                "Observations N", 
-                drop = TRUE)
-
-bp_data$Pct <- bp_data$Freq / n_obs
-
-my_cols <- c("#7f0000", "#b30000", "#d7301f", "#ef6548", "#fc8d59",
-             "#fdbb84", "#fdd49e", "#fee8c8", "#2166AC")
-
-
-ggplot(bp_data, aes(x = Var1, y = Pct, fill = Pct)) + 
-  geom_col(show.legend = FALSE) + 
-  scale_y_continuous(labels = scales::percent_format()) + 
-  scale_fill_gradientn(colors = rev(my_cols)) +
-  theme_minimal() + 
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
-  xlab("Missing Codes") +
-  ylab("rel. Frequency") +
-  ggtitle(sprintf("Completeness of %s", dQuote(variable)), "")
+```{r echo=FALSE, eval=have_a_result}
+print(current_results[[1]]$ReportSummaryTable[current_results[[1]]$ReportSummaryTable$Variables == variable, , FALSE], dt = TRUE)
 ```
 

@@ -9,7 +9,8 @@ util_assign_levlabs(
   string_of_levlabs,
   splitchar,
   assignchar,
-  ordered = TRUE
+  ordered = TRUE,
+  variable_name = ""
 )
 }
 \arguments{
@@ -30,6 +31,9 @@ meaningful numbers, e.g. \code{1 = low | 2 = medium | 3 = high}.
 If no special order is given, set \code{ordered} to \code{FALSE},
 e.g. for \code{1 = male | 2 = female} or
 \code{1 = low | 2 = high | 3 = medium}.}
+
+\item{variable_name}{\link{character} the name of the variable being converted
+for warning messages}
 }
 \value{
 a \link{data.frame} with labels assigned to categorical variables

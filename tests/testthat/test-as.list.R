@@ -1,8 +1,12 @@
 test_that("as.list.dataquieR_resultset works", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # deprecated
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   # don't include huge reports as RData in the package
   # Suppress warnings since we do not test dq_report
@@ -20,22 +24,20 @@ test_that("as.list.dataquieR_resultset works", {
                                            package = "dataquieR"
                                        ), header = TRUE, sep = "#"),
                                        show_causes = TRUE,
-                                       cause_label_df = read.csv(
-                                         system.file(
-                                           "extdata",
-                                           "Missing-Codes-2020.csv",
-                                           package = "dataquieR"),
-                                         header = TRUE, sep = ";"
-                                       )
+                                       cause_label_df = prep_get_data_frame(
+                                         "meta_data_v2|missing_table")
   ))
 
   x <- as.list(report)
 
-  expect_equal(length(x), 7)
-  expect_equal(names(x), c("com_unit_missingness", "com_segment_missingness",
-                           "com_item_missingness",  "con_limit_deviations",
-                           "con_inadmissible_categorical", "con_contradictions",
-                           "con_detection_limits"))
+  expect_equal(names(x),
+               c("int_all_datastructure_dataframe",
+                 "int_all_datastructure_segment", "int_datatype_matrix",
+                 "com_unit_missingness", "com_segment_missingness",
+                 "com_item_missingness",  "con_hard_limits",
+                 "con_soft_limits", "con_detection_limits",
+                 "con_inadmissible_categorical",
+                 "con_contradictions", "con_contradictions_redcap"))
   expect_type(x, "list")
   expect_false(is.data.frame(x))
 

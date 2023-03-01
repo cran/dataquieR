@@ -13,7 +13,7 @@
 #' - 3 data type matches and applicable
 #'
 util_app_cd <- function(x, dta) {
-  if ("CONTRADICTIONS" %in% names(x)) {
+  if ("CONTRADICTIONS" %in% names(x)) { # TODO: This is not really relevant
     c1 <- ifelse(is.na(x[["CONTRADICTIONS"]]), 0, 1)
   } else {
     c1 <- rep(0, times = dim(x)[1])

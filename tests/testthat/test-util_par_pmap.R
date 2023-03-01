@@ -1,9 +1,7 @@
 test_that("util_par_pmap works", {
   skip_on_cran() # slow and meant for parallel processing
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   plan <- dplyr::tribble(
     ~ x, ~ y,
     rnorm(1:10000), rnorm(1:10000),

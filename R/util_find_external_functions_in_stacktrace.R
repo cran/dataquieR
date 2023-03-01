@@ -30,6 +30,12 @@ util_find_external_functions_in_stacktrace <-
   is_base <- vapply(frame_parents, identical, asNamespace("base"),
                     FUN.VALUE =
                       logical(1)) # base never calls me, but by using do.call
+  if (requireNamespace("parallel", quietly = TRUE))
+    is_parallel <- vapply(frame_parents, identical, asNamespace("parallel"),
+                      FUN.VALUE =
+                        logical(1)) # base never calls me, but by using do.call
+  else
+    is_parallel <- is_base
   is_exception_handler_or_lambda <-
     withCallingHandlers(
     vapply(cls, function(cll) {
@@ -40,17 +46,21 @@ util_find_external_functions_in_stacktrace <-
               return(TRUE)
             if (cll[[1]] == as.symbol("doTryCatch"))
               return(TRUE)
+            if (cll[[1]] == as.symbol("tryCatch"))
+              return(TRUE)
             if (cll[[1]] == as.symbol("tryCatchOne"))
               return(TRUE)
             if (cll[[1]] == as.symbol("tryCatchList"))
               return(TRUE)
             if (cll[[1]] == as.symbol("try"))
               return(TRUE)
+            if (cll[[1]] == as.symbol("do.call"))
+              return(TRUE)
       }
       return(FALSE)
     }, FUN.VALUE = logical(1)),
   error = browser
   )
-  which(!is_me & !is_base & !is_exception_handler_or_lambda)
+  which(!is_me & !is_base & !is_parallel & !is_exception_handler_or_lambda) # FIXME: Off-by-one? (env is the **target** of a call)
 
 }

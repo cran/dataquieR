@@ -10,7 +10,7 @@
 #' @param strata_attribute [character] variable of a variable attribute coding
 #'                         study segments.
 #'                         Values other than leaving this empty or passing
-#'                         KEY_STUDY_SEGMENT are not yet supported.
+#'                         STUDY_SEGMENT are not yet supported.
 #'                         Stratification is not yet fully supported, please
 #'                         use [dq_report_by].
 #' @param strata_vars [character] name of variables to stratify the report on,
@@ -33,7 +33,16 @@
 #'                   included, and Consistency should be included, if Accuracy
 #'                   is included to avoid misleading detections of e.g. missing
 #'                   codes as outliers, please refer to the data quality concept
-#'                   for more details.
+#'                   for more details. Integrity is always included.
+#' @param author [character] author for the report documents.
+#' @param debug_parallel [logical] print blocks currently evaluated in parallel
+#' @param dont_modify_study_data_by [character] list of functions, which are
+#'                                  not allowed to modify study data downstream
+#'                                  the pipeline, e.g., to avoid, that even soft
+#'                                  limit violations are removed.
+#' @param meta_data_segment [data.frame] -- optional: Segment level metadata
+#' @param meta_data_dataframe [data.frame] -- optional: Data frame level
+#'                                                                 metadata
 #'
 #' @return a [dataquieR_resultset]. Can be printed creating a RMarkdown-report.
 #'
@@ -59,10 +68,7 @@
 #'     package = "dataquieR"
 #'   ), header = TRUE, sep = "#"),
 #'   show_causes = TRUE,
-#'   cause_label_df = read.csv(
-#'     system.file("extdata", "Missing-Codes-2020.csv", package = "dataquieR"),
-#'     header = TRUE, sep = ";"
-#'   )
+#'   cause_label_df = prep_get_data_frame("meta_data_v2|missing_table")
 #' )
 #' save(report, file = "report.RData") # careful, this contains the study_data
 #' report <- dq_report(study_data, meta_data,
@@ -92,19 +98,47 @@
 #'   specific_args = list(acc_univariate_outlier = list(resp_vars = "DBP_0")),
 #'   resp_vars = "SBP_0", cores = NULL
 #' )
+#' rp1 <- dq_report("ship", "ship_meta",
+#'   meta_data_segment = "meta_data_segment",
+#'   meta_data_dataframe = "meta_data_dataframe",
+#'   label_col = LABEL)
 #' }
 dq_report <- function(study_data,
                       meta_data,
                       label_col = NULL,
+                      meta_data_segment = "segment_level",
+                      meta_data_dataframe = "dataframe_level",
                       ...,
                       dimensions = c("Completeness", "Consistency"),
+                      dont_modify_study_data_by = c("con_soft_limits",
+                                                    "con_detection_limits"),
+                      # pro_applicability_matrix does not deliver
+                      # con_limit_deviations itself
                       strata_attribute,
                       strata_vars,
                       cores = list(mode = "socket",
                                    logging = FALSE,
                                    cpus = util_detect_cores(),
                                    load.balancing = TRUE),
-                      specific_args = list()) {
+                      specific_args = list(),
+                      author = prep_get_user_name(),
+                      debug_parallel = FALSE) {
+  util_deprecate_soft("2.0.0", what = "dq_report()", with = "dq_report2()")
+  .meta_data_segment <- NULL
+  try(
+    .meta_data_segment <-
+      prep_check_meta_data_segment(meta_data_segment)
+  , silent = TRUE) # TODO: Which columns are mandatory
+    # TODO: If an alternative argument dq_control has been set, this may point to either something composed (e.g., excel workbook or rdata file) featuring all other standard data frames as sheets, or to a sheet naming all other standard data frames
+  meta_data_segment <- .meta_data_segment
+
+  .meta_data_dataframe <- NULL
+  try(
+    .meta_data_dataframe <-
+      prep_check_meta_data_dataframe(meta_data_dataframe)
+  , silent = TRUE) # TODO: Which columns are mandatory # TODO: study data may be merged here
+  meta_data_dataframe <- .meta_data_dataframe
+
   util_prepare_dataframes(.replace_missings = FALSE)
 
   .worker <- function(row) {
@@ -116,7 +150,19 @@ dq_report <- function(study_data,
     args$meta_data <- meta_data
     args$label_col <- label_col
     # try(do.call(row$fct_, args))
-    do.call(util_make_function(row$fct_), args)
+    do.call(util_make_function(row$fct_, call("dq_report")), args)
+  }
+
+  acc_plan_to_call <- function(row) {
+    args <- list()
+    if (length(row) > 1) {
+      args <- row[2:length(row)]
+    }
+    args$study_data <- as.symbol("study_data")
+    args$meta_data <- as.symbol("meta_data")
+    args$label_col <- as.character(label_col)
+    # try(do.call(row$fct_, args))
+    paste0(sub("^list", row$fct_, deparse(args, nlines = -1)), collapse = "\n")
   }
 
   if (!all(is.character(dimensions))) {
@@ -127,9 +173,9 @@ dq_report <- function(study_data,
                "Accuracy"')
   }
   if (!missing(strata_attribute) && !identical(strata_attribute,
-                                               KEY_STUDY_SEGMENT)) {
+                                               STUDY_SEGMENT)) {
     util_error(
-      "segment attributes other than KEY_STUDY_SEGMENT are unsupported yet")
+      "segment attributes other than STUDY_SEGMENT are unsupported yet")
   } else {
     split_segments <- !missing(strata_attribute)
     if (!split_segments) strata_attribute <- NA_character_
@@ -142,19 +188,21 @@ dq_report <- function(study_data,
   # ---------------------------- applicability matrix -------------------
   app_mat <- pro_applicability_matrix(study_data = study_data, meta_data =
                                         meta_data, label_col = label_col,
-                                      split_segments = split_segments)
+                                      split_segments = split_segments,
+                                      meta_data_segment = meta_data_segment,
+                                      meta_data_dataframe = meta_data_dataframe)
 
-  segments <- unique(app_mat$SummaryTable$KEY_STUDY_SEGMENT)
-  if (KEY_STUDY_SEGMENT %in% colnames(app_mat$SummaryTable)) {
+  segments <- unique(app_mat$SummaryTable$STUDY_SEGMENT) # TODO: use [[STUDY_SEGMENT]]
+  if (STUDY_SEGMENT %in% colnames(app_mat$SummaryTable)) {
     variables <- split(app_mat$SummaryTable$Variables,
-                       app_mat$SummaryTable[[KEY_STUDY_SEGMENT]])
+                       app_mat$SummaryTable[[STUDY_SEGMENT]])
   } else { # nocov start
     # this should never happen, because the applicability matrix
-    # must return a column KEY_STUDY_SEGMENT, maybe with only one level.
+    # must return a column STUDY_SEGMENT, maybe with only one level.
     variables <- list(all_variables = app_mat$SummaryTable$Variables)
   } # nocov end
   functions_to_trigger <-
-    setdiff(colnames(app_mat$SummaryTable), c("Variables", KEY_STUDY_SEGMENT))
+    setdiff(colnames(app_mat$SummaryTable), c("Variables", STUDY_SEGMENT))
   functions_to_trigger <-
     setdiff(functions_to_trigger, "acc_multivariate_outlier")
   if (!("Completeness" %in% dimensions)) {
@@ -195,7 +243,7 @@ dq_report <- function(study_data,
   functions_to_trigger$dimension <- ordered(gsub("_$", "",
                                                  functions_to_trigger$dimension
                                                  ), levels =
-                                              c("com", "con", "acc"))
+                                              c("int", "com", "con", "acc"))
 
   functions_to_trigger <-
     functions_to_trigger[order(functions_to_trigger$dimension),
@@ -219,6 +267,8 @@ dq_report <- function(study_data,
       cores <- NULL
     }
   }
+
+  util_setup_rstudio_job("Computing dq_report, Completeness/Consistency part")
 
   i <- 0
   for (x in functions_to_trigger[!startsWith(functions_to_trigger, "acc_")]) {
@@ -252,6 +302,9 @@ dq_report <- function(study_data,
             "include_sysmiss" %in% names(formals(fct))) { # and we call itemmiss
         if (is.null(formals(fct)$include_sysmiss)) { # if default still NULL
           args$include_sysmiss <- TRUE # switch default here TRUE for dq_report
+        } else if (length(formals(fct)$include_sysmiss) == 1 &&
+                   is.logical(formals(fct)$include_sysmiss)) {
+          args$include_sysmiss <- formals(fct)$include_sysmiss
         }
       }
 
@@ -275,9 +328,11 @@ dq_report <- function(study_data,
         )
         args[["resp_vars"]] <- args[["resp_vars"]][!is.na(args[["resp_vars"]])]
       }
-      message(sprintf("%s [%s] %d of %d, %s -- %d variables", Sys.time(),
+      if (length(functions_to_trigger))
+        progress(100 * i / length(functions_to_trigger))
+      util_message(sprintf("%s [%s] %d of %d, %s -- %d variables", Sys.time(),
                       "INFO", i, length(functions_to_trigger), x,
-                      length(args[["resp_vars"]])))
+                      length(args[["resp_vars"]]))) # TODO: Use RStudio job if available
       if (startsWith(x, "acc_")) {
         util_error("Internal error: found acc in none-acc-part")
       } else {
@@ -288,8 +343,15 @@ dq_report <- function(study_data,
           args <- c(args, list(study_data = study_data, meta_data = meta_data,
                        label_col = label_col, strata_vars = strata_vars))
         }
-        args <- args[names(args) %in% names(formals(fct))]
-        r <- try(do.call(x, args))
+        if (!is.null(meta_data_segment)) {
+          args[["meta_data_segment"]] = meta_data_segment
+        }
+        if (!is.null(meta_data_dataframe)) {
+          args[["meta_data_dataframe"]] = meta_data_dataframe
+        }
+        if (!("..." %in% names(formals(fct))))
+          args <- args[names(args) %in% names(formals(fct))]
+        r <- try(do.call(x, args), silent = TRUE)
         df_args <- setdiff(names(args),
                            c("study_data", "meta_data", "label_col"))
         res <- as.data.frame(matrix(NA, nrow = 1, ncol = (length(df_args) + 1),
@@ -301,7 +363,9 @@ dq_report <- function(study_data,
           }
         }
         res[["results"]] <- list(r)
-        if ("ModifiedStudyData" %in% names(res[["results"]][[1]]) &&
+        # TODO: Write  a regression test for dont_modify_study_data_by
+        if (!(x %in% dont_modify_study_data_by) && "ModifiedStudyData" %in%
+            names(res[["results"]][[1]]) &&
             is.data.frame(res[["results"]][[1]]$ModifiedStudyData)) {
           study_data <- res[["results"]][[1]]$ModifiedStudyData
           if ("label_col" %in% names(args)) {
@@ -325,12 +389,14 @@ dq_report <- function(study_data,
           }
         }
       }
-      message(sprintf("%s [%s] %d of %d, %s -- done", Sys.time(), "INFO", i,
-                      length(functions_to_trigger), x))
+      util_message(sprintf("%s [%s] %d of %d, %s -- done", Sys.time(), "INFO", i,
+                      length(functions_to_trigger), x)) # TODO: Use RStudio job if available
     }
     long_format[[x]] <- res
   }
 
+  util_setup_rstudio_job(
+    "Computing dq_report, Accuracy part, planning parallel computation")
   acc_plan <- list()
   acc_df <- list()
   for (x in functions_to_trigger[startsWith(functions_to_trigger, "acc_")]) {
@@ -374,14 +440,15 @@ dq_report <- function(study_data,
         )
         args[["resp_vars"]] <- args[["resp_vars"]][!is.na(args[["resp_vars"]])]
       }
-      message(sprintf(
+      util_message(sprintf(
         "%s [%s] %d of %d, %s -- %d variables: planning parallel computation",
         Sys.time(), "INFO", i, length(functions_to_trigger), x,
-        length(args[["resp_vars"]])))
+        length(args[["resp_vars"]]))) # TODO: Use RStudio job if available
       if (startsWith(x, "acc_")) {
         if (!identical(args$resp_vars, character(0))) {
           # app mat likely found no suitable variable for calling x
-          args <- args[names(args) %in% names(formals(fct))]
+          if (!("..." %in% names(formals(fct))))
+            args <- args[names(args) %in% names(formals(fct))]
           args <- c(
             list(fct = x, compute_plan_only = TRUE, study_data = study_data,
                  meta_data = meta_data, label_col = label_col),
@@ -400,9 +467,11 @@ dq_report <- function(study_data,
       } else {
         util_error("Internal error: found none-acc in acc-part")
       }
-      message(sprintf(
+      if (length(functions_to_trigger))
+        progress(100 * i / length(functions_to_trigger))
+      util_message(sprintf(
         "%s [%s] %d of %d, %s: planning parallel computation -- done",
-        Sys.time(), "INFO", i, length(functions_to_trigger), x))
+        Sys.time(), "INFO", i, length(functions_to_trigger), x)) # TODO: Use RStudio job if available
     }
   }
   if ("label_col" %in% names(args)) {
@@ -411,6 +480,9 @@ dq_report <- function(study_data,
     label_col <- VAR_NAMES
   }
   if (length(acc_plan) > 0) {
+    util_setup_rstudio_job(
+      "Computing dq_report, Accuracy part, parallel computation")
+
     oldO <- options(parallelMap.show.info = FALSE)
     on.exit(options(oldO), add = TRUE)
     parallelMap::parallelExport("study_data", "meta_data", "label_col")
@@ -439,10 +511,25 @@ dq_report <- function(study_data,
       function(row) {
         slices <- task_matrix[row, ]
         slices <- slices[!is.na(slices)]
-        message(
+        if (length(functions_to_trigger))
+          progress(100 * row / nrow(task_matrix))
+        util_message(
           sprintf("%s [%s] %d of %d, %s", Sys.time(), "INFO",
                   row, nrow(task_matrix), "Accuracy of single variables")
-        )
+        ) # TODO: Use RStudio job if available
+        if (debug_parallel) {
+          .calls <- lapply(acc_plan[slices], acc_plan_to_call)
+          lapply(.calls, function(.call) {
+            progress_msg(sprintf("%s [%s] %d of %d, %s", Sys.time(), "INFO",
+                                 row, nrow(task_matrix),
+                                 "Accuracy of single variables"),
+                         .call)
+          }) # TODO: Use RStudio job if available
+          progress_msg(sprintf("%s [%s] %d of %d, %s", Sys.time(), "INFO",
+                               row, nrow(task_matrix),
+                               "Accuracy of single variables"),
+                       "-------------")
+        }
         R.devices::suppressGraphics(
           # don't use any auto graphics device (needed for certain
           # parallelization methods)
@@ -452,10 +539,10 @@ dq_report <- function(study_data,
       }
     ), recursive = FALSE)
 
-    message(
+    util_message(
       sprintf("%s [%s], %s", Sys.time(), "INFO",
               "Accuracy of single variables -- done")
-    )
+    ) # TODO: Use RStudio job if available
 
     # call_plan[['results']] <- r
     dfs <- lapply(acc_plan, as.data.frame, stringsAsFactors = FALSE)
@@ -479,12 +566,18 @@ dq_report <- function(study_data,
     r <- dataquieR_resultset(long_format = long_format, app_mat = app_mat,
                              study_data = study_data, meta_data = meta_data,
                              strata_attribute = strata_attribute,
-                             label_col = label_col)
+                             label_col = label_col,
+                             author = author, meta_data_segment =
+                               meta_data_segment, meta_data_dataframe =
+                               meta_data_dataframe)
   } else {
     r <- dataquieR_resultset(long_format = long_format, app_mat = app_mat,
                              study_data = study_data, meta_data = meta_data,
                              strata_attribute = strata_attribute,
-                             strata_vars = strata_vars, label_col = label_col)
+                             strata_vars = strata_vars, label_col = label_col,
+                             author = author, meta_data_segment =
+                               meta_data_segment, meta_data_dataframe =
+                               meta_data_dataframe)
   }
   return(r)
 }

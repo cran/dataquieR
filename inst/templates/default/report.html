@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel="icon" type="image/png" href="{{ logo }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>dataquieR {{ as.character(packageVersion("dataquieR")) }} Report</title>
+  <!-- needed to make media queries work: https://wpbuffs.com/media-query-for-mobile/#:~:text=Mobile%20Media%20Query%20Not%20Working&text=If%20your%20queries%20are%20working,the%20viewport%20and%20default%20zoom.&text=This%20tells%20the%20browser%20to,for%20making%20mobile%20breakpoints%20work. />
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=Array.prototype.find,Promise,Object.assign"></script><!-- TODO: Find a solution w/o inernet -->
+  {{ deps }}
+</head>
+<body onhashchange="single_page_switch(event)" onload="single_page_switch(event)" onclick="hideTopNav(event)">
+{{ loading }}
+<div class="navbar">
+  <a href="javascript:void(0);" class="icon" onclick="toggleTopNav(event)">
+    <i class="fa fa-bars"></i>
+  </a>
+  {{ menu }}
+  <div class="opaque-on-hover-20 dropdown">
+    <button class="dropbtn">
+    <label for="_enabletippy">Tooltips on Plots</label>
+    <input type="checkbox" id="_enabletippy", name="_enabletippy"></input>
+    </button>
+  </div>
+</div>
+<div class="content">
+{{ spage }}
+</div>
+<div class="default-target">
+  <span>
+    <img src="{{ logo }}" title="dataquieR {{ as.character(packageVersion("dataquieR")) }}" /> dataquieR {{ as.character(packageVersion("dataquieR")) }}
+  </span>
+</div>
+</body>
+</html>

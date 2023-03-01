@@ -20,6 +20,7 @@ util_app_sos(x, dta)
 \item 1 data type mismatches but applicable
 \item 2 data type matches but not applicable
 \item 3 data type matches and applicable
+\item 4 not applicable because of not suitable data type
 }
 }
 \description{

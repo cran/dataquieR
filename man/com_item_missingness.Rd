@@ -11,9 +11,14 @@ com_item_missingness(
   label_col,
   show_causes = TRUE,
   cause_label_df,
-  include_sysmiss = NULL,
+  include_sysmiss = TRUE,
   threshold_value,
-  suppressWarnings = FALSE
+  suppressWarnings = FALSE,
+  assume_consistent_codes = TRUE,
+  expand_codes = assume_consistent_codes,
+  drop_levels = TRUE,
+  expected_observations = c("HIERARCHY", "ALL", "SEGMENT"),
+  pretty_print = TRUE
 )
 }
 \arguments{
@@ -31,8 +36,9 @@ with labels of variables}
 is shown}
 
 \item{cause_label_df}{\link{data.frame} missing code table. If missing codes have
-labels the respective data frame must be
-specified here}
+labels the respective data frame can be
+specified here or in the metadata as
+assignments, see \link{cause_label_df}}
 
 \item{include_sysmiss}{\link{logical} Optional, if TRUE system missingness (NAs)
 is evaluated in the summary plot}
@@ -40,8 +46,44 @@ is evaluated in the summary plot}
 \item{threshold_value}{\link{numeric} from=0 to=100. a numerical value ranging
 from 0-100}
 
-\item{suppressWarnings}{\link{logical} warn about mixed missing and jump code
-lists}
+\item{suppressWarnings}{\link{logical} warn about consistency issues with missing
+and jump lists}
+
+\item{assume_consistent_codes}{\link{logical} if TRUE and no labels are given and
+the same missing/jump code is used
+for more than one variable, the
+labels assigned for this code are
+treated as being be the same for
+all variables.}
+
+\item{expand_codes}{\link{logical} if TRUE, code labels are copied from other
+variables, if the code is the same and the
+label is set somewhere}
+
+\item{drop_levels}{\link{logical} if TRUE, do not display unused missing codes in
+the figure legend.}
+
+\item{expected_observations}{\link{enum} HIERARCHY | ALL | SEGMENT. If ALL, all
+observations are expected to comprise
+all study segments. If SEGMENT, the
+\code{PART_VAR} is expected to point
+to a variable with values of 0 and 1,
+indicating whether the variable was
+expected to be observed for each data
+row. If HIERARCHY, this is also
+checked recursively, so, if a variable
+points to such a participation variable,
+and that other variable does has also
+a \code{PART_VAR} entry pointing
+to a variable, the observation of the
+initial variable is only
+expected, if both segment variables are
+1.}
+
+\item{pretty_print}{\link{logical} If FALSE, produce a table that can easily
+be processed further, because some cells
+feature two numbers (absolute and percentage)
+otherwise.}
 }
 \value{
 a list with:

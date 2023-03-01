@@ -1,6 +1,6 @@
 Package: dataquieR
 Title: Data Quality in Epidemiological Research
-Version: 1.0.13
+Version: 2.0.0
 Authors@R: 
     c(person(given = "University Medicine Greifswald",
              role = "cph"),
@@ -29,7 +29,9 @@ Authors@R:
              role = c("aut", "cre"),
              comment = c(ORCID = "0000-0002-8565-7962"),
              email = "stephan.struckmann@uni-greifswald.de"),
-      person(given = "German Research Foundation (DFG SCHM 2744/3-1)",
+      person(given = "German Research Foundation (DFG SCHM 2744/3-1, SCHM 2744/9-1, SCHM 2744/3-4)",
+             role = "fnd"),
+      person(given = "National Research Data Infrastructure for Personal Health Data: (NFDI 13/1)",
              role = "fnd"),
       person(given = "European Union’s Horizon 2020 programme (euCanSHare, grant agreement No. 825903)",
              role = "fnd"))
@@ -48,28 +50,34 @@ License: BSD_2_clause + file LICENSE
 URL: https://dataquality.ship-med.uni-greifswald.de/
 BugReports: https://gitlab.com/libreumg/dataquier/-/issues
 Depends: R (>= 3.6.0)
-Imports: patchwork, dplyr (>= 1.0.2), emmeans, ggplot2 (>= 3.4.0),
-        ggpubr, lme4, lubridate, MASS, MultinomialCI, parallelMap,
-        R.devices, reshape, rlang, robustbase, utils
-Suggests: cowplot (>= 0.9.4), anytime, digest, DT (>= 0.15),
-        flexdashboard, htmltools, knitr, rmarkdown, rstudioapi,
-        testthat (>= 2.3.2), tibble, markdown, vdiffr, parallel
+Imports: dplyr (>= 1.0.2), emmeans, ggplot2 (>= 3.4.0), lme4,
+        lubridate, MASS, MultinomialCI, parallelMap, patchwork,
+        R.devices, reshape, rlang, robustbase, qmrparser, utils, rio,
+        scales
+Suggests: cli, whoami, lifecycle, anytime, cowplot (>= 0.9.4), digest,
+        DT (>= 0.23), flexdashboard, flexsiteboard, htmltools, knitr,
+        markdown, parallel, rmarkdown, rstudioapi, testthat (>= 3.0.0),
+        tibble, vdiffr, pkgload, Rdpack, callr, colorspace, withr,
+        plotly, ggvenn, htmlwidgets
 VignetteBuilder: knitr
 Encoding: UTF-8
 KeepSource: TRUE
 Language: en-US
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 NeedsCompilation: no
-Packaged: 2022-11-16 08:28:59 UTC; struckmanns
+Packaged: 2023-03-01 16:10:20 UTC; struckmanns
 Author: University Medicine Greifswald [cph],
   Elisa Kasbohm [aut] (<https://orcid.org/0000-0001-5261-538X>),
   Joany Marino [aut] (<https://orcid.org/0000-0002-4657-3758>),
   Adrian Richter [aut] (<https://orcid.org/0000-0002-3372-2021>),
   Carsten Oliver Schmidt [aut] (<https://orcid.org/0000-0001-5266-9396>),
   Stephan Struckmann [aut, cre] (<https://orcid.org/0000-0002-8565-7962>),
-  German Research Foundation (DFG SCHM 2744/3-1) [fnd],
+  German Research Foundation (DFG SCHM 2744/3-1, SCHM 2744/9-1, SCHM
+    2744/3-4) [fnd],
+  National Research Data Infrastructure for Personal Health Data: (NFDI
+    13/1) [fnd],
   European Union’s Horizon 2020 programme (euCanSHare, grant agreement
     No. 825903) [fnd]
 Maintainer: Stephan Struckmann <stephan.struckmann@uni-greifswald.de>
 Repository: CRAN
-Date/Publication: 2022-11-16 14:40:22 UTC
+Date/Publication: 2023-03-01 16:30:02 UTC

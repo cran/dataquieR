@@ -36,8 +36,8 @@
 #'                                       with labels of variables
 #' @param ... additional arguments for the function
 #' @param key_var_names [character] character vector named by arguments to be
-#'                      filled by meta data KEY_-entries as follows:
-#'                      c(group_vars = KEY_OBSERVER) -- may be missing,
+#'                      filled by meta data GROUP_VAR-entries as follows:
+#'                      c(group_vars = GROUP_VAR_OBSERVER) -- may be missing,
 #'                      then all possible combinations will be analyzed.
 #'                      Cannot contain resp_vars.
 #' @param cores [integer] number of cpu cores to use or a named list with
@@ -76,7 +76,7 @@
 #' a <- pipeline_vectorized(
 #'   fct = acc_margins, study_data = study_data,
 #'   meta_data = meta_data, label_col = LABEL,
-#'   key_var_names = c(group_vars = KEY_OBSERVER)
+#'   key_var_names = c(group_vars = GROUP_VAR_OBSERVER)
 #' )
 #' b <- pipeline_vectorized(
 #'   fct = acc_margins, study_data = study_data,
@@ -106,38 +106,38 @@
 #' e <- pipeline_vectorized(
 #'   fct = acc_margins, study_data = study_data,
 #'   meta_data = meta_data, label_col = LABEL,
-#'   key_var_names = c(group_vars = KEY_OBSERVER), co_vars = "SEX_0"
+#'   key_var_names = c(group_vars = GROUP_VAR_OBSERVER), co_vars = "SEX_0"
 #' )
 #'
 #' f <- pipeline_vectorized(
 #'   fct = acc_margins, study_data = study_data,
 #'   meta_data = meta_data, label_col = LABEL,
-#'   key_var_names = c(group_vars = KEY_OBSERVER), co_vars = "SEX_0",
+#'   key_var_names = c(group_vars = GROUP_VAR_OBSERVER), co_vars = "SEX_0",
 #'   result_groups = NULL
 #' )
 #' pipeline_recursive_result(f)
 #' g <- pipeline_vectorized(
 #'   fct = acc_margins, study_data = study_data,
 #'   meta_data = meta_data, label_col = LABEL,
-#'   key_var_names = c(group_vars = KEY_OBSERVER), co_vars = "SEX_0",
+#'   key_var_names = c(group_vars = GROUP_VAR_OBSERVER), co_vars = "SEX_0",
 #'   result_groups = c("co_vars")
 #' )
 #' g1 <- pipeline_vectorized(
 #'   fct = acc_margins, study_data = study_data,
 #'   meta_data = meta_data, label_col = LABEL,
-#'   key_var_names = c(group_vars = KEY_OBSERVER), co_vars = "SEX_0",
+#'   key_var_names = c(group_vars = GROUP_VAR_OBSERVER), co_vars = "SEX_0",
 #'   result_groups = c("group_vars")
 #' )
 #' g2 <- pipeline_vectorized(
 #'   fct = acc_margins, study_data = study_data,
 #'   meta_data = meta_data, label_col = LABEL,
-#'   key_var_names = c(group_vars = KEY_OBSERVER), co_vars = "SEX_0",
+#'   key_var_names = c(group_vars = GROUP_VAR_OBSERVER), co_vars = "SEX_0",
 #'   result_groups = c("group_vars", "co_vars")
 #' )
 #' g3 <- pipeline_vectorized(
 #'   fct = acc_margins, study_data = study_data,
 #'   meta_data = meta_data, label_col = LABEL,
-#'   key_var_names = c(group_vars = KEY_OBSERVER), co_vars = "SEX_0",
+#'   key_var_names = c(group_vars = GROUP_VAR_OBSERVER), co_vars = "SEX_0",
 #'   result_groups = c("co_vars", "group_vars")
 #' )
 #' g4 <- pipeline_vectorized(
@@ -146,7 +146,7 @@
 #'   co_vars = "SEX_0", result_groups = c("co_vars")
 #' )
 #' meta_datax <- meta_data
-#' meta_datax[9, "KEY_DEVICE"] <- "v00011"
+#' meta_datax[9, "GROUP_VAR_DEVICE"] <- "v00011"
 #' g5 <- pipeline_vectorized(
 #'   fct = acc_margins, study_data = study_data,
 #'   meta_data = meta_datax, label_col = LABEL,
@@ -243,21 +243,26 @@ pipeline_vectorized <- function(fct, resp_vars = NULL, study_data, meta_data,
   # ingenious idea, btw:
   vars_yet_to_fill <- grep("_vars$", yet_to_fill, value = TRUE)
 
-  # fill in all KEY_-vars that refer to a suitable process variable
+  # fill in all GROUP_VAR_-vars that refer to a suitable process variable
   ## Autofill group_vars and Autofill strata_vars
   for (a in c("strata_vars", "group_vars")) {
     if (a %in% vars_yet_to_fill) {
-      all_key_vars <- grep("KEY_", colnames(meta_data), value = TRUE)
+      all_key_vars <- util_variable_references(meta_data)
+      all_key_vars <- setdiff(all_key_vars, PART_VAR)
       util_warning(
         c("Found %s in arguments of %s. Will call %s for",
-          "all available KEY_VARS (%s)\n"),
+          "all available GROUP_VAR (%s)\n"),
         dQuote(a), dQuote(.fct_name), dQuote(.fct_name),
         paste0(dQuote(all_key_vars), collapse = ", "),
         applicability_problem = TRUE
       )
       if ("time_vars" %in% args_to_fill) {
-        # do no use KEY_DATETIME if the function cares about time.
-        all_key_vars <- setdiff(all_key_vars, KEY_DATETIME)
+        # do no use TIME_VAR if the function cares about time.
+        all_key_vars <- setdiff(all_key_vars, c(TIME_VAR))
+      }
+      if (.fct_name %in% c("acc_margins", "acc_varcomp")) {
+        # no margins plot / ICC for date/time nor for study segment
+        all_key_vars <- setdiff(all_key_vars, c(TIME_VAR))
       }
       names(all_key_vars) <- all_key_vars
 
@@ -291,10 +296,11 @@ pipeline_vectorized <- function(fct, resp_vars = NULL, study_data, meta_data,
   ## Autofill time_vars
   a <- "time_vars"
   if (a %in% vars_yet_to_fill) {
-    all_key_vars <- grep("KEY_DATETIME", colnames(meta_data), value = TRUE)
+    all_key_vars <- grep("(TIME_VAR)", colnames(meta_data),
+                         value = TRUE)
     util_warning(
       c("Found %s in arguments of %s. Will call %s for all",
-        "available KEY_VARS (%s)\n"),
+        "available TIME_VAR (%s)\n"),
       dQuote(a), dQuote(.fct_name), dQuote(.fct_name),
       paste0(dQuote(all_key_vars), collapse = ", "),
       applicability_problem = TRUE
@@ -354,8 +360,9 @@ pipeline_vectorized <- function(fct, resp_vars = NULL, study_data, meta_data,
             from = label_col,
             ifnotfound = list("NA" = NA_character_), FUN.VALUE = character(1)
           ))
-        use <- use & (roles %in% variable_roles[[argument]]) # will remove rows
-                                               # with void roles from call plan
+        use <- use & (roles %in% c(NA_character_,
+                                   variable_roles[[argument]])) # will remove
+                                           # rows with void roles from call plan
       }
     }
   }

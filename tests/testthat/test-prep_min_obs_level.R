@@ -1,8 +1,7 @@
 test_that("prep_min_obs_level works", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # function not used, yet
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   label_col <- LABEL
   util_prepare_dataframes()
   expect_warning(

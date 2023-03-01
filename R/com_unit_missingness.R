@@ -40,8 +40,6 @@
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
 #'
-#' @importFrom ggpubr ggballoonplot
-#'
 #' @return A list with:
 #'   - `FlaggedStudyData`: [data.frame] with id-only-rows flagged in a column
 #'                         `Unit_missing`
@@ -107,7 +105,7 @@ com_unit_missingness <- function(study_data, meta_data, id_vars = NULL,
     sumdf1$Unit_missing <- as.integer(apply(ds1, 1, function(x) all(is.na(x))))
   }
 
-  UMR <- c(
+  UMR <- data.frame(
     "N" = sum(sumdf1$Unit_missing, na.rm = TRUE),
     "%" = round(sum(sumdf1$Unit_missing, na.rm = TRUE) / dim(sumdf1)[1] * 100,
                 digits = 2)

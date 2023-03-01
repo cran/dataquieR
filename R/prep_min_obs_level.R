@@ -26,6 +26,7 @@
 #'   - a subsample of original data
 #' @export
 prep_min_obs_level <- function(study_data, group_vars, min_obs_in_subgroup) {
+  util_expect_data_frame(study_data)
   if (!is.character(group_vars)) {
     util_error("%s is required to be a character(1) argument.",
                dQuote("group_vars"), applicability_problem = TRUE)
@@ -58,7 +59,7 @@ prep_min_obs_level <- function(study_data, group_vars, min_obs_in_subgroup) {
     min_obs_in_subgroup <- 30
   }
 
-  X <- data.frame(table(study_data[[group_vars]]))
+  X <- util_table_of_vct(study_data[[group_vars]])
 
   if (suppressWarnings(!is.finite(min(X[["Freq"]])))) {
     util_error("For %s, observations cannot be counted.",

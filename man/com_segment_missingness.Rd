@@ -12,6 +12,8 @@ com_segment_missingness(
   label_col,
   threshold_value,
   direction,
+  color_gradient_direction,
+  expected_observations = c("HIERARCHY", "ALL", "SEGMENT"),
   exclude_roles = "process"
 )
 }
@@ -34,7 +36,27 @@ with labels of variables}
 from 0-100}
 
 \item{direction}{\link{enum} low | high. "high" or "low", i.e. are deviations
-above/below the threshold critical}
+above/below the threshold critical. This argument is deprecated and replaced by \emph{color_gradient_direction}.}
+
+\item{color_gradient_direction}{\link{enum} above | below. "above" or "below", i.e. are deviations
+above or below the threshold critical? (default: above)}
+
+\item{expected_observations}{\link{enum} HIERARCHY | ALL | SEGMENT. If ALL, all
+observations are expected to comprise
+all study segments. If SEGMENT, the
+\code{PART_VAR} is expected to point
+to a variable with values of 0 and 1,
+indicating whether the variable was
+expected to be observed for each data
+row. If HIERARCHY, this is also
+checked recursively, so, if a variable
+points to such a participation variable,
+and that other variable does has also
+a \code{PART_VAR} entry pointing
+to a variable, the observation of the
+initial variable is only
+expected, if both segment variables are
+1.}
 
 \item{exclude_roles}{\link{variable roles} a character (vector) of variable roles
 not included}
@@ -66,7 +88,7 @@ if all variables within a segment are missing, otherwise FALSE.
 
 Use case \emph{(2)} assumes a more complex structure of study data and meta data.
 The study data comprise so-called intro-variables (either TRUE/FALSE or codes
-for non-participation). The column KEY_STUDY_SEGMENT in the metadata is
+for non-participation). The column \code{PART_VAR} in the metadata is
 filled by variable-IDs indicating for each variable the respective
 intro-variable. This structure has the benefit that subsequent calculation of
 item missingness obtains correct denominators for the calculation of
@@ -77,7 +99,7 @@ missingness rates.
 \subsection{Implementation and use of thresholds}{
 
 This implementation uses one threshold to discriminate critical from
-non-critical values. If direction is high than all values below the
+non-critical values. If direction is above than all values below the
 threshold_value are normal (displayed in dark blue in the plot and flagged
 with GRADING = 0 in the dataframe). All values above the threshold_value are
 considered critical. The more they deviate from the threshold the displayed
@@ -85,7 +107,7 @@ color shifts to dark red. All critical values are highlighted with GRADING =
 1 in the summary data frame. By default, highest values are always shown in
 dark red irrespective of the absolute deviation.
 
-If direction is low than all values above the threshold_value are normal
+If direction is below than all values above the threshold_value are normal
 (displayed in dark blue, GRADING = 0).
 }
 

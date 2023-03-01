@@ -4,12 +4,18 @@
 \alias{util_parse_assignments}
 \title{Utility function to parse assignments}
 \usage{
-util_parse_assignments(text, split_char = SPLIT_CHAR)
+util_parse_assignments(
+  text,
+  split_char = SPLIT_CHAR,
+  multi_variate_text = FALSE
+)
 }
 \arguments{
 \item{text}{Text to be parsed}
 
 \item{split_char}{Character separating assignments}
+
+\item{multi_variate_text}{don't paste text but parse element-wise}
 }
 \value{
 the parsed assignments as a named list

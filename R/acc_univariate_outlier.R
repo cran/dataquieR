@@ -1,4 +1,4 @@
-#' Function to identify univariate outliers by four different approaches
+#' Identify univariate outliers by four different approaches
 #'
 #' @description
 #' A classical but still popular approach to detect univariate outlier is the
@@ -6,7 +6,7 @@
 #' tool to display information about continuous univariate data (e.g., median,
 #' lower and upper quartile). Outliers are defined as values deviating more
 #' than \eqn{1.5 \times IQR} from the 1st (Q25) or 3rd (Q75) quartile. The
-#' strength of Tukey’s method is that it makes no distributional assumptions
+#' strength of Tukey's method is that it makes no distributional assumptions
 #' and thus is also applicable to skewed or non mound-shaped data
 #' Marsh and Seo, 2006. Nevertheless, this method tends to identify frequent
 #' measurements which are falsely interpreted as true outliers.
@@ -70,6 +70,8 @@
 #'                                                points exist, a subsample will
 #'                                                be plotted only. Note, that
 #'                                                sampling is not deterministic.
+#' @param criteria [set] tukey | sixsigma | hubert | sigmagap. a vector with
+#'                       methods to be used for detecting outliers.
 #'
 #' @seealso
 #' - [acc_robust_univariate_outlier]
@@ -94,18 +96,41 @@
 #'
 #'
 acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
-                                   meta_data, exclude_roles, n_rules = 4,
-                                   max_non_outliers_plot = 10000) {
-  rvs <- resp_vars
+                                   meta_data, exclude_roles,
+                                   n_rules = length(unique(criteria)),
+                                   max_non_outliers_plot = 10000,
+                                   criteria = c("tukey", "sixsigma",
+                                                "hubert", "sigmagap")) {
+
+  # TODO: Remove all obsoleted checks on resp_vars, the funcion uses util_correct_variable_use
+
+  if (length(unique(criteria)) < 1 ||
+      length(unique(criteria)) >
+        length(eval(formals(acc_univariate_outlier)$criteria)) ||
+      !all(criteria %in% eval(formals(acc_univariate_outlier)$criteria))) {
+    util_warning(c("The formal criteria must have > 0 and < %d entries.",
+                   "Allowed values are %s.",
+                   "I was called with %s, falling back to default %s."),
+                 length(eval(formals(acc_univariate_outlier)$criteria)),
+                 paste(dQuote(eval(formals(acc_univariate_outlier)$criteria)),
+                       collapse = ", "),
+                 paste(dQuote(unique(criteria)), collapse = ", "),
+                 paste(dQuote(eval(formals(acc_univariate_outlier)$criteria)),
+                       collapse = ", "))
+    criteria <- eval(formals(acc_univariate_outlier)$criteria)
+  }
 
   if (length(n_rules) != 1 || !is.numeric(n_rules) ||
       !all(util_is_integer(n_rules)) ||
-      !(n_rules %in% 1:4)) {
+      !(n_rules %in% seq_len(length(unique(criteria))))) {
     util_warning(
-      "The formal n_rules is not an integer of 1 to 4, default (%d) is used.",
-      formals(acc_univariate_outlier)$n_rules,
+      "The formal n_rules is not an integer between 1 and %d, default (%d) is used.",
+      length(unique(criteria)),
+      min(eval(formals(acc_univariate_outlier)$n_rules),
+          length(unique(criteria))),
       applicability_problem = TRUE)
-    n_rules <- formals(acc_univariate_outlier)$n_rules
+    n_rules <- min(eval(formals(acc_univariate_outlier)$n_rules),
+                   length(unique(criteria)))
   }
 
   if (length(max_non_outliers_plot) != 1 ||
@@ -121,9 +146,9 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
       formals(acc_univariate_outlier)$max_non_outliers_plot
   }
 
-  # Preps ----------------------------------------------------------------------
-  # map meta to study
-  util_prepare_dataframes()
+  # preps ----------------------------------------------------------------------
+  # map metadata to study data
+  prep_prepare_dataframes(.replace_hard_limits = TRUE)
 
   util_correct_variable_use("resp_vars",
     allow_more_than_one = TRUE,
@@ -165,31 +190,31 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   }
 
   # no variables defined?
-  if (length(rvs) == 0) {
+  if (length(resp_vars) == 0) {
 
     # which are float or integer?
-    rvs <- meta_data[[label_col]][meta_data[[DATA_TYPE]] %in%
+    resp_vars <- meta_data[[label_col]][meta_data[[DATA_TYPE]] %in%
                                     c(DATA_TYPES$FLOAT, DATA_TYPES$INTEGER)]
     util_warning(paste0("The following variables: ",
-                        paste0(rvs, collapse = ", "), " were selected."),
+                        paste0(resp_vars, collapse = ", "), " were selected."),
                  applicability_problem = TRUE)
-    if (length(rvs) == 0) {
+    if (length(resp_vars) == 0) {
       util_error(paste0("No variables suitable data type defined."),
                  applicability_problem = TRUE)
     }
 
-    rvs <- intersect(rvs, colnames(ds1))
+    resp_vars <- intersect(resp_vars, colnames(ds1))
   } else {
     # defined variables are not of type float/integer?
     isfloat <- meta_data[[DATA_TYPE]] %in%
       c(DATA_TYPES$FLOAT, DATA_TYPES$INTEGER)
     isrvs <-
-      meta_data[[label_col]] %in% rvs
+      meta_data[[label_col]] %in% resp_vars
 
     if (!all(isfloat | !isrvs)) {
-      rvs <- meta_data[[label_col]][isfloat & isrvs]
+      resp_vars <- meta_data[[label_col]][isfloat & isrvs]
       if (!all(!isrvs | isfloat)) util_warning(paste0("Only: ",
-                                      paste0(rvs, collapse = ", "),
+                                      paste0(resp_vars, collapse = ", "),
                           " are defined to be of type float or integer."),
                           applicability_problem = TRUE)
     }
@@ -204,43 +229,43 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
     } else {
       which_vars_not <- meta_data[[label_col]][meta_data[[VARIABLE_ROLE]] %in%
                                                  exclude_roles]
-      if (length(intersect(rvs, which_vars_not)) > 0) {
+      if (length(intersect(resp_vars, which_vars_not)) > 0) {
         util_warning(paste0("Study variables: ",
-                            paste(dQuote(intersect(rvs, which_vars_not)),
+                            paste(dQuote(intersect(resp_vars, which_vars_not)),
                                   collapse = ", "), " have been excluded."),
                      applicability_problem = TRUE)
       }
-      rvs <- setdiff(rvs, which_vars_not)
+      resp_vars <- setdiff(resp_vars, which_vars_not)
     }
   }
 
-  # remove rvs with non-matching data type
-  whicharenum <- vapply(FUN.VALUE = logical(1), ds1[, rvs, drop = FALSE],
+  # remove resp_vars with non-matching data type
+  whicharenum <- vapply(FUN.VALUE = logical(1), ds1[, resp_vars, drop = FALSE],
                         function(x) is.numeric(x))
 
   if (!all(whicharenum)) {
     util_warning(paste0(
-      "Variables ", paste0(dQuote(rvs[!whicharenum]), collapse = ", "),
+      "Variables ", paste0(dQuote(resp_vars[!whicharenum]), collapse = ", "),
       " are not of type float or integer and will be removed",
       " from univariate outlier analysis."
     ), applicability_problem = TRUE)
-    rvs <- rvs[whicharenum]
+    resp_vars <- resp_vars[whicharenum]
   }
 
-  intcheck <- vapply(FUN.VALUE = logical(1), ds1[, rvs, drop = FALSE],
+  intcheck <- vapply(FUN.VALUE = logical(1), ds1[, resp_vars, drop = FALSE],
                      function(x) all(util_is_integer(x), na.rm = TRUE))
 
   if (any(intcheck)) {
     util_warning(paste0(
-      "Variables: ", paste0(dQuote(rvs[intcheck]), collapse = ", "),
+      "Variables: ", paste0(dQuote(resp_vars[intcheck]), collapse = ", "),
       " show integer values only, but will be nonetheless considered."
     ), applicability_problem = FALSE)
   }
 
-  if (length(rvs) > 0) {
-    rvs <-
+  if (length(resp_vars) > 0) {
+    resp_vars <-
       util_no_value_labels(
-        resp_vars = rvs,
+        resp_vars = resp_vars,
         meta_data = meta_data,
         label_col = label_col,
         warn = TRUE,
@@ -256,18 +281,18 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   # Results   #
   #############
   # Boxplot
-  # ds2 <- melt(ds1_ll[, c(rvs, group_vars)], measure.vars = rvs)
+  # ds2 <- melt(ds1_ll[, c(resp_vars, group_vars)], measure.vars = resp_vars)
 
-  if (length(rvs) == 0) {
+  if (length(resp_vars) == 0) {
     util_error("No suitable response variables left.",
                applicability_problem = TRUE)
-  } else if (length(rvs) == 1) {
-    ds2 <- ds1_ll[, rvs, drop = FALSE]
-    ds2$variable <- rvs
+  } else if (length(resp_vars) == 1) {
+    ds2 <- ds1_ll[, resp_vars, drop = FALSE]
+    ds2$variable <- resp_vars
     ds2 <- ds2[, c(2, 1)]
     names(ds2) <- c("variable", "value")
   } else {
-    ds2 <- melt(ds1_ll[, c(rvs)], measure.vars = rvs)
+    ds2 <- melt(ds1_ll[, c(resp_vars)], measure.vars = resp_vars)
   }
 
   ds2$value <- as.numeric(ds2$value)
@@ -301,7 +326,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   ds2plot <- as.data.frame(ds2plotOL)
 
   # calculate summary of all outlier definitions
-  ds2plot$Rules <- apply(ds2plot[, 3:6], 1, sum)
+  ds2plot$Rules <- apply(ds2plot[, criteria, drop = FALSE], 1, sum)
 
   # outlier to low or to high?
   ds2plot$tlta <- ifelse(ds2plot$Rules >= n_rules, 1, 0)
@@ -357,6 +382,10 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   disc_cols <- c("#2166AC", "#fdd49e", "#fc8d59", "#d7301f", "#7f0000")
   names(disc_cols) <- c(0:4)
 
+  # select as many colors as needed
+  disc_cols <- disc_cols[c("0", rev(5-seq_len(length(unique(criteria)))))]
+  names(disc_cols) <- c("0", seq_len(length(unique(criteria))))
+
   for (i in unique(ds2plot$variable)) {
 
     ds_i <- subset(ds2plot, variable == i)
@@ -391,7 +420,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
         geom_jitter(data = ds_i, position = position_jitter(0.1),
                     aes(color = Rules, alpha = 0.5, size =
                           as.numeric(Rules) / 10)) +
-        scale_size_continuous(range = c(0.01, 3), guide = "none") +
+        scale_size_continuous(range = c(0.5, 3), guide = "none") +
         scale_color_manual(values = disc_cols) +
         facet_wrap(vars(variable), scales = "free") +
         scale_alpha(guide = "none") +

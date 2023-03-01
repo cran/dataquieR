@@ -18,7 +18,7 @@
 #' @param cols deprecated, ignored.
 #' @param strata [variable] optional, the name of a variable
 #'                          used for stratification
-#'
+#' `inheritParams` `acc_distributions`
 #' @return a [list] with:
 #'   - `SummaryPlot`: [ggplot] object with the heatmap
 #'
@@ -27,7 +27,9 @@
 #'                     scale_x_discrete
 #'
 util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
-                             invert, cols, strata) {
+                             invert, cols, strata
+                             # , flip_mode # TODO: pass through from all usages of this function
+                             ) {
 
   # STOPs
   if (!(length(cat_vars) %in% c(1, 2))) {
@@ -76,8 +78,11 @@ util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
 
   # create step-wise color-coding
   midrange <- c(threshold)
-  for (i in 1:(range / steps - 1)) {
-    midrange <- c(midrange, i * steps + threshold)
+  nsteps <- (range / steps - 1)
+  if (is.finite(nsteps)) {
+    for (i in 1:nsteps) {
+      midrange <- c(midrange, i * steps + threshold)
+    }
   }
 
   # extract unique levels (if range is too small)
@@ -117,8 +122,8 @@ util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
 
     if (!missing(strata)) {
       p <- ggplot(df, aes(x, y, fill = .data[[values]])) +
-        facet_grid(.data[[strata]] ~ .) +
-        geom_tile(colour = "white", lwd = 0.8) +
+        facet_grid(.data[[strata]] ~ .) + # TODO: test ~
+        geom_tile(colour = "white", linewidth = 0.8) + # https://github.com/tidyverse/ggplot2/issues/5051
         geom_text(label = paste0(round(df$z2, 2), " %")) +
         scale_fill_manual(values = disc_cols, name = " ") +
         theme_minimal() +
@@ -129,7 +134,7 @@ util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
         xlab("Study segments")
     } else {
       p <- ggplot(df, aes(x, y, fill = .data[[values]])) +
-        geom_tile(colour = "white", lwd = 0.8) +
+        geom_tile(colour = "white", linewidth = 0.8) + # https://github.com/tidyverse/ggplot2/issues/5051
         geom_text(label = paste0(round(df$z2, 2), " %")) +
         scale_fill_manual(values = disc_cols, name = " ") +
         theme_minimal() +
@@ -143,14 +148,15 @@ util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
     namex <- cat_vars
 
     p <- ggplot(df, aes(.data[[cat_vars]], y = z2, fill = .data[[values]])) +
-      geom_bar(stat = "identity") +
-      geom_text(y = ifelse(round(df$z2, 2) < 10, round(df$z2, 2) + 0.3,
-                           round(df$z2, 2) - 1), label = round(df$z2, 2)) +
+      geom_bar(stat = "identity", na.rm = TRUE) +
+      geom_text(label = paste0(" ", round(df$z2, digits = 2), "%"),
+                hjust = 0, vjust = 0.5) +
       scale_fill_manual(values = disc_cols, name = " ") +
       theme_minimal() +
       scale_x_discrete(name = namex) +
-      scale_y_discrete(name = "(%)") +
-      coord_flip()
+      scale_y_continuous(name = "(%)",
+                         limits = c(0, 1.2 * max(df$z2))) +
+      coord_flip() # TODO: use util_coord_flip
   }
 
   return(list(SummaryPlot = p))

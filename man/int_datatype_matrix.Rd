@@ -2,7 +2,7 @@
 % Please edit documentation in R/int_datatype_matrix.R
 \name{int_datatype_matrix}
 \alias{int_datatype_matrix}
-\title{Function to check declared data types of metadata in study data}
+\title{Check declared data types of metadata in study data}
 \usage{
 int_datatype_matrix(
   resp_vars = NULL,
@@ -33,7 +33,8 @@ per single plot.}
 
 \item{threshold_value}{\link{numeric} from=0 to=100. percentage failing
 conversions allowed to still classify a
-study variable convertible.}
+study variable convertible.
+\code{inheritParams} \code{acc_distributions}}
 }
 \value{
 a list with:
@@ -66,6 +67,7 @@ mismatches in the study data.
 List function.
 }
 \examples{
+\dontrun{
 load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
   environment())
 load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
@@ -73,4 +75,5 @@ load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
 appmatrix <- int_datatype_matrix(study_data = study_data,
                                  meta_data = meta_data,
                                  label_col = LABEL)
+}
 }

@@ -1,8 +1,7 @@
 test_that("acc_univariate_outlier works without label_col", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow, errors obvious
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   sd1 <- study_data # no outliers at all
   set.seed(234325)
@@ -12,7 +11,7 @@ test_that("acc_univariate_outlier works without label_col", {
     no_ol_det <- acc_univariate_outlier(resp_vars = "v00014", study_data = sd1,
                            meta_data = meta_data, max_non_outliers_plot = 0),
     regexp =
-      paste("For .+v00014.+, 0 from 2851 non-outlier data values",
+      paste("For .+v00014.+, 0 from 1466 non-outlier data values",
       "were sampled to avoid large plots."))
 
   expect_match(
@@ -25,7 +24,7 @@ test_that("acc_univariate_outlier works without label_col", {
     acc_univariate_outlier(resp_vars = "v00014", study_data = study_data,
                            meta_data = meta_data, n_rules = cars)),
     regexp =
-      "The formal n_rules is not an integer of 1 to 4, default .4. is used.")
+      "The formal n_rules is not an integer between 1 and 4, default .4. is used.")
 
   expect_warning(invisible(
     acc_univariate_outlier(resp_vars = "v00014", study_data = study_data,
@@ -61,27 +60,11 @@ test_that("acc_univariate_outlier works without label_col", {
 
   md0 <- meta_data
   md0$DATA_TYPE <- NULL
-  expect_warning(invisible(
+  expect_error(invisible(
     acc_univariate_outlier(study_data = study_data,
                            meta_data = md0, n_rules = 4)),
-    regexp = sprintf("(%s|%s|%s|%s)",
-      paste(
-        "No .+DATA_TYPE.+ for all or some variables defined in the metadata.",
-        "I guessed them based on data"),
-      paste("The following variables: v00000, v00002, v00003, v01003, v01002,",
-          "v10000, v00004, v00005, v00006, v00007, v00009, v00109, v00010,.+",
-          "v50000 were selected."),
-      paste("Variables: .+v00000.+, .+v00002.+, .+v50000.+",
-            "show integer values only, but will be nonetheless considered."),
-      paste("The variables .+v00000.+v00002.+v01002.+v10000.+v00007.+,",
-            ".+v00109.+v00010.+v20000.+v30000.+v00018.+v01018.+v00019.+,",
-            ".+v00020.+v00022.+v00023.+v00024.+v00025.+v00028.+v00029.+,",
-            ".+v00030.+v40000.+v50000.+ are neither float nor integer",
-            "without VALUE_LABELS. Ignoring those")
-    ),
-    all = TRUE,
-    perl = TRUE
-  )
+    regexp = "Missing columns .+DATA_TYPE.+ from .+meta_data.+"
+    )
 
   md0 <- meta_data
   md0$DATA_TYPE[[1]] <- NA
@@ -138,14 +121,13 @@ test_that("acc_univariate_outlier works without label_col", {
 })
 
 test_that("acc_univariate_outlier works with label_col", {
+  skip_on_cran() # slow, errors obvious
   skip_if_translated()
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   md0 <- meta_data
-  md0$DATA_TYPE <- NULL
+  md0$DATA_TYPE <- NA
   expect_warning(
     res1 <-
       acc_univariate_outlier(resp_vars = c("USR_SOCDEM_0", "CRP_0"),

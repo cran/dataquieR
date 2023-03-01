@@ -1,4 +1,9 @@
 test_that("util_map_all works", {
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
   md <- prep_create_meta(
     VAR_NAMES = letters,
     DATA_TYPE = DATA_TYPES$FLOAT,
@@ -53,7 +58,7 @@ test_that("util_map_all works", {
     label_col = "speed",
     study_data = sd,
     meta_data = cars
-  ), regexp = paste("In util_map_all: VAR_NAMES not found in meta data."))
+  ), regexp = paste(".*VAR_NAMES not found in meta data."))
 
   expect_error(util_map_all(
     label_col = "DATA_TYPE",

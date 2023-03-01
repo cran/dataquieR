@@ -14,6 +14,7 @@
 \alias{STRING}
 \alias{DATETIME}
 \alias{variable}
+\alias{set}
 \title{Data Types}
 \format{
 An object of class \code{list} of length 4.
@@ -45,6 +46,8 @@ allowed \code{DATA_TYPE} in the metadata. However, some functions may accept
 use the term \code{numeric}.
 \item \code{enum} allows one element out of a set of allowed options similar to
 \link{match.arg}
+\item \code{set} allows a subset out of a set of allowed options similar to
+\link{match.arg} with \code{several.ok = TRUE}.
 \item \code{variable} Function arguments of this type expect a character scalar that
 specifies one variable using the variable identifier given in
 the meta data attribute \code{VAR_NAMES} or, if \code{label_col} is set,

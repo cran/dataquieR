@@ -1,8 +1,6 @@
 test_that("acc_varcomp works without label_col", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     expect_error({
       res1 <-
@@ -24,10 +22,24 @@ test_that("acc_varcomp works without label_col", {
     all = TRUE
   )
 
-  expect_warning(
+  expect_error(
     res1 <-
       acc_varcomp(resp_vars = c("CRP_0", "SBP_0"), study_data = study_data,
                   meta_data = meta_data, group_vars = c("DEV_NO_0", "USR_BP_0"),
+                  label_col = LABEL),
+    regexp =
+      sprintf(
+        "(%s)",
+        paste("Need exactly one element in argument group_vars,",
+              "got 2: .DEV_NO_0, USR_BP_0.")
+      ),
+    perl = TRUE
+  )
+
+  suppressMessages(expect_warning(
+    res1 <-
+      acc_varcomp(resp_vars = c("DBP_0", "SBP_0"), study_data = study_data,
+                  meta_data = meta_data, group_vars = c("USR_BP_0"),
                   label_col = LABEL),
     regexp =
       sprintf(
@@ -37,7 +49,7 @@ test_that("acc_varcomp works without label_col", {
       ),
     perl = TRUE,
     all = TRUE
-  )
+  ))
 
   expect_true(all(
     c("SummaryTable",
@@ -48,20 +60,18 @@ test_that("acc_varcomp works without label_col", {
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
       as.matrix(res1$SummaryTable)),
-      na.rm = TRUE) - 2901.888)), 0.1
+      na.rm = TRUE) - 1638.564)), 0.1
   )
 
-  expect_equal(res1$ScalarValue_max_icc, 0.096)
-  expect_equal(res1$ScalarValue_argmax_icc, "SBP_0")
+  expect_equal(res1$ScalarValue_max_icc, 0.111)
+  expect_equal(res1$ScalarValue_argmax_icc, "DBP_0")
 
 })
 
 test_that("acc_varcomp works with label_col", {
 
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     expect_error({
       res1 <-
@@ -107,14 +117,12 @@ test_that("acc_varcomp works with label_col", {
 })
 
 test_that("acc_varcomp works illegal min_obs_in_subgroup/min_subgroups", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
-  expect_warning(
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
+  suppressMessages(expect_warning(
     res1 <-
-      acc_varcomp(resp_vars = c("CRP_0", "SBP_0"), study_data = study_data,
-                  meta_data = meta_data, group_vars = c("DEV_NO_0", "USR_BP_0"),
+      acc_varcomp(resp_vars = c("DBP_0", "SBP_0"), study_data = study_data,
+                  meta_data = meta_data, group_vars = c("USR_BP_0"),
                   label_col = LABEL, min_obs_in_subgroup = "k",
                   min_subgroups = "x"),
     regexp =
@@ -129,7 +137,7 @@ test_that("acc_varcomp works illegal min_obs_in_subgroup/min_subgroups", {
       ),
     perl = TRUE,
     all = TRUE
-  )
+  ))
 
   expect_true(all(
     c("SummaryTable",
@@ -140,34 +148,34 @@ test_that("acc_varcomp works illegal min_obs_in_subgroup/min_subgroups", {
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
       as.matrix(res1$SummaryTable)),
-      na.rm = TRUE) - 2901.888)), 0.1
+      na.rm = TRUE) - 1638.564)), 0.1
   )
 
-  expect_equal(res1$ScalarValue_max_icc, 0.096)
-  expect_equal(res1$ScalarValue_argmax_icc, "SBP_0")
+  expect_equal(res1$ScalarValue_max_icc, 0.111)
+  expect_equal(res1$ScalarValue_argmax_icc, "DBP_0")
 
 })
 
 test_that("acc_varcomp works without resp_vars", {
 
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   expect_error(
     res1 <-
       acc_varcomp(study_data = study_data,
                   meta_data = meta_data,
                   group_vars = c("v00016", "v00012")),
-    regexp = "Need exactly 1 group_vars, if all applicable resp_vars are used"
+    regexp =
+      paste("Need exactly one element in argument group_vars,",
+            "got 2: .v00016, v00012.")
 
   )
 
   res1 <-
-    acc_varcomp(study_data = study_data,
+    suppressMessages(acc_varcomp(study_data = study_data,
                 meta_data = meta_data,
-                group_vars = "v00016")
+                group_vars = "v00016"))
 
   expect_true(all(
     c("SummaryTable",
@@ -178,7 +186,7 @@ test_that("acc_varcomp works without resp_vars", {
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
       as.matrix(res1$SummaryTable)),
-      na.rm = TRUE) - 74205.86)), 0.1
+      na.rm = TRUE) - 73930.06)), 0.1
   )
 
   expect_equal(res1$ScalarValue_max_icc, 0.021)
@@ -189,10 +197,8 @@ test_that("acc_varcomp works without resp_vars", {
 
 test_that("acc_varcomp stops on to few subgroups", {
 
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   expect_warning(
     res1 <-

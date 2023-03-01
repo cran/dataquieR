@@ -2,22 +2,21 @@
 % Please edit documentation in R/acc_distributions.R
 \name{acc_distributions}
 \alias{acc_distributions}
-\title{Function to plot histograms added by empirical cumulative distributions
-for subgroups}
+\title{Plots and checks for distributions}
 \usage{
 acc_distributions(
   resp_vars = NULL,
-  label_col,
   group_vars = NULL,
   study_data,
-  meta_data
+  meta_data,
+  label_col,
+  check_param = c("any", "location", "proportion"),
+  plot_ranges = TRUE,
+  flip_mode = "noflip"
 )
 }
 \arguments{
 \item{resp_vars}{\link{variable list} the names of the measurement variables}
-
-\item{label_col}{\link{variable attribute} the name of the column in the metadata
-with labels of variables}
 
 \item{group_vars}{\link{variable list} the name of the observer, device or
 reader variable}
@@ -26,28 +25,65 @@ reader variable}
 
 \item{meta_data}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
+
+\item{label_col}{\link{variable attribute} the name of the column in the metadata
+with labels of variables}
+
+\item{check_param}{\link{enum} any | location | proportion. Which type of check
+should be conducted (if possible): a check on the
+location of the mean or median value of the study
+data, a check on proportions of categories, or either
+of them if the necessary metadata is available.}
+
+\item{plot_ranges}{\link{logical} Should the plot show ranges and results from the
+data quality checks? (default: TRUE)}
+
+\item{flip_mode}{\link{enum} default | flip | noflip | auto. Should the plot be
+in default orientation, flipped, not flipped or
+auto-flipped. Not all options are always supported.
+In general, this con be controlled by
+setting the \code{roptions(dataquieR.flip_mode = ...)}. If
+called from \code{dq_report}, you can also pass
+\code{flip_mode} to all function calls or set them
+specifically using \code{specific_args}.}
 }
 \value{
 A \link{list} with:
 \itemize{
-\item \code{SummaryPlots}: \link{list} of \link{ggplot}s for each response variable in
+\item \code{SummaryTable}: \link{data.frame} containing data quality checks for
+"Unexpected location" (\code{FLG_acc_ud_loc}) and "Unexpected
+proportion" (\code{FLG_acc_ud_prop}) for each response
+variable in \code{resp_vars}.
+\item \code{SummaryData}: a \link{data.frame} containing data quality checks for
+"Unexpected location" and / or "Unexpected proportion"
+for a report
+\item \code{SummaryPlotList}: \link{list} of \link{ggplot}s for each response variable in
 \code{resp_vars}.
 }
 }
 \description{
-Function to identify inadmissible measurements according to hard limits
-(multiple variables)
+Data quality indicator checks "Unexpected location" and "Unexpected
+proportion" with histograms and, if a grouping variable is included, plots of
+empirical cumulative distributions for the subgroups.
 }
-\section{ALGORITHM OF THIS IMPLEMENTATION:}{
+\section{Algorithm of this implementation:}{
 \itemize{
-\item Select all variables of type float or integer in the study data
-\item Remove missing codes from the study data (if defined in the metadata)
-\item Remove measurements deviating from limits defined in the metadata
-\item Plot histograms
-\itemize{
-\item If group_vars is specified by the user, distributions within
-group-wise ecdf are presented.
-}
+\item If no response variable is defined, select all variables of type float or
+integer in the study data.
+\item Remove missing codes from the study data (if defined in the metadata).
+\item Remove measurements deviating from (hard) limits defined in the metadata
+(if defined).
+\item Exclude variables containing only \code{NA} or only one unique value (excluding
+\code{NA}s).
+\item Perform check for "Unexpected location" if defined in the metadata (needs a
+LOCATION_METRIC (mean or median) and LOCATION_RANGE (range of expected values
+for the mean and median, respectively)).
+\item Perform check for "Unexpected proportion" if defined in the metadata (needs
+PROPORTION_RANGE (range of expected values for the proportions of the
+categories)).
+\item Plot histogram(s).
+\item If group_vars is specified by the user, distributions within group-wise
+ecdf are presented.
 }
 }
 

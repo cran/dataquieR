@@ -1,4 +1,13 @@
-#' @inherit `[`
+#' Extract Parts of a `dataquieR` Result Object
+#'
+#' @param x the `dataquieR` result object
+#'
+#' @param ... arguments passed to the implementation for lists.
+#'
+#' @return the sub-list of the `dataquieR` result object with all messages
+#'         still attached
+#'
+#' @seealso  [base::Extract]
 #' @export
 `[.dataquieR_result` <- function(x, ...) {
   r <- NextMethod()
@@ -9,11 +18,20 @@
   r
 }
 
-#' @inherit `[[`
+#' Extract Elements of a `dataquieR` Result Object
+#'
+#' @param x the `dataquieR` result object
+#'
+#' @param ... arguments passed to the implementation for lists.
+#'
+#' @return the element of the `dataquieR` result object with all messages
+#'         still attached
+#'
+#' @seealso  [base::Extract]
 #' @export
 `[[.dataquieR_result` <- function(x, ...) {
   r <- NextMethod()
-  if (!is.null(r)) {
+  if (!is.null(r) && !inherits(x, "ggplot")) {
     attr(r, "error") <- attr(x, "error")
     attr(r, "message") <- attr(x, "message")
     attr(r, "warning") <- attr(x, "warning")
@@ -22,11 +40,20 @@
   r
 }
 
-#' @inherit `$`
+#' Extract elements of a `dataquieR` Result Object
+#'
+#' @param x the `dataquieR` result object
+#'
+#' @param ... arguments passed to the implementation for lists.
+#'
+#' @return the element of the `dataquieR` result object with all messages
+#'         still attached
+#'
+#' @seealso  [base::Extract]
 #' @export
 `$.dataquieR_result` <- function(x, ...) {
   r <- NextMethod()
-  if (!is.null(r)) {
+  if (!is.null(r) && !inherits(x, "ggplot")) {
     attr(r, "error") <- attr(x, "error")
     attr(r, "message") <- attr(x, "message")
     attr(r, "warning") <- attr(x, "warning")

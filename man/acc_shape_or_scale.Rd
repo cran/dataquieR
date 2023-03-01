@@ -2,7 +2,7 @@
 % Please edit documentation in R/acc_shape_or_scale.R
 \name{acc_shape_or_scale}
 \alias{acc_shape_or_scale}
-\title{Function to compare observed versus expected distributions}
+\title{Compare observed versus expected distributions}
 \usage{
 acc_shape_or_scale(
   resp_vars,
@@ -13,7 +13,8 @@ acc_shape_or_scale(
   end_digits,
   label_col,
   study_data,
-  meta_data
+  meta_data,
+  flip_mode = "noflip"
 )
 }
 \arguments{
@@ -38,6 +39,15 @@ with labels of variables}
 
 \item{meta_data}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
+
+\item{flip_mode}{\link{enum} default | flip | noflip | auto. Should the plot be
+in default orientation, flipped, not flipped or
+auto-flipped. Not all options are always supported.
+In general, this con be controlled by
+setting the \code{roptions(dataquieR.flip_mode = ...)}. If
+called from \code{dq_report}, you can also pass
+\code{flip_mode} to all function calls or set them
+specifically using \code{specific_args}.}
 }
 \value{
 a list with:

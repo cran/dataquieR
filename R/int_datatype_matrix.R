@@ -1,4 +1,4 @@
-#' Function to check declared data types of metadata in study data
+#' Check declared data types of metadata in study data
 #'
 #' @description
 #' Checks data types of the study data and for the data type
@@ -28,7 +28,7 @@
 #' @param threshold_value [numeric] from=0 to=100. percentage failing
 #'                                  conversions allowed to still classify a
 #'                                  study variable convertible.
-#'
+#' `inheritParams` `acc_distributions`
 #' @return a list with:
 #'   - `SummaryTable`: data frame about the applicability of each indicator
 #'                   function (each function in a column).
@@ -45,6 +45,7 @@
 #'                     theme_minimal scale_x_discrete xlab guides
 #'                     guide_legend theme element_text
 #' @examples
+#' \dontrun{
 #' load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
 #'   environment())
 #' load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
@@ -52,11 +53,14 @@
 #' appmatrix <- int_datatype_matrix(study_data = study_data,
 #'                                  meta_data = meta_data,
 #'                                  label_col = LABEL)
+#' }
 int_datatype_matrix <- function(resp_vars = NULL,
                                 study_data, meta_data, split_segments =
                                      FALSE, label_col,
                                      max_vars_per_plot = 20,
-                                threshold_value = 0) {
+                                threshold_value = 0
+                                # , flip_mode = "noflip" # TODO: Improve style
+                                ) {
 
   if (length(max_vars_per_plot) != 1 || !util_is_integer(max_vars_per_plot) ||
       is.na(max_vars_per_plot) || is.nan(max_vars_per_plot) ||
@@ -121,38 +125,39 @@ int_datatype_matrix <- function(resp_vars = NULL,
   # This step compares the datatype as represented in study data with expected
   # datatypes in metadata and creates a binary vector indicating whether data
   # type fits or not
-  dt_appl <- 2 -
+  dt_appl <-
              as.numeric(util_compare_meta_with_study(sdf = ds1, mdf = meta_data,
                                                      label_col = label_col,
                                                      check_convertible = TRUE,
                                                      threshold_value =
                                                        threshold_value))
+  dt_appl <- recode(dt_appl, `1` = 0, `2` = 1, `0` = 2)
 #TODO: return_counts
   app_matrix$MATCH = dt_appl
 
   # SHOULD STRATIFICATION OF SEGMENTS BE USED? ---------------------------------
 
-  # is KEY_STUDY_SEGMENT in metadata and none of the entries has NA?
-  strata_defined <- KEY_STUDY_SEGMENT %in% names(meta_data)
+  # is STUDY_SEGMENT in metadata and none of the entries has NA?
+  strata_defined <- STUDY_SEGMENT %in% names(meta_data)
 
   if (!strata_defined && split_segments) {
     util_warning(c(
-      "Stratification for KEY_STUDY_SEGMENTS is not possible due to missing",
+      "Stratification for STUDY_SEGMENT is not possible due to missing",
       "metadata. Will split arbitrarily avoiding too large figures"
     ), applicability_problem = TRUE)
     nvars <- nrow(meta_data)
-    meta_data$KEY_STUDY_SEGMENT <- paste0("Block #", ceiling(1:nvars /
+    meta_data$STUDY_SEGMENT <- paste0("Block #", ceiling(1:nvars /
                                                              max_vars_per_plot))
   } else if (strata_defined && split_segments) {
-    if (any(is.na(meta_data$KEY_STUDY_SEGMENT))) {
+    if (any(is.na(meta_data$STUDY_SEGMENT))) {
       util_warning(c(
-        "Some KEY_STUDY_SEGMENTS are NA. Will assign those to an artificial",
+        "Some STUDY_SEGMENT are NA. Will assign those to an artificial",
         "segment %s"), dQuote("Other"),
         applicability_problem = TRUE
       )
-      meta_data$KEY_STUDY_SEGMENT[is.na(meta_data$KEY_STUDY_SEGMENT)] <- "Other"
+      meta_data$STUDY_SEGMENT[is.na(meta_data$STUDY_SEGMENT)] <- "Other"
     }
-    too_big_blocks <- table(meta_data$KEY_STUDY_SEGMENT) > max_vars_per_plot
+    too_big_blocks <- table(meta_data$STUDY_SEGMENT) > max_vars_per_plot
     too_big_blocks <- names(too_big_blocks)[too_big_blocks]
     for (too_big_block in too_big_blocks) {
       util_warning(
@@ -160,11 +165,11 @@ int_datatype_matrix <- function(resp_vars = NULL,
         dQuote(too_big_block),
         applicability_problem = FALSE
       )
-      nvars <- sum(meta_data$KEY_STUDY_SEGMENT == too_big_block, na.rm = TRUE)
-      meta_data$KEY_STUDY_SEGMENT[
-        meta_data$KEY_STUDY_SEGMENT == too_big_block] <-
+      nvars <- sum(meta_data$STUDY_SEGMENT == too_big_block, na.rm = TRUE) # TODO: Use [[STUDY_SEGMENT]]
+      meta_data$STUDY_SEGMENT[
+        meta_data$STUDY_SEGMENT == too_big_block] <-
         paste0(
-          meta_data$KEY_STUDY_SEGMENT[meta_data$KEY_STUDY_SEGMENT ==
+          meta_data$STUDY_SEGMENT[meta_data$STUDY_SEGMENT ==
                                         too_big_block],
           "#",
           ceiling(1:nvars / max_vars_per_plot)
@@ -172,13 +177,13 @@ int_datatype_matrix <- function(resp_vars = NULL,
     }
   }
 
-  if (!(KEY_STUDY_SEGMENT %in% names(meta_data))) {
-    meta_data[[KEY_STUDY_SEGMENT]] <- "Study"
+  if (!(STUDY_SEGMENT %in% names(meta_data))) {
+    meta_data[[STUDY_SEGMENT]] <- "Study"
   }
 
   # merge relation to segments to app_matrix
-  app_matrix <- merge(app_matrix, meta_data[, intersect(c("VAR_NAMES", "LABEL",
-                                                          "KEY_STUDY_SEGMENT",
+  app_matrix <- merge(app_matrix, meta_data[, intersect(c(VAR_NAMES, LABEL,
+                                                          STUDY_SEGMENT,
                                                           label_col),
                                                         colnames(meta_data)),
                                             FALSE],
@@ -207,7 +212,7 @@ int_datatype_matrix <- function(resp_vars = NULL,
 
   # reshape wide to long
   app_matrix_long <- melt(app_matrix, id.vars = c("Variables",
-                                                  KEY_STUDY_SEGMENT))
+                                                  STUDY_SEGMENT))
   colnames(app_matrix_long) <- c("VARIABLES", "SEGMENT", "IMPLEMENTATION",
                                  "APP_SCORE")
 
@@ -223,20 +228,22 @@ int_datatype_matrix <- function(resp_vars = NULL,
   )
   # PLOT -----------------------------------------------------------------------
   # colcode <- c("#B2182B", "#ef6548", "#92C5DE", "#2166AC", "#B0B0B0")
-  colcode <- c("#B2182B", "#2166AC", "#92C5DE")
+  colcode <- c("#B2182B", "#92C5DE", "#2166AC")
   names(colcode) <- levels(app_matrix_long$APP_SCORE)
 
   ratio <- dim(app_matrix)[1] / dim(app_matrix)[2]
+
+  # ref_env <- environment() TODO
 
   plot_me <- function(m) {
     ggplot(m, aes(
       x = IMPLEMENTATION, y = VARIABLES,
       fill = APP_SCORE
     )) +
-      geom_tile(colour = "white", lwd = 0.8) +
+      geom_tile(colour = "white", linewidth = 0.8) + # https://github.com/tidyverse/ggplot2/issues/5051
       scale_fill_manual(values = colcode, name = " ") +
       {
-        if (split_segments) facet_wrap(~SEGMENT, scales = "free_y")
+        if (split_segments) facet_wrap(~SEGMENT, scales = "free_y")# TODO: check ~
       } +
       theme_minimal() +
       scale_x_discrete(position = "top") +
@@ -250,7 +257,7 @@ int_datatype_matrix <- function(resp_vars = NULL,
         axis.text.x = element_text(angle = 90, hjust = 0),
         axis.text.y = element_text(size = 10),
         aspect.ratio = ratio
-      )
+      ) # + util_coord_flip(ref_env = ref_env) # TODO: estimate w and h, since p is not using discrete axes
   }
 
   p <- plot_me(app_matrix_long)
@@ -264,14 +271,14 @@ int_datatype_matrix <- function(resp_vars = NULL,
 
   ReportSummaryTable$N <- 1;
 
-  ReportSummaryTable$KEY_STUDY_SEGMENT <- NULL
+  ReportSummaryTable$STUDY_SEGMENT <- NULL
 
   attr(ReportSummaryTable, "colcode") <- setNames(
     c("#B2182B", "#92C5DE", "#2166AC"),
     nm = as.character(3:1))
 
   attr(ReportSummaryTable, "level_names") <-
-    setNames(nm = 3:1, levels(app_matrix_long$APP_SCORE))
+    setNames(nm = 2:0, levels(app_matrix_long$APP_SCORE))
 
   attr(ReportSummaryTable, "continuous") <- FALSE
 

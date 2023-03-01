@@ -4,7 +4,15 @@
 \alias{prep_prepare_dataframes}
 \title{Prepare and verify study data with metadata}
 \usage{
-prep_prepare_dataframes(.study_data, .meta_data, .label_col, .replace_missings)
+prep_prepare_dataframes(
+  .study_data,
+  .meta_data,
+  .label_col,
+  .replace_hard_limits,
+  .replace_missings,
+  .sm_code = NULL,
+  .allow_empty = FALSE
+)
 }
 \arguments{
 \item{.study_data}{if provided, use this data set as study_data}
@@ -13,7 +21,15 @@ prep_prepare_dataframes(.study_data, .meta_data, .label_col, .replace_missings)
 
 \item{.label_col}{if provided, use this as label_col}
 
-\item{.replace_missings}{replace missing codes, defaults to TRUE}
+\item{.replace_hard_limits}{replace \code{HARD_LIMIT} violations by \code{NA},
+defaults to \code{FALSE}.}
+
+\item{.replace_missings}{replace missing codes, defaults to \code{TRUE}}
+
+\item{.sm_code}{missing code for \code{NAs}, if they have been
+re-coded by \code{util_combine_missing_lists}}
+
+\item{.allow_empty}{allow \code{ds1} to be empty. i.e., 0 rows and/or 0 columns}
 }
 \value{
 \code{ds1} the study data with mapped column names
@@ -43,6 +59,7 @@ It defines a new object \code{ds1}, it modifies \code{study_data} and/or \code{m
 and \code{label_col}.
 }
 \examples{
+\dontrun{
 acc_test1 <- function(resp_variable, aux_variable,
                       time_variable, co_variables,
                       group_vars, study_data, meta_data) {
@@ -97,6 +114,7 @@ print(head(acc_test4(study_data = study_data, meta_data = meta_data)))
 print(head(acc_test4(study_data = study_data, meta_data = meta_data,
   label_col = LABEL)))
 try(acc_test2(study_data = NULL, meta_data = meta_data))
+}
 
 }
 \seealso{

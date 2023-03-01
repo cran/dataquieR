@@ -6,7 +6,7 @@
 #'  are valid.
 #'
 #' @details
-#' ### ALGORITHM OF THIS IMPLEMENTATION:
+#' ### Algorithm of this implementation:
 #'
 #'  - Remove missing codes from the study data (if defined in the metadata)
 #'  - Interpretation of variable specific VALUE_LABELS as supplied in the
@@ -26,19 +26,27 @@
 #'                               attributes of study data
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
-#' @param threshold [numeric] from=0 to=100. a numerical value ranging
-#'                                           from 0-100. Not yet implemented.
+#' @param threshold_value [numeric] from=0 to=100. a numerical value ranging
+#'                                           from 0-100.
+# @param use_value_labels [logical] If set to `TRUE`, the output will report value
+#                             labels. Otherwise, the output will give only the
+#                             numerical codes of value labels.
+
 #'
 #' @return a list with:
-#' - `SummaryTable`: data frame summarizing inadmissible categories with the
+#' - `SummaryData`: data frame summarizing inadmissible categories with the
 #' columns:
 #'   - `Variables`: variable name/label
 #'   - `OBSERVED_CATEGORIES`: the categories observed in the study data
 #'   - `DEFINED_CATEGORIES`: the categories defined in the metadata
 #'   - `NON_MATCHING`: the categories observed but not defined
 #'   - `NON_MATCHING_N`: the number of observations with categories not defined
+#'   - `NON_MATCHING_N_PER_CATEGORY`: the number of observations for each of the
+#'                unexpected categories
 #'   - `GRADING`: indicator TRUE/FALSE if inadmissible categorical values were
-#'     observed
+#'     observed (more than indicated by the `threshold_value`)
+#' - `SummaryTable`: data frame for the `dataquieR` pipeline reporting the number
+#'                   and percentage of inadmissible categorical values
 #' - `ModifiedStudyData`: study data having inadmissible categories removed
 #' - `FlaggedStudyData`: study data having cases with inadmissible categories
 #' flagged
@@ -50,101 +58,118 @@
 #' )
 con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
                                          meta_data, label_col,
-                                         threshold = NULL) {
-  rvs <- resp_vars
+                                         threshold_value = 0
+                                         #, use_value_labels = FALSE
+                                         ) {
+
+  # preps ----------------------------------------------------------------------
 
   as_numeric_now_warn <- function(...) {
     suppressWarnings(as.numeric(...))
   }
 
-  # map meta to study
-  util_prepare_dataframes()
+  # map metadata to study data
+  prep_prepare_dataframes()
+
+  if (!VALUE_LABELS %in% colnames(meta_data)) {
+    util_error(paste0("Function con_inadmissible_categorical requires",
+                      "the metadata column VALUE_LABELS."),
+               applicability_problem = TRUE)
+  }
 
   util_correct_variable_use("resp_vars",
-    allow_more_than_one = TRUE,
-    allow_null = TRUE,
-    allow_any_obs_na = TRUE,
-    need_type = "integer | string"
+                            allow_more_than_one = TRUE,
+                            allow_null = TRUE,
+                            allow_any_obs_na = TRUE,
+                            need_type = "integer | string"
   )
 
-
-  # no variables defined?
-  if (length(rvs) == 0) {
-    if (all(is.na(meta_data[[VALUE_LABELS]]))) {
-      util_error(paste0("No Variables with defined VALUE_LABELS."),
+  if (length(resp_vars) == 0) {
+    # Select all variables with VALUE_LABELS (if any), if resp_vars were not specified.
+    if (all(util_empty(meta_data[[VALUE_LABELS]]))) {
+      util_error(paste0("No variables with defined VALUE_LABELS."),
                  applicability_problem = TRUE)
     } else {
       util_warning("All variables with VALUE_LABELS in the metadata are used.",
                    applicability_problem = TRUE)
-      rvs <-
-        intersect(meta_data[[label_col]][!(is.na(meta_data[[VALUE_LABELS]]))],
+      resp_vars <-
+        intersect(meta_data[[label_col]][!(util_empty(meta_data[[VALUE_LABELS]]))],
                   colnames(ds1))
     }
   } else {
-    # limits defined at all?
-    if (all(is.na(
-          meta_data[[VALUE_LABELS]][meta_data[[label_col]] %in% rvs]))) {
-      util_error("No Variables with defined VALUE_LABELS.",
+    # Check for specified resp_vars whether VALUE_LABELS have been defined at all.
+    if (all(util_empty(
+      meta_data[[VALUE_LABELS]][meta_data[[label_col]] %in% resp_vars]))) {
+      util_error("No variables with defined VALUE_LABELS.",
                  applicability_problem = TRUE)
     }
-    # no limits for some variables?
-    rvs2 <- meta_data[[label_col]][!(is.na(meta_data[[VALUE_LABELS]])) &
-                                     meta_data[[label_col]] %in% rvs]
-    if (length(rvs2) < length(rvs)) {
-      util_warning(paste0("The variables ", rvs[!(rvs %in% rvs2)],
+    # check whether VALUE_LABELS are missing for some of the specified resp_vars
+    rvs <- meta_data[[label_col]][!(util_empty(meta_data[[VALUE_LABELS]])) &
+                                    meta_data[[label_col]] %in% resp_vars]
+    if (length(rvs) < length(resp_vars)) {
+      util_warning(paste0("The variables ", resp_vars[!(resp_vars %in% rvs)],
                           " have no defined VALUE_LABELS."),
                    applicability_problem = TRUE)
     }
-    rvs <- rvs2
+    resp_vars <- rvs
   }
+
+  util_expect_scalar(threshold_value,
+                     check_type = util_is_numeric_in(min = 0, max = 100))
+
+  #util_expect_scalar(use_value_labels, check_type = is.logical)
 
   # Calculations ---------------------------------------------------------------
 
-  sumdf1 <- data.frame(Variables = rvs)
+  sumdf1 <- data.frame(Variables = resp_vars)
 
-  # which categories were used in the data
-  obs_cats <- function(x) {
-    as.character(unique(x[!is.na(x)]))
+  # Which categories were used in the study data?
+  get_obs_cats <- function(x) {
+    as.character(sort(unique(x[!is.na(x)])))
   }
-  sumdf1$OBSERVED_CATEGORIES <- lapply(ds1[, rvs, drop = FALSE], obs_cats)
+  sumdf1$OBSERVED_CATEGORIES <- lapply(ds1[, resp_vars, drop = FALSE], get_obs_cats)
 
-  # which categories were defined in metadata
-  defcats <- lapply(lapply(setNames(util_map_labels(rvs,
-                                                meta_data = meta_data,
-                                                to = VALUE_LABELS,
-                                                from = label_col,
-                                                ifnotfound = NA), nm = rvs),
-                       util_parse_assignments), unlist) # get for all item
-
-  sumdf1$DEFINED_CATEGORIES <- mapply(lapply(defcats, names), defcats,
+  # Which categories were defined in metadata?
+  def_cats <- lapply(lapply(
+    setNames(
+      util_map_labels(
+        resp_vars,
+        meta_data = meta_data,
+        to = VALUE_LABELS,
+        from = label_col,
+        ifnotfound = NA
+      ),
+      nm = resp_vars
+    ),
+    util_parse_assignments
+  ), unlist)
+  sumdf1$DEFINED_CATEGORIES <- mapply(lapply(def_cats, names), def_cats,
                                       SIMPLIFY = FALSE,
                                       FUN = setNames) # swap names and values
 
-  # which used categories were not defined
-  whichnot <- lapply(
+  # Which categories were used in the study data but not defined in the metadata?
+  which_not <- lapply(
     seq_along(sumdf1$OBSERVED_CATEGORIES),
     function(x) !(sumdf1$OBSERVED_CATEGORIES[[x]] %in%
                     sumdf1$DEFINED_CATEGORIES[[x]])
   )
-
-  # extract those undefined
   sumdf1$NON_MATCHING <- lapply(
     seq_along(sumdf1$OBSERVED_CATEGORIES),
-    function(x) paste0(sumdf1$OBSERVED_CATEGORIES[[x]][whichnot[[x]]])
+    function(x) paste0(sumdf1$OBSERVED_CATEGORIES[[x]][which_not[[x]]])
   )
-
+  # If there are no unexpected categories, the entry should be NA (instead of "character(0)").
   sumdf1$NON_MATCHING <- lapply(
     sumdf1$NON_MATCHING,
     function(x) if (identical(x, character(0))) NA_character_ else x
   )
 
+  # Count the number of non-matching observations in total and per unexpected category.
   sumdf1$NON_MATCHING_N <- NA
-
+  sumdf1$NON_MATCHING_N_PER_CATEGORY <- NA
   # msdf = modified study data
   msdf <- ds1
 
-  # count obs with undefined categories
-  for (i in 1:dim(sumdf1)[1]) {
+  for (i in seq_len(nrow(sumdf1))) {
     if (!is.na(sumdf1$NON_MATCHING[i])) {
       if (all(!is.na(as_numeric_now_warn(unlist(sumdf1$NON_MATCHING[i]))))) {
         sumdf1$NON_MATCHING_N[i] <- sum(ds1[[paste(sumdf1$Variables[i])]] %in%
@@ -152,6 +177,11 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
                                             sumdf1$NON_MATCHING[i])),
           na.rm = TRUE
         )
+        n_per_cat <- table(ds1[[sumdf1$Variables[i]]][which(
+          ds1[[sumdf1$Variables[i]]] %in% as_numeric_now_warn(unlist(sumdf1$NON_MATCHING[i])))])
+        sumdf1$NON_MATCHING_N_PER_CATEGORY[i] <- paste(
+          paste0(n_per_cat, " (", dQuote(names(n_per_cat)), ")"),
+          collapse = ", ")
         msdf[[paste(sumdf1$Variables[i])]][
           msdf[[paste(sumdf1$Variables[i])]] %in%
             as_numeric_now_warn(unlist(sumdf1$NON_MATCHING[i]))] <- NA
@@ -163,6 +193,11 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
                                           unlist(sumdf1$NON_MATCHING[i]),
           na.rm = TRUE
         )
+        n_per_cat <- table(ds1[[sumdf1$Variables[i]]][which(
+          ds1[[sumdf1$Variables[i]]] %in% unlist(sumdf1$NON_MATCHING[i]))])
+        sumdf1$NON_MATCHING_N_PER_CATEGORY[i] <- paste(
+          paste0(n_per_cat, " (", dQuote(names(n_per_cat)), ")"),
+          collapse = ", ")
         msdf[[paste(sumdf1$Variables[i])]][
           msdf[[paste(sumdf1$Variables[i])]] %in%
             as_numeric_now_warn(unlist(sumdf1$NON_MATCHING[i]))] <- NA
@@ -185,10 +220,20 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
   # attribute
   attr(msdf, "rmIAVcat") <- TRUE
 
+  # if (use_value_labels) {
+  #   sumdf1$DEFINED_CATEGORIES <- lapply(sumdf1[["DEFINED_CATEGORIES"]], function(x) {
+  #     if (all(!is.na(as_numeric_now_warn(x)))) {
+  #       x <- paste0(x, " (", dQuote(names(x)), ")")
+  #     }
+  #     x
+  #   })
+  # }
+
   # handle lists
   sumdf1[["OBSERVED_CATEGORIES"]] <-
     as.vector(unlist(lapply(sumdf1[["OBSERVED_CATEGORIES"]],
                             paste, collapse = ", ")))
+
   sumdf1[["DEFINED_CATEGORIES"]] <-
     as.vector(unlist(lapply(sumdf1[["DEFINED_CATEGORIES"]],
                             paste, collapse = ", ")))
@@ -199,9 +244,19 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
     ifelse(sumdf1$NON_MATCHING == "NA", "", sumdf1$NON_MATCHING)
   sumdf1$NON_MATCHING_N <-
     ifelse(is.na(sumdf1$NON_MATCHING_N), 0, sumdf1$NON_MATCHING_N)
+  sumdf1$NON_MATCHING_N_PER_CATEGORY <-
+    ifelse(is.na(sumdf1$NON_MATCHING_N_PER_CATEGORY), 0, sumdf1$NON_MATCHING_N_PER_CATEGORY)
   sumdf1[["GRADING"]] <-
-    ifelse(sumdf1$NON_MATCHING_N > 0, 1, 0)
+    ifelse(sumdf1$NON_MATCHING_N > threshold_value / 100 * nrow(ds1), 1, 0)
 
-  return(list(SummaryTable = sumdf1, ModifiedStudyData = msdf,
+  sumdf2 <- sumdf1[, c("Variables", "NON_MATCHING_N")]
+  colnames(sumdf2)[2] <- "NUM_con_rvv_icat"
+  sumdf2$PCT_con_rvv_icat <- round(sumdf2$NUM_con_rvv_icat / nrow(ds1) * 100, 1)
+  sumdf2$GRADING <- sumdf1$GRADING
+  sumdf2$FLG_con_rvv_icat <- ifelse(sumdf2$GRADING == 1, TRUE, FALSE)
+
+  return(list(SummaryData = sumdf1,
+              SummaryTable = sumdf2,
+              ModifiedStudyData = msdf,
               FlaggedStudyData = ds1))
 }

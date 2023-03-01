@@ -36,7 +36,8 @@ its required structure.}
 \code{check_table}.
 If set, a summary output is generated for the
 defined categories plus one plot per
-category.}
+category.
+\code{inheritParams} \code{acc_distributions}}
 }
 \value{
 If \code{summarize_categories} is \code{FALSE}:
@@ -78,7 +79,7 @@ to be impossible. The approach does not consider implausible or inadmissible
 values.
 }
 \details{
-\subsection{ALGORITHM OF THIS IMPLEMENTATION:}{
+\subsection{Algorithm of this implementation:}{
 \itemize{
 \item Select all variables in the data with defined contradiction rules (static
 metadata column CONTRADICTIONS)
@@ -100,6 +101,7 @@ List function.
 }
 }
 \examples{
+\dontrun{
 load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
 load(system.file("extdata", "study_data.RData", package = "dataquieR"))
 check_table <- read.csv(system.file("extdata",
@@ -140,6 +142,12 @@ con_contradictions(
   study_data = study_data, meta_data = meta_data, label_col = label_col,
   threshold_value = threshold_value, check_table = check_table
 )
+con_contradictions(
+  study_data = study_data, meta_data = meta_data, label_col = label_col,
+  threshold_value = threshold_value, check_table = check_table,
+  summarize_categories = TRUE
+)
+}
 }
 \seealso{
 \href{https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_contradictions.html}{Online Documentation}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/acc_margins.R
 \name{acc_margins}
 \alias{acc_margins}
-\title{Function to estimate marginal means, see \link[emmeans:emmeans]{emmeans::emmeans}}
+\title{Estimate marginal means, see \link[emmeans:emmeans]{emmeans::emmeans}}
 \usage{
 acc_margins(
   resp_vars = NULL,
@@ -107,7 +107,7 @@ rvs <- c("DBP_0")
 group_vars <- prep_map_labels(rvs, meta_data = meta_data, from = label_col,
   to = VAR_NAMES)
 group_vars <- prep_map_labels(group_vars, meta_data = meta_data,
-  to = KEY_OBSERVER)
+  to = GROUP_VAR_OBSERVER)
 group_vars <- prep_map_labels(group_vars, meta_data = meta_data)
 acc_margins(resp_vars = rvs,
             study_data = study_data,

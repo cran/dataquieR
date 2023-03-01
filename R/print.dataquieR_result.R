@@ -6,36 +6,39 @@
 #'
 #' @return see print
 #' @export
-#' @examples
-#' load(system.file("extdata", "study_data.RData", package = "dataquieR"))
-#' load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
-#' result <- pipeline_vectorized(acc_margins, cores = list(mode = "local"),
-#'   resp_vars = "SBP_0", group_vars = "USR_BP_0",
-#'   study_data = study_data, meta_data = meta_data, label_col = LABEL
-#' )
-#' single_result <- result$`group_vars = USR_BP_0`$`resp_vars = SBP_0`
-#' print(single_result, slot = "SummaryPlot")
 print.dataquieR_result <- function(x, ...) {
+  old_opts <- options(
+    dataquieR.CONDITIONS_WITH_STACKTRACE = FALSE,
+    dataquieR.ERRORS_WITH_CALLER = FALSE,
+    dataquieR.WARNINGS_WITH_CALLER = FALSE,
+    dataquieR.MESSAGES_WITH_CALLER = FALSE)
+  on.exit(old_opts)
   if (length(attr(x, "message")) > 0) {
     for (m in attr(x, "message")) {
-      message(m)
+      util_message(m)
     }
   }
   if (length(attr(x, "warning")) > 0) {
     for (w in attr(x, "warning")) {
-      warning(w)
+      util_warning(w)
     }
   }
   error_shown <- FALSE
   if (length(attr(x, "error")) > 0) {
     e <- attr(x, "error")[[1]]
-    try(stop(e))
+    try(util_error(e))
     error_shown <- TRUE
   }
   attr(x, "message") <- NULL
   attr(x, "warning") <- NULL
   attr(x, "error") <- NULL
-  class(x) <- setdiff(class(x), "dataquieR_result")
+  if (inherits(x, "empty")) {
+    return()
+  }
+  class(x) <- setdiff(class(x), c("dataquieR_result", "square_result_list"))
+  if (inherits(x, "dataquieR_NULL")) {
+    x <- NULL
+  }
   opts <- list(...)
   if ("slot" %in% names(opts)) {
     if (opts$slot %in% names(x)) {
@@ -44,6 +47,6 @@ print.dataquieR_result <- function(x, ...) {
       if (!error_shown) util_error("Cannot find %s in result", opts$slot)
     }
   } else {
-    NextMethod()
+    print(x, ...) # NextMethod()
   }
 }

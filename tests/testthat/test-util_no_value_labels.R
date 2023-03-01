@@ -1,7 +1,6 @@
 test_that("util_no_value_labels works", {
   local({
-    load(system.file("extdata", "meta_data.RData", package = "dataquieR"),
-         envir = environment())
+    meta_data <- prep_get_data_frame("meta_data")
     expect_identical(util_no_value_labels("CENTER_0", meta_data = meta_data,
                                           label_col = LABEL, stop = FALSE,
                                           warn = FALSE), character(0))

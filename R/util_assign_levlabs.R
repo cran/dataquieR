@@ -15,13 +15,31 @@
 #'                If no special order is given, set `ordered` to `FALSE`,
 #'                e.g. for `1 = male | 2 = female` or
 #'                `1 = low | 2 = high | 3 = medium`.
+#' @param variable_name [character] the name of the variable being converted
+#'                                  for warning messages
 #'
 #' @return a [data.frame] with labels assigned to categorical variables
 #'         (if available)
 #'
 util_assign_levlabs <- function(variable, string_of_levlabs, splitchar,
-                                assignchar, ordered = TRUE) {
+                                assignchar, ordered = TRUE, variable_name = "")
+  {
+  util_expect_scalar(variable_name, check_type = is.character)
+  if (!util_empty(variable_name)) {
+    variable_name <- sprintf(" for variable %s", dQuote(variable_name))
+  }
+  util_expect_scalar(string_of_levlabs, check_type = is.character)
+  util_expect_scalar(splitchar, check_type = is.character)
+  util_expect_scalar(assignchar, check_type = is.character)
+  util_expect_scalar(ordered, check_type = is.logical)
+  util_expect_scalar(variable, # not nec. numeric
+                     allow_more_than_one = TRUE,
+                     allow_null = TRUE,
+                     allow_na = TRUE)
 
+  #TODO: util_deparse_assignments
+  #TODO: rewrite, user should not need ot lookup metadata, this could be done here
+  #TODO: make available as a prep funciton
   # split one string into multiple
   levlab_list <- strsplit(string_of_levlabs, split = splitchar, fixed = TRUE)
   # remove lreading/trailing blanks
@@ -46,19 +64,19 @@ util_assign_levlabs <- function(variable, string_of_levlabs, splitchar,
   # warnings:
   if (length(levs) != length(labs)) {
     # Dead code?
-    util_warning("Number of levels does not match number of labels.", # nocov
-                 applicability_problem = TRUE) # nocov
+    util_warning("Number of levels does not match number of labels%s.", # nocov
+                 variable_name, applicability_problem = TRUE) # nocov
   }
 
   if (length(levs) < length(unique(variable[!(is.na(variable))]))) {
     util_warning(
-      "Number of levels in variable greater than in character string.",
-      applicability_problem = TRUE)
+      "Number of levels in variable greater than in character string%s.",
+      variable_name, applicability_problem = TRUE)
   }
 
   if (any(is.na(labs))) {
-    util_warning("No labels assigned for some levels, use levels as labels",
-                 applicability_problem = TRUE)
+    util_warning("No labels assigned for some levels, use levels as labels%s",
+                 variable_name, applicability_problem = TRUE)
     labs[is.na(labs)] <- levs[is.na(labs)]
   }
 

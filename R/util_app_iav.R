@@ -11,17 +11,18 @@
 #' - 1 data type mismatches but applicable
 #' - 2 data type matches but not applicable
 #' - 3 data type matches and applicable
+#' - 4 not applicable because of not suitable data type
 util_app_iav <- function(x, dta) {
-  if ("HARD_LIMITS" %in% names(x)) {
-    c1 <- ifelse(is.na(x[["HARD_LIMITS"]]), 0, 1)
-  } else {
-    c1 <- rep(0, times = dim(x)[1])
-  }
+  c1 <- rep(0, times = dim(x)[1])
+  if (HARD_LIMITS %in% names(x))
+    c1 <- c1 | !is.na(x[[HARD_LIMITS]])
+  if (SOFT_LIMITS %in% names(x))
+    c1 <- c1 | !is.na(x[[SOFT_LIMITS]])
 
-  aa <- paste0(dta, c1)
+  aa <- paste0(dta, as.numeric(c1))
   score <- as.numeric(recode(as.factor(aa), "00" = 0, "01" = 1,
                              "10" = 2, "11" = 3))
-  score <- ifelse(x[["DATA_TYPE"]] %in% c("float", "integer"), score, 4)
+  score <- ifelse(x[["DATA_TYPE"]] %in% c("float", "integer", "datetime"), score, 4)
   score <- as.factor(score)
   return(score)
 }

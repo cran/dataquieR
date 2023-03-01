@@ -6,8 +6,11 @@ if (outputSlot == "SummaryTable") {
   stop("Not a table result")
 }
 all_res <- current_results[resp_vars == variable]
+all_meta <- call_meta[resp_vars == variable, ]
 if (!chunk_error) {
-  all_res <- all_res[(vapply(all_res, length, FUN.VALUE = integer(1)) > 0)]
+  noerror <- (vapply(all_res, length, FUN.VALUE = integer(1)) > 0)
+  all_meta <- all_meta[noerror, ]
+  all_res <- all_res[noerror]
 }
 have_a_result <- length(all_res) > 0
 if (!have_a_result) {
@@ -15,9 +18,27 @@ if (!have_a_result) {
 }
 ```
 ```{r results='asis', eval=have_a_result}
-cat(sprintf(title, dQuote(variable)))
+#cat(sprintf(title, dQuote(dataquieR::prep_title_escape(variable, html = FALSE))))
 cat("\n")
 ```
-```{r echo=FALSE, eval=have_a_result}
-invisible(lapply(all_res, print, slot = outputSlot))
+
+```{r echo=FALSE, eval=have_a_result, results='asis'}
+to_display <- all_meta
+to_display$res <- all_res
+# save(all_res, all_meta, resp_vars, variable, file = "/tmp/xxxx.RData")
+invisible(apply(to_display, 1, function(x) {
+  cat("\n\n")
+  cat(sprintf(title, dQuote(dataquieR::prep_title_escape(variable, html = FALSE))))
+  my_args <- x[setdiff(names(x), c("implementationform", "res", "resp_vars"))]
+  my_args <- my_args[!is.na(my_args)]
+  if (length(my_args)) {
+    cat(", ")
+    cat(paste(names(my_args), "=", prep_title_escape(dQuote(my_args), html = FALSE)), sep = ", ")
+  }
+  cat("\n\n")
+  print(x[["res"]], slot = outputSlot)
+  cat("\n")
+}))
+# knitr::knit_exit()
 ```
+

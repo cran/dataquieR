@@ -1,22 +1,21 @@
 test_that("acc_multivariate_outlier works with 3 args", {
+  skip_on_cran() # slow and tested elsewhere
   skip_if_translated()
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_error(
     res1 <-
       acc_multivariate_outlier(
         study_data = study_data, meta_data = meta_data),
     regexp =
-      "argument .+resp_vars.+ is missing, with no default",
+      "Argument variable_group is NULL",
     perl = TRUE
   )
 
   expect_error(
     res1 <-
       acc_multivariate_outlier(
-        resp_vars = "v00014",
+        variable_group = "v00014",
         study_data = study_data, meta_data = meta_data),
     regexp =
       "Need at least two variables for multivariate outliers.",
@@ -25,7 +24,7 @@ test_that("acc_multivariate_outlier works with 3 args", {
 
   expect_warning(
     res1 <-
-      acc_multivariate_outlier(resp_vars = c("v00014", "v00006"),
+      acc_multivariate_outlier(variable_group = c("v00014", "v00006"),
                          study_data = study_data, meta_data = meta_data),
     regexp =
       sprintf(
@@ -44,7 +43,7 @@ test_that("acc_multivariate_outlier works with 3 args", {
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
       as.matrix(res1$FlaggedStudyData)),
-      na.rm = TRUE) - 4493047)), 0.5
+      na.rm = TRUE) - 4492191)), 0.5
   )
   expect_equal(
     suppressWarnings(abs(sum(as.numeric(
@@ -54,17 +53,16 @@ test_that("acc_multivariate_outlier works with 3 args", {
 })
 
 test_that("acc_multivariate_outlier works with label_col", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow and tested elsewhere
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_error(
     res1 <-
       acc_multivariate_outlier(
         label_col = LABEL,
         study_data = study_data, meta_data = meta_data),
     regexp =
-      "argument .+resp_vars.+ is missing, with no default",
+      "Argument variable_group is NULL",
     perl = TRUE
   )
 
@@ -72,7 +70,7 @@ test_that("acc_multivariate_outlier works with label_col", {
     res1 <-
       acc_multivariate_outlier(
         label_col = LABEL,
-        resp_vars = "CRP_0",
+        variable_group = "CRP_0",
         study_data = study_data, meta_data = meta_data),
     regexp =
       "Need at least two variables for multivariate outliers.",
@@ -81,7 +79,7 @@ test_that("acc_multivariate_outlier works with label_col", {
 
   expect_warning(
     res1 <-
-      acc_multivariate_outlier(resp_vars = c("CRP_0", "GLOBAL_HEALTH_VAS_0"),
+      acc_multivariate_outlier(variable_group = c("CRP_0", "GLOBAL_HEALTH_VAS_0"),
                                label_col = LABEL,
                                study_data = study_data, meta_data = meta_data),
     regexp =
@@ -101,7 +99,7 @@ test_that("acc_multivariate_outlier works with label_col", {
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
       as.matrix(res1$FlaggedStudyData)),
-      na.rm = TRUE) - 4493047)), 0.5
+      na.rm = TRUE) - 4492191)), 0.5
   )
   expect_equal(
     suppressWarnings(abs(sum(as.numeric(

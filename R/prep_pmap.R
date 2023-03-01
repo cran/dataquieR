@@ -25,6 +25,10 @@ prep_pmap <- function(.l, .f, ..., cores = 0) {
   }
 
   if (!is.null(cores)) {
+    if (getOption("parallelMap.status", "stopped") != "stopped") {
+      util_warning("prep_pmap called encapsulated",
+                   applicability_problem = FALSE)
+    }
     if (identical(cores, 0)) {
       suppressMessages(parallelMap::parallelStart(mode = "local"))
     } else if (inherits(cores, "list")) { # nocov start

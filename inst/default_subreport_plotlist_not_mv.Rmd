@@ -14,7 +14,7 @@ if (!have_a_result) {
 }
 ```
 ```{r results='asis', eval=have_a_result}
-cat(sprintf(title, dQuote(variable)))
+cat(sprintf(title, dQuote(dataquieR::prep_title_escape(variable, html = FALSE))))
 cat("\n")
 ```
 ```{r echo=FALSE, eval=have_a_result}

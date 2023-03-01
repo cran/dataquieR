@@ -1,9 +1,14 @@
 test_that("util_get_code_list works", {
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
   mdf <- prep_create_meta(
     VAR_NAMES = c("age", "sex"),
     DATA_TYPE = c(DATA_TYPES$INTEGER, DATA_TYPES$INTEGER),
-    MISSING_LIST = c(NA, "-1|-2|-5"),
-    JUMP_LIST = c("999", "")
+    MISSING_LIST = c(NA, "-1 = -|-2 = -|-5 = -"),
+    JUMP_LIST = c("999 = -", "")
   )
   expect_warning(expect_equal(
     util_get_code_list(c("age"), "MISSING_LIST",
@@ -15,7 +20,7 @@ test_that("util_get_code_list works", {
     numeric(0)
   ),
   perl = TRUE,
-  regexp = paste0("In util_get_code_list: Could not find .MISSING_LIST. for",
+  regexp = paste0("Could not find .MISSING_LIST. for",
                   " .age. in the meta_data for replacing codes with NAs.")
   )
   expect_equal(
@@ -25,7 +30,7 @@ test_that("util_get_code_list works", {
       label_col = VAR_NAMES,
       warning_if_no_list = TRUE
     ),
-    c(-1, -2, -5)
+    c(`-` = -1,`-` =  -2, `-` = -5)
   )
   expect_equal(
     util_get_code_list(c("sex"), "JUMP_LIST",
@@ -34,7 +39,7 @@ test_that("util_get_code_list works", {
       label_col = VAR_NAMES,
       warning_if_no_list = TRUE
     ),
-    numeric(0)
+    setNames(numeric(0), character(0))
   )
   expect_equal(
     util_get_code_list(c("age"), "JUMP_LIST",
@@ -43,7 +48,7 @@ test_that("util_get_code_list works", {
       label_col = VAR_NAMES,
       warning_if_no_list = TRUE
     ),
-    999
+    c(`-` = 999)
   )
   expect_warning(
     util_get_code_list(c("age"), "XJUMP_LIST",
@@ -81,11 +86,16 @@ test_that("util_get_code_list works", {
 })
 
 test_that("util_get_code_list warns about non-numeric codes", {
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
   mdf <- prep_create_meta(
     VAR_NAMES = c("age", "sex"),
     DATA_TYPE = c(DATA_TYPES$INTEGER, DATA_TYPES$INTEGER),
     MISSING_LIST = c(NA, NA),
-    JUMP_LIST = c("999", "")
+    JUMP_LIST = c("999=-", "")
   )
   mdf$MISSING_LIST[2] <- "-1|-2|-5|x"
   expect_warning(expect_equal(
@@ -95,11 +105,11 @@ test_that("util_get_code_list warns about non-numeric codes", {
                        label_col = VAR_NAMES,
                        warning_if_no_list = TRUE
     ),
-    c(-1, -2, -5, NA)
+    c(`-1` = -1, `-2` = -2, `-5` = -5)
   ),
   perl = TRUE,
-  regexp = paste("In util_get_code_list: Some codes ..MISSING_LIST.. were",
-                  "not numeric for .sex.: .x., these will be ignored")
+  regexp = paste("Some codes ..MISSING_LIST.. were",
+                  "not numeric/assignment for .sex.: .x., these will be ignored")
   )
 })
 
@@ -108,7 +118,7 @@ test_that("util_get_code_list recognizes no code on purpose", {
     VAR_NAMES = c("age", "sex"),
     DATA_TYPE = c(DATA_TYPES$INTEGER, DATA_TYPES$INTEGER),
     MISSING_LIST = c(SPLIT_CHAR, SPLIT_CHAR),
-    JUMP_LIST = c("999", "")
+    JUMP_LIST = c("999 = ", "")
   )
   expect_silent(expect_equal(
     util_get_code_list(c("sex"), "MISSING_LIST",
@@ -117,6 +127,7 @@ test_that("util_get_code_list recognizes no code on purpose", {
                        label_col = VAR_NAMES,
                        warning_if_no_list = TRUE
     ),
-    NA_real_
+    setNames(numeric(0), character(0))
   ))
 })
+

@@ -14,8 +14,8 @@
 #' @seealso [`acc_univariate_outlier`]
 #'
 util_looks_like_missing <- function(x, n_rules = 1) {
-  if (any(DATA_TYPES_OF_R_TYPE[[class(x)]] %in%
-          c(DATA_TYPES$INTEGER, DATA_TYPES$FLOAT))) {
+  if (any(prep_dq_data_type_of(x) %in%
+          tolower(c(DATA_TYPES$INTEGER, DATA_TYPES$FLOAT)))) {
     x <- as.numeric(x)
   }
   if (!is.numeric(x)) {

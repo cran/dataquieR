@@ -4,7 +4,12 @@
 \alias{util_replace_codes_by_NA}
 \title{Utility function to replace missing codes by \code{NA}s}
 \usage{
-util_replace_codes_by_NA(study_data, meta_data, split_char = SPLIT_CHAR)
+util_replace_codes_by_NA(
+  study_data,
+  meta_data = "item_level",
+  split_char = SPLIT_CHAR,
+  sm_code = NULL
+)
 }
 \arguments{
 \item{study_data}{Study data including jump/missing codes as specified in the
@@ -12,9 +17,15 @@ code conventions}
 
 \item{meta_data}{Metadata as specified in the code conventions}
 
-\item{split_char}{Character separating missing codes
+\item{split_char}{Character separating missing codes}
+
+\item{sm_code}{missing code for \code{NAs}, if they have been
+re-coded by \code{util_combine_missing_lists}
 
 Codes are expected to be numeric.}
+}
+\value{
+a list with a modified data frame and some counts
 }
 \description{
 Substitute all missing codes in a \link{data.frame} by \code{NA}.

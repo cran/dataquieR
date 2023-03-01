@@ -1,8 +1,7 @@
 test_that("util_heatmap_1th works", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"),
-    envir = environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"),
-    envir = environment())
+  skip_on_cran() # will be remoed, currently used only by segment missingness which is also tested
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   label_col <- LABEL
   prep_prepare_dataframes()
   hm1 <- util_heatmap_1th(

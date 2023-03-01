@@ -1,14 +1,19 @@
 test_that("dq_report_by works", {
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
   skip_on_cran() # slow test
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
 
   # don't include huge reports as RData in the package
   # Suppress warnings since we do not test dq_report
   # here in the first place
-  reports <- suppressWarnings(dq_report_by(meta_data_split = KEY_STUDY_SEGMENT,
+  reports <- suppressWarnings(dq_report_by(v1.0 = TRUE,
+                                           meta_data_split = STUDY_SEGMENT,
                                            cores = 1,
                                            study_data_split = "CENTER_0",
                                        subset(study_data, # speed: CENTER_0 1:2
@@ -26,6 +31,7 @@ test_that("dq_report_by works", {
   # Suppress warnings since we do not test dq_report
   # here in the first place
   reports <- suppressWarnings(dq_report_by(
+                                       v1.0 = TRUE,
                                        cores = 1,
                                        subset(study_data, # speed: CENTER_0 1:2
                                               v00000 %in% 1:2),
@@ -40,26 +46,29 @@ test_that("dq_report_by works", {
 
   expect_error(
     reports <- suppressWarnings(dq_report_by(
+      v1.0 = TRUE,
       cores = 1,
       subset(study_data, # speed: CENTER_0 1:2
              v00000 %in% 1:2),
       meta_data,
-      meta_data_split = KEY_DEVICE,
+      meta_data_split = GROUP_VAR_DEVICE,
       dimensions = # for speed, omit Accuracy
         c("Completeness")
     )),
     regexp =
-      "Only KEY_STUDY_SEGMENT is supported for meta_data_split up to now.",
+      "Only STUDY_SEGMENT is supported for meta_data_split up to now.",
     fixed = TRUE
   )
 
 
   md0 <- meta_data
+  md0$STUDY_SEGMENT <- NULL
   md0$KEY_STUDY_SEGMENT <- NULL
   # don't include huge reports as RData in the package
   # Suppress warnings since we do not test dq_report
   # here in the first place
   reports <- suppressWarnings(dq_report_by(
+    v1.0 = TRUE,
     cores = 1,
     subset(study_data, # speed: CENTER_0 1:2
            v00000 %in% 1:2),

@@ -41,11 +41,9 @@
 acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
                            label_col = VAR_NAMES) {
 
-  ###########################
-  # STOPS, PREPS AND CHECKS #
-  ###########################
-
-  util_prepare_dataframes()
+  # preps ----------------------------------------------------------------------
+  # map metadata to study data
+  prep_prepare_dataframes(.replace_hard_limits = TRUE)
 
   # correct variable use?
   util_correct_variable_use("resp_vars",
@@ -66,11 +64,9 @@ acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
                applicability_problem = TRUE)
   }
 
-  rvs <- resp_vars
+  vtype <- meta_data[meta_data[[label_col]] == resp_vars, DATA_TYPE]
 
-  vtype <- meta_data[meta_data[[label_col]] == rvs, DATA_TYPE]
-
-  decs <- meta_data[meta_data[[label_col]] == rvs, DECIMALS]
+  decs <- meta_data[meta_data[[label_col]] == resp_vars, DECIMALS]
 
   if (is.null(decs)) {
     decs <- NA
@@ -85,13 +81,13 @@ acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
     )
   }
 
-  if (vtype == DATA_TYPES$FLOAT && all(util_is_integer(ds1[[rvs]]))) {
+  if (vtype == DATA_TYPES$FLOAT && all(util_is_integer(ds1[[resp_vars]]))) {
     util_warning("The 'resp_vars' is of type integer.",
                  applicability_problem = TRUE)
     vtype <- "integer"
   }
 
-  if (vtype == DATA_TYPES$INTEGER && !(all(util_is_integer(ds1[[rvs]])))) {
+  if (vtype == DATA_TYPES$INTEGER && !(all(util_is_integer(ds1[[resp_vars]])))) {
     util_error("The 'resp_vars' is not of type integer.",
                applicability_problem = TRUE)
   }
@@ -154,17 +150,4 @@ acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
     res$SummaryPlot,
     width_em = 15
   )))
-}
-
-#' @examples
-#' \dontrun{
-#'   x <- acc_end_digits(resp_vars = "v00041", study_data = study_data, meta_data = meta_data)
-#'   x <- acc_loess(resp_vars = "v00041", time_vars = "v00013", group_vars = "v00002", study_data = study_data, meta_data = meta_data)
-#'   w <- 30
-#'   h <- 15
-#'   ggplot2::ggsave(x$SummaryPlotList$v00041, width = ggplot2::unit(w * 0.15, units = "in"), height = ggplot2::unit(h * 0.15, units = "in"), filename = "/tmp/xxx.png"); system("open /tmp/xxx.png")
-#'   # .03 in is eta the default size of ggplot fonts ; http://sape.inf.usi.ch/quick-reference/ggplot2/size
-#' }
-xxxx <- function() {
-# and run check, changed some error messages.
 }

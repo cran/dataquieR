@@ -38,8 +38,8 @@ with labels of variables}
 \item{...}{additional arguments for the function}
 
 \item{key_var_names}{\link{character} character vector named by arguments to be
-filled by meta data KEY_-entries as follows:
-c(group_vars = KEY_OBSERVER) -- may be missing,
+filled by meta data GROUP_VAR-entries as follows:
+c(group_vars = GROUP_VAR_OBSERVER) -- may be missing,
 then all possible combinations will be analyzed.
 Cannot contain resp_vars.}
 
@@ -108,7 +108,7 @@ load(system.file("extdata/meta_data.RData", package = "dataquieR"))
 a <- pipeline_vectorized(
   fct = acc_margins, study_data = study_data,
   meta_data = meta_data, label_col = LABEL,
-  key_var_names = c(group_vars = KEY_OBSERVER)
+  key_var_names = c(group_vars = GROUP_VAR_OBSERVER)
 )
 b <- pipeline_vectorized(
   fct = acc_margins, study_data = study_data,
@@ -138,38 +138,38 @@ d <- pipeline_vectorized(
 e <- pipeline_vectorized(
   fct = acc_margins, study_data = study_data,
   meta_data = meta_data, label_col = LABEL,
-  key_var_names = c(group_vars = KEY_OBSERVER), co_vars = "SEX_0"
+  key_var_names = c(group_vars = GROUP_VAR_OBSERVER), co_vars = "SEX_0"
 )
 
 f <- pipeline_vectorized(
   fct = acc_margins, study_data = study_data,
   meta_data = meta_data, label_col = LABEL,
-  key_var_names = c(group_vars = KEY_OBSERVER), co_vars = "SEX_0",
+  key_var_names = c(group_vars = GROUP_VAR_OBSERVER), co_vars = "SEX_0",
   result_groups = NULL
 )
 pipeline_recursive_result(f)
 g <- pipeline_vectorized(
   fct = acc_margins, study_data = study_data,
   meta_data = meta_data, label_col = LABEL,
-  key_var_names = c(group_vars = KEY_OBSERVER), co_vars = "SEX_0",
+  key_var_names = c(group_vars = GROUP_VAR_OBSERVER), co_vars = "SEX_0",
   result_groups = c("co_vars")
 )
 g1 <- pipeline_vectorized(
   fct = acc_margins, study_data = study_data,
   meta_data = meta_data, label_col = LABEL,
-  key_var_names = c(group_vars = KEY_OBSERVER), co_vars = "SEX_0",
+  key_var_names = c(group_vars = GROUP_VAR_OBSERVER), co_vars = "SEX_0",
   result_groups = c("group_vars")
 )
 g2 <- pipeline_vectorized(
   fct = acc_margins, study_data = study_data,
   meta_data = meta_data, label_col = LABEL,
-  key_var_names = c(group_vars = KEY_OBSERVER), co_vars = "SEX_0",
+  key_var_names = c(group_vars = GROUP_VAR_OBSERVER), co_vars = "SEX_0",
   result_groups = c("group_vars", "co_vars")
 )
 g3 <- pipeline_vectorized(
   fct = acc_margins, study_data = study_data,
   meta_data = meta_data, label_col = LABEL,
-  key_var_names = c(group_vars = KEY_OBSERVER), co_vars = "SEX_0",
+  key_var_names = c(group_vars = GROUP_VAR_OBSERVER), co_vars = "SEX_0",
   result_groups = c("co_vars", "group_vars")
 )
 g4 <- pipeline_vectorized(
@@ -178,7 +178,7 @@ g4 <- pipeline_vectorized(
   co_vars = "SEX_0", result_groups = c("co_vars")
 )
 meta_datax <- meta_data
-meta_datax[9, "KEY_DEVICE"] <- "v00011"
+meta_datax[9, "GROUP_VAR_DEVICE"] <- "v00011"
 g5 <- pipeline_vectorized(
   fct = acc_margins, study_data = study_data,
   meta_data = meta_datax, label_col = LABEL,

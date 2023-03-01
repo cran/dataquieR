@@ -1,4 +1,9 @@
 test_that("prep_map_labels works", {
+  skip_if_not_installed("withr")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                   dataquieR.ERRORS_WITH_CALLER = TRUE,
+                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
   meta_data <- prep_create_meta(
     VAR_NAMES = c("ID", "SEX", "AGE", "DOE"),
     LABEL = c("Pseudo-ID", "Gender", "Age", "Examination Date"),
@@ -18,8 +23,7 @@ test_that("prep_map_labels works", {
                c(AGE = "Age", NOT_AVAIL = 42))
   expect_error(prep_map_labels(meta_data = 42),
                regexp =
-                 paste("Need meta data as a data frame for mapping",
-                       "variables to their attributes")
+                 paste(".+meta_data.+ is not a data frame")
   )
   expect_error(prep_map_labels(x = function(){},
                                meta_data = meta_data),

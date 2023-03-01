@@ -1,0 +1,286 @@
+div.content {
+  position: static; /* fixed; */
+  margin-top: 3em;
+  overflow: auto;
+}
+
+/* Navbar container */
+.navbar {
+  z-index: 10;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3em;
+  width: 100%;
+  /* overflow: hidden; */
+  background-color: #555;
+  font-family: Arial;
+}
+
+/* Links inside the navbar */
+.navbar a {
+  float: left;
+  font-size: 16px;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+/* The dropdown container */
+.dropdown {
+  float: left;
+  overflow: hidden;
+}
+
+/* Dropdown button */
+.dropdown .dropbtn {
+  font-size: 16px;
+  border: none;
+  outline: none;
+  color: white;
+  padding: 14px 16px;
+  background-color: inherit;
+  font-family: inherit; /* Important for vertical align on mobile phones */
+  margin: 0; /* Important for vertical align on mobile phones */
+}
+
+/* Add a #aaa background color to navbar links on hover */
+.navbar a:hover, .dropdown:hover .dropbtn {
+  background-color: #aaa;
+}
+
+/* Dropdown content (hidden by default) */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  max-height: 60vh; /* long menus otherwise are off the browser even in full-screen */
+}
+
+/* Firefox not yet supports overlay mode */
+@supports(overflow: overlay) {
+  .dropdown-content {
+    overflow: overlay;
+  }
+}
+@supports not (overflow: overlay) {
+  .dropdown-content {
+    overflow: auto;
+  }
+}
+
+
+/* Links inside the dropdown */
+.dropdown-content a {
+  float: none;
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+
+/* Add a grey background color to dropdown links on hover */
+.dropdown-content a:hover {
+  background-color: #aaa;
+}
+
+.dropdown-content a:target {
+  background-color: #aaa;
+}
+
+.navbar div:has(*.target) button.dropbtn {
+  background-color: #aaa;
+}
+
+.navbar a.target {
+  background-color: #aaa;
+  display: static;
+}
+
+/* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+div.singlePageFinal {
+  padding-top: 3em;
+}
+
+div.singlePageFinal {display: none}
+div.singlePageFinal:target {display: block}
+div.singlePageFinal:has(:target) {display: block}
+
+div.default-target {
+  display: block;
+}
+
+div.content:has(:target) + div.default-target {
+    display: none;
+}
+
+div.default-target {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar a.icon {
+  display: none;
+  height: 1.2em;
+}
+
+/* https://stackoverflow.com/a/7354648 */
+/* When the screen is less than 640 pixels wide, hide all links, except for the first one ("Home"). Show the link that contains should open and close the navbar (.icon) */
+@media screen and (max-width: 835px) { /* also adjust in CSS at line tagged with !!MEDIA!!*/
+  .navbar {
+    height: unset;
+  }
+  .navbar :not(:first-child) {display: none;}
+  .navbar a.icon {
+    float: right;
+    display: block;
+  }
+}
+
+/* https://stackoverflow.com/a/7354648 */
+/* The "responsive" class is added to the navbar with JavaScript when the user clicks on the icon. This class makes the navbar look good on small screens (display the links vertically instead of horizontally) */
+@media screen and (max-width: 835px) { /* 835px is the point, where full fledged menus break, currently */
+  .navbar.responsive *.icon {          /* also adjust in CSS at line tagged with !!MEDIA!!*/
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+  .navbar.responsive * {
+    float: none;
+    display: block;
+    text-align: left;
+  }
+
+  .navbar.responsive div * {
+    display: none;
+  }
+  .navbar.responsive div button.dropbtn {
+    float: none;
+    display: block;
+    text-align: left;
+    width: 100%;
+  }
+  .navbar.responsive div:has(*.target) {
+    float: none;
+    display: block;
+    text-align: left;
+  }
+  .navbar.responsive div:has(*.target) * {
+    float: none;
+    display: block;
+    text-align: left;
+  }
+  .navbar.responsive div:target * {
+    float: none;
+    display: block;
+    text-align: left;
+  }
+  .navbar.responsive button.dropbtn * {
+    display: inline;
+  }
+}
+
+.navbar button.dropbtn * {
+  display: inline;
+}
+
+.opaque-on-hover-20 {
+  opacity: 0.2;
+}
+
+.opaque-on-hover-20:hover {
+  opacity: 1.0;
+}
+
+div.table_top_spacer {
+}
+
+div.table_result {
+  max-height: calc(100vh - 8em);
+  overflow-y: auto;
+}
+
+/* https://github.com/rstudio/DT/issues/951#issuecomment-1256844234 */
+.datatables.html-widget.html-widget-static-bound {
+  height: auto !important;
+  width: calc(100vw - 20px) !important; /* TODO: 20px: heuristic quick fix for scrollbars hiding content. Scrollbar width could be detected using javascript, but then, the css class is hard to adjust from javascript, hence possible. */
+}
+.dataTables_scrollBody {
+  /* height: unset !important; */
+}
+
+/*
+https://stackoverflow.com/a/5316785
+add a floating menu to the single page's divs
+*/
+.floatbar {
+  position: absolute;
+  right: 0px;
+  z-index: 99;
+  background-color: #555;
+  font-family: Arial;
+  text-decoration: none;
+  list-style-type: none;
+  color: white;
+  max-height: 60vh; /* long menus otherwise are off the browser even in full-screen */
+  overflow-y: scroll;
+}
+
+.floatbar * {
+  text-decoration: none;
+  list-style-type: none;
+  color: white
+}
+
+.floatbar a:link,
+.floatbar a:visited,
+.floatbar a:focus,
+.floatbar a:hover,
+.floatbar a:active {
+  color: white;
+}
+
+.floatmenu {
+  padding: 2px;
+}
+
+.floatbar:hover .floatmenu {
+  display: block;
+}
+
+.floatbar .floatmenu {
+  display: none;
+}
+
+button.context-menu:hover {
+  background-color: #111;
+}
+
+button.context-menu {
+  margin: 0;
+  background-color: #333;
+  padding: 0;
+  border: none;
+  color: #aaaaaa;
+  cursor: pointer;
+  margin-left: -2em;
+}
+
+li.context-menu {
+  list-style: none;
+}
+
+body {
+  margin: 0px; /* avoid scroll problems in tables */
+}

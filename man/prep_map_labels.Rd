@@ -4,12 +4,23 @@
 \alias{prep_map_labels}
 \title{Support function to allocate labels to variables}
 \usage{
-prep_map_labels(x, meta_data = NULL, to = LABEL, from = VAR_NAMES, ifnotfound)
+prep_map_labels(
+  x,
+  meta_data = "item_level",
+  to = LABEL,
+  from = VAR_NAMES,
+  ifnotfound,
+  warn_ambiguous = FALSE
+)
 }
 \arguments{
 \item{x}{\link{character} variable names, character vector, see parameter from}
 
-\item{meta_data}{\link{data.frame} meta data frame}
+\item{meta_data}{\link{data.frame} meta data frame, if, as a \code{dataquieR}
+developer, you do not have
+\strong{item-level-metadata}, you should use
+\link{util_map_labels} instead to avoid consistency
+checks on for item-level \code{meta_data}.}
 
 \item{to}{\link{character} variable attribute to map to}
 
@@ -17,6 +28,9 @@ prep_map_labels(x, meta_data = NULL, to = LABEL, from = VAR_NAMES, ifnotfound)
 
 \item{ifnotfound}{\link{list} A list of values to be used if the item is not
 found: it will be coerced to a list if necessary.}
+
+\item{warn_ambiguous}{\link{logical} print a warning if mapping variables from
+\code{from} to \code{to} produces ambiguous identifiers.}
 }
 \value{
 a character vector with:
@@ -40,6 +54,7 @@ metadata variable attribute, so the function can also be used, to get, e.g.
 all \code{HARD_LIMITS} from the metadata.
 }
 \examples{
+\dontrun{
 meta_data <- prep_create_meta(
   VAR_NAMES = c("ID", "SEX", "AGE", "DOE"),
   LABEL = c("Pseudo-ID", "Gender", "Age", "Examination Date"),
@@ -49,4 +64,5 @@ meta_data <- prep_create_meta(
 )
 stopifnot(all(prep_map_labels(c("AGE", "DOE"), meta_data) == c("Age",
                                                  "Examination Date")))
+}
 }

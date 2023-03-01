@@ -1,8 +1,7 @@
 test_that("acc_end_digits works with 2 args", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow, errors obvious
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_error(
     res1 <-
       acc_end_digits(study_data = study_data, meta_data = meta_data),
@@ -40,10 +39,9 @@ test_that("acc_end_digits works with 2 args", {
 })
 
 test_that("acc_end_digits works with label_col", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow, errors obvious
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     res1 <-
       acc_end_digits(resp_vars = "CRP_0",
@@ -78,10 +76,8 @@ test_that("acc_end_digits works image check", {
   skip_on_cran()
   skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   expect_warning(
     res1 <-
       acc_end_digits(resp_vars = "CRP_0",
@@ -96,15 +92,15 @@ test_that("acc_end_digits works image check", {
     perl = TRUE,
     all = TRUE
   )
+  skip_on_cran()
   vdiffr::expect_doppelganger("enddigits plot for CRP_0 ok",
                               res1$SummaryPlot)
 })
 
 test_that("acc_end_digits is robust", {
-  load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-         environment())
-  load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-         environment())
+  skip_on_cran() # slow, errors obvious
+  meta_data <- prep_get_data_frame("meta_data")
+  study_data <- prep_get_data_frame("study_data")
   sd0 <- study_data
   sd0$v00014[[2]] <- Inf
   expect_error(
@@ -201,3 +197,4 @@ test_that("acc_end_digits is robust", {
                    label_col = LABEL)
 
 })
+

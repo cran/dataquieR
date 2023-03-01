@@ -17,7 +17,7 @@
 #'
 util_is_integer <- function(x, tol = .Machine$double.eps^0.5) {
   if (is.numeric(x)) {
-    r <- abs(x - round(x)) < tol
+    r <- abs(x - round(x)) < tol & !is.nan(x)
   } else {
     r <- rep(FALSE, length(x))
   }

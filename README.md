@@ -41,6 +41,12 @@ You can install the released version of `dataquieR` from
 install.packages("dataquieR")
 ```
 
+The suggested packages can be directly installed by:
+
+``` r
+install.packages("dataquieR", dependencies = TRUE)
+```
+
 The developer version from
 [`GitLab.com`](https://gitlab.com/libreumg/dataquier) can be installed
 using:
@@ -55,30 +61,40 @@ devtools::install_gitlab("libreumg/dataquier")
 For examples and additional documentation, please refer to our
 [website](https://dataquality.ship-med.uni-greifswald.de).
 
+## Suggested packages
+
+`dataquieR` reports can now use
+[`plotly`](https://cran.r-project.org/package=plotly) if installed. That
+means that, in the final report, you can zoom in the figures and get
+information by hovering on the points, etc. To install `plotly` type:
+
+``` r
+install.packages("plotly")
+```
+
 ## References
 
--   [Software Paper](https://doi.org/10.21105/joss.03093) [![JOSS
-    Article](https://joss.theoj.org/papers/10.21105/joss.03093/status.svg)](https://doi.org/10.21105/joss.03093)
--   [Data Quality Concept
-    Paper](https://doi.org/10.1186/s12874-021-01252-7)
--   [Data Quality Concept and Software Web
-    Site](https://dataquality.ship-med.uni-greifswald.de)
+- [Software Paper](https://doi.org/10.21105/joss.03093) [![JOSS
+  Article](https://joss.theoj.org/papers/10.21105/joss.03093/status.svg)](https://doi.org/10.21105/joss.03093)
+- [Data Quality Concept
+  Paper](https://doi.org/10.1186/s12874-021-01252-7)
+- [Data Quality Concept and Software Web
+  Site](https://dataquality.ship-med.uni-greifswald.de)
 
 ## Funding
 
--   [German Research Foundation](https://www.dfg.de/) (DFG:
-    `SCHM 2744/3–1` – initial concept and dataquieR development,
-    `SCHM 2744/9-1` – `NFDI` Task Force `COVID-19` use case application;
-    `SCHM 2744/3-4` – concept extensions, ongoing )
+- [German Research Foundation](https://www.dfg.de/) (DFG:
+  `SCHM 2744/3–1` – initial concept and dataquieR development,
+  `SCHM 2744/9-1` – `NFDI` Task Force `COVID-19` use case application;
+  `SCHM 2744/3-4` – concept extensions, ongoing )
 
--   [European Union’s Horizon 2020 research and innovation
-    program](https://ec.europa.eu/info/research-and-innovation/funding/funding-opportunities/funding-programmes-and-open-calls/horizon-2020_en):
-    [euCanSHare, grant agreement No.825903](http://www.eucanshare.eu/) –
-    [dataquieR](https://cran.r-project.org/package=dataquieR)
-    refinements and implementations in the
-    [Square2](https://pubmed.ncbi.nlm.nih.gov/28423853/) web
-    application.
+- [European Union’s Horizon 2020 research and innovation
+  program](https://research-and-innovation.ec.europa.eu/funding/funding-opportunities/funding-programmes-and-open-calls/horizon-2020_en):
+  [euCanSHare, grant agreement No. 825903](http://www.eucanshare.eu/) –
+  [dataquieR](https://cran.r-project.org/package=dataquieR) refinements
+  and implementations in the
+  [Square2](https://pubmed.ncbi.nlm.nih.gov/28423853/) web application.
 
--   [National Research Data Infrastructure for Personal Health
-    Data](https://www.nfdi4health.de/en/): `NFDI 13/1` – integration,
-    ongoing.
+- [National Research Data Infrastructure for Personal Health
+  Data](https://www.nfdi4health.de/en/): `NFDI 13/1` – extension based
+  on revised metadata concept, ongoing.
