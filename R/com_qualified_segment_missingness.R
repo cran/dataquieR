@@ -15,70 +15,6 @@
 #' @return [list] list with entries:
 #'
 #' @export
-#'
-#' @examples
-#' \dontrun{
-#' prep_load_workbook_like_file("inst/extdata/Metadata_example_v3-6.xlsx")
-#' clean <- prep_get_data_frame("item_level")
-#' clean <- subset(clean, `Metadata name` == "Example" &
-#'   !dataquieR:::util_empty(VAR_NAMES))
-#' clean$`Metadata name` <- NULL
-#' clean <- rbind(clean, data.frame(
-#' VAR_NAMES = "part_seg_interview",
-#' LABEL = "PART_SEG_INTERVIEW",
-#' VALUE_LABELS = NA_character_,
-#' DATA_TYPE = "integer",
-#' UNIT = NA_character_,
-#' SCALE_LEVEL = NA_character_,
-#' STANDARDIZED_VOCABULARY_TABLE = NA_character_,
-#' MISSING_LIST = NA_character_,
-#' JUMP_LIST = NA_character_,
-#' MISSING_LIST_TABLE = "missing_matchtable1",
-#' MISSING_CODED = NA,
-#' HARD_LIMITS = NA_character_,
-#' SOFT_LIMITS = NA_character_,
-#' DETECTION_LIMITS = NA_character_,
-#' CONTRADICTIONS = NA_character_,
-#' DISTRIBUTION = NA_character_,
-#' DECIMALS = NA_character_,
-#' DATA_ENTRY_TYPE = NA_character_,
-#'  GROUP_VAR_OBSERVER = NA_character_,
-#'  GROUP_VAR_DEVICE = NA_character_,
-#'  TIME_VAR = NA_character_,
-#'  STUDY_SEGMENT = NA_character_,
-#'  PARTICIPATION_VAR = NA_character_,
-#'  VARIABLE_ROLE = NA_character_,
-#'  VARIABLE_ORDER = NA_character_,
-#'  ELEMENT_HOMOGENITY_CHECKTYPE = NA_character_,
-#'  UNIVARIATE_OUTLIER_CHECKTYPE = NA_character_,
-#'  LOCATION_METRIC = NA_character_,
-#'  LOCATION_RANGE = NA_character_,
-#'  PROPORTION_RANGE = NA_character_,
-#'  KEY_REPEATED_MEASURES = NA_character_,
-#'  REPEATED_MEASURES_GOLDSTANDARD = NA_character_,
-#'  CO_VARS = NA_character_
-#' ))
-#' prep_add_data_frames(item_level = clean)
-#' clean <- prep_get_data_frame("segment_level")
-#' clean <- subset(clean, `Metadata name` == "Example" &
-#'   !dataquieR:::util_empty(STUDY_SEGMENT))
-#' clean$`Metadata name` <- NULL
-#' prep_add_data_frames(segment_level = clean)
-#' clean <- prep_get_data_frame("missing_matchtable1")
-#' clean <- clean[clean$`Metadata name` == "Example", , FALSE]
-#' clean <- clean[suppressWarnings(as.character(as.integer(clean$CODE_VALUE)) ==
-#'   as.character(clean$CODE_VALUE)), , FALSE]
-#' clean$CODE_VALUE <- as.integer(clean$CODE_VALUE)
-#' clean <- clean[!is.na(clean$`Metadata name`), , FALSE]
-#' clean$`Metadata name` <- NULL
-#' prep_add_data_frames(missing_matchtable1 = clean)
-#' ship <- prep_get_data_frame("ship")
-#' ship$part_seg_interview <-
-#'   sample(as.numeric(prep_get_data_frame("missing_matchtable1")$CODE_VALUE),
-#'     nrow(ship), replace = TRUE)
-#' com_qualified_segment_missingness(ship, "item_level",
-#'         LABEL, "segment_level")
-#' }
 com_qualified_segment_missingness <- function(study_data,
                                               meta_data,
                                               label_col = NULL,
@@ -154,14 +90,19 @@ com_qualified_segment_missingness <- function(study_data,
           }
         )), silent = TRUE)
         if (inherits(cur_miss, "try-error")) { # some problems with fetching and checking/fixing the data frame by util_expect_data_frame
-          util_warning(
+          if (!is.na(.cur_miss)) util_warning(
   "Could not load missing-match-table %s for %s variable %s for segment %s: %s",
-             dQuote(.cur_miss),
-             sQuote(SEGMENT_PART_VARS),
-             dQuote(cur_state_var),
-             dQuote(segment),
-             conditionMessage(attr(cur_miss, "condition")),
-             applicability_problem = TRUE)
+               dQuote(.cur_miss),
+               sQuote(SEGMENT_PART_VARS),
+               dQuote(cur_state_var),
+               dQuote(segment),
+               conditionMessage(attr(cur_miss, "condition")),
+               applicability_problem = TRUE) else
+                 util_warning(
+               "No missing-match-table for response variable %s for segment %s",
+                   dQuote(cur_state_var),
+                   dQuote(segment),
+                   applicability_problem = TRUE)
           return(NULL)
         } else { # if a missing table could be properly fetched and is consistent
 
@@ -258,7 +199,9 @@ com_qualified_segment_missingness <- function(study_data,
                      sQuote(SEGMENT_PART_VARS),
                      dQuote(cur_state_var),
                      sQuote("study_data"),
-                     dQuote(segment))
+                     dQuote(segment),
+                     applicability_problem = TRUE,
+                     intrinsic_applicability_problem = TRUE)
         return(NULL)
       }
     })

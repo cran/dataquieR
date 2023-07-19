@@ -16,7 +16,7 @@ util_compare_meta_with_study(
 \arguments{
 \item{sdf}{the \link{data.frame} of study data}
 
-\item{mdf}{the \link{data.frame} of associated static meta data}
+\item{mdf}{the \link{data.frame} of associated static metadata}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}

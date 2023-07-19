@@ -6,7 +6,7 @@
 \alias{.meta_data_env}
 \title{\code{.meta_data_env} -- an environment for easy metadata access}
 \format{
-An object of class \code{environment} of length 6.
+An object of class \code{environment} of length 7.
 }
 \usage{
 .meta_data_env

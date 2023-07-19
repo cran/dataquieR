@@ -112,6 +112,6 @@ observations according to the no. of violated rules (step 5).
 \seealso{
 \itemize{
 \item \link{acc_robust_univariate_outlier}
-\item \href{https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_robust_univariate_outlier.html}{Online Documentation}
+\item \href{https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_robust_univariate_outlier.html}{Online Documentation}
 }
 }

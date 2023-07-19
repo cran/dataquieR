@@ -1,9 +1,12 @@
 #' Create a caption from an alias name of a `dq_report2` result
 #'
 #' @param alias alias name
+#' @param long not for menu entry
 #'
 #' @return caption
-util_alias2caption <- function(alias) {
+util_alias2caption <- function(alias, long = FALSE) {
+
+  util_expect_scalar(long, check_type = is.logical)
 
   if (length(alias) != 1 ||
       !is.character(alias) ||
@@ -15,17 +18,38 @@ util_alias2caption <- function(alias) {
     alias,
     haystack = names(.manual$titles))
 
-  ftitle <-
-    util_map_labels(fname,
-                  util_get_concept_info("implementations"),
-                  to = "dq_report2_short_title",
-                  from = "function_R",
-                  ifnotfound = NA_character_)
+  if (is.na(fname)) {
+    fname <- alias
+  }
+
+  if (long) {
+    ftitle <-
+      util_map_labels(fname,
+                      util_get_concept_info("implementations"),
+                      to = "Implementationform",
+                      from = "function_R",
+                      ifnotfound = NA_character_)
+    if (util_empty(ftitle)) {
+      ftitle <-
+        util_map_labels(fname,
+                        util_get_concept_info("implementations"),
+                        to = "dq_report2_short_title",
+                        from = "function_R",
+                        ifnotfound = NA_character_)
+    }
+  } else {
+    ftitle <-
+      util_map_labels(fname,
+                      util_get_concept_info("implementations"),
+                      to = "dq_report2_short_title",
+                      from = "function_R",
+                      ifnotfound = NA_character_)
+  }
 
   if (is.na(ftitle)) {
     ftitle <-
       r <- .manual$titles[[fname]];
-    if (length(r) != 1) r <- alias;
+    if (length(r) != 1 || is.na(r)) ftitle <- r <- alias;
   }
 
   if (startsWith(alias, fname)) {

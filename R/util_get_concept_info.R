@@ -15,6 +15,13 @@ util_get_concept_info <- function(filename, ...) {
     dfr <- readRDS(f)
     assign(filename, dfr, .concept_chache)
   }
-  subset(dfr, ...)
+  cl <- sys.call()
+  cl[[1]] <- as.symbol("subset")
+  cl[[2]] <- NULL
+  cl$x <- dfr
+  r <- eval(cl,
+       envir = parent.frame(),
+       enclos = environment())
+  r
 }
 .concept_chache <- new.env(parent = emptyenv())

@@ -10,11 +10,17 @@ util_setup_rstudio_job(job_name = "Job")
 \item{job_name}{a name for the job}
 }
 \value{
-the progress function
+list: the \code{progress} function and the \code{progress_msg} function
 }
 \description{
 Also defines a progress function and a \code{progress_msg} function in
 the caller's environment.
+}
+\details{
+In \code{RStudio} its job system will be used, for \code{shiny::withProgress}
+based calls, this will require min and max being set to 0 and 1 (defaults).
+If \code{cli} is available, it will be used, in all other cases, just \code{message}s
+will be created.
 }
 \examples{
 \dontrun{

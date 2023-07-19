@@ -6,6 +6,11 @@ test_that("dq_report2 works", {
                        dataquieR.WARNINGS_WITH_CALLER = TRUE,
                        dataquieR.MESSAGES_WITH_CALLER = TRUE)
 
+  Sys.setenv("DISPLAY" = "")
+  if (suppressWarnings(requireNamespace("summarytools", quietly = TRUE))) {
+    suppressMessages(suppressWarnings(summarytools::st_options(use.x11 = FALSE)))
+  }
+
   prep_load_workbook_like_file("meta_data_v2")
 
   study_data <- prep_get_data_frame("study_data")
@@ -23,6 +28,8 @@ test_that("dq_report2 works", {
   sd0$v00012 <- study_data$v00012
   md0 <- subset(meta_data, VAR_NAMES %in% colnames(sd0))
   md0$PART_VAR <- NULL
+
+  # md0$MISSING_LIST_TABLE <- NULL
 
   # don't include huge reports as RData in the package
   # Suppress warnings since we do not test dq_report2
@@ -90,6 +97,8 @@ test_that("dq_report2 works", {
             "you mean.+Integrity.+"),
     perl = TRUE
   )
+
+  # md0$MISSING_LIST_TABLE <- NULL
 
   expect_silent(
     report <-
@@ -161,8 +170,8 @@ test_that("dq_report2 works", {
                                            "Accuracy"))
   )
 
-  expect_equal(attr(report$acc_distributions_loc.SEX_0, "call")$resp_vars,
-               "SEX_0") # resp_vars cannot be overwritten
+  expect_equal(attr(report$acc_distributions_loc.SBP_0, "call")$resp_vars,
+               "SBP_0") # resp_vars cannot be overwritten, but SEX_0 is not a pimary output
 
   expect_equal(attr(report$acc_distributions_loc.SBP_0, "call")$flip_mode,
                "flip")
@@ -170,4 +179,29 @@ test_that("dq_report2 works", {
   expect_equal(attr(report$acc_distributions_loc_ecdf_observer.SBP_0, "call")[[
     "flip_mode"]], "flip")
 
+  md1 <- md0
+  md1$LABEL <- c("CENTER_0",
+                 "",
+                 "CENTER_0 DUPLICATE", # will become a duplicated label
+                 "CENTER_0", # direct duplication of the first label
+                 "Have you been physically vigorously active in the past 12 hours ('physically vigorously active' means at least 30 minutes of jogging or fast cycling, digging up your garden, carrying heavy objects weighing more than 10 kg for a long time, or similar physical activities)?", # very long label
+                 "Hybpvaitp1h(vamal3mojofcduygchowmt1kfaltospa") # matches the very long label after abbreviation
+  md1$VAR_NAMES[2] <- "yOvCzPY60JRjmrYb16Tsd6qMymal4B5Skw9rZ5PHSCtaBqOVglAKcguPkQhakampFJcC8xqLbZJs7kZUdKH804pbOmM5ORPVabrkEkVkiWbakWiixZ99NRYF6BP8SRxzNYY2tED7DjmhMUwk0t674RjH828jq9zoTJgDxYP6nEdHBxhmXJh0ClCPjGsi1q" # very long variable name that should get caught and not be used as label as it is
+
+  expect_warning(
+    report <- dq_report2(sd0, md1,
+                         label_col = LABEL,
+                         cores = 1,
+                         dimensions =
+                           c("Integrity",
+                             "Consistency")),
+    regexp = sprintf("(%s|%s|%s|%s|%s)",
+                     "Labels are required to create a report, that's why missing labels will be replaced provisionally. Please add missing labels in your metadata.",
+                     "Unique labels are required to create a report, that's why duplicated labels will be replaced provisionally. Please modify the labels in your metadata or select a suitable column",
+                     "This will cause suboptimal outputs and possibly also failures when rendering the report, due to issues with the maximum length of file names in your operating system or file system. This will be fixed provisionally. Please shorten your labels or choose another label column.",
+                     "Lost 16.7. of the study data because of missing/not assignable metadata",
+                     "Lost 16.7. of the metadata because of missing/not assignable study data"
+    ),
+    all = TRUE
+  )
 })

@@ -7,7 +7,7 @@
 Variable level metadata.
 }
 \seealso{
-\href{https://dataquality.ship-med.uni-greifswald.de/Annotation_of_Metadata.html}{further details on variable level metadata.}
+\href{https://dataquality.qihs.uni-greifswald.de/Annotation_of_Metadata.html}{further details on variable level metadata.}
 
 \link{meta_data_segment}
 

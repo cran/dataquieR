@@ -58,7 +58,7 @@ test_that("util_get_code_list works", {
                        warning_if_no_list = TRUE
     ),
     regexp = paste(
-      "Meta data does not provide a column called .*XJUMP_LIST.*",
+      "Metadata does not provide a column called .*XJUMP_LIST.*",
       "for replacing codes with NAs."
     ),
     all = TRUE,
@@ -72,7 +72,7 @@ test_that("util_get_code_list works", {
                        warning_if_no_list = TRUE
     ),
     regexp = paste(
-      "Meta data does not provide a column called .+xx.+",
+      "Metadata does not provide a column called .+xx.+",
       "for the labels."
     ),
     all = TRUE,

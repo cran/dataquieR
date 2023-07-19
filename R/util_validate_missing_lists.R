@@ -106,7 +106,7 @@ util_validate_missing_lists <-
 
     if (!is.data.frame(cause_label_df) ||
         !(all(c("CODE_VALUE", "CODE_LABEL") %in% colnames(cause_label_df)))) {
-      util_warning(
+      util_message(
         c("Need columns %s in %s, which must be a data frame if given.",
           "Will ignore this argument"),
         paste(dQuote(c("CODE_VALUE", "CODE_LABEL")), collapse = ", "),
@@ -257,7 +257,7 @@ util_validate_missing_lists <-
         dd <- unique(cld[d, "CODE_VALUE", TRUE])
         if (!suppressWarnings) {
           util_warning(
-            "Found at missing code(s) with more than one meaning:\n%s",
+            "Found missing code(s) with more than one meaning:\n%s",
             paste(capture.output(
               print(cld[cld$CODE_VALUE %in% dd, , FALSE])),
               collapse = "\n"),
@@ -282,7 +282,7 @@ util_validate_missing_lists <-
         my_labels <- cldf[!cldf$AUTO, "CODE_LABEL", TRUE]
         my_labels <- my_labels[!is.na(my_labels)]
         if (!suppressWarnings && length(unique(my_labels)) == 1) {
-          util_warning("Would use label %s for all values coded with %s",
+          util_message("Would use label %s for all values coded with %s",
                        dQuote(unique(my_labels)),
                        dQuote(unique(cldf$CODE_VALUE)),
                        applicability_problem = TRUE)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/prep_study2meta.R
 \name{prep_study2meta}
 \alias{prep_study2meta}
-\title{Guess a meta data frame from study data.}
+\title{Guess a metadata data frame from study data.}
 \usage{
 prep_study2meta(
   study_data,
@@ -24,13 +24,13 @@ prep_study2meta(
 a meta_data data frame
 }
 \description{
-Guess a minimum meta data frame from study data. Minimum required variable
+Guess a minimum metadata data frame from study data. Minimum required variable
 attributes are:
 }
 \details{
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{dataquieR:::util_get_var_att_names_of_level(VARATT_REQUIRE_LEVELS$REQUIRED)
-#>      VAR_NAMES      DATA_TYPE   MISSING_LIST 
-#>    "VAR_NAMES"    "DATA_TYPE" "MISSING_LIST"
+#>            VAR_NAMES            DATA_TYPE   MISSING_LIST_TABLE 
+#>          "VAR_NAMES"          "DATA_TYPE" "MISSING_LIST_TABLE"
 }\if{html}{\out{</div>}}
 
 The function also tries to detect missing codes.

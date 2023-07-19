@@ -75,12 +75,23 @@ redcap_env <- (function() {
   gen_op <- function(op) {
     # support REDcap NAs in operators; see decorate_fkt_redcap_na
     function(x, y) {
+#      util_warning("Used expected thing")
+#      util_warning("op = %s", util_deparse1(op))
+      # if (identical(op, `==`)) browser()
+      if (identical(op, `&`) ||
+          identical(op, `|`)
+          ) {
+        x <- suppressWarnings(as.logical(x))
+        y <- suppressWarnings(as.logical(y))
+      }
       if (is.factor(x) && !("" %in% levels(x))) {
         levels(x) <- c(levels(x), "")
       }
       if (is.factor(y) && !("" %in% levels(y))) {
         levels(y) <- c(levels(y), "")
       }
+#      util_warning("dt(x) = %s", prep_dq_data_type_of(x))
+#      util_warning("dt(y) = %s", prep_dq_data_type_of(y))
       if (prep_dq_data_type_of(x) == DATA_TYPES$DATETIME &&
           prep_dq_data_type_of(y) == DATA_TYPES$STRING) {
         yrcna <- y == ""
@@ -93,7 +104,7 @@ redcap_env <- (function() {
       }
       if (prep_dq_data_type_of(x) == DATA_TYPES$DATETIME ||
           prep_dq_data_type_of(y) == DATA_TYPES$DATETIME) {
-        res <- op(x, y)
+        res <- op(as.POSIXct(x), as.POSIXct(y))
         resrna <- is.na(res)
         if (identical(op, .Primitive("!="))) {
           if (any(resrna)) {
@@ -109,11 +120,36 @@ redcap_env <- (function() {
           if (any(resrna)) res[resrna] <- ""
         }
       } else {
-        xrcna <- is.na(x) | x == ""
-        yrcna <- is.na(y) | y == ""
-        if (any(xrcna)) x[is.na(x)] <- ""
-        if (any(yrcna)) y[is.na(y)] <- ""
-        res <- op(x, y)
+        xrcna <- util_empty(x)
+        yrcna <- util_empty(y)
+        if (is.logical(x) && is.logical(y)) {
+          res <- op(x, y)
+          if (any(is.na(res)))
+            res[is.na(res)] <- ""
+        } else if (is.numeric(x) && is.numeric(y)) {
+          res <- op(x, y)
+          if (any(is.na(res)))
+            res[is.na(res)] <- ""
+        } else if (prep_dq_data_type_of(x) == DATA_TYPES$DATETIME &&
+                   prep_dq_data_type_of(y) == DATA_TYPES$DATETIME) {
+          res <- op(as.POSIXct(x), as.POSIXct(y))
+          if (any(is.na(res)))
+            res[is.na(res)] <- ""
+        } else {
+          if (any(xrcna)) x[is.na(x)] <- ""
+          if (any(yrcna)) y[is.na(y)] <- ""
+          res <- try(op(x, y), silent = TRUE)
+          if (inherits(res, "try-error") ||
+              (is.factor(x) && !is.factor(y)) ||
+              (!is.factor(x) && is.factor(y))) {
+            .x <- trimws(as.character(x))
+            .x[is.na(x)] <- ""
+            .y <- trimws(as.character(y))
+            .y[is.na(y)] <- ""
+            res <- op(as.character(.x), as.character(.y))
+          }
+          res
+        }
       }
       res
     }
@@ -217,6 +253,82 @@ redcap_env <- (function() {
 
   penv[["as.POSIXct"]] <- as.POSIXct
   attr(penv[["as.POSIXct"]], "internal") <- TRUE
+
+  successive_dates <- function(..., strictly = TRUE) {
+    util_expect_scalar(strictly, check_type = is.logical)
+    if (length(unique(vapply(list(...), length, FUN.VALUE = integer(1))))
+        != 1) {
+      util_warning(
+        c("%s was called with vectors of differing lengths. This should",
+          "never happen."),
+          sQuote("successive_dates")
+      )
+      return(FALSE)
+    }
+    all_dates <- list(...)
+    FUN <- function(...) {
+      dates <- list(...)
+      if (length(dates) < 2) {
+        return(TRUE)
+      }
+      is_timepoint <- vapply(dates, lubridate::is.timepoint, FUN.VALUE =
+                               logical(1))
+      if (!all(is_timepoint)) {
+        dates[!is_timepoint] <- lapply(dates[!is_timepoint],
+                                       function(x) {
+                                         if (util_empty(x)) {
+                                           NULL
+                                         } else
+                                         try(
+                                           as.POSIXct(x,
+                                                      tryFormats =
+                                                    c("%Y-%m-%d %H:%M:%OS",
+                                                          "%Y-%m-%d")),
+                                           silent = TRUE
+                                          )
+                                        })
+        dates <- dates[!vapply(dates, is.null, FUN.VALUE = logical(1))]
+        is_timepoint <- vapply(dates, lubridate::is.timepoint, FUN.VALUE =
+                                 logical(1))
+        if (!all(is_timepoint)) {
+          util_warning(c("Found non-dates in %s: %s, so,",
+                         "dates are not successive."),
+                       sQuote("successive_dates"),
+                       util_pretty_vector_string(dates[!is_timepoint]))
+          return(NA)
+        }
+      }
+      LHS_indices_to_check <- (head(seq_along(dates), -1))
+      if (strictly) {
+        .cmp_fun <- function(lhs_index) {
+          dates[[lhs_index]] < dates[[lhs_index + 1]]
+        }
+      } else {
+        .cmp_fun <- function(lhs_index) {
+          dates[[lhs_index]] <= dates[[lhs_index + 1]]
+        }
+      }
+      vapply(LHS_indices_to_check, FUN.VALUE = logical(1),
+             FUN = .cmp_fun)
+    }
+    vapply(do.call(what = mapply,
+            args =
+              c(
+                all_dates,
+                list(
+                  FUN = FUN,
+                  SIMPLIFY = FALSE,
+                  USE.NAMES = FALSE,
+                  MoreArgs = list()
+                )
+              )
+            ), all, na.rm = TRUE, FUN.VALUE = logical(1))
+  }
+
+  penv[["successive_dates"]] <- function(...) successive_dates(...,
+                                                               strictly = FALSE)
+  penv[["strictly_successive_dates"]] <- function(...)
+    successive_dates(...,  strictly = TRUE)
 
   penv[["datediff"]] <- function(date1, # TODO: if used with vectors of posixct, this crashes: util_eval_rule(util_parse_redcap_rule('datediff(set("2020-11-01", "", "2020-11-10"), "2020-01-01", "y", "Y-M-D", true)'), ds1 = ds1, meta_data = meta_data, use_value_labels = FALSE)
                                  date2,

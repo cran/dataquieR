@@ -2,9 +2,9 @@
 % Please edit documentation in R/print.dataquieR_resultset2.R
 \name{print.dataquieR_resultset2}
 \alias{print.dataquieR_resultset2}
-\title{Generate a RMarkdown-based report from a \link{dataquieR} report}
+\title{Generate a HTML-based report from a \link{dataquieR} report}
 \usage{
-\method{print}{dataquieR_resultset2}(x, dir, view = TRUE, disable_plotly = FALSE, ...)
+\method{print}{dataquieR_resultset2}(x, dir, view = TRUE, disable_plotly = FALSE, block_load_factor = 4, ...)
 }
 \arguments{
 \item{x}{\link[=dq_report2]{dataquieR report v2}.}
@@ -18,11 +18,14 @@ overwritten inside that directory}
 
 \item{disable_plotly}{\link{logical} do not use \code{plotly}, even if installed}
 
+\item{block_load_factor}{\link{numeric} multiply size of parallel compute blocks
+by this factor.}
+
 \item{...}{additional arguments:}
 }
 \value{
 file names of the generated report's HTML files
 }
 \description{
-Generate a RMarkdown-based report from a \link{dataquieR} report
+Generate a HTML-based report from a \link{dataquieR} report
 }

@@ -22,7 +22,7 @@ as jump code labels, if the values are the
 same.}
 }
 \value{
-\link{data.frame} an updated meta data frame.
+\link{data.frame} an updated metadata data frame.
 }
 \description{
 Code labels are copied from other

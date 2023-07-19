@@ -37,7 +37,14 @@ test_that("loess plot works", { # acc_loess.R ----
   skip_if_not_installed("vdiffr")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
 
   ({
     time_vars <- prep_map_labels("DBP_0", meta_data = "meta_data", from = LABEL,

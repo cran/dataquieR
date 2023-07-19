@@ -20,6 +20,7 @@
 #' @export
 #' @seealso [prep_add_data_frames]
 #' @seealso [prep_load_workbook_like_file]
+#' @family data-frame-cache
 #'
 #' @examples
 #' \dontrun{

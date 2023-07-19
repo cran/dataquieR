@@ -11,8 +11,8 @@
 #' default or a general default if missing, variable names being all white
 #' space replaced by NAs).
 #' It expects two objects in the caller's environment: `ds1` and `meta_data`.
-#' `meta_data` is the meta data frame and `ds1` is produced by a preceding call
-#' of [util_prepare_dataframes] using `meta_data` and `study_data`.
+#' `meta_data` is the metadata data frame and `ds1` is produced by a preceding
+#' call of [util_prepare_dataframes] using `meta_data` and `study_data`.
 #'
 #' [util_correct_variable_use] and [util_correct_variable_use2] differ only in
 #' the default of the argument `role`.
@@ -43,7 +43,7 @@
 #' @param min_distinct_values [integer] Minimum number of distinct observed
 #'                              values of a study variable
 #' @param need_type [character] if not `NA`, variables must be of data type
-#'                                       `need_type` according to the meta data,
+#'                                       `need_type` according to the metadata,
 #'                                       can be a pipe (`|`) separated list of
 #'                                       allowed data types. Use `!` to exclude
 #'                                       a type. See [DATA_TYPES] for the
@@ -232,7 +232,7 @@ util_correct_variable_use <- function(arg_name,
     # if the calling function does not have a ds1, this is a wrong use of
     # util_correct_variable_use
     util_error(c(
-      "Did not find merged study data and meta data ds1.",
+      "Did not find merged study data and metadata ds1.",
       "Wrong use of util_correct_variable_use?"))
   }
 
@@ -240,7 +240,7 @@ util_correct_variable_use <- function(arg_name,
     # if the calling function does not have a meta_data, this is a wrong use of
     # util_correct_variable_use
     util_error(
-      "Did not find meta data. Wrong use of util_correct_variable_use?")
+      "Did not find metadata. Wrong use of util_correct_variable_use?")
   }
 
   ds1 <- try(get("ds1", envir = p), silent = TRUE)
@@ -248,7 +248,7 @@ util_correct_variable_use <- function(arg_name,
   if (!is.data.frame(ds1)) { # it this is not a data frame, this is again a
     # wrong use of util_correct_variable_use
     util_error(
-      c("ds1 does not provide merged study data and meta data.",
+      c("ds1 does not provide merged study data and metadata.",
         "Wrong use of util_correct_variable_use?"))
   }
 
@@ -258,7 +258,7 @@ util_correct_variable_use <- function(arg_name,
     # it this is not a data frame, this is again a wrong use of
     # util_correct_variable_use
     util_error(
-      c("meta_data does not provide a meta data frame.",
+      c("meta_data does not provide a metadata data frame.",
         "Wrong use of util_correct_variable_use?"))
   }
 
@@ -334,7 +334,8 @@ util_correct_variable_use <- function(arg_name,
       paste0(non_matching_vars, collapse = ", "),
       arg_name,
       paste0(fuzzy_match, collapse = ", "),
-      applicability_problem = TRUE
+      applicability_problem = TRUE,
+      intrinsic_applicability_problem = TRUE
     )
   } else {
     # If users mix VAR_NAMES and LABELs (and maybe also LONG_LABELs), we need to
@@ -406,7 +407,7 @@ util_correct_variable_use <- function(arg_name,
     }
   }
 
-  record_problem <- ifelse(do_not_stop, util_warning, util_error)
+  record_problem <- ifelse(do_not_stop, util_message, util_error)
   empty_container <- new.env(parent = emptyenv())
   for (v in variable) { # now, check all variable values from the data
     if (!allow_all_obs_na && all(is.na(ds1[[v]]))) {
@@ -443,14 +444,16 @@ util_correct_variable_use <- function(arg_name,
       util_error(
         "In %s, none of the specified variables matches the requirements.",
         dQuote(arg_name),
-        applicability_problem = FALSE
+        applicability_problem = TRUE,
+        intrinsic_applicability_problem = TRUE
       )
     } else {
       util_warning(
         c("In %s, variables %s were excluded."),
         dQuote(arg_name),
         paste(dQuote(names(empty_container)), collapse = ", "),
-        applicability_problem = FALSE
+        applicability_problem = TRUE,
+        intrinsic_applicability_problem = TRUE
       )
       assign(arg_name, variable, envir = p)
     }
@@ -459,7 +462,7 @@ util_correct_variable_use <- function(arg_name,
   # data type given in metadata? (similar to util_get_meta_from_var ...)
   if (DATA_TYPE %in% colnames(meta_data)) {
     types <- meta_data[meta_data[[label_col]] %in% variable, DATA_TYPE]
-      # try to fetch the types from the meta data.
+      # try to fetch the types from the metadata.
     names(types) <- meta_data[meta_data[[label_col]] %in% variable, label_col]
     types <- types[!is.na(types) & !is.na(names(types))]
   } else {
@@ -471,7 +474,7 @@ util_correct_variable_use <- function(arg_name,
         length(unique(variable[!is.na(variable)]))) {
     util_warning(
       c("In %s, variables with types matching %s should be specified, but not",
-        "all variables have a type assigned in the meta data.",
+        "all variables have a type assigned in the metadata.",
         "I have %d variables but only %d types."),
       dQuote(arg_name),
       dQuote(need_type),
@@ -482,7 +485,7 @@ util_correct_variable_use <- function(arg_name,
   }
 
   for (..vname in names(types)) {
-    # for all variables that have a data type assigned in the meta data
+    # for all variables that have a data type assigned in the metadata
     type <- types[[..vname]]
     # fetch the type of the currently checked variable
     if (!is.null(type) && !is.na(type) && !is.na(need_type)) {
@@ -542,20 +545,22 @@ util_correct_variable_use <- function(arg_name,
         util_error(
           "Argument %s: Variable '%s' (%s) does not have an allowed type (%s)",
           dQuote(arg_name), ..vname, tolower(trimws(type)), need_type,
-          applicability_problem = TRUE)
+          applicability_problem = TRUE,
+          intrinsic_applicability_problem = TRUE)
       }
       if ((length(not_type) > 0) && (tolower(trimws(type)) %in% not_type)) {
         # and for the disallowed types
         util_error(
           "Argument %s: Variable '%s' (%s) does not have an allowed type (%s)",
           dQuote(arg_name), ..vname, tolower(trimws(type)), need_type,
-          applicability_problem = TRUE)
+          applicability_problem = TRUE,
+          intrinsic_applicability_problem = TRUE)
       }
       # Check, if variable is really of declared data type.
       sd_type <- prep_datatype_from_data(..vname, ds1)
-      if (sd_type != type) {
+      if (!is.na(sd_type) && sd_type != type) {
         if (sd_type != DATA_TYPES$INTEGER || type != DATA_TYPES$FLOAT) {
-          util_warning(
+          util_message(
             c("Argument %s: Variable '%s' (%s) does not have matching",
               "data type in the study data (%s)"),
             dQuote(arg_name), ..vname, tolower(trimws(type)),
@@ -570,7 +575,7 @@ util_correct_variable_use <- function(arg_name,
       if (!is.na(need_type)) {
         util_warning(
           c("Argument %s: No data type found for '%s' in the",
-            "meta data, cannot check type"), dQuote(arg_name), variable,
+            "metadata, cannot check type"), dQuote(arg_name), variable,
           applicability_problem = TRUE)
       }
     } # nocov end

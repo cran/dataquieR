@@ -33,7 +33,7 @@ test_that("util_map_all works", {
       meta_data = md
     ),
     regexp =
-      paste("label_col must be exactly 1 meta data attribute,",
+      paste("label_col must be exactly 1 metadata attribute,",
             "neither a vector nor NULL.")
   )
 
@@ -43,7 +43,7 @@ test_that("util_map_all works", {
     meta_data = md
   ),
   regexp =
-    paste("label_col must be exactly 1 meta data attribute,",
+    paste("label_col must be exactly 1 metadata attribute,",
           "neither a vector nor NULL.")
   )
 
@@ -51,21 +51,22 @@ test_that("util_map_all works", {
     label_col = "NO NO NO NO NO",
     study_data = sd,
     meta_data = md
-  ), regexp = paste("label_col .+NO NO NO NO NO.+ not found in meta data.",
+  ), regexp = paste("label_col .+NO NO NO NO NO.+ not found in metadata.",
                     "Did you mean .+VAR_NAMES.+"))
 
   expect_error(util_map_all(
     label_col = "speed",
     study_data = sd,
     meta_data = cars
-  ), regexp = paste(".*VAR_NAMES not found in meta data."))
+  ), regexp = paste(".*VAR_NAMES not found in metadata."))
 
   expect_error(util_map_all(
     label_col = "DATA_TYPE",
     study_data = sd,
     meta_data = md
-  ), regexp = paste("The following .+DATA_TYPE.+ are duplicated in the meta",
-                    "data and cannot be used as label therefore: .+float.+"))
+  ), regexp =
+    paste("The following .+DATA_TYPE.+ are duplicated in the",
+          "metadata and cannot be used as label therefore: .+float.+"))
 
   mdx <- md
   mdx$VAR_NAMES[[5]] <- mdx$VAR_NAMES[[1]]
@@ -73,8 +74,9 @@ test_that("util_map_all works", {
     label_col = LABEL,
     study_data = sd,
     meta_data = mdx
-  ), regexp = paste("The following variable names are duplicated in the",
-                    "meta data and cannot be used as label therefore: .+a.+"))
+  ), regexp =
+    paste("The following variable names are duplicated in the",
+          "metadata and cannot be used as label therefore: .+a.+"))
 
   mdx <- md
   mdx$VAR_NAMES[[5]] <- NA
@@ -83,7 +85,7 @@ test_that("util_map_all works", {
     study_data = sd,
     meta_data = mdx
   ), regexp = paste("For the following variables, some variable names are",
-                    "missing in the meta data: Variable No. #5"))
+                    "missing in the metadata: Variable No. #5"))
 
   mdx <- md
   mdx$LABEL[[5]] <- NA
@@ -92,7 +94,7 @@ test_that("util_map_all works", {
     study_data = sd,
     meta_data = mdx
   ), regexp = paste("For the following variables, some .+LABEL.+ are missing",
-                    "in the meta data and cannot be used as label therefore:",
+                    "in the metadata and cannot be used as label therefore:",
                     "Variable No. #5"))
 
   mdx <- md
@@ -106,19 +108,19 @@ test_that("util_map_all works", {
     ), regexp =
       sprintf("(%s|%s|%s)",
               paste("Lost 7.7% of the study data because",
-                    "of missing/not assignable meta-data"),
-              paste("Did not find any meta data for the following",
+                    "of missing/not assignable metadata"),
+              paste("Did not find any metadata for the following",
                     "variables from the study data: .+a.+, .+d.+"),
-              paste("Lost 7.7% of the meta data because of",
-                    "missing/not assignable study-data")
+              paste("Lost 7.7% of the metadata because of",
+                    "missing/not assignable study data")
       ),
       perl = TRUE,
       all = TRUE
     ), regexp =
       sprintf("(%s|%s)",
-              paste("Did not find any meta data for the following",
+              paste("Did not find any metadata for the following",
                     "variables from the study data: .+a.+, .+d.+"),
-              paste("Found meta data for the following variables not",
+              paste("Found metadata for the following variables not",
                     "found in the study data: .+xxx.+, .+yyy.+")
       ),
     all = TRUE,
@@ -131,7 +133,7 @@ test_that("util_map_all works", {
     label_col = LABEL,
     study_data = sd,
     meta_data = mdx
-  ), regexp = paste("Mapping of meta on study data yielded invalid",
+  ), regexp = paste("Mapping of metadata on study data yielded invalid",
                     "variable labels: .+    .+"))
 
   expect_equal(colnames(mapped$df), as.character(seq_along(letters)))

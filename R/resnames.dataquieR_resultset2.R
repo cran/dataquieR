@@ -3,5 +3,5 @@
 #' @export
 # importFrom dataquieR resnames
 resnames.dataquieR_resultset2 <- function(x) {
-  dimnames(x)[[3]]
+  sort(unique(unname(unlist(lapply(x, names)))))
 }

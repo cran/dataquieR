@@ -121,12 +121,16 @@ com_qualified_item_missingness <-    function(resp_vars, study_data,
           }
         )), silent = TRUE)
         if (inherits(cur_miss, "try-error")) { # some problems with fetching and checking/fixing the data frame by util_expect_data_frame
-          util_warning(
+          if (!is.na(.cur_miss)) util_warning(
   "Could not load missing-match-table %s for response variable %s: %s",
-             dQuote(.cur_miss),
-             dQuote(rv),
-             conditionMessage(attr(cur_miss, "condition")),
-             applicability_problem = TRUE)
+               dQuote(.cur_miss),
+               dQuote(rv),
+               conditionMessage(attr(cur_miss, "condition")),
+               applicability_problem = TRUE) else
+            util_warning(
+              "No missing-match-table for response variable %s",
+              dQuote(rv),
+              applicability_problem = TRUE)
           return(NULL)
         } else { # if a missing table could be properly fetched and is consistent
 
@@ -138,13 +142,14 @@ com_qualified_item_missingness <-    function(resp_vars, study_data,
                                  "CODE_VALUE", TRUE], 1) # get the first code for P to replace the real measurements by this code
           if (length(code_for_P) == 0) {
             code_for_P <- max(cur_miss$CODE_VALUE, na.rm = TRUE) + 1
-             cur_miss <- rbind(cur_miss,
-                               data.frame(
-                                 CODE_VALUE = code_for_P,
-                                 CODE_LABEL = "Participation",
-                                 CODE_INTERPRET = "P",
-                                 stringsAsFactors = FALSE
-                               ))
+             P_df <- data.frame(
+               CODE_VALUE = code_for_P,
+               CODE_LABEL = "Participation",
+               CODE_INTERPRET = "P",
+               stringsAsFactors = FALSE
+             )
+             cur_miss <- util_rbind(cur_miss,
+                               P_df)
              code_for_P <- head(cur_miss[cur_miss[["CODE_INTERPRET"]] == "P",
                                          "CODE_VALUE", TRUE], 1) # get the first code for P to replace the real measurements by this code
           }
@@ -251,7 +256,9 @@ com_qualified_item_missingness <-    function(resp_vars, study_data,
       } else { # study data lacks the status variable for the  current variable, omit this segment
         util_warning("Missing variable %s from %s",
                      dQuote(rv),
-                     sQuote("study_data"))
+                     sQuote("study_data"),
+                     applicability_problem = TRUE,
+                     intrinsic_applicability_problem = TRUE)
         return(NULL)
       }
     })
@@ -293,6 +300,8 @@ com_qualified_item_missingness <-    function(resp_vars, study_data,
            function(cl) {
             paste0(round(cl, 2), "%")
            })
+
+  SummaryTable$GRADING <- SummaryTable[["PCT_com_qum_nonresp"]] > 10 # TODO: only to avoid empty output in issue matrix
 
   return(list( # return the results
     SummaryTable = SummaryTable,

@@ -30,8 +30,9 @@ ranging from 0-100}
 defining contractions. See details for
 its required structure.}
 
-\item{use_value_labels}{\link{logical} If set to \code{TRUE}, labels can be used in the
-REDCap syntax to specify contraction checks for
+\item{use_value_labels}{\link{logical} Deprecated in favor of \link{DATA_PREPARATION}.
+If set to \code{TRUE}, labels can be used in the
+\code{REDCap} syntax to specify contraction checks for
 categorical variables. If set to \code{FALSE},
 contractions have to be specified using the coded
 values. In case that this argument is not set in
@@ -45,7 +46,7 @@ which is not empty.
 the \code{meta_data_cross_item}.
 If set, a summary output is generated for the
 defined categories plus one plot per
-category.}
+category. TODO: Not yet controllable by metadata.}
 }
 \value{
 If \code{summarize_categories} is \code{FALSE}:
@@ -124,5 +125,5 @@ con_contradictions_redcap(
 }
 }
 \seealso{
-\href{https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html}{Online Documentation}
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html}{Online Documentation}
 }

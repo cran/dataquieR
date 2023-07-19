@@ -16,7 +16,7 @@
 util_remove_na_records <- function(study_data, vars = colnames(study_data)) {
   obs_wo_na <- rowSums(is.na(study_data[, vars, FALSE])) == 0
   if (sum(!obs_wo_na) > 0) {
-    util_warning(
+    util_message(
       c("Removing %d observations because of NAs in some of",
         "the following columns: %s"),
       sum(!obs_wo_na),

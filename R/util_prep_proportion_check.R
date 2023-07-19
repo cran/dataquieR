@@ -84,7 +84,8 @@ util_prep_proportion_check <- function(resp_vars,
     rep_fun(paste0(
       "For ", paste(setdiff(resp_vars, rvs_with_prop), collapse = ", "),
       ", the metadata for a proportion check is missing (PROPORTION_RANGE)."),
-      applicability_problem = TRUE)
+      applicability_problem = TRUE,
+      intrinsic_applicability_problem = TRUE)
   }
 
   return(list("Range" = prop_range_int))

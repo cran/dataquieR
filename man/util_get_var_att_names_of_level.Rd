@@ -16,5 +16,5 @@ all matching variable attribute names
 }
 \description{
 This function returns all variable attribute names of a certain
-meta data provision level or of more than one level.
+metadata provision level or of more than one level.
 }

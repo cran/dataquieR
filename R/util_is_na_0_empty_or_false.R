@@ -10,10 +10,10 @@ util_is_na_0_empty_or_false <- function(x) { # TODO: generic?
   attributes(y) <- NULL
   y[] <- FALSE
   y[is.na(x)] <- TRUE
-  y[trimws(x) %in% c("true", "TRUE", "T", "t", "+", "")] <- TRUE
-  idx <- !suppressWarnings(as.numeric(x))
+  y[!(trimws(x) %in% c("true", "TRUE", "T", "t", "+", ""))] <- TRUE
+  idx <- !!suppressWarnings(as.numeric(x))
   idx[is.na(idx)] <- FALSE
-  y[idx] <- TRUE
+  y[idx] <- FALSE
   y <- as.logical(y)
   return(y)
 }

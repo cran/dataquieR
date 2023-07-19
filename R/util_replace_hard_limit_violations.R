@@ -44,7 +44,7 @@
    }
 
    if (!HARD_LIMITS %in% names(meta_data)) {
-     util_warning("Cannot replace %s violations, because %s do not provide %s.",
+     util_message("Cannot replace %s violations, because %s do not provide %s.",
                   sQuote(HARD_LIMITS),
                   dQuote("meta_data"),
                   sQuote(HARD_LIMITS),
@@ -77,7 +77,7 @@
                         "(metadata say %s)"),
                       dQuote(nm), sQuote(HARD_LIMITS),
                       sQuote(prep_dq_data_type_of(col)),
-                      sQuote(dt))
+                      sQuote(dt), applicability_problem = TRUE)
        }
        col
      }

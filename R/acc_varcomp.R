@@ -64,7 +64,7 @@
 #'
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_varcomp.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_varcomp.html
 #' )
 #'
 #' @examples
@@ -101,7 +101,7 @@ acc_varcomp <-
 
   .min_obs_in_subgroup <- suppressWarnings(as.integer(min_obs_in_subgroup))
   if (is.na(.min_obs_in_subgroup)) {
-   util_warning(c(
+    util_message(c(
     "Could not convert min_obs_in_subgroup %s to a number.",
     "Set to standard value."
     ),
@@ -115,7 +115,7 @@ acc_varcomp <-
 
   .min_subgroups <- suppressWarnings(as.integer(min_subgroups))
   if (is.na(.min_subgroups)) {
-    util_warning(
+    util_message(
       "Could not convert min_subgroups %s to a number. Set to standard value.",
       dQuote(as.character(min_subgroups)),
       applicability_problem = TRUE
@@ -159,7 +159,8 @@ acc_varcomp <-
 
   if (length(group_vars) == 1 && length(rvs) > 1) {
     group_vars <- rep(group_vars, length(rvs))
-    util_message(sprintf("using the same group var %s for all resp_vars",
+    if (!.called_in_pipeline)
+      util_message(sprintf("using the same group var %s for all resp_vars",
                     dQuote(group_vars[[1]])
                     ))
   }
@@ -201,7 +202,7 @@ acc_varcomp <-
     critical_levels <- levels(check_df$Var1)[check_df$Freq <
                                                min_obs_in_subgroup]
     if (length(critical_levels) > 0) {
-      util_warning("Levels %s were excluded due to less than %d observations.",
+      util_message("Levels %s were excluded due to less than %d observations.",
                    paste0(c(vapply(head(critical_levels, 10), dQuote, ""),
                             if (length(critical_levels) <= 10)
                               character(0) else "..."),
@@ -219,12 +220,13 @@ acc_varcomp <-
 
     # fewer than min_subgroups levels of random effect
     if (length(check_df[, 1]) < min_subgroups) {
-      util_warning("%d < %d levels in %s. Will not compute ICCs for %s.",
+      util_message("%d < %d levels in %s. Will not compute ICCs for %s.",
                    length(check_df[, 1]),
                    min_subgroups,
                    dQuote(group_var),
                    dQuote(rv),
-                   applicability_problem = FALSE)
+                   applicability_problem = TRUE,
+                   intrinsic_applicability_problem = TRUE)
       return(data.frame(
         Variables = NA,
         Object = NA,

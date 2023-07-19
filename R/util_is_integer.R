@@ -18,6 +18,8 @@
 util_is_integer <- function(x, tol = .Machine$double.eps^0.5) {
   if (is.numeric(x)) {
     r <- abs(x - round(x)) < tol & !is.nan(x)
+    # & x <= .Machine$integer.max & this would return, whether x can be stored as an integer.
+    #   x >= - .Machine$integer.max
   } else {
     r <- rep(FALSE, length(x))
   }

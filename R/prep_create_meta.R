@@ -1,7 +1,7 @@
 #' Support function to create [data.frame]s of metadata
 #'
 #' @description
-#' Create a meta data frame and map names.
+#' Create a metadata data frame and map names.
 #' Generally, this function only creates a [data.frame], but using
 #' this constructor instead of calling
 #' `data.frame(..., stringsAsFactors = FALSE)`, it becomes possible, to adapt
@@ -36,8 +36,8 @@
 #'
 #' @seealso [WELL_KNOWN_META_VARIABLE_NAMES]
 #' @return a data frame with:
-#'   - meta data attribute names mapped and
-#'   - meta data checked using [prep_check_meta_names] and do some more
+#'   - metadata attribute names mapped and
+#'   - metadata checked using [prep_check_meta_names] and do some more
 #'     verification about conventions, such as check for valid intervals
 #'     in limits)
 #' @export
@@ -120,9 +120,9 @@ prep_create_meta <- function(..., stringsAsFactors = FALSE,
   # level <- VARATT_REQUIRE_LEVELS[[level]]
 
   prep_check_meta_names(metas, level = level, character.only = TRUE)
-  if (any(c(JUMP_LIST, MISSING_LIST) %in%
+  if (any(c(JUMP_LIST, MISSING_LIST, MISSING_LIST_TABLE) %in%
       util_get_var_att_names_of_level(level))) {
-    util_validate_known_meta(metas)
+    util_validate_known_meta(metas) # TODO: MISSING_LIST_TABLE
   }
   return(metas)
 }

@@ -5,6 +5,7 @@
 #' @param study_data [data.frame] the data frame that contains the measurements
 #'                                Hint: Only data frames supported, no URL
 #'                                or file names.
+#' @param .dont_cast_off_cols [logical] internal use, only
 #'
 #' @return vector of data types
 #' @export
@@ -15,7 +16,8 @@
 #' dataquieR::prep_datatype_from_data(cars)
 #' }
 prep_datatype_from_data <-
-  function(resp_vars = colnames(study_data), study_data) {
+  function(resp_vars = colnames(study_data), study_data,
+           .dont_cast_off_cols = FALSE) {
   if (!missing(resp_vars) && is.data.frame(resp_vars) && missing(study_data)) {
     study_data <- resp_vars
     resp_vars <- colnames(study_data)
@@ -24,44 +26,27 @@ prep_datatype_from_data <-
                dQuote("study_data"))
   }
 
-  if (requireNamespace("tibble", quietly = TRUE)) {
-    if (tibble::is_tibble(study_data)) {
-      study_data <- as.data.frame(study_data)
-    }
-  } else if (inherits(study_data, "tbl_df")) {
-    util_warning(
-      c(
-        "%s looks like a tibble. However, the package %s seems not to be",
-        "available, which is quite strange.",
-        "I cannot convert the tibble to a data.frame therefore.",
-        "Tibbles do not always work like base R data.frames (see %s), so",
-        "this can cause errors,",
-        "because %s expects %s in base R data.frames, not in tibbles."
-      ),
-      dQuote("study_data"),
-      dQuote("tibble"),
-      dQuote("https://r4ds.had.co.nz/tibbles.html#tibbles-vs.data.frame"),
-      dQuote("dataquieR"),
-      dQuote("study_data"),
-      applicability_problem = FALSE
-    )
+  study_data <- util_cast_off(study_data, "study_data", .dont_cast_off_cols)
+
+  if (ncol(study_data) == 0) {
+    return(character(0))
   }
 
-
-  if ((length(study_data) == 0) || !is.character(resp_vars)) {
+  if (!is.character(resp_vars)) {
     util_error(
       "%s should be missing or give variable names referring the study_data.",
       dQuote("resp_vars"), applicability_problem = TRUE)
   }
 
   if (!(all(resp_vars %in% colnames(study_data)))) {
-    util_warning(c(
+    util_message(c(
       "The following %s are missing from the %s.",
       "Won't return a type for them: %s"),
       dQuote("resp_vars"),
       dQuote("study_data"),
       sQuote(resp_vars[!(resp_vars %in% colnames(study_data))]),
-      applicability_problem = TRUE
+      applicability_problem = TRUE,
+      intrinsic_applicability_problem = TRUE
     )
   }
 

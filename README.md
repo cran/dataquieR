@@ -28,7 +28,7 @@ pipeline. `dataquieR` also implements one generic pipeline producing
 
 See also
 
-[`https://dataquality.ship-med.uni-greifswald.de`](https://dataquality.ship-med.uni-greifswald.de)
+[`https://dataquality.qihs.uni-greifswald.de`](https://dataquality.qihs.uni-greifswald.de)
 
 ------------------------------------------------------------------------
 
@@ -59,7 +59,7 @@ devtools::install_gitlab("libreumg/dataquier")
 ```
 
 For examples and additional documentation, please refer to our
-[website](https://dataquality.ship-med.uni-greifswald.de).
+[website](https://dataquality.qihs.uni-greifswald.de).
 
 ## Suggested packages
 
@@ -79,7 +79,7 @@ install.packages("plotly")
 - [Data Quality Concept
   Paper](https://doi.org/10.1186/s12874-021-01252-7)
 - [Data Quality Concept and Software Web
-  Site](https://dataquality.ship-med.uni-greifswald.de)
+  Site](https://dataquality.qihs.uni-greifswald.de)
 
 ## Funding
 

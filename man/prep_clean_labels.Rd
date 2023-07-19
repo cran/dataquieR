@@ -11,8 +11,8 @@ prep_clean_labels(label_col, meta_data = "item_level", no_dups = FALSE)
 adjust, depending on \code{meta_data} argument is
 given or missing.}
 
-\item{meta_data}{\link{data.frame} meta data frame: If \code{label_col} is a label
-attribute to adjust, this is the meta data
+\item{meta_data}{\link{data.frame} metadata data frame: If \code{label_col} is a label
+attribute to adjust, this is the metadata
 table to process on. If missing, \code{label_col}
 must be a character vector with values to
 adjust.}

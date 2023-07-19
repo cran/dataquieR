@@ -19,6 +19,7 @@
 #' @export
 #' @seealso [prep_load_workbook_like_file]
 #' @seealso [prep_get_data_frame]
+#' @family data-frame-cache
 prep_add_data_frames <- function(..., data_frame_list = list()) {
   ellipse <- list(...)
   if (is.null(names(ellipse))) {
@@ -51,6 +52,8 @@ prep_add_data_frames <- function(..., data_frame_list = list()) {
     (1 == vapply(data_frame_list, length, FUN.VALUE = integer(1)))
   data_frame_list[characters] <- lapply(data_frame_list[characters],
                                         prep_get_data_frame)
+  nulls <- vapply(data_frame_list, is.null, FUN.VALUE = logical(1))
+  data_frame_list <- data_frame_list[!nulls]
   errors <- !vapply(data_frame_list, is.data.frame, FUN.VALUE = logical(1))
 
   data_frame_list[errors] <- lapply(data_frame_list[errors], function(x) {

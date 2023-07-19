@@ -50,7 +50,7 @@ util_generate_calls <- function(dimensions,
   .dimensions[.dimensions == "int"] <- "int_all" # use the wrappers, only
   .dimensions <- paste(paste0(.dimensions, "_"), collapse = "|")
   .dimensions <- sprintf("^(%s)", .dimensions)
-  exports <- getNamespaceExports(utils::packageName())
+  exports <- getNamespaceExports(utils::packageName()) # TODO: Use util_all_ind_functions
   ind_functions <- grep(.dimensions, exports, value = TRUE)
   ind_functions <- ind_functions[
     vapply(ind_functions,
@@ -61,7 +61,8 @@ util_generate_calls <- function(dimensions,
     "con_contradictions", # we use the new cross-item-level now
     "con_limit_deviations", # there is a specific function for each limit type, now
     "acc_robust_univariate_outlier", # is just a synonym for acc_univariate_outlier
-    "acc_distributions" # there are specific functions for location and proportion checks
+    "acc_distributions", # there are specific functions for location and proportion checks
+    "com_unit_missingness" # function does not really create something reasonable, currently
   )), "int_datatype_matrix") # the data type matrix function does not start with int_all, but integrity should always run.
 
   ind_functions <- setNames(nm = ind_functions)
@@ -120,6 +121,15 @@ util_generate_calls <- function(dimensions,
 
   all_calls <- unlist(mapply(SIMPLIFY = FALSE,
                              names(all_calls), all_calls, FUN = explode))
+
+
+  has_resp_vars <- vapply(lapply(all_calls, names),
+                          `%in%`, x = "resp_vars", FUN.VALUE = logical(1))
+  suppress <- has_resp_vars &
+    vapply(lapply(all_calls, `[[`, "resp_vars"), length,
+                                             FUN.VALUE = integer(1)) == 0
+
+  all_calls <- all_calls[!suppress]
 
   make_name <- function(nm, call) {
     entity_name <- attr(call, "entity_name")

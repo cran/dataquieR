@@ -98,7 +98,8 @@ util_int_unexp_records_set_segment <- function(level = c("segment"),
       "The segments in the %s do not match the segments in %s, considering only the intersection",
       dQuote("meta_data"),
       dQuote("meta_data_segment"),
-      applicability_problem = TRUE
+      applicability_problem = TRUE,
+      intrinsic_applicability_problem = TRUE
     )
   }
 
@@ -122,7 +123,9 @@ util_int_unexp_records_set_segment <- function(level = c("segment"),
       util_warning(
         "No %d defined in %d, skipping the check for unexpected record set",
         dQuote("SEGMENT_ID_VARS"),
-        dQuote("meta_data_segment")
+        dQuote("meta_data_segment"),
+        applicability_problem = TRUE,
+        intrinsic_applicability_problem = TRUE
       )
       return(
         res_pipeline <- data.frame(
@@ -163,7 +166,9 @@ util_int_unexp_records_set_segment <- function(level = c("segment"),
 
     # TODO: fix
     if (length(id_vars) > 1) {
-      util_warning("Check for mutliple IDs is not currently supported")
+      util_warning("Check for mutliple IDs is not currently supported",
+                   applicability_problem = TRUE,
+                   intrinsic_applicability_problem = TRUE)
       return(
         res_pipeline <- data.frame(
           "Level" = "Segment",

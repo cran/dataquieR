@@ -28,7 +28,7 @@ util_ensure_suggested <- function(pkg, goal =
                                       "work",
                                       paste("call", sQuote(rlang::call_name(
                                                       rlang::caller_call())))),
-                                  err = TRUE, and_import = c()) {
+                                  err = TRUE, and_import = c()) { # TODO: rlang::check_installed
   util_expect_scalar(err, check_type = is.logical)
   missingp <- !vapply(pkg,
                       FUN.VALUE = logical(1),

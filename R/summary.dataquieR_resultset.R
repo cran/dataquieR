@@ -225,7 +225,8 @@ summary.dataquieR_resultset <- function(object, aspect =
     util_warning(c(
       "No summary available for this report. None of the called",
       "implementation forms returned any GRADING column."),
-      applicability_problem = FALSE)
+      applicability_problem = FALSE,
+      intrinsic_applicability_problem = TRUE)
     return(data.frame())
   }
 

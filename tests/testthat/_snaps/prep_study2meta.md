@@ -4,9 +4,7 @@
     "Sepal.Width", "Petal.Length", "Petal.Width", "Species"), LABEL = c("Sepal.Length", 
     "Sepal.Width", "Petal.Length", "Petal.Width", "Species"), DATA_TYPE = c("float", 
     "float", "float", "float", "string"), VALUE_LABELS = c(NA, NA, 
-    NA, NA, "1 = setosa | 2 = versicolor | 3 = virginica"), MISSING_LIST = c("|", 
-    "|", "|", "|", "|"), JUMP_LIST = c(NA_character_, NA_character_, 
-    NA_character_, NA_character_, NA_character_), MISSING_LIST_TABLE = c(NA_character_, 
+    NA, NA, "1 = setosa | 2 = versicolor | 3 = virginica"), MISSING_LIST_TABLE = c(NA_character_, 
     NA_character_, NA_character_, NA_character_, NA_character_), 
         HARD_LIMITS = c(NA_character_, NA_character_, NA_character_, 
         NA_character_, NA_character_), CO_VARS = c(NA_character_, 
@@ -24,7 +22,9 @@
         NA_character_, NA_character_), LOCATION_METRIC = c(NA_character_, 
         NA_character_, NA_character_, NA_character_, NA_character_
         ), PROPORTION_RANGE = c(NA_character_, NA_character_, NA_character_, 
-        NA_character_, NA_character_)), class = "data.frame", row.names = c("Sepal.Length", 
+        NA_character_, NA_character_), MISSING_LIST = c("|", "|", 
+        "|", "|", "|"), JUMP_LIST = c(NA_character_, NA_character_, 
+        NA_character_, NA_character_, NA_character_)), class = "data.frame", row.names = c("Sepal.Length", 
     "Sepal.Width", "Petal.Length", "Petal.Width", "Species")), ModifiedStudyData = structure(list(
         Sepal.Length = c(5.1, 4.9, 4.7, 4.6, 5, 5.4, 4.6, 5, 4.4, 
         4.9, 5.4, 4.8, 4.8, 4.3, 5.8, 5.7, 5.4, 5.1, 5.7, 5.1, 5.4, 

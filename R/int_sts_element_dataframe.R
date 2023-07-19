@@ -25,8 +25,8 @@ int_sts_element_dataframe <- function(study_data,
   # TODO: also differntly implemetned from int_sts_element_segment -- other loop level!!
   util_expect_data_frame(meta_data, c(VAR_NAMES))
   if (STUDY_SEGMENT %in% colnames(meta_data) && any(meta_data$STUDY_SEGMENT == "ALL")) {
-    util_warning("No segment should be named %s, renaming it.",
-                 dQuote("ALL"))
+    util_message("No segment should be named %s, renaming it.",
+                 dQuote("ALL"), applicability_problem = TRUE)
     meta_data$STUDY_SEGMENT[meta_data$STUDY_SEGMENT == "ALL"] <-
       "RENAMED SEGMENT: ALL"
   }
@@ -84,7 +84,7 @@ int_sts_element_dataframe <- function(study_data,
                     DESCRIPTION = vapply(e$conds[msgs],
                                          conditionMessage,
                                          FUN.VALUE = character(1)),
-                    MISSING = ifelse(grepl("Did not find any meta data", vapply(e$conds[msgs],
+                    MISSING = ifelse(grepl("Did not find any metadata", vapply(e$conds[msgs],
                                                                                 conditionMessage,
                                                                                 FUN.VALUE = character(1)), fixed = TRUE),
                                      "metadata",
@@ -153,7 +153,7 @@ int_sts_element_dataframe <- function(study_data,
     } else {
       if (any(x$Segment != "ALL")) {
         util_error(c("Unexpected error for segments: found a mixture of",
-                   "segements. Internal error in dataquieR, please report."))
+                   "segments. Internal error in dataquieR, please report."))
       }
       x <- data.frame(stringsAsFactors = FALSE,
                       Segment = "ALL",

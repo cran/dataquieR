@@ -51,9 +51,9 @@
 <text x='27.86' y='389.96' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>500</text>
 <text x='27.86' y='255.52' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='19.58px' lengthAdjust='spacingAndGlyphs'>1000</text>
 <text x='27.86' y='121.08' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='19.58px' lengthAdjust='spacingAndGlyphs'>1500</text>
-<text x='180.92' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>1</text>
-<text x='378.55' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='9.79px' lengthAdjust='spacingAndGlyphs'>33</text>
-<text x='576.18' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>111</text>
+<text x='180.92' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='22.50px' lengthAdjust='spacingAndGlyphs'>Berlin</text>
+<text x='378.55' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='36.20px' lengthAdjust='spacingAndGlyphs'>Hamburg</text>
+<text x='576.18' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='32.78px' lengthAdjust='spacingAndGlyphs'>Cologne</text>
 <text x='378.55' y='569.38' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='36.10px' lengthAdjust='spacingAndGlyphs'>v00000</text>
 <text x='42.58' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='176.89px' lengthAdjust='spacingAndGlyphs'>non_consecutive_codes_work</text>
 </g>

@@ -186,7 +186,7 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
     !all(util_empty(meta_data[[STUDY_SEGMENT]]))
 
   if (!strata_defined && split_segments) {
-    util_warning(c(
+    util_message(c(
       "Stratification for STUDY_SEGMENT is not possible due to missing",
       "metadata. Will split arbitrarily avoiding too large figures"
     ), applicability_problem = TRUE)
@@ -195,7 +195,7 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
                                                              max_vars_per_plot))
   } else if (strata_defined && split_segments) {
     if (any(is.na(meta_data$STUDY_SEGMENT))) {
-      util_warning(c(
+      util_message(c(
         "Some STUDY_SEGMENT are NA. Will assign those to an artificial",
         "segment %s"), dQuote("Other"),
         applicability_problem = TRUE
@@ -205,7 +205,7 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
     too_big_blocks <- table(meta_data$STUDY_SEGMENT) > max_vars_per_plot
     too_big_blocks <- names(too_big_blocks)[too_big_blocks]
     for (too_big_block in too_big_blocks) {
-      util_warning(
+      util_message(
         "Will split segemnt %s arbitrarily avoiding too large figures",
         dQuote(too_big_block),
         applicability_problem = FALSE
@@ -303,7 +303,8 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
       geom_tile(colour = "white", linewidth = 0.8) + # https://github.com/tidyverse/ggplot2/issues/5051
       scale_fill_manual(values = colcode, name = " ") +
       {
-        if (split_segments) facet_wrap(~SEGMENT, scales = "free_y")# TODO: check ~
+        if (split_segments) facet_wrap(~STUDY_SEGMENT,
+                                       scales = "free_y")# TODO: check ~
       } +
       theme_minimal() +
       scale_x_discrete(position = "top") +

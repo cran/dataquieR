@@ -41,7 +41,8 @@ util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
   if (!(is.numeric(df[[values]]))) {
     util_error(paste0("The variable you specified under ",
                       values, " must be numeric."),
-               applicability_problem = TRUE)
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
   }
 
   if (missing(threshold)) {

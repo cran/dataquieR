@@ -11,7 +11,7 @@ util_get_vars_in_segment(segment, meta_data = "item_level", label_col = LABEL)
 
 \item{meta_data}{\link{data.frame} the metadata}
 
-\item{label_col}{\link{character} the meta data attribute used for naming the
+\item{label_col}{\link{character} the metadata attribute used for naming the
 variables}
 }
 \value{

@@ -6,7 +6,7 @@ test_that("com_segment_missingness works", {
                    dataquieR.MESSAGES_WITH_CALLER = FALSE)
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
                                threshold_value = NA, color_gradient_direction = "above",
                                exclude_roles = VARIABLE_ROLES$PROCESS),
@@ -24,7 +24,7 @@ test_that("com_segment_missingness works", {
     all = TRUE
   )
 
-  expect_warning(
+  expect_message(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
                                  threshold_value = NA, color_gradient_direction = "above"),
     regexp = sprintf("%s|%s|%s",
@@ -43,7 +43,7 @@ test_that("com_segment_missingness works", {
     all = TRUE
   )
 
-  expect_warning(
+  expect_message(
     r <- com_segment_missingness(study_data, meta_data,
                                  threshold_value = NA, color_gradient_direction = "above"),
     regexp = sprintf("%s|%s|%s",
@@ -62,7 +62,7 @@ test_that("com_segment_missingness works", {
     all = TRUE
   )
 
-  expect_warning(
+  expect_message(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
                                  threshold_value = NA, color_gradient_direction = "above",
                                  strata_vars = "CENTER_0"),
@@ -162,7 +162,7 @@ test_that("com_segment_missingness works", {
     perl = TRUE
   )
 
-  expect_error(suppressWarnings(
+  expect_error(suppressMessages(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
                                  threshold_value = 10, color_gradient_direction = 1:2,
                                  exclude_roles = VARIABLE_ROLES$PROCESS)
@@ -172,7 +172,7 @@ test_that("com_segment_missingness works", {
     perl = TRUE
   )
 
-  expect_warning(
+  expect_message(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
                                  threshold_value = 10, color_gradient_direction = "above",
                                  exclude_roles = VARIABLE_ROLES$PROCESS),
@@ -184,7 +184,7 @@ test_that("com_segment_missingness works", {
                    "are not considered due to their",
                    "VARIABLE_ROLE.")
   )
-  expect_warning(
+  expect_message(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
                                  threshold_value = 10, color_gradient_direction = "below",
                                  exclude_roles = VARIABLE_ROLES$PROCESS),
@@ -224,7 +224,7 @@ test_that("com_segment_missingness works w/g (group|strata)_vars", {
                    dataquieR.MESSAGES_WITH_CALLER = FALSE)
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning({
+  expect_message({
     r1 <- com_segment_missingness(study_data, meta_data, strata_vars = "CENTER_0",
                                   threshold_value = 5,
                                   color_gradient_direction = "above",

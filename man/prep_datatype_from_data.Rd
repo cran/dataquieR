@@ -4,7 +4,11 @@
 \alias{prep_datatype_from_data}
 \title{Get data types from data}
 \usage{
-prep_datatype_from_data(resp_vars = colnames(study_data), study_data)
+prep_datatype_from_data(
+  resp_vars = colnames(study_data),
+  study_data,
+  .dont_cast_off_cols = FALSE
+)
 }
 \arguments{
 \item{resp_vars}{\link{variable} names of the variables to fetch the data type
@@ -13,6 +17,8 @@ from the data}
 \item{study_data}{\link{data.frame} the data frame that contains the measurements
 Hint: Only data frames supported, no URL
 or file names.}
+
+\item{.dont_cast_off_cols}{\link{logical} internal use, only}
 }
 \value{
 vector of data types

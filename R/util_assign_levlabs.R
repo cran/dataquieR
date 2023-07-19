@@ -17,12 +17,15 @@
 #'                `1 = low | 2 = high | 3 = medium`.
 #' @param variable_name [character] the name of the variable being converted
 #'                                  for warning messages
+#' @param warn_if_inadmissible [logical] warn on [con_inadmissible_categorical]
+#'                                       values
 #'
 #' @return a [data.frame] with labels assigned to categorical variables
 #'         (if available)
 #'
 util_assign_levlabs <- function(variable, string_of_levlabs, splitchar,
-                                assignchar, ordered = TRUE, variable_name = "")
+                                assignchar, ordered = TRUE, variable_name = "",
+                                warn_if_inadmissible = TRUE)
   {
   util_expect_scalar(variable_name, check_type = is.character)
   if (!util_empty(variable_name)) {
@@ -44,6 +47,8 @@ util_assign_levlabs <- function(variable, string_of_levlabs, splitchar,
   levlab_list <- strsplit(string_of_levlabs, split = splitchar, fixed = TRUE)
   # remove lreading/trailing blanks
   levlab_list <- trimws(unlist(levlab_list), which = "both")
+
+  levlab_list <- levlab_list[!util_empty(levlab_list)]
 
   # get levels
   .levs <- unlist(lapply(levlab_list, function(x)
@@ -74,7 +79,7 @@ util_assign_levlabs <- function(variable, string_of_levlabs, splitchar,
       variable_name, applicability_problem = TRUE)
   }
 
-  if (any(is.na(labs))) {
+  if (warn_if_inadmissible && any(is.na(labs))) {
     util_warning("No labels assigned for some levels, use levels as labels%s",
                  variable_name, applicability_problem = TRUE)
     labs[is.na(labs)] <- levs[is.na(labs)]

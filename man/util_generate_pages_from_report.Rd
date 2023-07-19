@@ -9,7 +9,8 @@ util_generate_pages_from_report(
   template,
   disable_plotly,
   progress = progress,
-  progress_msg = progress_msg
+  progress_msg = progress_msg,
+  block_load_factor
 )
 }
 \arguments{
@@ -22,6 +23,9 @@ util_generate_pages_from_report(
 \item{progress}{\code{\link{function}} lambda for progress in percent -- 1-100}
 
 \item{progress_msg}{\code{\link{function}} lambda for progress messages}
+
+\item{block_load_factor}{\link{numeric} multiply size of parallel compute blocks
+by this factor.}
 }
 \value{
 named list, each entry becomes a file with the name of the entry.

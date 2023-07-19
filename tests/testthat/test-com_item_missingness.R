@@ -10,7 +10,7 @@ test_that("com_item_missingness works", {
 
   md0 <- meta_data
   md0$STUDY_SEGMENT <- NULL
-  expect_warning(invisible(
+  expect_message(invisible(
     com_item_missingness(study_data, md0, suppressWarnings = TRUE)
   ))
 
@@ -50,7 +50,7 @@ test_that("com_item_missingness works", {
   w <- gsub("(\n|^|\r)+>.*$", "", w)
   expect_false(any(grepl("include_sysmiss", w)))
 
-  expect_warning(invisible(
+  expect_message(invisible(
     com_item_missingness(study_data, meta_data,
                          suppressWarnings = TRUE)
   ), regexp =
@@ -98,7 +98,7 @@ test_that("com_item_missingness works", {
   ), regexp =
     paste(".+cause_label_df.+ is not a data frame."))
 
-  expect_warning(invisible(
+  expect_message(invisible(
     com_item_missingness(study_data, meta_data, suppressWarnings = TRUE,
                          threshold_value = "XX")
   ), regexp = paste(

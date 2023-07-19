@@ -4,6 +4,6 @@
 \alias{meta_data_segment}
 \title{Well known columns on the \code{meta_data_segment} sheet}
 \description{
-Meta data describing study segments, e.g., a full questionnaire, not its
+Metadata describing study segments, e.g., a full questionnaire, not its
 items.
 }

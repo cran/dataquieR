@@ -58,6 +58,7 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
     if (view) {
       print(x)
     }
+    attr(x, "from_ReportSummaryTable") <- TRUE
     return(invisible(x))
   }
   higher_means <- attr(x, "higher_means")
@@ -105,10 +106,12 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
       util_ensure_suggested("DT", "the option dt = TRUE")
       w <- DT::datatable(data.frame())
       if (view) print(w)
+      attr(w, "from_ReportSummaryTable") <- TRUE
       return(w)
     } else {
       p <- ggplot()
       if (view) print(p)
+      attr(p, "from_ReportSummaryTable") <- TRUE
       return(p)
     }
   }
@@ -242,6 +245,8 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
 
     if (view) print(w)
 
+    attr(w, "from_ReportSummaryTable") <- TRUE
+
     return(w)
 
     # https://stackoverflow.com/a/46043032
@@ -315,6 +320,7 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
         ) + xlab("") + ylab("")
 
       if (view) print(p)
+      attr(p, "from_ReportSummaryTable") <- TRUE
       return(p)
 
     } else {
@@ -346,6 +352,8 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
 
         if (view) print(p)
 
+        attr(p, "from_ReportSummaryTable") <- TRUE
+
         return(p)
 
       } else {
@@ -372,6 +380,7 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
           #      scale_fill_gradientn(colors = rev(my_cols)) +
           #      scale_x_discrete(position = "top") +
           xlab("") +
+          ylab("") +
           guides(fill = guide_legend(
             ncol = 1, nrow = length(colcode),
             byrow = TRUE
@@ -382,6 +391,9 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
             axis.text.y = element_text(size = 10)
           )
         if (view) print(p)
+
+        attr(p, "from_ReportSummaryTable") <- TRUE
+
         return(p)
       }
     }

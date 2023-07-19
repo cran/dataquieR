@@ -24,9 +24,13 @@ util_condition_constructor_factory <- function(
   .caller_control_att_default <- get(paste0(.caller_control_att, "_default"))
 
   function(m, ..., applicability_problem = NA,
-           integrity_indicator = "none", level = 0) {
+           intrinsic_applicability_problem = NA,
+           integrity_indicator = "none", level = 0, immediate) {
     if (identical(getOption("dataquieR.debug", FALSE), TRUE)) {
       browser()
+    }
+    if (missing(immediate)) {
+      immediate <- FALSE
     }
     m_args <- eval(quote(force(list(...))))
     # shows some false positive note on possible misplaced
@@ -51,6 +55,9 @@ util_condition_constructor_factory <- function(
     }
     util_stop_if_not(length(applicability_problem) == 1 &&
                        is.logical(applicability_problem))
+    util_stop_if_not(length(intrinsic_applicability_problem) == 1 &&
+                       is.logical(intrinsic_applicability_problem))
+
     start_from_call <- util_find_first_externally_called_functions_in_stacktrace()
     start_from_call <- length(sys.calls()) - start_from_call # refers to reverted sys.calls, so mirror the number
     caller. <- sys.call(1)
@@ -80,6 +87,7 @@ util_condition_constructor_factory <- function(
 
     if (identical(as.logical(getOption("dataquieR.CONDITIONS_WITH_STACKTRACE", FALSE)), FALSE)) {
       stacktrace <- ""
+      calling <- character(0)
     } else {
     }
     if (identical(as.logical(getOption(.caller_control_att, .caller_control_att_default)), FALSE)) {
@@ -109,11 +117,19 @@ util_condition_constructor_factory <- function(
                     call = caller.)
     }
     attr(ec, "applicability_problem") <- applicability_problem
+    attr(ec, "intrinsic_applicability_problem") <- intrinsic_applicability_problem
     attr(ec, "integrity_indicator") <- integrity_indicator
     if (level >= getOption("dataquieR.CONDITIONS_LEVEL_TRHESHOLD",
                   dataquieR.CONDITIONS_LEVEL_TRHESHOLD_default) ||
         inherits(ec, "error")) {
       # .signal_fkt(ec)
+      if (immediate && inherits(ec, "warning")) {
+        cat("In",
+            as.character(conditionCall(ec)),
+            ":\n",
+            conditionMessage(ec),
+            file = stderr()) # rlang currently only calls warning
+      }
       rlang::cnd_signal(ec)
     }
     invisible(ec)

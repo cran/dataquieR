@@ -1,6 +1,6 @@
 #' Create an HTML file for the [dq_report2]
 #'
-#' @param page the name of the page-file being created
+#' @param page_nr the number of the page being created
 #' @param pages list with all page-contents named by their desired file names
 #' @param rendered_pages list with all rendered (`htmltools::renderTags`) page-contents named by their desired file names
 #' @param template_file the report template file to use
@@ -12,9 +12,11 @@
 #' @param deps dependencies, as pre-processed by
 #'             `htmltools::copyDependencyToDir` and
 #'             `htmltools::renderDependencies`
+#' @param progress_msg [closure] to call with progress information
+#' @param progress [closure] to call with progress information
 #'
 #' @return `invisible(file_name)`
-util_create_page_file <- function(page,
+util_create_page_file <- function(page_nr,
                                   pages,
                                   rendered_pages,
                                   dir,
@@ -23,9 +25,14 @@ util_create_page_file <- function(page,
                                   logo,
                                   loading,
                                   packageName,
-                                  deps) {
+                                  deps,
+                                  progress_msg,
+                                  progress) {
 
-  util_message("Writing %s...", dQuote(page))
+  page <- names(pages)[page_nr] # the name of the page-file being created
+
+  # util_message("Writing %s...", dQuote(page))
+  progress_msg("", sprintf("Writing %s...", dQuote(page)))
 
   util_stop_if_not(endsWith(page, ".html"))
   util_stop_if_not(!is.null(pages[[page]]))
@@ -53,7 +60,20 @@ util_create_page_file <- function(page,
   #                      libdir = file.path(dir, "lib"),
   #                      file = file_name)
 
-  cat(as.character(html_report), file = file_name)
+  f <- file(description = file_name , open = "w", encoding = "utf-8")
+  on.exit(close(f))
+
+  withCallingHandlers({
+    cat(as.character(html_report), file = f)
+  },
+  warning = function(cond) { # suppress a waning caused by ggplotly for barplots
+    if (startsWith(conditionMessage(cond),
+                   "'bar' objects don't have these attributes: 'mode'")) {
+      invokeRestart("muffleWarning")
+    }
+  })
+
+  progress(page_nr / length(pages) * 100)
 
   invisible(file_name)
 }

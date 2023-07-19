@@ -31,4 +31,11 @@ they will remain data frames).
 \link{prep_load_workbook_like_file}
 
 \link{prep_get_data_frame}
+
+Other data-frame-cache: 
+\code{\link{prep_get_data_frame}()},
+\code{\link{prep_list_dataframes}()},
+\code{\link{prep_load_workbook_like_file}()},
+\code{\link{prep_purge_data_frame_cache}()}
 }
+\concept{data-frame-cache}

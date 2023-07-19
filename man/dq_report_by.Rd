@@ -6,12 +6,18 @@
 \usage{
 dq_report_by(
   study_data,
-  meta_data,
+  meta_data = "item_level",
+  meta_data_segment = "segment_level",
+  meta_data_dataframe = "dataframe_level",
+  meta_data_cross_item = "cross-item_level",
   label_col,
+  meta_data_v2,
   meta_data_split = STUDY_SEGMENT,
   study_data_split,
   ...,
-  v1.0 = FALSE
+  v1.0 = FALSE,
+  output_dir = NULL,
+  also_print = FALSE
 )
 }
 \arguments{
@@ -20,10 +26,24 @@ dq_report_by(
 \item{meta_data}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
+\item{meta_data_segment}{\link{data.frame} -- optional: Segment level metadata}
+
+\item{meta_data_dataframe}{\link{data.frame} -- optional: Data frame level
+metadata}
+
+\item{meta_data_cross_item}{\link{data.frame} -- optional: Cross-item level
+metadata}
+
 \item{label_col}{\link{variable attribute} the name of the column in the
 metadata with labels of variables}
 
-\item{meta_data_split}{\link{variable attribute} name of a meta data attribute to
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{meta_data_split}{\link{variable attribute} name of a metadata attribute to
 split the report in sections of
 variables, e.g. all blood-
 pressure. By default, reports are
@@ -33,22 +53,52 @@ if available.}
 \item{study_data_split}{\link{variable} Name of a study variable to stratify the
 report by, e.g. the study centers.}
 
-\item{...}{passed through to \link{dq_report}}
+\item{...}{arguments to be passed through to \link{dq_report} or \link{dq_report2}}
 
 \item{v1.0}{\link{logical} if \code{TRUE}, create old \code{dq_report} reports, use
 \code{dq_report2}, otherwise}
+
+\item{output_dir}{\link{character} if given, the output is not returned but}
+
+\item{also_print}{\link{logical} if \code{output_dir} is not \code{NULL}, also create
+\code{HTML} output for each segment using
+\code{\link[=print.dataquieR_resultset2]{print.dataquieR_resultset2()}}.
+written to the path \code{output_dir}}
+}
+\value{
+named \link{list} of named \link{list}s of \link{dq_report2} reports or,
+if \code{output_dir} has been specified, \code{invisible(NULL)}
 }
 \description{
 Generate a stratified full DQ report
 }
 \examples{
 \dontrun{ # really long-running example.
-prep_load_workbook_like_file("inst/extdata/meta_data_extended.xlsx")
+prep_load_workbook_like_file("meta_data_v2")
 rep <- dq_report_by("study_data", label_col =
   LABEL, study_data_split = "CENTER_0")
 rep <- dq_report_by("study_data",
   label_col = LABEL, study_data_split = "CENTER_0",
   meta_data_split = NULL
+)
+unlink("/tmp/testRep/", force = TRUE, recursive = TRUE)
+dq_report_by("study_data",
+  label_col = LABEL, study_data_split = "CENTER_0",
+  meta_data_split = STUDY_SEGMENT, output_dir = "/tmp/testRep"
+)
+unlink("/tmp/testRep/", force = TRUE, recursive = TRUE)
+dq_report_by("study_data",
+  label_col = LABEL, study_data_split = "CENTER_0",
+  meta_data_split = NULL, output_dir = "/tmp/testRep"
+)
+dq_report_by("study_data",
+  label_col = LABEL,
+  meta_data_split = STUDY_SEGMENT, output_dir = "/tmp/testRep"
+)
+dq_report_by("study_data",
+  label_col = LABEL,
+  meta_data_split = STUDY_SEGMENT, output_dir = "/tmp/testRep",
+  also_print = TRUE
 )
 }
 }

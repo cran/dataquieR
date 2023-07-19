@@ -90,6 +90,6 @@ ecdf are presented.
 \seealso{
 \itemize{
 \item \link{acc_distributions}
-\item \href{https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_distributions.html}{Online Documentation}
+\item \href{https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_distributions.html}{Online Documentation}
 }
 }

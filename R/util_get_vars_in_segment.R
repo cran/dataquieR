@@ -2,7 +2,7 @@
 #'
 #' @param segment [character] the segment as specified in `STUDY_SEGMENT`
 #' @param meta_data [data.frame] the metadata
-#' @param label_col [character] the meta data attribute used for naming the
+#' @param label_col [character] the metadata attribute used for naming the
 #'                              variables
 #'
 #' @return vector of variable names

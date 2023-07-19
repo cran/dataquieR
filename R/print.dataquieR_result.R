@@ -1,9 +1,10 @@
 #' Print a [dataquieR] result returned by pipeline_vectorized
 #' @aliases dataquieR_result
-#' @param x [list] a dataquieR result from [pipeline_vectorized]
+#' @param x [list] a dataquieR result from [pipeline_vectorized] or
+#'                 [util_eval_to_dataquieR_result]
 #' @param ... passed to print. Additionally, the argument `slot` may be passed
 #'            to print only specific sub-results.
-#'
+#' @seealso [util_pretty_print()]
 #' @return see print
 #' @export
 print.dataquieR_result <- function(x, ...) {

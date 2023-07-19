@@ -50,13 +50,13 @@
 <text x='25.41' y='524.40' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>0</text>
 <text x='25.41' y='357.20' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>200</text>
 <text x='25.41' y='190.00' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>400</text>
-<text x='128.48' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>0</text>
-<text x='211.02' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>1</text>
-<text x='293.56' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>2</text>
-<text x='376.10' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>3</text>
-<text x='458.64' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>4</text>
-<text x='541.19' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>5</text>
-<text x='623.73' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>6</text>
+<text x='128.48' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='44.99px' lengthAdjust='spacingAndGlyphs'>pre-primary</text>
+<text x='211.02' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='29.34px' lengthAdjust='spacingAndGlyphs'>primary</text>
+<text x='293.56' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='40.61px' lengthAdjust='spacingAndGlyphs'>secondary</text>
+<text x='376.10' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='50.89px' lengthAdjust='spacingAndGlyphs'>uppersecond</text>
+<text x='458.64' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='45.02px' lengthAdjust='spacingAndGlyphs'>postsecond</text>
+<text x='541.19' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='26.90px' lengthAdjust='spacingAndGlyphs'>tertiary</text>
+<text x='623.73' y='557.01' text-anchor='middle' style='font-size: 8.80px; font-family: sans;' textLength='55.28px' lengthAdjust='spacingAndGlyphs'>secondtertiary</text>
 <text x='376.10' y='569.38' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='77.04px' lengthAdjust='spacingAndGlyphs'>EDUCATION_0</text>
 <text x='37.69' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='153.39px' lengthAdjust='spacingAndGlyphs'>acc_distributions def edu0</text>
 </g>

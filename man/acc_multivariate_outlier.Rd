@@ -97,5 +97,5 @@ List function.
 }
 
 \seealso{
-\href{https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_multivariate_outlier.html}{Online Documentation}
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_multivariate_outlier.html}{Online Documentation}
 }

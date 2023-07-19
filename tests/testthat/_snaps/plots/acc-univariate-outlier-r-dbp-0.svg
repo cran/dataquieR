@@ -2601,8 +2601,6 @@
 <text x='32.76' y='234.52' text-anchor='end' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='9.79px' lengthAdjust='spacingAndGlyphs'>90</text>
 <text x='32.76' y='154.58' text-anchor='end' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>100</text>
 <text x='32.76' y='74.65' text-anchor='end' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>110</text>
-<text x='351.08' y='568.24' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='38.52px' lengthAdjust='spacingAndGlyphs'>variable</text>
-<text transform='translate(13.05,292.27) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='26.30px' lengthAdjust='spacingAndGlyphs'>value</text>
 <text x='680.91' y='267.40' style='font-size: 11.00px; font-family: sans;' textLength='28.13px' lengthAdjust='spacingAndGlyphs'>Rules</text>
 <circle cx='689.55' cy='282.66' r='1.95' style='stroke-width: 0.71; stroke: #2166AC; fill: #2166AC;' />
 <circle cx='689.55' cy='299.94' r='1.95' style='stroke-width: 0.71; stroke: #FC8D59; fill: #FC8D59;' />

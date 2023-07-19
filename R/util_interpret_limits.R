@@ -25,7 +25,7 @@ util_interpret_limits <- function(mdata) { # TODO: Use the redcap parser, instea
   ne <- apply(mdata[, lv, drop = FALSE], 2, function(x) all(is.na(x)))
 
   if (any(ne)) {
-    util_warning(paste0("The column: ", lv[ne],
+    util_message(paste0("The column: ", lv[ne],
                         " has no defined intervals and is omitted."),
                  applicability_problem = TRUE)
   }

@@ -1,7 +1,7 @@
-#' Checks the validity of meta data w.r.t. the provided column names
+#' Checks the validity of metadata w.r.t. the provided column names
 #'
 #' @description
-#' This function verifies, if a data frame complies to meta data conventions and
+#' This function verifies, if a data frame complies to metadata conventions and
 #' provides a given richness of meta information as specified by `level`.
 #'
 #' @details
@@ -17,7 +17,7 @@
 #'                                 assumed to be character strings.
 #'
 #' @return a logical with:
-#'   - invisible(TRUE). In case of problems with the meta data, a condition is
+#'   - invisible(TRUE). In case of problems with the metadata, a condition is
 #'      raised (`stop()`).
 #' @export
 #'
@@ -64,6 +64,7 @@
 #'     DECIMALS = "DECIMALS", VARIABLE_ROLE = "VARIABLE_ROLE",
 #'     DATA_ENTRY_TYPE = "DATA_ENTRY_TYPE",
 #'     CO_VARS = "CO_VARS",
+#'     END_DIGIT_CHECK = "END_DIGIT_CHECK",
 #'     VARIABLE_ORDER = "VARIABLE_ORDER", LONG_LABEL =
 #'       "LONG_LABEL", recode = "recode",
 #'       MISSING_LIST_TABLE = "MISSING_LIST_TABLE"
@@ -121,16 +122,22 @@ prep_check_meta_names <- function(meta_data = "item_level", level,
   try(
     withCallingHandlers({
         if (!is.data.frame(meta_data)) {
-          util_error("meta data is not a data frame at all")
+          util_error("metadata is not a data frame at all")
         }
         required_atts <- util_get_var_att_names_of_level(level)
-        if (!all(required_atts %in% colnames(meta_data))) {
+        missing_atts <- setdiff(required_atts, colnames(meta_data))
+        if (WELL_KNOWN_META_VARIABLE_NAMES$MISSING_LIST_TABLE %in% # no mlt
+            missing_atts && WELL_KNOWN_META_VARIABLE_NAMES$MISSING_LIST %in%
+              colnames(meta_data)) { # no problem, if missing list is there
+            missing_atts <- setdiff(missing_atts,
+                                    WELL_KNOWN_META_VARIABLE_NAMES$
+                                      MISSING_LIST_TABLE)
+        }
+        if (length(missing_atts) > 0) {
           util_error(
             c("Missing %s: Not all variable attributes of requirement",
-              "level %s (%s) are available in the meta data (%s)."),
-            paste0(dQuote(required_atts[!(required_atts %in%
-                                            colnames(meta_data))]),
-                   collapse = ", "),
+              "level %s (%s) are available in the metadata (%s)."),
+            paste0(dQuote(missing_atts), collapse = ", "),
             dQuote(level),
             paste0(dQuote(required_atts), collapse = ", "),
             paste0(dQuote(colnames(meta_data)), collapse = ", "),

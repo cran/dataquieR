@@ -5,7 +5,7 @@
 #' in metadata
 #'
 #' @param sdf the [data.frame] of study data
-#' @param mdf the [data.frame] of associated static meta data
+#' @param mdf the [data.frame] of associated static metadata
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
 #' @param check_convertible [logical] also try, if a conversion to the

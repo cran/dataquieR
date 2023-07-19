@@ -68,7 +68,7 @@ test_that("acc_margins works without label_col", {
 
   gv <- prep_map_labels("SEX_0", meta_data, VAR_NAMES, LABEL)
 
-  expect_warning(
+  expect_message(
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = c("SEX_0"),
                 label_col = LABEL),
@@ -86,13 +86,13 @@ test_that("acc_margins works without label_col", {
     all = TRUE
   )
 
-  expect_warning( # float
+  expect_message( # float
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 label_col = LABEL)
   )
 
-  expect_warning( # float
+  expect_message( # float
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 threshold_value = data.frame(l = letters, L = LETTERS),
@@ -102,7 +102,7 @@ test_that("acc_margins works without label_col", {
     all = FALSE
   )
 
-  expect_warning( # integer
+  expect_message( # integer
     acc_margins(resp_vars = "ASTHMA_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 label_col = LABEL)
@@ -118,7 +118,7 @@ test_that("acc_margins works without label_col", {
   )
 
 
-  expect_warning(
+  expect_message(
     expect_error({
       res1 <-
         acc_margins(resp_vars = "v00014", study_data = study_data,
@@ -130,7 +130,7 @@ test_that("acc_margins works without label_col", {
     )
   )
 
-  expect_warning(
+  expect_message(
     res1 <-
       acc_margins(resp_vars = "v00014", study_data = study_data,
                   meta_data = meta_data, group_vars = "v00016",
@@ -149,7 +149,7 @@ test_that("acc_margins works without label_col", {
     all = TRUE
   )
 
-  expect_warning(
+  expect_message(
     res1 <-
       acc_margins(resp_vars = "v00014", study_data = study_data,
                   meta_data = meta_data, group_vars = "v00016",
@@ -158,7 +158,7 @@ test_that("acc_margins works without label_col", {
       paste("min_obs_in_subgroup cannot be set below 5.")
   )
 
-  expect_warning(
+  expect_message(
       res1 <-
         acc_margins(resp_vars = "v00014", study_data = study_data,
                   meta_data = meta_data, group_vars = "v00016"),
@@ -235,7 +235,7 @@ suppressWarnings(expect_error(
   perl = TRUE
 ))
 
-expect_warning(
+expect_message(
   res1 <-
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -257,7 +257,7 @@ expect_warning(
   all = TRUE
 )
 
-expect_warning(
+expect_message(
   res1 <-
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -277,7 +277,7 @@ expect_warning(
   all = TRUE
 )
 
-expect_warning(
+expect_message(
   res1 <-
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -298,7 +298,7 @@ expect_warning(
   all = TRUE
 )
 
-expect_warning(
+expect_message(
   res1 <-
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -318,7 +318,7 @@ expect_warning(
   all = TRUE
 )
 
-expect_warning(
+expect_message(
     res1 <-
       acc_margins(resp_vars = "CRP_0", study_data = study_data,
                   meta_data = meta_data, group_vars = "DEV_NO_0",

@@ -3,7 +3,7 @@ test_that("acc_shape_or_scale works with 3 args", {
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
 
-  expect_warning(
+  expect_message(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data,
@@ -20,7 +20,7 @@ test_that("acc_shape_or_scale works with 3 args", {
     perl = TRUE
   )
 
-  expect_warning(
+  expect_message(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data,
@@ -87,7 +87,7 @@ test_that("acc_shape_or_scale works with 3 args", {
     regexp = "This distribution .+dirichlet.+ is not supported yet..."
   ))
 
-  expect_warning(
+  expect_message(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00016", # uniform and integer
                          study_data = study_data,
@@ -128,7 +128,7 @@ expect_error(
   regexp = "resp_vars == .+v00001.+ must be a non-empty numeric variable",
   perl = TRUE
 )
-  expect_warning(
+expect_message(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data,
@@ -148,7 +148,7 @@ expect_error(
     all = TRUE,
     perl = TRUE
   )
-  expect_warning(
+expect_message(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data,
@@ -164,7 +164,7 @@ expect_error(
     all = TRUE,
     perl = TRUE
   )
-  expect_warning(
+expect_message(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data,
@@ -206,7 +206,7 @@ expect_error(
     all = TRUE
   )
 
-  expect_warning(
+  expect_message(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data, meta_data = meta_data),
@@ -259,7 +259,7 @@ test_that("acc_shape_or_scale works with label_col", {
     all = TRUE
   )
 
-  expect_warning(
+  expect_message(
     res1 <-
       acc_shape_or_scale(resp_vars = "CRP_0",
                          study_data = study_data, meta_data = meta_data,

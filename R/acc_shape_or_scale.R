@@ -46,7 +46,7 @@
 #' @importFrom stats dunif dgamma dnorm punif  pgamma pnorm median
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_shape_or_scale.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_shape_or_scale.html
 #' )
 acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
                                end_digits, label_col, study_data, meta_data,
@@ -61,25 +61,26 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
 
   if (missing(dist_col)) {
     dist_col <- DISTRIBUTION
-    util_warning(
-      c("A column of the metaddata specifying the distributions has",
-      "not been specified. Trying the default %s."),
-      dQuote(DISTRIBUTION), applicability_problem = TRUE)
+    # util_message(
+    #   c("A column of the metaddata specifying the distributions has",
+    #   "not been specified. Trying the default %s."),
+    #   dQuote(DISTRIBUTION), applicability_problem = TRUE)
   }
 
   if (!(dist_col %in% colnames(meta_data))) {
     util_error("Did not find variable attribute %s in the meta_data",
-                       dist_col, applicability_problem = TRUE)
+                       dist_col, applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
   }
 
   if (missing(guess) || is.na(guess[[1]])) {
     if (!missing(guess) && length(guess) > 1) {
-      util_warning("Have more than one value for guess, use the first one only",
+      util_message("Have more than one value for guess, use the first one only",
                    applicability_problem = TRUE)
     }
     if (!missing(par1) && !missing(par2)) {
       guess <- FALSE
-      util_warning("Since parameters were specified: 'guess' is set to false",
+      util_message("Since parameters were specified: 'guess' is set to false",
                    applicability_problem = TRUE)
     } else {
       guess <- TRUE
@@ -87,7 +88,7 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
   }
 
   if (!(missing(end_digits)) && length(end_digits) > 1) {
-    util_warning(
+    util_message(
       c("end_digits should be a scalar logical value. Have more than one",
         "value, use the first one only"),
       applicability_problem = TRUE)
@@ -95,7 +96,7 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
   }
 
   if (!missing(guess) && length(guess) > 1) {
-    util_warning(
+    util_message(
       c("guess should be a scalar logical value.",
         "Have more than one value, use the first one only"),
       applicability_problem = TRUE)
@@ -103,7 +104,7 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
   }
 
   if (!missing(par1) && length(par1) > 1) {
-    util_warning(
+    util_message(
       c("par1 should be a scalar numeric value. Have more than one value,",
         "use the first one only"),
       applicability_problem = TRUE)
@@ -111,7 +112,7 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
   }
 
   if (!missing(par2) && length(par2) > 1) {
-    util_warning(
+    util_message(
       c("par2 should be a scalar numeric value.",
         "Have more than one value, use the first one only"),
       applicability_problem = TRUE)
@@ -152,7 +153,8 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
 
   if (length(ds1[[resp_vars]]) == 0L || mode(ds1[[resp_vars]]) != "numeric") {
     util_error("resp_vars == '%s' must be a non-empty numeric variable",
-               resp_vars, applicability_problem = TRUE)
+               resp_vars, applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
   }
 
   # missings in resp_vars?
@@ -161,7 +163,7 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
   n_post <- dim(ds1)[1]
 
   if (n_post < n_prior) {
-    util_warning(paste0("Due to missing values in ", resp_vars, " ",
+    util_message(paste0("Due to missing values in ", resp_vars, " ",
                         n_prior - n_post,
       " observations were deleted.",
       collapse = " "
@@ -185,7 +187,8 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
     trimws(meta_data[meta_data[[label_col]] == resp_vars, dist_col]) == "") {
     util_error(paste0("No distribution specified for ", resp_vars, " in ",
                       dist_col, collapse = ""),
-               applicability_problem = TRUE)
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
   }
 
   dist <- paste0(meta_data[meta_data[[label_col]] == resp_vars, dist_col])
@@ -325,7 +328,7 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
       if (end_digits) xlab("End digits")
     } + scale_color_manual(values = c("#E69F00"), guide = "none")
 
-
+  p1 <- p1 + theme(legend.position = "none") # also suppresses the legend in the ggplotly figure
   p1 <- p1 + util_coord_flip(p = p1) # TODO: estimate w and h, since p is not using discrete axes
 
   p1 <- util_set_size(p1);

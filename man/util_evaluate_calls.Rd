@@ -15,7 +15,9 @@ util_evaluate_calls(
   resp_vars,
   filter_result_slots,
   cores,
-  debug_parallel
+  debug_parallel,
+  mode = c("default", "futures", "queue", "parallel"),
+  mode_args
 )
 }
 \arguments{
@@ -50,9 +52,29 @@ is performed.}
 
 \item{cores}{\link{integer} number of cpu cores to use or a named list with
 arguments for \link[parallelMap:parallelStart]{parallelMap::parallelStart} or NULL,
-if parallel has already been started by the caller.}
+if parallel has already been started by the caller.
+Can also be a cluster.}
 
 \item{debug_parallel}{\link{logical} print blocks currently evaluated in parallel}
+
+\item{mode}{\link{character} work mode for parallel execution. default is
+"default", the values mean:
+- default: use \code{queue} except \code{cores} has been set explicitly
+- futures: use the \code{future} package
+- queue: use a queue as described in the examples
+from the \code{callr} package by Csárdi and Chang and start
+sub-processes as workers that evaluate the queue.
+- parallel: use the cluster from \code{cores} to evaluate all
+calls of indicator functions using the classic
+R \code{parallel} back-ends}
+
+\item{mode_args}{\link{list} of arguments for the selected \code{mode}. As of writing
+this manual, only for the mode \code{queue} the argument
+\code{step} is supported, which gives the number of
+function calls that are run by one worker at a time.
+the default is 15, which gives on most of the tested
+systems a good balance between synchronization
+overhead and idling workers.}
 }
 \value{
 a \link{dataquieR_resultset2}. Can be printed creating a RMarkdown-report.

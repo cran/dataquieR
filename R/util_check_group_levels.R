@@ -73,7 +73,7 @@ util_check_group_levels <- function(study_data,
 
   modified_study_data <- do.call(rbind.data.frame, l[which_valid])
   if (length(which_valid) < length(l)) {
-    util_warning(
+    util_message(
       c("Discarding %d observations (%d from %d levels of %s)",
         "because of too few/many observations",
         "per group"),

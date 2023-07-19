@@ -80,7 +80,7 @@
 #' @importFrom stats setNames reorder
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_contradictions.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions.html
 #' )
 #' @examples
 #' \dontrun{
@@ -172,7 +172,8 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
 
   if (missing(threshold_value)) {
     threshold_value <- 0
-    util_warning("No %s has been set, will use default %d",
+    if (!.called_in_pipeline)
+      util_message("No %s has been set, will use default %d",
                  dQuote("threshold_value"), threshold_value,
                  applicability_problem = TRUE)
   }
@@ -308,10 +309,10 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
     ct$A_levels <- as.character(ct$A_levels)
     ct$B_levels <- as.character(ct$B_levels)
 
-    # check and prep meta data
+    # check and prep metadata
     if (!(CONTRADICTIONS %in% colnames(meta_data))) {
       util_error(
-        c("Missing column %s in meta data cannot apply",
+        c("Missing column %s in metadata cannot apply",
           "contradictions checks w/o contradiction rules"),
         dQuote(CONTRADICTIONS),
         applicability_problem = TRUE
@@ -325,11 +326,13 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
     if (length(resp_vars) == 0) {
       if (all(is.na(meta_data[[CONTRADICTIONS]]))) {
         util_error(paste0("No Variables with defined CONTRADICTIONS."),
-                   applicability_problem = TRUE)
+                   applicability_problem = TRUE,
+                   intrinsic_applicability_problem = TRUE)
       } else {
-        util_warning(paste0(
+        util_message(paste0(
           "All variables with CONTRADICTIONS in the metadata are used."),
-          applicability_problem = TRUE)
+          applicability_problem = TRUE,
+          intrinsic_applicability_problem = TRUE)
         resp_vars <- meta_data[[label_col]][!(is.na(meta_data[[CONTRADICTIONS]]))]
         resp_vars <- intersect(resp_vars, colnames(ds1))
       }
@@ -338,13 +341,14 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
       if (all(is.na(meta_data[[CONTRADICTIONS]][meta_data[[label_col]] %in%
                                                 resp_vars]))) {
         util_error(paste0("No Variables with defined CONTRADICTIONS."),
-                   applicability_problem = TRUE)
+                   applicability_problem = TRUE,
+                   intrinsic_applicability_problem = TRUE)
       }
       # no contradictions for some variables?
       rvs_with_contr <- meta_data[[label_col]][!(is.na(meta_data[[CONTRADICTIONS]])) &
                                        meta_data[[label_col]] %in% resp_vars]
       if (length(rvs_with_contr) < length(resp_vars)) {
-        util_warning(paste0("The variables ", resp_vars[!(resp_vars %in% rvs_with_contr)],
+        util_message(paste0("The variables ", resp_vars[!(resp_vars %in% rvs_with_contr)],
                             " have no defined CONTRADICTIONS.",
                             collapse = ", "),
                      applicability_problem = TRUE)
@@ -361,7 +365,8 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
       util_warning(paste0("Variables: ", paste0(resp_vars[is.na(levlabs)],
                                                 collapse = ", "),
                           " have no assigned labels and levels."),
-                   applicability_problem = TRUE)
+                   applicability_problem = TRUE,
+                   intrinsic_applicability_problem = TRUE)
     }
 
     # only variables with labels

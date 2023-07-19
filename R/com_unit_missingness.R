@@ -50,7 +50,7 @@
 #'
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_com_impl_unit_missingness.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_com_impl_unit_missingness.html
 #' )
 com_unit_missingness <- function(study_data, meta_data, id_vars = NULL,
                                  strata_vars = NULL, label_col) {
@@ -70,10 +70,11 @@ com_unit_missingness <- function(study_data, meta_data, id_vars = NULL,
   )
 
   if (is.null(id_vars)) {
-    util_warning(
+    util_message(
       c("No ID-variables specified, all variables are",
         "considered to be measurements."),
-      applicability_problem = TRUE
+      applicability_problem = TRUE,
+      intrinsic_applicability_problem = TRUE
       )
   }
 

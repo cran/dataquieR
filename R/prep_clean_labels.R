@@ -22,8 +22,8 @@
 #' @param label_col [character] label attribute to adjust or character vector to
 #'                              adjust, depending on `meta_data` argument is
 #'                              given or missing.
-#' @param meta_data [data.frame] meta data frame: If `label_col` is a label
-#'                               attribute to adjust, this is the meta data
+#' @param meta_data [data.frame] metadata data frame: If `label_col` is a label
+#'                               attribute to adjust, this is the metadata
 #'                               table to process on. If missing, `label_col`
 #'                               must be a character vector with values to
 #'                               adjust.
@@ -85,10 +85,10 @@ prep_clean_labels <- function(label_col, meta_data = "item_level",
   }
   if (any(na.omit(orig_col != adjusted_col))) {
     if (!missing(meta_data)) {
-      util_warning("Adjusted labels in %s to be valid variable names.",
+      util_message("Adjusted labels in %s to be valid variable names.",
                    dQuote(label_col), applicability_problem = TRUE)
     } else {
-      util_warning("Adjusted labels to be valid variable names.",
+      util_message("Adjusted labels to be valid variable names.",
                    applicability_problem = TRUE)
     }
   }

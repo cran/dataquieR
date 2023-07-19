@@ -4,10 +4,12 @@
 \alias{util_alias2caption}
 \title{Create a caption from an alias name of a \code{dq_report2} result}
 \usage{
-util_alias2caption(alias)
+util_alias2caption(alias, long = FALSE)
 }
 \arguments{
 \item{alias}{alias name}
+
+\item{long}{not for menu entry}
 }
 \value{
 caption

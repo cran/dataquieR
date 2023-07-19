@@ -69,8 +69,8 @@ util_int_duplicate_ids_dataframe <- function(level = c("dataframe"),
     id_cols <- intersect(id_vars, colnames(data_current_df))
 
     if (length(id_cols) == 0) {
-      util_warning(
-        c("None of the ID variables (%s) in the metadata are not included in",
+      util_message(
+        c("None of the ID variables (%s) in the metadata are included in",
           "the study data frame %s. Ignore that data frame."),
         util_pretty_vector_string(id_vars),
         dQuote(current_df),

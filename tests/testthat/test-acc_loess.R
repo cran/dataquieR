@@ -6,7 +6,14 @@ test_that("acc_loess works without label_col", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   skip_on_cran() # slow test
   skip_if_translated()
   meta_data <- prep_get_data_frame("meta_data")
@@ -75,7 +82,7 @@ test_that("acc_loess works without label_col", {
 
   sd1 <- study_data
   sd1[["v00017"]][1:1000] <- NA
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = sd1,
                 meta_data = meta_data, group_vars = "v00016",
@@ -227,7 +234,7 @@ test_that("acc_loess works without label_col", {
     )
   )
 
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = study_data,
                 meta_data = meta_data, group_vars = "v00016",
@@ -247,7 +254,7 @@ test_that("acc_loess works without label_col", {
     all = TRUE
   )
 
-  expect_warning(
+  expect_message(
     res1 <-
          acc_loess(resp_vars = "v00014", study_data = study_data,
                    meta_data = meta_data, group_vars = "v00016",
@@ -268,7 +275,7 @@ test_that("acc_loess works without label_col", {
     all = TRUE
   )
 
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = study_data,
                 meta_data = meta_data, group_vars = "v00016",
@@ -308,7 +315,14 @@ test_that("acc_loess works with label_col", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
   expect_warning(
@@ -355,7 +369,7 @@ test_that("acc_loess works with label_col", {
     all = TRUE
   )
 
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -397,10 +411,17 @@ test_that("acc_loess output matches", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -443,10 +464,17 @@ test_that("acc_loess min_obs_in_subgroups with label_col", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     expect_error({
       res1 <-
         acc_loess(resp_vars = "CRP_0", study_data = study_data,
@@ -480,14 +508,21 @@ test_that("acc_loess with co-vars output matches", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
 
   sd0 <- study_data
   sd0$v00003[1:10] <- NA
   sd0$v00002[11:20] <- NA
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -543,7 +578,7 @@ test_that("acc_loess with co-vars output matches", {
     all = TRUE
   )
 
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -586,7 +621,14 @@ test_that("acc_loess works for all time span ranges", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   skip_on_cran() # slow test
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
@@ -621,7 +663,7 @@ test_that("acc_loess works for all time span ranges", {
     regexp = "span is too small"
   )
   expect_silent(
-    suppressWarnings(res1 <-
+    suppressMessages(res1 <-
                        acc_loess(resp_vars = "CRP_0", study_data = sd0,
                                  meta_data = meta_data, group_vars = "DEV_NO_0",
                                  time_vars = "LAB_DT_0",
@@ -629,7 +671,7 @@ test_that("acc_loess works for all time span ranges", {
                                  label_col = LABEL))
   )
   expect_silent(
-    suppressWarnings(res1 <-
+    suppressMessages(res1 <-
                        acc_loess(resp_vars = "CRP_0", study_data = sd0,
                                  meta_data = meta_data, group_vars = "DEV_NO_0",
                                  time_vars = "LAB_DT_0",
@@ -637,7 +679,7 @@ test_that("acc_loess works for all time span ranges", {
                                  label_col = LABEL))
   )
   expect_silent(
-    suppressWarnings(res1 <-
+    suppressMessages(res1 <-
                        acc_loess(resp_vars = "CRP_0", study_data = sd0,
                                  meta_data = meta_data, group_vars = "DEV_NO_0",
                                  time_vars = "LAB_DT_0",
@@ -645,7 +687,7 @@ test_that("acc_loess works for all time span ranges", {
                                  label_col = LABEL))
   )
   expect_silent(
-    suppressWarnings(res1 <-
+    suppressMessages(res1 <-
                        acc_loess(resp_vars = "CRP_0", study_data = sd0,
                                  meta_data = meta_data, group_vars = "DEV_NO_0",
                                  time_vars = "LAB_DT_0",
@@ -653,7 +695,7 @@ test_that("acc_loess works for all time span ranges", {
                                  label_col = LABEL))
   )
   expect_silent(
-    suppressWarnings(res1 <-
+    suppressMessages(res1 <-
                        acc_loess(resp_vars = "CRP_0", study_data = sd0,
                                  meta_data = meta_data, group_vars = "DEV_NO_0",
                                  time_vars = "LAB_DT_0",
@@ -676,7 +718,7 @@ test_that("acc_loess works for all time span ranges", {
 
   md0 <- meta_data
   md0[md0$LABEL == "LAB_DT_0", HARD_LIMITS] <- NA
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
                 meta_data = md0, group_vars = "DEV_NO_0",
@@ -697,7 +739,7 @@ test_that("acc_loess works for all time span ranges", {
     sample(x = 11, size = sum(!is.na(sd0[[g]])),
            replace = TRUE) # for >= 11 groups,
                            # R standard colors are used.
-  expect_warning(
+  expect_message(
     res0 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -709,7 +751,7 @@ test_that("acc_loess works for all time span ranges", {
     sample(x = 10, size = sum(!is.na(sd0[[g]])),
            replace = TRUE) # for <= 10 groups,
                            # dataquieR standard colors are used.
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -740,10 +782,17 @@ test_that("acc_loess output matches plot_format=auto", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -771,7 +820,7 @@ test_that("acc_loess output matches plot_format=auto", {
   sd1 <- study_data
   set.seed(42)
   sd1$v00016 <- sample(1:20, size = nrow(sd1), replace = TRUE)
-  expect_warning(
+  expect_message(
     res2 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd1,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -814,10 +863,17 @@ test_that("acc_loess output matches plot_format=combined", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -858,10 +914,17 @@ test_that("acc_loess output matches plot_format=facets", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -902,10 +965,17 @@ test_that("acc_loess output matches plot_format=both", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -948,10 +1018,17 @@ test_that("acc_loess output matches plot_format=invalid1", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -988,10 +1065,17 @@ test_that("acc_loess output matches plot_format=invalid2", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",

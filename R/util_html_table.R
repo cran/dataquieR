@@ -30,16 +30,24 @@
 #' @param fillContainer see `DT::datatable`
 #' @param dl_fn file name for downloaded table -- see
 #'      [https://datatables.net/reference/button/excel](https://datatables.net/reference/button/excel))
+#' @param cols_are_indicatormetrics [logical] cannot be `TRUE`,
+#'        `colnames_aliases2acronyms` is `TRUE`. `cols_are_indicatormetrics`
+#'        controls, if the columns are really function calls or, if
+#'        `cols_are_indicatormetrics` has been set to `TRUE`, the columns are
+#'        indicator metrics.
+#' @param rotate_for_one_row [logical] rotate one-row-tables
 #'
 #' @return the table to be added to an `rmd`/´`html` file as
 #'         [htmlwidgets::htmlwidgets]
-util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
-                  filter = "top", # TODO: Check with strange labels (report2, esp.)
+#' @seealso [util_formattable()]
+util_html_table <- function(tb,
+                  filter = "top",
                   columnDefs = NULL,
                   autoWidth = FALSE,
                   hideCols = character(0),
                   rowCallback = DT::JS("function(r,d) {$(r).attr('height', '2em')}"),
-                  copy_row_names_to_column = length(rownames(tb)) == nrow(tb) &&
+                  copy_row_names_to_column = !is.null(tb) &&
+                    length(rownames(tb)) == nrow(tb) &&
                     !is.integer(attr(tb, "row.names")) && !all(seq_len(nrow(tb))
                                                                == rownames(tb)),
                   link_variables = TRUE,
@@ -50,20 +58,33 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
                   ...,
                   colnames, options = list(),
                   is_matrix_table = FALSE,
-                  colnames_aliases2acronyms = is_matrix_table,
+                  colnames_aliases2acronyms = is_matrix_table &&
+                    !cols_are_indicatormetrics,
+                  cols_are_indicatormetrics = FALSE,
                   label_col = LABEL,
-                  output_format = c("RMD", "HTML"),
-                  dl_fn = "*") { # caveat: the fixed columns filter may not work.
+                  output_format = c("RMD", "HTML"), # TODO: Order bny VAR_ORDER, if clicked Variables column not on metadata view (NOT named VAR_NAMES)
+                  dl_fn = "*",
+                  rotate_for_one_row = FALSE) { # caveat: the fixed columns filter may not work.
+
+  force(copy_row_names_to_column)
 
   util_ensure_suggested("htmltools", "Generating nice tables")
 
-  if (is.null(tb)) {
+  if (is.null(tb) || nrow(tb) == 0 || ncol(tb) == 0) {
     return()
   }
 
   class(tb) <- setdiff(class(tb), "dataquieR_result")
 
+  util_expect_scalar(rotate_for_one_row, check_type = is.logical)
+
   output_format <- util_match_arg(output_format)
+
+  util_expect_scalar(cols_are_indicatormetrics, check_type = is.logical)
+  util_expect_scalar(colnames_aliases2acronyms, check_type = is.logical)
+  util_expect_scalar(is_matrix_table, check_type = is.logical)
+
+  util_stop_if_not(!(cols_are_indicatormetrics && colnames_aliases2acronyms))
 
   if (missing(meta_data)) {
     if (isTRUE(getOption('knitr.in.progress'))) {
@@ -72,11 +93,24 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
     }
   }
 
+  tb <- as.data.frame.matrix(tb,
+                             stringsAsFactors = FALSE)
+  log_cols <- vapply(tb, is.logical, FUN.VALUE = logical(1))
+  tb[, log_cols] <-
+    vapply(tb[, log_cols, drop = FALSE],
+           as.character, FUN.VALUE = character(nrow(tb)))
+  numcols <- prep_datatype_from_data(tb) %in%
+    c(DATA_TYPES$INTEGER, DATA_TYPES$FLOAT)
+  tb[, numcols] <-
+    vapply(tb[, numcols, drop = FALSE], scales::number,
+           FUN.VALUE = character(nrow(tb)))
+
   if (copy_row_names_to_column) {
     tb <- cbind.data.frame(data.frame(Variables = rownames(tb), # TODO: Check, if Variable still is used instead of plural somewhere
                                       stringsAsFactors = FALSE), tb)
     rownames(tb) <- NULL
   }
+
 
   if (link_variables && any(c("Variables", VAR_NAMES) %in%
                             base::colnames(tb)) && !missing(meta_data)) {
@@ -144,6 +178,8 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
       title <- vn
     }
 
+    .filter <- data
+
     if (output_format == "RMD") { # a proxy to detect the old rmd based output engine
       href <- paste0("#", prep_link_escape(href,
                                            html = FALSE))
@@ -156,7 +192,7 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
       href <- paste0("VAR_", prep_link_escape(href,
                                               html = TRUE),
                      ".html#",
-                     htmltools::urlEncodePath(href))
+                     htmltools::urlEncodePath(as.character(href)))
       title <- prep_title_escape(title,
                                  html = TRUE)
       data <- prep_title_escape(data,
@@ -166,6 +202,7 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
     links <- mapply(
       href = href,
       title = title,
+      filter = .filter,
       data,
       SIMPLIFY = FALSE,
       FUN = htmltools::a
@@ -175,6 +212,15 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
                               FUN = as.character,
                               FUN.VALUE = character(1))
   }
+
+
+  if (rotate_for_one_row && nrow(tb) == 1) {
+    tb <- data.frame(Name = base::colnames(tb),
+                     Value = unlist(tb[1, , TRUE], recursive = FALSE,
+                                    use.names = FALSE),
+                     stringsAsFactors = FALSE)
+  }
+
 
   if (missing(colnames)) {
     colnames <- base::colnames(tb)
@@ -197,6 +243,10 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
     columnDefs,
     list(
       list(
+        targets = 0,
+        className = "dt-nowrap max_60vw"
+      ),
+      list(
         targets = (setdiff(seq_len(ncol(tb)), which(colnames(tb) %in% hideCols))) - 1,
         render = DT::JS("sort_vert_dt")
       )
@@ -211,7 +261,16 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
 
   ftitles <-
     vapply(fnames, function(fn) {
-      r <- .manual$titles[[fn]];
+      r <- util_alias2caption(fn, long = TRUE) # .manual$titles[[fn]];
+      if (length(r) != 1) r <- NA_character_;
+      r
+    }, FUN.VALUE = character(1))
+
+  ftitles[is.na(ftitles)] <- colnames[is.na(ftitles)]
+
+  coltitles <-
+    vapply(colnames, function(cn) {
+      r <- util_alias2caption(cn, long = TRUE) # .manual$titles[[fn]];
       if (length(r) != 1) r <- NA_character_;
       r
     }, FUN.VALUE = character(1))
@@ -253,57 +312,21 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
                                             )
     acronyms <- paste0(acronyms, suffixes)
     names(acronyms) <- colnames
+  } else if (cols_are_indicatormetrics) {
+    # acronyms <- colnames
+    acronyms <- util_translate_indicator_metrics(colnames, short = TRUE)
   } else {
     acronyms <- colnames
     names(acronyms) <- colnames
   }
 
-  if (requireNamespace("Rdpack", quietly = TRUE)) {
-    rd <- Rdpack::Rdo_fetch(package = "dataquieR")
-    # rd$acc_distributions.Rd
-    util_get_col_description <- function(x, ...) {
-      ""
-    }
-    util_get_function_description <-
-      function(x, ...) {
-        if (x %in% names(.manual$descriptions)) {
-          d <- .manual$descriptions[[x]]
-          if (length(d) == 0) {
-            d <- sprintf("Description of %s", dQuote(x))
-          } else {
-            d <- paste0(d, collapse = "\n")
-          }
-        } else {
-          d <- sprintf("Description of %s", dQuote(x))
-        }
-        d
-        # x <- paste0(x, ".Rd")
-        # if (is.null(rd[[x]])) return("")
-        # # paste0(capture.output(tools::Rd2HTML(rd[[x]], fragment = TRUE)),
-        # #        collapse = "\n")
-        # if (output_format == "HTML") {
-        #   h <- paste0(capture.output(tools::Rd2HTML(rd[[x]])),
-        #          collapse = "\n")
-        #   sub(perl = TRUE, '(?msi).*<body.*?>(.*)</body>.*', '\\1', h)
-        #
-        # } else {
-        #   paste0(capture.output(tools::Rd2txt(rd[[x]])),
-        #          collapse = "\n")
-        # }
-      }
+  if (cols_are_indicatormetrics) {
+    descs <- rep("TODO", length(colnames))
+    fdescs <- rep("TODO", length(colnames))
   } else {
-    util_warning("Without installed Rdpack, no documentation will be copied to the dataquieR dq_report.")
-    util_get_col_description <- function(x, ...) {
-      ""
-    }
-    util_get_function_description <-
-      function(x, ...) {
-        sprintf("Description of %s", dQuote(x))
-      }
+    descs <- vapply(colnames, FUN.VALUE = character(1), util_col_description)
+    fdescs <- vapply(fnames, FUN.VALUE = character(1), util_function_description)
   }
-
-  descs <- vapply(colnames, FUN.VALUE = character(1), util_get_col_description)
-  fdescs <- vapply(fnames, FUN.VALUE = character(1), util_get_function_description)
 
   acs <- acronyms[colnames]
 
@@ -329,7 +352,7 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
     cssClass <- c("vertDT")
     cn <-
       paste0("<div class=\"colheader\" title=\"",
-             paste(ftitles, colnames, descs, fdescs, sep = "\n\n"),
+             paste(coltitles, descs, sep = "<br />\n\n"),
              "\">",
              vapply(
                strsplit(
@@ -346,7 +369,7 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
   } else {
     cssClass <- "myDT"
     cn <- paste0("<span title=\"",
-                 paste(ftitles, colnames, descs, fdescs, sep = "\n\n"),
+                 paste(coltitles, descs, sep = "<br />\n\n"),
                  "\">",
                  acs,
                  "</span>")
@@ -354,6 +377,7 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
 
   .options <- list(
     dom = "Bt",
+    # dom = "Bltp",
     buttons = list(
       list(
         extend = 'copy',
@@ -385,7 +409,7 @@ util_html_table <- function(tb, # TODO: Finish tidy-up -- done?
     rowCallback = rowCallback,
     autoFill = TRUE,
     scrollX = TRUE,
-    scrollY = "75vh",
+    scrollY = "55vh",
     scrollCollapse = TRUE,
     paging = FALSE,
     responsive = TRUE,

@@ -7,15 +7,15 @@
 util_dichotomize(study_data, meta_data, label_col = VAR_NAMES)
 }
 \arguments{
-\item{study_data}{Study data including jump/missing codes as specified in the
+\item{study_data}{study data including jump/missing codes as specified in the
 code conventions}
 
-\item{meta_data}{Meta data as specified in the code conventions}
+\item{meta_data}{metadata as specified in the code conventions}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
 }
 \description{
-use the meta data attribute \code{RECODE} (="recode") to
+use the metadata attribute \code{RECODE} (="recode") to
 dichotomize the data
 }

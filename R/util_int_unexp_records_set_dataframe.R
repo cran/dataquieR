@@ -58,7 +58,9 @@ util_int_unexp_records_set_dataframe <- function(level = c("dataframe"),
       util_warning(
         "No %d defined in %d, skipping the check for unexpected record set",
         dQuote("DF_ID_VARS"),
-        dQuote("meta_data_studies")
+        dQuote("meta_data_studies"),
+        applicability_problem = TRUE,
+        intrinsic_applicability_problem = TRUE
       )
       return(
         res_pipeline <- data.frame(
@@ -78,7 +80,9 @@ util_int_unexp_records_set_dataframe <- function(level = c("dataframe"),
     metadata_ids <- metadata_ids[!util_empty(metadata_ids)]
 
     if (length(id_vars) > 1) {
-      util_warning("Check for mutliple IDs is not currently supported")
+      util_warning("Check for mutliple IDs is not currently supported",
+                   intrinsic_applicability_problem = TRUE,
+                   applicability_problem = TRUE)
       return(
         res_pipeline <- data.frame(
           "Level" = "Data frame",

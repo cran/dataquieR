@@ -99,7 +99,7 @@ print.dataquieR_resultset <- function( # TODO: use parallel-mapping
 
   if (length(dir) == 0) {
     dir <- tempfile()
-    util_warning("No output directory given (with dir=), setting it to %s",
+    util_message("No output directory given (with dir=), setting it to %s",
                  dQuote(dir))
   }
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)

@@ -18,6 +18,6 @@ a vector of data quality dimensions. The supported
 dimensions are Completeness, Consistency and Accuracy.
 }
 \seealso{
-\href{https://dataquality.ship-med.uni-greifswald.de/DQconceptNew.html}{Data Quality Concept}
+\href{https://dataquality.qihs.uni-greifswald.de/DQconceptNew.html}{Data Quality Concept}
 }
 \keyword{datasets}

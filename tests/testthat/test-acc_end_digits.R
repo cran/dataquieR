@@ -8,7 +8,7 @@ test_that("acc_end_digits works with 2 args", {
     regexp = "Argument resp_vars is NULL",
     perl = TRUE
   )
-  expect_warning(
+  expect_message(
     res1 <-
       acc_end_digits(resp_vars = "v00014", study_data = study_data,
                      meta_data = meta_data),
@@ -42,7 +42,7 @@ test_that("acc_end_digits works with label_col", {
   skip_on_cran() # slow, errors obvious
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     res1 <-
       acc_end_digits(resp_vars = "CRP_0",
                      study_data = study_data, meta_data = meta_data,
@@ -78,7 +78,7 @@ test_that("acc_end_digits works image check", {
   skip_if_not_installed("vdiffr")
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     res1 <-
       acc_end_digits(resp_vars = "CRP_0",
                      study_data = study_data, meta_data = meta_data,
@@ -134,7 +134,7 @@ test_that("acc_end_digits is robust", {
   sd0 <- study_data
   sd0$v00010[[2]] <- sd0$v00010[[2]] + 0.5
   md0 <- meta_data
-  expect_warning(
+  expect_message(
     expect_error(
       res1 <-
         acc_end_digits(resp_vars = "ARM_CUFF_0",
@@ -143,7 +143,7 @@ test_that("acc_end_digits is robust", {
       regexp =
         sprintf(
           "(%s)",
-          paste("The .+resp_vars.+ is not of type integer.")
+          paste(".+resp_vars.+ are categorical.*")
         ),
       perl = TRUE
     ),

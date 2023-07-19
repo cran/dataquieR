@@ -4,7 +4,7 @@ test_that("con_limit_deviations works", {
   withr::local_timezone("CET")
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     MyValueLimits <- con_limit_deviations(resp_vars  = c("AGE_0", "SBP_0",
                                                          "DBP_0", "SEX_0",
                                                          "QUEST_DT_0",
@@ -42,7 +42,14 @@ test_that("con_limit_deviations and timevars with < 20 integer sec-values ok", {
   skip_on_cran() # slow, errors obvious
   skip_if_not_installed("withr")
   withr::local_timezone("CET")
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
 
@@ -98,12 +105,12 @@ test_that("con_limit_deviations works w/o resp_vars", {
   md0$JUMP_LIST <- SPLIT_CHAR # signals unambiguously no codes intentionally
 
 
-  expect_warning(
+  expect_message(
     MyValueLimits <- con_limit_deviations(label_col  = "LABEL",
                                           study_data = sd0,
                                           meta_data  = md0,
                                           limits     = "HARD_LIMITS"),
-    regexp = sprintf("(%s|%s|%s|%s)",
+    regexp = sprintf("(%s|%s|%s|%s|%s)",
                      paste("All variables with HARD_LIMITS in",
                            "the metadata are used."),
                      paste("N = 9 values in QUEST_DT_0 lie outside hard",
@@ -111,7 +118,9 @@ test_that("con_limit_deviations works w/o resp_vars", {
                      paste("N = 3 values in EDUCATION_1 lie outside hard",
                            "limits and were removed."),
                      paste("N = 24 values in SMOKE_SHOP_0 lie outside hard",
-                           "limits and were removed.")
+                           "limits and were removed."),
+                     paste("Not all entries in.+KEY_STUDY_SEGMENT.+are",
+                           "found in.+VAR_NAMES.+")
     ),
     all = TRUE,
     perl = TRUE
@@ -290,7 +299,7 @@ test_that("con_limit_deviations with no lower limit", {
   sd0[[prep_map_labels("EDUCATION_0", meta_data, VAR_NAMES, LABEL)]] <- x
   md0 <- meta_data
 
-  expect_warning(
+  expect_message(
     MyValueLimits1 <- con_limit_deviations(resp_vars  = "EDUCATION_0",
                                           label_col  = "LABEL",
                                           study_data = sd0,
@@ -366,7 +375,7 @@ test_that("con_limit_deviations does not crash with missing codes", {
   sd0[[prep_map_labels("SBP_0", meta_data, VAR_NAMES, LABEL)]] <- x
   md0 <- meta_data
 
-  expect_warning(
+  expect_message(
     MyValueLimits  <- con_limit_deviations(resp_vars  = "SBP_0",
                                           label_col  = "LABEL",
                                           study_data = sd0,
@@ -394,7 +403,7 @@ test_that("con_limit_deviations does not crash with missing codes", {
 
   sd0[[prep_map_labels("SBP_0", meta_data, VAR_NAMES, LABEL)]] <- x
 
-  expect_warning(
+  expect_message(
     MyValueLimits  <- con_limit_deviations(resp_vars  = "SBP_0",
                                            label_col  = "LABEL",
                                            study_data = sd0,
@@ -439,7 +448,7 @@ test_that("con_limit_deviations does not crash with strong outliers", {
   x <- sd0[[prep_map_labels("BSG_0", meta_data, VAR_NAMES, LABEL)]]
   x[c(2,8,92)] <- c(26027, 28097, 4031012019)
   sd0[[prep_map_labels("BSG_0", meta_data, VAR_NAMES, LABEL)]] <- x
-  expect_warning(
+  expect_message(
     MyValueLimits  <- con_limit_deviations(resp_vars  = "BSG_0",
                                          label_col  = "LABEL",
                                          study_data = sd0,
@@ -475,7 +484,7 @@ test_that("con_limits_deviations does not crash with NAs in datetime vars", {
   #any(is.na(x))
   #length(which(is.na(x)))
   # Variable QUEST_DT_0 already contains NA values
-  expect_warning(
+  expect_message(
     MyValueLimits  <- con_limit_deviations(resp_vars  = "QUEST_DT_0",
                                          label_col  = "LABEL",
                                          study_data = study_data,
@@ -502,7 +511,7 @@ test_that("con_limit_deviations works with no values within limits", {
   md0[["HARD_LIMITS"]][which(md0$LABEL == "BSG_0")] <- "[51.5;51.8]"
   sd0 <- study_data
 
-  expect_warning(
+  expect_message(
     MyValueLimits  <- con_limit_deviations(resp_vars  = "BSG_0",
                                          label_col  = "LABEL",
                                          study_data = sd0,
@@ -541,7 +550,7 @@ test_that("con_limit_deviations works with wrong datetime limits", {
   md0[["HARD_LIMITS"]][which(md0$LABEL == "QUEST_DT_0")] <- "[51.5;51.8]"
   sd0 <- study_data
 
-  expect_warning(
+  expect_message(
     MyValueLimits <- con_limit_deviations(resp_vars  = "QUEST_DT_0",
                                           label_col  = "LABEL",
                                           study_data = sd0,

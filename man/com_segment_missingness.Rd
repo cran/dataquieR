@@ -8,13 +8,14 @@ com_segment_missingness(
   study_data,
   meta_data,
   group_vars = NULL,
+  meta_data_segment,
   strata_vars = NULL,
   label_col,
   threshold_value,
   direction,
   color_gradient_direction,
   expected_observations = c("HIERARCHY", "ALL", "SEGMENT"),
-  exclude_roles = "process"
+  exclude_roles = c(VARIABLE_ROLES$PROCESS)
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ attributes of study data}
 
 \item{group_vars}{\link{variable} the name of a variable used for grouping,
 defaults to \emph{NULL} for not grouping output}
+
+\item{meta_data_segment}{\link{data.frame} Segment level metadata. Optional.}
 
 \item{strata_vars}{\link{variable} the name of a variable used for stratification,
 defaults to NULL for not grouping output}
@@ -86,7 +89,7 @@ respective segments. This structure must be specified in the static metadata.
 The R-function identifies all variables within each segment and returns TRUE
 if all variables within a segment are missing, otherwise FALSE.
 
-Use case \emph{(2)} assumes a more complex structure of study data and meta data.
+Use case \emph{(2)} assumes a more complex structure of study data and metadata.
 The study data comprise so-called intro-variables (either TRUE/FALSE or codes
 for non-participation). The column \code{PART_VAR} in the metadata is
 filled by variable-IDs indicating for each variable the respective
@@ -120,5 +123,5 @@ List function.
 }
 }
 \seealso{
-\href{https://dataquality.ship-med.uni-greifswald.de/VIN_com_impl_segment_missingness.html}{Online Documentation}
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_com_impl_segment_missingness.html}{Online Documentation}
 }

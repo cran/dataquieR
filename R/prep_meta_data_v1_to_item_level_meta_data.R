@@ -9,7 +9,8 @@
 #' @param meta_data [data.frame] the old item-level-metadata
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
-#' @param verbose [logical] display all estimated decisions
+#' @param verbose [logical] display all estimated decisions, defaults to `TRUE`,
+#'                          except if called in a [dq_report2] pipeline.
 #' @param cause_label_df [data.frame] missing code table, see [cause_label_df].
 #'                                    Optional. If this argument is given,
 #'                                    you can add missing code tables.
@@ -28,8 +29,12 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
   #       MISSING_LIST_TABLE is compatible with the data frame passed as `cause_label_df` to `com_item_missingness`, so it works also with `prep_add_cause_label_df` and can be extracted form the JUMP_LIST and MISSING_LIST (without the v2 mapping columns for qualified mssingness) using `prep_extract_cause_label_df`
   # TODO: Re-Check, if besides prep_prepare_dataframes, all other a places, where meta_data is used, call this function
 
+  if (missing(verbose) && .called_in_pipeline) {
+    verbose <- FALSE
+  }
+
   if (identical(attr(meta_data, "version"), 2)) {
-    return(.util_internal_normalize_meta_data(meta_data))
+    return(.util_internal_normalize_meta_data(meta_data, label_col))
   }
 
   util_expect_data_frame(meta_data,
@@ -46,6 +51,33 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
                  dQuote(label_col),
                  sQuote("meta_data"))
     meta_data[[label_col]] <- NA_character_
+  }
+
+  # End digits requested? ----
+  if (DATA_ENTRY_TYPE %in% colnames(meta_data) &&
+      END_DIGIT_CHECK %in% colnames(meta_data)) {
+    util_warning("Have %s and %s in %s, will prefer %s.",
+                 sQuote(END_DIGIT_CHECK),
+                 sQuote(DATA_ENTRY_TYPE),
+                 sQuote("meta_data"),
+                 sQuote(END_DIGIT_CHECK))
+    meta_data[[DATA_ENTRY_TYPE]] <- NULL
+  }
+
+  if (!END_DIGIT_CHECK %in% colnames(meta_data) &&
+      DATA_ENTRY_TYPE %in% colnames(meta_data)) {
+    meta_data[[END_DIGIT_CHECK]] <-
+      !tolower(trimws(meta_data[[DATA_ENTRY_TYPE]])) %in% c("auto",
+                                                            "automatic",
+                                                            "machine",
+                                                            "computational",
+                                                            "electronic") &
+      !util_is_na_0_empty_or_false(meta_data[[DATA_ENTRY_TYPE]])
+    meta_data[[DATA_ENTRY_TYPE]] <- NULL
+  }
+
+  if (!END_DIGIT_CHECK %in% colnames(meta_data)) { # defaults to FALSE
+    meta_data[[END_DIGIT_CHECK]] <- FALSE
   }
 
   # KEY_STUDY_SEGMENT -> STUDY_SEGMENT and PART_VAR ----
@@ -252,7 +284,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
 
   attr(meta_data, "version") <- 2
 
-  return(.util_internal_normalize_meta_data(meta_data))
+  return(.util_internal_normalize_meta_data(meta_data, label_col = label_col))
 }
 
 
@@ -263,6 +295,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
 #'
 #' @inheritParams prep_meta_data_v1_to_item_level_meta_data
 .util_internal_normalize_meta_data <- function(meta_data = "item_level",
+                                               label_col = LABEL,
                                                verbose = TRUE) {
   if (!identical(attr(meta_data, "version"), 2)) {
     util_error(c(
@@ -275,6 +308,135 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
       meta_data[[MISSING_LIST_TABLE]] <- NA_character_
     }
     no_mlt <- util_empty(meta_data[[MISSING_LIST_TABLE]])
+    has_both_mlt_and_ml_jl <- !no_mlt &
+      (!util_empty(meta_data[[JUMP_LIST]]) |
+         !util_empty(meta_data[[MISSING_LIST]]))
+    if (any(has_both_mlt_and_ml_jl)) { # have to combine lists
+      util_warning(c("Should not have %s and %s / %s for the same variable.",
+                     "I'll try to combine them. This will take some time, so",
+                     "you should fix this in your %s to avaoid waiting."),
+                   dQuote(MISSING_LIST_TABLE),
+                   dQuote(MISSING_LIST),
+                   dQuote(JUMP_LIST),
+                   sQuote("meta_data"),
+                   applicability_problem = TRUE)
+      for (r in which(has_both_mlt_and_ml_jl)) {
+        tb <- data.frame(CODE_VALUE = character(0),
+                         CODE_LABEL = character(0),
+                         CODE_INTERPRET = character(0))
+        try({
+          tb <- prep_get_data_frame(meta_data[r, MISSING_LIST_TABLE])
+          if (!"CODE_VALUE" %in% colnames(tb)) {
+            tb[["CODE_VALUE"]] <- NA
+          }
+          tb <- tb[!util_empty(tb[["CODE_VALUE"]]), ,
+                                 FALSE]
+          if ("CODE_INTERPRET" %in% colnames(tb) &&
+              !"CODE_CLASS" %in% colnames(tb)) {
+            tb[["CODE_CLASS"]] <- ifelse(tb[["CODE_INTERPRET"]] %in%
+                                           c("NE"), "JUMP", "MISSING") # TODO: Verify, if, e.g., PL is also a JUMP
+          }
+        })
+        legacy_tb <- data.frame(CODE_VALUE = character(0),
+                                CODE_LABEL = character(0))
+        try({
+          legacy_tb <- prep_extract_cause_label_df(
+            meta_data[r, , drop = FALSE], label_col = label_col)$cause_label_df
+          util_stop_if_not(length(unique(legacy_tb$resp_vars)) < 2)
+          legacy_tb$resp_vars <- NULL # is always only for the item in row r
+          if (!"CODE_VALUE" %in% colnames(legacy_tb)) {
+            legacy_tb[["CODE_VALUE"]] <- NA
+          }
+          legacy_tb <- legacy_tb[!util_empty(legacy_tb[["CODE_VALUE"]]), ,
+                                 FALSE]
+        })
+        cld_name <- paste0(meta_data[r, MISSING_LIST_TABLE], '_',
+                           meta_data[r, label_col])
+        if (exists( # find an available name for a new data frame
+          cld_name,
+          envir = .dataframe_environment)) {
+          i <- 0
+          while (exists( # find an available name for a new data frame
+            paste0(cld_name, "_", i),
+            envir = .dataframe_environment)) i <- i + 1
+          cld_name <- paste0(cld_name, "_", i)
+        }
+        meta_data[r, MISSING_LIST] <- NA
+        meta_data[r, JUMP_LIST] <- NA
+        meta_data[r, MISSING_LIST_TABLE] <- NA
+        combined_table <- merge(legacy_tb, tb, by = "CODE_VALUE", all = TRUE)
+        if (all(c("CODE_LABEL.x", "CODE_LABEL.y") %in%
+                colnames(combined_table))) {
+          combined_table[util_empty(combined_table$CODE_LABEL.x) |
+                           combined_table$CODE_LABEL.x ==
+            paste("MISSING", combined_table$CODE_VALUE), "CODE_LABEL.x"] <-
+            combined_table[util_empty(combined_table$CODE_LABEL.x) |
+                             combined_table$CODE_LABEL.x ==
+                             paste("MISSING", combined_table$CODE_VALUE),
+                           "CODE_LABEL.y"]
+
+          combined_table[util_empty(combined_table$CODE_LABEL.x) |
+                           combined_table$CODE_LABEL.x ==
+            paste("JUMP", combined_table$CODE_VALUE), "CODE_LABEL.x"] <-
+            combined_table[util_empty(combined_table$CODE_LABEL.x) |
+                             combined_table$CODE_LABEL.x ==
+                             paste("JUMP", combined_table$CODE_VALUE),
+                           "CODE_LABEL.y"]
+
+          combined_table[util_empty(combined_table$CODE_LABEL.y) |
+                           combined_table$CODE_LABEL.y ==
+            paste("MISSING", combined_table$CODE_VALUE), "CODE_LABEL.y"] <-
+            combined_table[util_empty(combined_table$CODE_LABEL.y) |
+                             combined_table$CODE_LABEL.y ==
+                             paste("MISSING", combined_table$CODE_VALUE),
+                           "CODE_LABEL.x"]
+
+          combined_table[util_empty(combined_table$CODE_LABEL.y) |
+                           combined_table$CODE_LABEL.y ==
+            paste("JUMP", combined_table$CODE_VALUE), "CODE_LABEL.y"] <-
+            combined_table[util_empty(combined_table$CODE_LABEL.y) |
+                             combined_table$CODE_LABEL.y ==
+                             paste("JUMP", combined_table$CODE_VALUE),
+                           "CODE_LABEL.x"]
+          combined_table$CODE_LABEL <- combined_table$CODE_LABEL.x
+          combined_table$CODE_LABEL.x <- NULL
+          combined_table$CODE_LABEL.y <- NULL
+        }
+        if (all(c("CODE_CLASS.x", "CODE_CLASS.y") %in%
+                colnames(combined_table))) {
+          combined_table[util_empty(combined_table$CODE_CLASS.x),
+                         "CODE_CLASS.x"] <-
+            combined_table[util_empty(combined_table$CODE_CLASS.x),
+                           "CODE_CLASS.y"]
+          combined_table[util_empty(combined_table$CODE_CLASS.y),
+                         "CODE_CLASS.y"] <-
+            combined_table[util_empty(combined_table$CODE_CLASS.y),
+                           "CODE_CLASS.x"]
+          if (any(
+            (!is.na(combined_table$CODE_CLASS.y) &
+             combined_table$CODE_CLASS.x != combined_table$CODE_CLASS.y))) {
+            util_warning(
+              c("Code classes in old and new missing code settings",
+                "don't match for %s, missing and jump codes overlap.",
+                "Will use the new %s: %s as the reference."),
+              dQuote(meta_data[r, label_col]),
+              sQuote(MISSING_LIST_TABLE),
+              dQuote(cld_name),
+              applicability_problem = TRUE)
+          }
+          combined_table$CODE_CLASS <- combined_table$CODE_CLASS.y
+          combined_table$CODE_CLASS.x <- NULL
+          combined_table$CODE_CLASS.y <- NULL
+        }
+        if (prod(dim(combined_table))) {
+          l <- list()
+          l[[cld_name]] <- combined_table
+          prep_add_data_frames(data_frame_list = l)
+          # assign the new cause label df as MISSING_LIST_TABLE
+          meta_data[r, MISSING_LIST_TABLE] <- cld_name
+        }
+      }
+    }
     if (any(no_mlt)) {
       # If no missing list table, yet, for a variable
       # generate one from JUMP_LIST/MISSING_LIST
@@ -362,10 +524,28 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
       util_stop_if_not(all(!util_empty(mlts$resp_vars)))
 
       # ensure, that all missing codes for an item are in MISSING/JUMP_LIST
-      meta_data[] <-
-        prep_add_cause_label_df(meta_data = meta_data,
-                                cause_label_df = mlts,
-                                label_col = VAR_NAMES)
+      new <- prep_add_cause_label_df(meta_data = meta_data,
+                                     cause_label_df = mlts,
+                                     label_col = VAR_NAMES)
+
+      new_cols <- setdiff(colnames(new), colnames(meta_data))
+      if (length(new_cols)) {
+        meta_data[, new_cols] <- NA
+      }
+
+      lost_cols <- setdiff(colnames(meta_data), colnames(new))
+      if (length(lost_cols)) {
+        new[, lost_cols] <- NA
+      }
+
+      util_stop_if_not(length(intersect(colnames(meta_data), colnames(new))) ==
+                         length(union(colnames(meta_data), colnames(new))))
+
+      if (!all(colnames(meta_data) == colnames(new))) {
+        new <- new[, colnames(meta_data)]
+      }
+
+      meta_data[] <- new
     }
     attr(meta_data, "normalized") <- TRUE
   }

@@ -4,7 +4,7 @@
 #'
 #' @return renamed table
 util_make_data_slot_from_table_slot <- function(Table) { # TODO: Use also in both qualified missingness functions
-  abbreviationMetrics <- util_get_concept_info("abbreviationMetrics")
+  abbreviationMetrics <- util_get_concept_info("abbreviationMetrics") # TODO: Use util_translate_indicator_metrics
   dqi <- util_get_concept_info("dqi")
   cols_for_output <-
     vapply(colnames(Table), FUN.VALUE = character(1), FUN = function(x) {
@@ -28,7 +28,8 @@ util_make_data_slot_from_table_slot <- function(Table) { # TODO: Use also in bot
     })
   cols_for_output <- c(Variables = "Variables",
                        Segment = "Segment",
-                       DF_NAME = "DF_NAME",
+                       DF_NAME = "Dataframe",
+                       CHECK_LABEL = "Check",
                        Dataframe = "Dataframe",
                        cols_for_output)
   cols_for_output <- cols_for_output[!is.na(cols_for_output)]
@@ -39,9 +40,14 @@ util_make_data_slot_from_table_slot <- function(Table) { # TODO: Use also in bot
     Data[, startsWith(names(cols_for_output), "PCT_")]
   colnames(Data) <- cols_for_output
   Data[, startsWith(names(cols_for_output), "PCT_")] <-
-    lapply(Data[, startsWith(names(cols_for_output), "PCT_")],
+    lapply(Data[, startsWith(names(cols_for_output), "PCT_"), FALSE],
            function(cl) {
-             paste0(round(cl, 2), "%")
+             if (length(cl) == 0 ||
+                 all(util_empty(cl))) {
+               NA_character_
+             } else {
+               paste0(round(cl, 2), "%")
+             }
            })
   Data
 }

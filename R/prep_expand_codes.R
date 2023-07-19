@@ -12,7 +12,7 @@
 #'                               as jump code labels, if the values are the
 #'                               same.
 #'
-#' @return [data.frame] an updated meta data frame.
+#' @return [data.frame] an updated metadata data frame.
 #' @export
 #'
 #' @examples
@@ -58,11 +58,12 @@ prep_expand_codes <- function(meta_data = "item_level",
   }
 
   expand <- function(cldf) {
+    have_auto <- any(cldf$AUTO)
     my_labels <- cldf[!cldf$AUTO, "CODE_LABEL", TRUE]
     my_labels <- my_labels[!is.na(my_labels)]
     if (length(unique(my_labels)) == 1) {
-      if (!suppressWarnings) {
-        util_warning("Expand label %s for all values coded with %s",
+      if (!suppressWarnings && have_auto) {
+        util_message("Expand label %s for all values coded with %s",
                      dQuote(unique(my_labels)),
                      dQuote(unique(cldf$CODE_VALUE)),
                      applicability_problem = TRUE)

@@ -1,31 +1,87 @@
- {{
+{{
  util_float_index_menu(
    data.frame(links = c("report.html#ismat",
                         "report.html#apmat",
-                        "report.html#ermat"),
+                         "report.html#ermat",
+                         "report.html#anamat",
+                        "report.html#notes_labels"),
               hovers = c("Overview on Data Quality Issues",
                          "Overview on Applicability Problems",
-                         "Overview on Other Errors"),
+                         "Overview on Other Errors",
+                         "Overview on Impossible Analyses",
+                         "Other notes"),
               texts = c("Issue Matrix",
-                        "Applicability Matrix",
-                        "Error Matrix"))
+                        "Metadata Limitations Matrix",
+                        "Error Matrix",
+                        "Analysis Matrix",
+                        "Other information"))
   )
 }}
 <h1>
-  Summary overview
+  Overview of all performed quality checks
 </h1>
+<p>
+  This overview is composed of two matrices. Their rows contain the variables of the study data, columns refer to the targeted data quality indicator functions. The meaning of the colors is described at the bottom of each table.
+</p>
+<br>
+
+<br>
 <h2>
   Issue Matrix
 </h2>
+<p>
+  The issue matrix displays all potential data quality issues in the data.
+</p>
 <a id="ismat"></a>
  {{ ismat }}
+
+<p>
+Each cell of the issue matrix can have one of the following colours:<br>
+grey: no data quality measure is available;<br>
+blue: a data quality measure is available: no problems detected;<br>
+red: a data quality measure is available: a possible problem was detected needing further investigation.
+</p>
+<br>
+
+<br>
+
 <h2>
-  Applicability Matrix
+  Metadata Limitations Matrix
 </h2>
+<p>
+  The metadata limitations matrix refers to problems originating from the metadata. It shows warnings related to missing or deficient metadata.
+</p>
 <a id="apmat"></a>
  {{ apmat }}
+
+<p>
+Each cell of the metadata limitations matrix can have one of the following colours:<br>
+grey: the function could not be applied;<br>
+yellow: the function produced a result, but metadata can be improved;<br>
+blue: the function produced a result;<br>
+red: the function produced no result due to missing metadata.
+</p>
+<br>
+
 <h2>
   Error Matrix
 </h2>
 <a id="ermat"></a>
- {{ ermat }}
+{{ ermat }}
+<h2>
+  Analysis Matrix
+</h2>
+<a id="anamat"></a>
+{{ anamat }}
+
+<br>
+<h2>
+  Other information
+</h2>
+<p>
+Moving the mouse pointer on the table shows the function, the variable of interest, and the warning or error message produced when calling the function. <br> Moving the mouse pointer on the variables displays the actual variable name instead of the label.
+</p>
+<a id="notes_labels"></a>
+{{ notes_labels }}
+<br>
+<br>

@@ -36,7 +36,7 @@
 #'
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_end_digits.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_end_digits.html
 #' )
 acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
                            label_col = VAR_NAMES) {
@@ -51,6 +51,14 @@ acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
     need_type = "integer|float"
   )
 
+  if (.called_in_pipeline && util_is_na_0_empty_or_false(
+    meta_data[meta_data[[label_col]] == resp_vars, END_DIGIT_CHECK])) {
+    util_error("No end digit check requested for %s",
+               dQuote(resp_vars),
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE) # this is not really intrinsic, but, from a user's point of view, it is.
+  }
+
   # checks
   if (is.null(resp_vars) || length(ds1[[resp_vars]]) == 0L ||
       mode(ds1[[resp_vars]]) != "numeric") {
@@ -62,6 +70,18 @@ acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
   if (any(is.infinite(ds1[[resp_vars]]))) {
     util_error("Values in 'resp_vars' must not contain infinite data",
                applicability_problem = TRUE)
+  }
+
+  vlabels <- meta_data[meta_data[[label_col]] == resp_vars, VALUE_LABELS]
+
+  have_labels <- vapply(util_parse_assignments(vlabels,
+         multi_variate_text = TRUE), length, FUN.VALUE = integer(1)) > 0
+
+  if (have_labels) {
+    util_error("%s are categorical, so end digits are not reasonable to check",
+               sQuote("resp_vars"),
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
   }
 
   vtype <- meta_data[meta_data[[label_col]] == resp_vars, DATA_TYPE]
@@ -82,13 +102,15 @@ acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
   }
 
   if (vtype == DATA_TYPES$FLOAT && all(util_is_integer(ds1[[resp_vars]]))) {
-    util_warning("The 'resp_vars' is of type integer.",
+    util_message("%s is of type integer.",
+                 dQuote(resp_vars),
                  applicability_problem = TRUE)
     vtype <- "integer"
   }
 
   if (vtype == DATA_TYPES$INTEGER && !(all(util_is_integer(ds1[[resp_vars]])))) {
-    util_error("The 'resp_vars' is not of type integer.",
+    util_error("%s is not of type integer.",
+               dQuote(resp_vars),
                applicability_problem = TRUE)
   }
 

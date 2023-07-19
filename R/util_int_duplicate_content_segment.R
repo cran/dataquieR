@@ -60,11 +60,12 @@ util_int_duplicate_content_segment <- function(level = c("segment"),
                                  meta_data[[STUDY_SEGMENT]])
 
   if (length(old_study_segment) > length(study_segment)) {
-    util_warning(
+    util_message(
       "The segments in the %s do not match the segments in %s, considering only the intersection",
       dQuote("meta_data"),
       dQuote("meta_data_segment"),
-      applicability_problem = TRUE
+      applicability_problem = TRUE,
+      intrinsic_applicability_problem = FALSE
     )
   }
 

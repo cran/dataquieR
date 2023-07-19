@@ -90,7 +90,7 @@ test_that("pro_applicability_matrix works", {
     md0[[KEY_STUDY_SEGMENT]][[2]] <- NA
   if (STUDY_SEGMENT %in% names(md0))
     md0[[STUDY_SEGMENT]][[2]] <- NA
-  expect_warning(
+  expect_message(
     appmatrix <- pro_applicability_matrix(study_data = study_data,
                                           meta_data = md0,
                                           label_col = LABEL,
@@ -102,7 +102,7 @@ test_that("pro_applicability_matrix works", {
     perl = TRUE
   )
 
-  expect_warning(
+  expect_message(
     appmatrix <- pro_applicability_matrix(study_data = study_data,
                                           meta_data = meta_data,
                                           label_col = LABEL,
@@ -119,7 +119,7 @@ test_that("pro_applicability_matrix works", {
   md0 <- meta_data
   md0$KEY_STUDY_SEGMENT <- NULL
   md0$STUDY_SEGMENT <- NULL
-  expect_warning(
+  expect_message(
     appmatrix <- pro_applicability_matrix(study_data = study_data,
                                           meta_data = md0,
                                           label_col = LABEL,

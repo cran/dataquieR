@@ -13,15 +13,16 @@ prep_deparse_assignments <- function(codes, labels, split_char = SPLIT_CHAR) {
   if (length(codes) != length(labels)) {
     util_error("%s and %s must have the same length",
                dQuote("values"),
-               dQuote("labels"))
+               dQuote("labels"), applicability_problem = TRUE)
   }
   if (suppressWarnings(!all(util_is_integer(as.numeric(codes)) |
            !is.na(lubridate::as_datetime(codes))))) {
-    util_error("All codes must be integer or date/time values")
+    util_error("All codes must be integer or date/time values",
+               applicability_problem = TRUE)
   }
   if (any(grepl(split_char, labels, fixed = TRUE))) {
-    util_warning("Removed seperator characters (%s) from the labels",
-                 dQuote(split_char))
+    util_message("Removed seperator characters (%s) from the labels",
+                 dQuote(split_char), applicability_problem = TRUE)
     labels <- gsub(split_char, "", labels, fixed = TRUE)
   }
   if (!!length(codes) && length(codes) == length(labels)) {

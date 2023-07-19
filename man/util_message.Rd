@@ -8,8 +8,10 @@ util_message(
   m,
   ...,
   applicability_problem = NA,
+  intrinsic_applicability_problem = NA,
   integrity_indicator = "none",
-  level = 0
+  level = 0,
+  immediate
 )
 }
 \arguments{
@@ -17,13 +19,17 @@ util_message(
 
 \item{...}{arguments for \link{sprintf} on m, if m is a character}
 
-\item{applicability_problem}{\link{logical} message indicates unsuitable resp_vars}
+\item{applicability_problem}{\link{logical} error indicates missing metadata}
+
+\item{intrinsic_applicability_problem}{\link{logical} error unsuitable resp_vars}
 
 \item{integrity_indicator}{\link{character} the message is an integrity problem,
 here is the indicator abbreviation..}
 
 \item{level}{\link{integer} level of the message (defaults to 0). Higher
 levels are more severe.}
+
+\item{immediate}{\link{logical} not used.}
 }
 \value{
 \link{condition} the condition object, if the execution is not stopped

@@ -2,13 +2,21 @@
 % Please edit documentation in R/prep_purge_data_frame_cache.R
 \name{prep_purge_data_frame_cache}
 \alias{prep_purge_data_frame_cache}
-\title{Title}
+\title{Clear data frame cache}
 \usage{
 prep_purge_data_frame_cache()
 }
 \value{
-TODO
+nothing
 }
 \description{
-Title
+Clear data frame cache
 }
+\seealso{
+Other data-frame-cache: 
+\code{\link{prep_add_data_frames}()},
+\code{\link{prep_get_data_frame}()},
+\code{\link{prep_list_dataframes}()},
+\code{\link{prep_load_workbook_like_file}()}
+}
+\concept{data-frame-cache}

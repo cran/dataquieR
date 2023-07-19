@@ -110,5 +110,5 @@ if the minimum of observations in one level of the group_vars is higher than
 \code{n=30}.
 }
 \seealso{
-\href{https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_loess.html}{Online Documentation}
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_loess.html}{Online Documentation}
 }

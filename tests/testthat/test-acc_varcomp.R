@@ -36,7 +36,7 @@ test_that("acc_varcomp works without label_col", {
     perl = TRUE
   )
 
-  suppressMessages(expect_warning(
+  suppressMessages(expect_message(
     res1 <-
       acc_varcomp(resp_vars = c("DBP_0", "SBP_0"), study_data = study_data,
                   meta_data = meta_data, group_vars = c("USR_BP_0"),
@@ -48,7 +48,7 @@ test_that("acc_varcomp works without label_col", {
               "due to less than 30 observations.")
       ),
     perl = TRUE,
-    all = TRUE
+    all = FALSE
   ))
 
   expect_true(all(
@@ -119,7 +119,7 @@ test_that("acc_varcomp works with label_col", {
 test_that("acc_varcomp works illegal min_obs_in_subgroup/min_subgroups", {
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  suppressMessages(expect_warning(
+  suppressMessages(expect_message(
     res1 <-
       acc_varcomp(resp_vars = c("DBP_0", "SBP_0"), study_data = study_data,
                   meta_data = meta_data, group_vars = c("USR_BP_0"),
@@ -136,7 +136,7 @@ test_that("acc_varcomp works illegal min_obs_in_subgroup/min_subgroups", {
               "due to less than 30 observations.")
       ),
     perl = TRUE,
-    all = TRUE
+    all = FALSE
   ))
 
   expect_true(all(
@@ -200,7 +200,7 @@ test_that("acc_varcomp stops on to few subgroups", {
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
 
-  expect_warning(
+  expect_message(
     res1 <-
       acc_varcomp(resp_vars = "v00014",
                   study_data = study_data,

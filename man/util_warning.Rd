@@ -8,8 +8,10 @@ util_warning(
   m,
   ...,
   applicability_problem = NA,
+  intrinsic_applicability_problem = NA,
   integrity_indicator = "none",
-  level = 0
+  level = 0,
+  immediate
 )
 }
 \arguments{
@@ -17,13 +19,18 @@ util_warning(
 
 \item{...}{arguments for \link{sprintf} on m, if m is a character}
 
-\item{applicability_problem}{\link{logical} warning indicates unsuitable resp_vars}
+\item{applicability_problem}{\link{logical} error indicates missing metadata}
+
+\item{intrinsic_applicability_problem}{\link{logical} error unsuitable resp_vars}
 
 \item{integrity_indicator}{\link{character} the warning is an integrity problem,
 here is the indicator abbreviation..}
 
 \item{level}{\link{integer} level of the warning message (defaults to 0). Higher
 levels are more severe.}
+
+\item{immediate}{\link{logical} Display the warning immediately, not only, when
+the interactive session comes back.}
 }
 \value{
 \link{condition} the condition object, if the execution is not stopped

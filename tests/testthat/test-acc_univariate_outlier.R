@@ -7,7 +7,7 @@ test_that("acc_univariate_outlier works without label_col", {
   set.seed(234325)
   sd1$v00014 <- rnorm(nrow(sd1), sd = 0.01)
   sd1 <- sd1[sd1$v00014 < 0.02 & sd1$v00014 > -0.02, ]
-  expect_warning(
+  expect_message(
     no_ol_det <- acc_univariate_outlier(resp_vars = "v00014", study_data = sd1,
                            meta_data = meta_data, max_non_outliers_plot = 0),
     regexp =
@@ -20,13 +20,13 @@ test_that("acc_univariate_outlier works without label_col", {
     perl = TRUE
   )
 
-  expect_warning(invisible(
+  expect_message(invisible(
     acc_univariate_outlier(resp_vars = "v00014", study_data = study_data,
                            meta_data = meta_data, n_rules = cars)),
     regexp =
       "The formal n_rules is not an integer between 1 and 4, default .4. is used.")
 
-  expect_warning(invisible(
+  expect_message(invisible(
     acc_univariate_outlier(resp_vars = "v00014", study_data = study_data,
                            meta_data = meta_data,
                            max_non_outliers_plot = 100)),
@@ -34,7 +34,7 @@ test_that("acc_univariate_outlier works without label_col", {
       paste("For .+v00014.+, 100 from 2633 non-outlier data values",
             "were sampled to avoid large plots."))
 
-  expect_warning(invisible(
+  expect_message(invisible(
     acc_univariate_outlier(resp_vars = "v00014", study_data = study_data,
                            meta_data = meta_data,
                            max_non_outliers_plot = -42)),
@@ -47,14 +47,14 @@ test_that("acc_univariate_outlier works without label_col", {
   md1$JUMP_LIST <- "|"
   md1$MISSING_LIST <- "|"
 
-  expect_warning(
+  expect_message(
     expect_error(invisible(
       acc_univariate_outlier(study_data = sd1,
                              meta_data = md1)),
       regexp =
-        paste("No variables suitable data type defined.")),
+        paste("No variables with suitable data type defined.")),
     regexp = "The following variables:  were selected.",
-    all = TRUE,
+    all = !TRUE,
     fixed = TRUE
   )
 
@@ -141,7 +141,7 @@ test_that("acc_univariate_outlier works with label_col", {
                      paste("In .+resp_vars.+, variables",
                            "with types matching .+integer . float.+ should",
                            "be specified, but not all variables have a type",
-                           "assigned in the meta data. I have 2 variables but",
+                           "assigned in the metadata. I have 2 variables but",
                            "only 0 types."),
                      paste("Only: CRP_0 are defined to be of type float or",
                            "integer.")
@@ -163,7 +163,7 @@ test_that("acc_univariate_outlier works with label_col", {
                      paste("In .+resp_vars.+, variables",
                            "with types matching .+integer . float.+ should",
                            "be specified, but not all variables have a type",
-                           "assigned in the meta data. I have 2 variables but",
+                           "assigned in the metadata. I have 2 variables but",
                            "only 0 types."),
                      paste("Only: CRP_0 are defined to be of type float or",
                            "integer."),
@@ -189,7 +189,7 @@ test_that("acc_univariate_outlier works with label_col", {
                      paste("In .+resp_vars.+, variables",
                            "with types matching .+integer . float.+ should",
                            "be specified, but not all variables have a type",
-                           "assigned in the meta data. I have 5 variables but",
+                           "assigned in the metadata. I have 5 variables but",
                            "only 0 types."),
                      paste("Only: CENTER_0, SEX_0, AGE_0, CRP_0 are defined",
                            "to be of type float or integer."),
@@ -202,7 +202,7 @@ test_that("acc_univariate_outlier works with label_col", {
 
   sd0 <- study_data
   sd0$v00014 <- NA_integer_
-  expect_warning(
+  expect_message(
     expect_error(
       res1 <-
         acc_univariate_outlier(resp_vars = c("CRP_0", "AGE_0"),
@@ -224,7 +224,7 @@ test_that("acc_univariate_outlier works with label_col", {
 
   sd0 <- study_data
   sd0$v00014 <- NA
-  expect_warning(
+  expect_message(
     expect_error(
       res1 <-
         acc_univariate_outlier(resp_vars = c("CRP_0", "AGE_0"),

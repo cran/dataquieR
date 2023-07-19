@@ -13,7 +13,7 @@ util_fix_rstudio_bugs <- function() { # nocov start
         rstudio_too_old <- FALSE
       }
     } else {
-      packageStartupMessage(sprintf(
+      util_user_hint(sprintf(
         paste0("Without the package %s, I cannot decide, if your RStudio is",
                "at least at version 1.3.1056, so I'll activate a work-around",
                "for a known parallel-bug fixed in newer RStudios."),
@@ -22,7 +22,7 @@ util_fix_rstudio_bugs <- function() { # nocov start
       rstudio_too_old <- TRUE
     }
     if (rstudio_too_old) {
-      packageStartupMessage(paste0("Enabling workaround for an RStudio bug:",
+      util_user_hint(paste0("Enabling workaround for an RStudio bug:",
                              "https://github.com/rstudio/rstudio/issues/6692"))
       if (exists("setDefaultClusterOptions", asNamespace("parallel"),
                  mode = "function")) {

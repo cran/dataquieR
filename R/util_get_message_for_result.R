@@ -10,22 +10,26 @@
 #'         run-time errors, warnings or notes (aka messages)
 util_get_message_for_result <- function(result,
                                    aspect = c("applicability", "error",
-                                              "issue"),
+                                              "issue", "anamat", "indicator_or_descriptor"),
                                    collapse = "\n<br />\n", ...) {
   aspect <- util_match_arg(aspect, several_ok = FALSE)
   if (!inherits(result, "dataquieR_result")) {
     return("No results computed")
   }
-  if (aspect != "applicability") {
+  if (!(aspect %in% c("applicability", "anamat"))) {
     expected_a_result <-
       (util_get_color_for_result(result, "applicability") %in%
          c("green", "yellow")) # TODO: Fix error must be added in squarereportrenderer
+    expected_a_result <-
+      expected_a_result && (util_get_color_for_result(result, "anamat") !=
+                              "red")
+
   } else {
     expected_a_result <- NA
   }
-  if (aspect == "issue") {
+  if (aspect == "issue") { # issue ----
     if (length(result) == 0 || inherits(result, "dataquieR_NULL")) {
-      return("No classification available")
+      return("No result available")
     }
     if (is.data.frame(result$SummaryTable)) { # TODO: Make also work for variable groups and so on...
       if (!is.null(result$SummaryTable$GRADING)) {
@@ -60,13 +64,24 @@ util_get_message_for_result <- function(result,
       if (is.null(applicability_problem) || is.na(applicability_problem)) {
         applicability_problem <- FALSE
       }
+      intrinsic_applicability_problem <- attr(w,
+                                              "intrinsic_applicability_problem")
+      if (is.null(intrinsic_applicability_problem) ||
+          is.na(intrinsic_applicability_problem)) {
+        intrinsic_applicability_problem <- FALSE
+      }
       if (aspect == "applicability") {
-        if (applicability_problem) {
+        if (applicability_problem && !intrinsic_applicability_problem) {
+          msgs <- c(msgs, gsub("\n>.*$", "", gsub("^.*?: ", "",
+                                                  conditionMessage(w))))
+        }
+      } else if (aspect == "anamat") {
+        if (applicability_problem && intrinsic_applicability_problem) {
           msgs <- c(msgs, gsub("\n>.*$", "", gsub("^.*?: ", "",
                                                   conditionMessage(w))))
         }
       } else {
-        if (!applicability_problem) {
+        if (!applicability_problem && !intrinsic_applicability_problem) {
           msgs <- c(msgs, gsub("\n>.*$", "", gsub("^.*?: ", "",
                                                   conditionMessage(w))))
         }
@@ -79,13 +94,24 @@ util_get_message_for_result <- function(result,
       if (is.null(applicability_problem) || is.na(applicability_problem)) {
         applicability_problem <- FALSE
       }
-      if (aspect == "applicability") {
-        if (applicability_problem) {
+      intrinsic_applicability_problem <- attr(w,
+                                              "intrinsic_applicability_problem")
+      if (is.null(intrinsic_applicability_problem) ||
+          is.na(intrinsic_applicability_problem)) {
+        intrinsic_applicability_problem <- FALSE
+      }
+      if (aspect %in% c("applicability", "anamat")) {
+        if (aspect == "applicability" &&
+            applicability_problem && !intrinsic_applicability_problem) {
+          msgs <- c(msgs, gsub("\n>.*$", "", gsub("^.*?: ", "",
+                                                  conditionMessage(w))))
+        } else if ((aspect == "anamat") &&
+                    applicability_problem && intrinsic_applicability_problem) {
           msgs <- c(msgs, gsub("\n>.*$", "", gsub("^.*?: ", "",
                                                   conditionMessage(w))))
         }
       } else {
-        if (!applicability_problem) {
+        if (!applicability_problem && !intrinsic_applicability_problem) {
           msgs <- c(msgs, gsub("\n>.*$", "", gsub("^.*?: ", "",
                                                   conditionMessage(w))))
         }
@@ -98,8 +124,19 @@ util_get_message_for_result <- function(result,
       if (is.null(applicability_problem) || is.na(applicability_problem)) {
         applicability_problem <- FALSE
       }
-      if (aspect == "applicability") {
-        if (applicability_problem) {
+      intrinsic_applicability_problem <- attr(w,
+                                              "intrinsic_applicability_problem")
+      if (is.null(intrinsic_applicability_problem) ||
+          is.na(intrinsic_applicability_problem)) {
+        intrinsic_applicability_problem <- FALSE
+      }
+      if (aspect %in% c("applicability", "anamat")) {
+        if (aspect == "applicability" &&
+            applicability_problem && !intrinsic_applicability_problem) {
+          msgs <- c(msgs, gsub("\n>.*$", "", gsub("^.*?: ", "",
+                                                  conditionMessage(w))))
+        } else if ((aspect == "anamat") &&
+                    applicability_problem && intrinsic_applicability_problem) {
           msgs <- c(msgs, gsub("\n>.*$", "", gsub("^.*?: ", "",
                                                   conditionMessage(w))))
         }

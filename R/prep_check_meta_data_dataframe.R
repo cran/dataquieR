@@ -1,4 +1,4 @@
-#' Verify and normalize meta data on data frame level
+#' Verify and normalize metadata on data frame level
 #'
 #' if possible, mismatching data types are converted (`"true"` becomes `TRUE`)
 #'
@@ -88,7 +88,8 @@ prep_check_meta_data_dataframe <- function(meta_data_dataframe =
     util_message("Removing %d rows from %s, because %s is empty.",
                  sum_no_key,
                  dQuote("meta_data_dataframe"),
-                 sQuote(DF_NAME)
+                 sQuote(DF_NAME),
+                 applicability_problem = TRUE
                  )
   }
 

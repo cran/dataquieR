@@ -42,7 +42,7 @@ util_par_pmap <- function(.l, .f, ...,
     meta_data <- more_args[["meta_data"]]
     if (use_cache &&
         !all(unlist(parallelMap::parallelMap(exists, "meta_data")))) {
-      parallelMap::parallelExport("meta_data")
+      suppressWarnings(parallelMap::parallelExport("meta_data"))
       more_args[["meta_data"]] <- NULL
     }
   }
@@ -50,7 +50,7 @@ util_par_pmap <- function(.l, .f, ...,
     study_data <- more_args[["study_data"]]
     if (use_cache &&
         !all(unlist(parallelMap::parallelMap(exists, "study_data")))) {
-      parallelMap::parallelExport("study_data")
+      suppressWarnings(parallelMap::parallelExport("study_data"))
       more_args[["study_data"]] <- NULL
     }
   }

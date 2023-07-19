@@ -64,7 +64,7 @@ int_unexp_records_segment <- function(study_segment,
   segments <- intersect(study_segment, meta_data$STUDY_SEGMENT)
 
   if (length(old_segments) > length(segments)) {
-    util_warning(
+    util_message(
       c("The segments in the %s do not match the segments in %s,",
         "considering only the intersection"),
       dQuote("meta_data"),

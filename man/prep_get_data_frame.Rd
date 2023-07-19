@@ -66,4 +66,11 @@ prep_get_data_frame(file.path(system.file(package = "dataquieR"),
 \link{prep_add_data_frames}
 
 \link{prep_load_workbook_like_file}
+
+Other data-frame-cache: 
+\code{\link{prep_add_data_frames}()},
+\code{\link{prep_list_dataframes}()},
+\code{\link{prep_load_workbook_like_file}()},
+\code{\link{prep_purge_data_frame_cache}()}
 }
+\concept{data-frame-cache}

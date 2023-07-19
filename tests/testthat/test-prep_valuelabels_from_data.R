@@ -4,7 +4,7 @@ test_that("prep_datatype_from_data works", {
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  expect_warning(
+  expect_message(
     prep_valuelabels_from_data(c("Species", "xzy", "Sepal.Width"), iris),
     all = TRUE,
     regexp =

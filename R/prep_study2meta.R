@@ -1,6 +1,6 @@
-#' Guess a meta data frame from study data.
+#' Guess a metadata data frame from study data.
 #'
-#' Guess a minimum meta data frame from study data. Minimum required variable
+#' Guess a minimum metadata data frame from study data. Minimum required variable
 #' attributes are:
 #'
 #' ```{r}
@@ -33,28 +33,7 @@ prep_study2meta <- function(study_data, level = c(
     util_error("Argument %s must be logical(1)", dQuote("convert_factors"))
   }
 
-  if (requireNamespace("tibble", quietly = TRUE)) {
-    if (tibble::is_tibble(study_data)) {
-      study_data <- as.data.frame(study_data)
-    }
-  } else if (inherits(study_data, "tbl_df")) {
-    util_warning(
-      paste(
-        "%s looks like a tibble. However, the package %s seems not to be",
-        "available, which is quite strange.",
-        "I cannot convert the tibble to a data.frame therefore.",
-        "Tibbles do not always work like base R data.frames (see %s), so this",
-        "can cause errors,",
-        "because %s expects %s in base R data.frames, not in tibbles."
-      ),
-      dQuote("study_data"),
-      dQuote("tibble"),
-      dQuote("https://r4ds.had.co.nz/tibbles.html#tibbles-vs.data.frame"),
-      dQuote("dataquieR"),
-      dQuote("study_data"),
-      applicability_problem = FALSE
-    )
-  }
+  study_data <- util_cast_off(study_data, "study_data")
 
   util_get_var_att_names_of_level(VARATT_REQUIRE_LEVELS$REQUIRED)
 
@@ -97,7 +76,8 @@ prep_study2meta <- function(study_data, level = c(
       LONG_LABEL = var_labels,
       DATA_TYPE = datatypes,
       VALUE_LABELS = valuelabels[[VALUE_LABELS]],
-      MISSING_LIST = missing_list
+      MISSING_LIST = missing_list,
+      JUMP_LIST = NA_character_
     )
   } else {
     res <- prep_create_meta(
@@ -105,14 +85,14 @@ prep_study2meta <- function(study_data, level = c(
       LABEL = var_labels,
       LONG_LABEL = var_labels,
       DATA_TYPE = datatypes,
-      MISSING_LIST = missing_list
+      MISSING_LIST = missing_list,
+      JUMP_LIST = NA_character_
     )
   }
 
   generated_atts <- util_get_var_att_names_of_level(level,
                                                     cumulative = cumulative)
   missing_atts <- setdiff(generated_atts, colnames(res))
-
   if (length(missing_atts) > 0) {
     empty_cols <-
       do.call(data.frame, c(
@@ -125,14 +105,19 @@ prep_study2meta <- function(study_data, level = c(
     res <- cbind.data.frame(res, empty_cols)
   }
 
+  if (MISSING_LIST_TABLE %in% generated_atts)
+    generated_atts <- union(generated_atts, c(MISSING_LIST, JUMP_LIST))
+
+  missing_atts <- setdiff(generated_atts, colnames(res))
+
   res <- res[, intersect(generated_atts, colnames(res))]
 
-  if (!all(generated_atts %in% colnames(res))) {
+  if (length(missing_atts)) {
     util_error(
-      c("Internal error. The function prep_study2meta should return a mininum",
-      "meta data frame, but the attributes %s are missing."),
+      c("Internal error. The function prep_study2meta should return a minimum",
+      "metadata data frame, but the attributes %s are missing."),
       paste0(dQuote(
-        generated_atts[!(generated_atts %in% colnames(res))]
+        missing_atts
       ), collapse = ", ")
     )
   }

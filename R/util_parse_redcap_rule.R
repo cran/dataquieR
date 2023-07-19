@@ -902,10 +902,10 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
 
       if ( cstream$status == "fail" ) {
         invisible(errorFun(cstream$node$pos,cstream$node$h,cstream$node$type))
-        return(list())
+        return(util_attach_attr(list(), src = rule))
       } else if ( cstream$status != "ok" ) {
         warning(sprintf("Unknown error parsing %s: %s (will ignore this rule)", rule, cstream$status))
-        return(list())
+        return(util_attach_attr(list(), src = rule))
       } else {
         # r <- cstream$node[[2]] # 2 to remove the brackets added in <ADDBR>
         iseof <- !(cstream$stream$pos < cstream$stream$lenchar)
@@ -923,6 +923,8 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
         # }
         r <- cstream$node
         if (debug > 0) message(r)
+        if (is.symbol(r)) r <- as.expression(r)
+        attr(r, "src") <- rule
         return(r)
       }
     }

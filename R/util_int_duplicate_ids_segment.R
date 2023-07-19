@@ -65,11 +65,12 @@ util_int_duplicate_ids_segment <- function(level = c("segment"),
   study_segment <- intersect(study_segment, meta_data[[STUDY_SEGMENT]])
 
   if (length(old_study_segment) > length(study_segment)) {
-    util_warning(
+    util_message(
       "The study_segment in the %s do not match the study_segment in %s, considering only the intersection",
       dQuote("meta_data"),
       dQuote("meta_data_segment"),
-      applicability_problem = TRUE
+      applicability_problem = TRUE,
+      intrinsic_applicability_problem = FALSE
     )
   }
 
@@ -93,7 +94,7 @@ util_int_duplicate_ids_segment <- function(level = c("segment"),
         "The %s (%s) in the %s are not included in the %s",
         "ID variables",
         util_pretty_vector_string(id_vars_list[[current_segment]]),
-        "meta data",
+        "metadata",
         "study data",
         applicability_problem = TRUE
       )

@@ -5,7 +5,7 @@
 \title{Create an HTML file for the \link{dq_report2}}
 \usage{
 util_create_page_file(
-  page,
+  page_nr,
   pages,
   rendered_pages,
   dir,
@@ -14,11 +14,13 @@ util_create_page_file(
   logo,
   loading,
   packageName,
-  deps
+  deps,
+  progress_msg,
+  progress
 )
 }
 \arguments{
-\item{page}{the name of the page-file being created}
+\item{page_nr}{the number of the page being created}
 
 \item{pages}{list with all page-contents named by their desired file names}
 
@@ -39,6 +41,10 @@ util_create_page_file(
 \item{deps}{dependencies, as pre-processed by
 \code{htmltools::copyDependencyToDir} and
 \code{htmltools::renderDependencies}}
+
+\item{progress_msg}{\link{closure} to call with progress information}
+
+\item{progress}{\link{closure} to call with progress information}
 }
 \value{
 \code{invisible(file_name)}

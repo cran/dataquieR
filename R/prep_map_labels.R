@@ -6,7 +6,7 @@
 #' @details
 #' This function basically calls `colnames(study_data) <- meta_data$LABEL`,
 #' ensuring correct merging/joining of study data columns to the corresponding
-#' meta data rows, even if the orders differ. If a variable/study_data-column
+#' metadata rows, even if the orders differ. If a variable/study_data-column
 #' name is not found in `meta_data[[from]]` (default `from = VAR_NAMES`),
 #' either stop is called or, if `ifnotfound` has been assigned a value, that
 #' value is returned. See [`mget`], which is internally used by this function.
@@ -16,7 +16,7 @@
 #' all `HARD_LIMITS` from the metadata.
 #'
 #' @param x [character] variable names, character vector, see parameter from
-#' @param meta_data [data.frame] meta data frame, if, as a `dataquieR`
+#' @param meta_data [data.frame] metadata data frame, if, as a `dataquieR`
 #'                               developer, you do not have
 #'                               **item-level-metadata**, you should use
 #'                               [util_map_labels] instead to avoid consistency
@@ -52,7 +52,7 @@ prep_map_labels <- function(x, meta_data = "item_level",
     meta_data = meta_data, verbose = TRUE, label_col = LABEL)
   if (!is.data.frame(meta_data)) {
     util_error(
-      c("Need meta data as a data frame for mapping",
+      c("Need metadata as a data frame for mapping",
         "variables to their attributes"),
       applicability_problem = TRUE
     )

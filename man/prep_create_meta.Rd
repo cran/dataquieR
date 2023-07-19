@@ -30,14 +30,14 @@ assumed to be character strings.}
 \value{
 a data frame with:
 \itemize{
-\item meta data attribute names mapped and
-\item meta data checked using \link{prep_check_meta_names} and do some more
+\item metadata attribute names mapped and
+\item metadata checked using \link{prep_check_meta_names} and do some more
 verification about conventions, such as check for valid intervals
 in limits)
 }
 }
 \description{
-Create a meta data frame and map names.
+Create a metadata data frame and map names.
 Generally, this function only creates a \link{data.frame}, but using
 this constructor instead of calling
 \code{data.frame(..., stringsAsFactors = FALSE)}, it becomes possible, to adapt

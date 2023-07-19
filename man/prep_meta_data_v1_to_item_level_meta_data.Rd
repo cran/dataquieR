@@ -14,7 +14,8 @@ prep_meta_data_v1_to_item_level_meta_data(
 \arguments{
 \item{meta_data}{\link{data.frame} the old item-level-metadata}
 
-\item{verbose}{\link{logical} display all estimated decisions}
+\item{verbose}{\link{logical} display all estimated decisions, defaults to \code{TRUE},
+except if called in a \link{dq_report2} pipeline.}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}

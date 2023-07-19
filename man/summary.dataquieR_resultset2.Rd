@@ -6,7 +6,7 @@
 \usage{
 \method{summary}{dataquieR_resultset2}(
   object,
-  aspect = c("applicability", "error", "issue"),
+  aspect = c("applicability", "error", "issue", "anamat", "indicator_or_descriptor"),
   FUN = util_get_html_cell_for_result,
   collapse = "\\n<br />\\n",
   ...
@@ -24,7 +24,7 @@
 \item{...}{not used}
 }
 \value{
-a summary of a \code{Square2} report
+a summary of a \code{dataquieR} report
 }
 \description{
 Generate a report summary table

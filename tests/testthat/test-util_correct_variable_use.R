@@ -309,7 +309,7 @@ test_that("util_correct_variable_use works", {
   environment(acc_test5) <- asNamespace("dataquieR")
   expect_error(
     acc_test5(resp_variable = "v00001", meta_data = meta_data),
-    regexp = paste("Did not find merged study data and meta data ds1.",
+    regexp = paste("Did not find merged study data and metadata ds1.",
                    "Wrong use of util_correct_variable_use?")
   )
 
@@ -325,14 +325,14 @@ test_that("util_correct_variable_use works", {
     acc_test6(resp_variable = "v00001", study_data = study_data,
               meta_data = meta_data,
               cmd = function() { rm(meta_data, envir = parent.frame())}),
-    regexp = paste("Did not find meta data.",
+    regexp = paste("Did not find metadata.",
                    "Wrong use of util_correct_variable_use?")
   )
   expect_error(
     acc_test6(resp_variable = "v00001", study_data = study_data,
               meta_data = meta_data,
               cmd = function() { assign("meta_data", 42, parent.frame()) }),
-    regexp = paste("meta_data does not provide a meta data frame.",
+    regexp = paste("meta_data does not provide a metadata data frame.",
                    "Wrong use of util_correct_variable_use?")
   )
 
@@ -340,7 +340,7 @@ test_that("util_correct_variable_use works", {
     acc_test6(resp_variable = "v00001", study_data = study_data,
               meta_data = meta_data,
               cmd = function() { assign("ds1", 42, parent.frame()) }),
-    regexp = paste("ds1 does not provide merged study data and meta data.",
+    regexp = paste("ds1 does not provide merged study data and metadata.",
                    "Wrong use of util_correct_variable_use?")
   )
 
@@ -368,7 +368,7 @@ test_that("util_correct_variable_use works", {
               cmd = function() { }, need_type = "string"),
     regexp = paste("In .+resp_variable.+, variables with types matching",
                    ".+string.+ should be specified, but not all variables",
-                   "have a type assigned in the meta data. I have 1 variables",
+                   "have a type assigned in the metadata. I have 1 variables",
                    "but only 0 types"),
     perl = TRUE,
     all = TRUE

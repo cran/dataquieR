@@ -4,7 +4,7 @@ test_that("prep_min_obs_level works", {
   study_data <- prep_get_data_frame("study_data")
   label_col <- LABEL
   util_prepare_dataframes()
-  expect_warning(
+  expect_message(
     x <- prep_min_obs_level(ds1,
                             group_vars = "USR_BP_0",
                             min_obs_in_subgroup = 50),
@@ -37,7 +37,7 @@ test_that("prep_min_obs_level works", {
     perl = TRUE
   )
 
-  expect_warning(
+  expect_message(
     expect_error(
       x <- prep_min_obs_level(ds1,
                               group_vars = letters,
@@ -53,7 +53,7 @@ test_that("prep_min_obs_level works", {
     all = TRUE
   )
 
-  expect_warning(
+  expect_message(
     x <- prep_min_obs_level(ds1,
                             group_vars = "USR_BP_0",
                             min_obs_in_subgroup = NA),
@@ -69,7 +69,7 @@ test_that("prep_min_obs_level works", {
 
   ds1. <- ds1
   ds1.$USR_BP_0 <- NA
-  expect_warning(
+  expect_message(
     expect_error(
       x <- prep_min_obs_level(ds1.,
                               group_vars = "USR_BP_0",

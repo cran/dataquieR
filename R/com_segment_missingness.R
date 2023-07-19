@@ -15,7 +15,7 @@
 #' The R-function identifies all variables within each segment and returns TRUE
 #' if all variables within a segment are missing, otherwise FALSE.
 #'
-#' Use case *(2)* assumes a more complex structure of study data and meta data.
+#' Use case *(2)* assumes a more complex structure of study data and metadata.
 #' The study data comprise so-called intro-variables (either TRUE/FALSE or codes
 #' for non-participation). The column `PART_VAR` in the metadata is
 #' filled by variable-IDs indicating for each variable the respective
@@ -52,6 +52,7 @@
 #'                               defaults to NULL for not grouping output
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
+#' @param meta_data_segment [data.frame] Segment level metadata. Optional.
 #' @param threshold_value [numeric] from=0 to=100. a numerical value ranging
 #'                                                 from 0-100
 #' @param direction [enum] low | high. "high" or "low", i.e. are deviations
@@ -87,20 +88,27 @@
 #' @export
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_com_impl_segment_missingness.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_com_impl_segment_missingness.html
 #' )
 com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
+                                    meta_data_segment,
                                     strata_vars = NULL, label_col,
                                     threshold_value,
                                     direction, color_gradient_direction,
                                     expected_observations = c("HIERARCHY",
                                                               "ALL",
                                                               "SEGMENT"),
-                                    exclude_roles = "process") {
+                                    exclude_roles =
+                                      c(VARIABLE_ROLES$PROCESS)) {
 
   #########
   # STOPS #
   #########
+  if (!missing(meta_data_segment)) {
+    meta_data_segment <- util_expect_data_frame(meta_data_segment)
+  } else {
+    meta_data_segment <- data.frame()
+  }
   util_expect_scalar(expected_observations, allow_more_than_one = TRUE)
   expected_observations <- match.arg(expected_observations)
   util_expect_scalar(expected_observations)
@@ -108,7 +116,7 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
   if (missing(threshold_value) ||
       length(threshold_value) != 1 ||
       !is.numeric(threshold_value)) {
-    util_warning(
+    if (!missing(threshold_value) || !.called_in_pipeline) util_message(
       c("threshold_value should be a single number between 0 and 100.",
       "Invalid value specified, setting to 10%%."),
       applicability_problem = TRUE)
@@ -116,7 +124,7 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
   }
 
   if (missing(color_gradient_direction)) {
-    util_warning(c(
+    if (!.called_in_pipeline) util_message(c(
       "No specification of color gradient direction found.",
       "The function interprets values above the threshold as violations."),
       applicability_problem = TRUE)
@@ -130,7 +138,7 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
       applicability_problem = TRUE)
   }
 
-  if (!(color_gradient_direction %in% c("above", "below"))) {
+  if (!all(color_gradient_direction %in% c("above", "below"))) {
     util_error(
       "Parameter %s should be either %s or %s, but not %s.",
       dQuote("color_gradient_direction"),
@@ -214,21 +222,23 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
                                          meta_data[[VARIABLE_ROLE]]]
 
         which_vars_not <-
-          meta_data[[label_col]][meta_data[[VARIABLE_ROLE]] %in% exclude_roles]
+          meta_data[[label_col]][meta_data[[VARIABLE_ROLE]] %in%
+                                   c(exclude_roles, VARIABLE_ROLES$SUPPRESS)]
         if (missing(label_col)) {
           which_vars_not <-
             meta_data[[VAR_NAMES]][meta_data[[VARIABLE_ROLE]] %in%
-                                     exclude_roles]
+                                     c(exclude_roles, VARIABLE_ROLES$SUPPRESS)]
         }
         which_vars_not <- setdiff(which_vars_not, strata_vars)
         which_vars_not <- setdiff(which_vars_not, group_vars)
         if (length(intersect(names(ds1), which_vars_not)) > 0) {
-          util_warning(paste0(
+          util_message(paste0(
             "Study variables: ",
             paste(dQuote(intersect(names(ds1), which_vars_not)),
                   collapse = ", "),
             " are not considered due to their VARIABLE_ROLE."
-          ), applicability_problem = TRUE)
+          ), applicability_problem = TRUE,
+          intrinsic_applicability_problem = TRUE)
         }
         ds1 <- ds1[, !(names(ds1) %in% which_vars_not)]
       } else {
@@ -243,36 +253,41 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
       # b: all roles are found in metadata
     } else {
       if (missing(exclude_roles)) {
-        util_warning(
+        if (!.called_in_pipeline) util_message(
           c("Formal exclude_roles is used with default: all process variables",
             "are not included here."), applicability_problem = TRUE)
       }
 
       which_vars_not <- meta_data[[label_col]][meta_data[[VARIABLE_ROLE]] %in%
-                                                 exclude_roles]
+                                                 c(exclude_roles,
+                                                   VARIABLE_ROLES$SUPPRESS)]
       if (missing(label_col)) {
         which_vars_not <- meta_data[[VAR_NAMES]][meta_data[[VARIABLE_ROLE]] %in%
-                                                   exclude_roles]
+                                                   c(exclude_roles,
+                                                     VARIABLE_ROLES$SUPPRESS)]
       }
       which_vars_not <- setdiff(which_vars_not, strata_vars)
       which_vars_not <- setdiff(which_vars_not, group_vars)
       if (length(intersect(names(ds1), which_vars_not)) > 0) {
-        util_warning(paste0(
+        util_message(paste0(
           "Study variables: ", paste(dQuote(intersect(names(ds1),
                                                       which_vars_not)),
                                      collapse = ", "),
           " are not considered due to their VARIABLE_ROLE."
-        ), applicability_problem = FALSE)
+        ),
+        applicability_problem = TRUE,
+        intrinsic_applicability_problem = TRUE)
       }
       ds1 <- ds1[, !(names(ds1) %in% which_vars_not)]
     }
   } else {
     # since there are no roles defined exclusion is set to false
     exclude_roles <- FALSE
-    util_warning(
+    util_message(
       c("VARIABLE_ROLE has not been defined in the metadata,",
         "therefore all variables within segments are used."),
-      applicability_problem = TRUE)# TODO: PART_VAR or STUDY_SEGMENT
+      applicability_problem = TRUE,
+      intrinsic_applicability_problem = TRUE) # TODO: PART_VAR or STUDY_SEGMENT
   }
 
   # Which segments?
@@ -281,7 +296,12 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
                applicability_problem = TRUE)
   }
 
-  seg_names <- meta_data[[STUDY_SEGMENT]] # meta_data[[LONG_LABEL]][meta_data$VAR_NAMES %in% part_vars]
+  seg_names <- meta_data[
+    util_empty(meta_data[[VARIABLE_ROLE]]) |
+    meta_data[[VARIABLE_ROLE]] !=
+      VARIABLE_ROLES$SUPPRESS, # omit segments added on-the-fly as dependencies
+    STUDY_SEGMENT,
+    drop = TRUE] # meta_data[[LONG_LABEL]][meta_data$VAR_NAMES %in% part_vars]
 
   if (!(PART_VAR %in% names(meta_data))) {
     util_warning("Metadata do not contain the column PART_VAR",
@@ -312,8 +332,37 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
 
   part_vars <- part_vars[!duplicated(part_vars)]
 
-  sn <- setNames(nm = unique(seg_names))
+  sn <- seg_names[!is.na(seg_names)]
+  sn <- setNames(nm = unique(sn))
+  .sn <- sn
+
+  # do not compute segment plots, if not explicitly requested, if only one
+  # segment in data
+  keep_in_segmiss <- character(0)
+  if (all(c(STUDY_SEGMENT, SEGMENT_MISS) %in% colnames(meta_data_segment))) {
+    nas <- util_empty(meta_data_segment[[SEGMENT_MISS]])
+    not_in_output <-
+      util_is_na_0_empty_or_false(meta_data_segment[[SEGMENT_MISS]]) &
+      !nas
+    must_in_output <-
+      !util_is_na_0_empty_or_false(meta_data_segment[[SEGMENT_MISS]])
+    auto <- meta_data_segment[nas, STUDY_SEGMENT, drop = TRUE]
+    remove <- meta_data_segment[not_in_output, STUDY_SEGMENT, drop = TRUE]
+    keep_in_segmiss <- meta_data_segment[must_in_output,
+                                         STUDY_SEGMENT, drop = TRUE]
+    sn <- union(keep_in_segmiss, setdiff(sn, remove))
+  }
+
+  sn <- intersect(.sn, sn)
+
   sn <- sn[!is.na(sn)]
+  sn <- setNames(nm = unique(sn))
+
+  if (length(sn) < 2 && length(keep_in_segmiss) == 0) {
+    util_error("No segment missingness plot for less than two segments",
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
+  }
 
   # determine which vars per segment
   var_sets <- lapply(sn, util_get_vars_in_segment,
@@ -375,7 +424,7 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
     # No. of strata levels and labels
     if (dim(ds1)[1] != dim(ds1[!is.na(ds1[[strata_vars]]), ])[1]) {
       ds1 <- ds1[!is.na(ds1[[strata_vars]]), ]
-      util_warning(paste0("Some observations in ", strata_vars,
+      util_message(paste0("Some observations in ", strata_vars,
                           " are NA and were removed."),
                    applicability_problem = FALSE)
     }

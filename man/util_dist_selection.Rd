@@ -9,7 +9,7 @@ util_dist_selection(measurements, meta_data)
 \arguments{
 \item{measurements}{study data}
 
-\item{meta_data}{meta data, not yet used}
+\item{meta_data}{metadata, not yet used}
 }
 \value{
 data frame with one column for each variable in study data giving

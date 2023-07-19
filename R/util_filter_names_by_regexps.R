@@ -20,20 +20,31 @@ util_filter_names_by_regexps <- function(collection, regexps) {
                      allow_null = TRUE,
                      check_type = is.character)
 
-  if (length(regexps) == 0) {
+  if (length(regexps) == 0 || length(collection) == 0) {
     return(collection)
   }
 
   matches_mat <-
-    vapply(
+    matrix(vapply(
       regexps,
       grepl,
       names(collection),
       perl = TRUE,
       FUN.VALUE =
         logical(length(collection))
-    )
+    ), nrow = length(collection), ncol = length(regexps))
 
-  collection[rowSums(matches_mat) > 0]
+  if (is.null(dim(matches_mat))) {
+    util_stop_if_not(length(regexps) == 1 && length(collection) == 1)
+    r <- collection[matches_mat]
+    nm <- names(collection[matches_mat])
+  } else {
+    r <- collection[rowSums(matches_mat) > 0]
+    nm <- names(collection[rowSums(matches_mat) > 0])
+  }
 
+  mostattributes(r) <- attributes(collection)
+  names(r) <- nm
+
+  r
 }

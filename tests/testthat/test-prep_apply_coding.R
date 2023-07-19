@@ -8,6 +8,6 @@ test_that("prep_apply_coding works", {
       prep_apply_coding(study_data, x$MetaData)$Species,
       x$ModifiedStudyData$Species
     ),
-    regexp = "Meta data does not provide a filled column called .+JUMP_LIST"
+    regexp = "Metadata does not provide a filled column called .+JUMP_LIST"
   )
 })

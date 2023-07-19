@@ -82,7 +82,7 @@
 #'                     scale_fill_gradientn theme element_blank
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_com_impl_item_missingness.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_com_impl_item_missingness.html
 #' )
 com_item_missingness  <- function(study_data,
                                   meta_data,
@@ -114,7 +114,7 @@ com_item_missingness  <- function(study_data,
   prep_prepare_dataframes(.replace_missings = FALSE)
 
   if (missing(threshold_value)) {
-    util_warning(
+    if (!.called_in_pipeline) util_message(
       c("The mandatory argument threshold_value was not",
         "defined and is set to the default of 90%%."),
       applicability_problem = TRUE)
@@ -122,7 +122,7 @@ com_item_missingness  <- function(study_data,
   }
   .threshold_value <- suppressWarnings(as.numeric(threshold_value))
   if (is.na(.threshold_value)) {
-    util_warning(
+    util_message(
       c("Could not convert threshold_value %s to a number.",
         "Set to default value 90%%."),
       dQuote(as.character(threshold_value)),
@@ -409,6 +409,7 @@ com_item_missingness  <- function(study_data,
                                               expected_observations = expected_observations)
   class(mctab) <- union("ReportSummaryTable", class(mctab))
   list(SummaryTable = SummaryTable,
+       SummaryData = SummaryTable,
        SummaryPlot = print(mctab, view = FALSE, relative = FALSE),
        ReportSummaryTable = mctab)
 }

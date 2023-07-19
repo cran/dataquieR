@@ -2,11 +2,13 @@
 % Please edit documentation in R/000_globs.R
 \name{check_table}
 \alias{check_table}
-\alias{meta_data_cross_item}
 \title{Data frame with contradiction rules}
 \description{
 Two versions exist, the newer one is used by \link{con_contradictions_redcap} and
-is described \href{https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html#Example_output}{here}.,
-the older one used by \link{con_contradictions_redcap} is described
-\href{https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_contradictions.html#Example_output}{here}.
+is described \href{https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html#Example_output}{here}.,
+the older one used by \link{con_contradictions} is described
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions.html#Example_output}{here}.
+}
+\seealso{
+\link{meta_data_cross}
 }

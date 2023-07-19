@@ -26,7 +26,8 @@ util_prep_location_check <- function(resp_vars,
 
   if (!all(loc_metric[!util_empty(loc_metric)] %in% c("median", "mean"))) {
     rep_fun("Location checks can only be performed for mean or median values.",
-            applicability_problem = TRUE)
+            applicability_problem = TRUE,
+            intrinsic_applicability_problem = TRUE)
     loc_metric[which(!(loc_metric %in% c("median", "mean")))] <- NA
   }
 
@@ -60,7 +61,8 @@ util_prep_location_check <- function(resp_vars,
       "For ", paste(rvs_with_none, collapse = ", "),
       ", the metadata for a location check is missing (LOCATION_RANGE and ",
       "LOCATION_METRIC)."),
-      applicability_problem = TRUE)
+      applicability_problem = TRUE,
+      intrinsic_applicability_problem = TRUE)
   }
 
   loc_meta <- list("Metric" = loc_metric,

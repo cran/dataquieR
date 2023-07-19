@@ -342,7 +342,14 @@ test_that("class ReportSummaryTable", {
 })
 
 test_that("print.interval works", {
-  withr::local_locale(c(LC_TIME = "en_US.UTF-8"))
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
   withr::local_timezone("Europe/Berlin")
   expect_output(
     print(util_parse_interval("(1;)")),

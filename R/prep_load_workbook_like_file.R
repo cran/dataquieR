@@ -4,7 +4,7 @@
 #' e.g., spreadsheet-workbooks or `RData`-files.
 #'
 #' Note, that this function in contrast to [prep_get_data_frame] does neither
-#' support `URLs` nor selecting specific sheets/columns from a file.
+#' support selecting specific sheets/columns from a file.
 #'
 #' @param file the file name to load.
 #'
@@ -12,6 +12,7 @@
 #' @export
 #' @seealso [prep_add_data_frames]
 #' @seealso [prep_get_data_frame]
+#' @family data-frame-cache
 #' @examples
 #' \dontrun{
 #' file_name <-
@@ -25,9 +26,23 @@ prep_load_workbook_like_file <- function(file) {
 
   util_expect_scalar(file, check_type = is.character)
 
+  if (startsWith(file, "https://") ||
+      startsWith(file, "http://")) {
+    fp <- tempfile()
+    util_stop_if_not(!file.exists(fp))
+    dir.create(fp)
+    on.exit(try(unlink(fp, force = TRUE, recursive = TRUE, expand = FALSE), silent = TRUE))
+    file_new <- file.path(fp, gsub("^.*\\/", "", file, perl = TRUE))
+    try(utils::download.file(file, destfile = file_new, quiet = TRUE), silent = TRUE)
+    if (file.exists(file_new)) {
+      file <- file_new
+    }
+  }
+
   fn <- file
 
-  r <- try(rio::import_list(fn), silent = TRUE)
+  r <-
+    suppressMessages(suppressWarnings(try(rio::import_list(fn), silent = TRUE)))
 
   if (inherits(r, "try-error") || !is.list(r) ||
       any(vapply(r, is.data.frame, FUN.VALUE = logical(1)))) {
@@ -48,11 +63,15 @@ prep_load_workbook_like_file <- function(file) {
         }
       }
     }
-    r <- try(rio::import_list(fn), silent = TRUE)
+    r <- suppressMessages(suppressWarnings(
+      try(rio::import_list(fn), silent = TRUE)))
   }
 
   if (inherits(r, "try-error") || !is.list(r) ||
-      any(!vapply(r, is.data.frame, FUN.VALUE = logical(1)))) {
+      any(
+        !vapply(r, is.null, FUN.VALUE = logical(1))
+        &
+        !vapply(r, is.data.frame, FUN.VALUE = logical(1)))) {
     if (inherits(r, "try-error")) {
       error <- gsub("%", "%%", fixed = TRUE,
                           conditionMessage(attr(r, "condition")))
@@ -62,6 +81,12 @@ prep_load_workbook_like_file <- function(file) {
       error <- "File not found"
     } else if (dir.exists(fn)) {
       error <- "It is a folder"
+    } else if (any(
+      !vapply(r, is.null, FUN.VALUE = logical(1))
+      &
+      !vapply(r, is.data.frame, FUN.VALUE = logical(1)))) {
+      error <-
+        "File does not feature a workbook-like structure, i.e., a named list of data frames"
     } else {
       error <- "Unkonwn reasons."
     }

@@ -1,6 +1,6 @@
 Package: dataquieR
 Title: Data Quality in Epidemiological Research
-Version: 2.0.0
+Version: 2.0.1
 Authors@R: 
     c(person(given = "University Medicine Greifswald",
              role = "cph"),
@@ -45,27 +45,28 @@ Description: Data quality assessments guided by a
     individually tailored reports can be generated. For an introduction
     into the specification of corresponding metadata, please refer to the
     'package website'
-    <https://dataquality.ship-med.uni-greifswald.de/Annotation_of_Metadata.html>.
+    <https://dataquality.qihs.uni-greifswald.de/Annotation_of_Metadata.html>.
 License: BSD_2_clause + file LICENSE
-URL: https://dataquality.ship-med.uni-greifswald.de/
+URL: https://dataquality.qihs.uni-greifswald.de/
 BugReports: https://gitlab.com/libreumg/dataquier/-/issues
 Depends: R (>= 3.6.0)
 Imports: dplyr (>= 1.0.2), emmeans, ggplot2 (>= 3.4.0), lme4,
         lubridate, MASS, MultinomialCI, parallelMap, patchwork,
         R.devices, reshape, rlang, robustbase, qmrparser, utils, rio,
         scales
-Suggests: cli, whoami, lifecycle, anytime, cowplot (>= 0.9.4), digest,
+Suggests: lifecycle, cli, whoami, anytime, cowplot (>= 0.9.4), digest,
         DT (>= 0.23), flexdashboard, flexsiteboard, htmltools, knitr,
-        markdown, parallel, rmarkdown, rstudioapi, testthat (>= 3.0.0),
-        tibble, vdiffr, pkgload, Rdpack, callr, colorspace, withr,
-        plotly, ggvenn, htmlwidgets
+        markdown, parallel, parallelly, rJava, rmarkdown, rstudioapi,
+        testthat (>= 3.1.9), tibble, vdiffr, pkgload, Rdpack, callr,
+        colorspace, withr, plotly, ggvenn, htmlwidgets, future,
+        processx, R6, shiny, summarytools
 VignetteBuilder: knitr
 Encoding: UTF-8
 KeepSource: TRUE
 Language: en-US
 RoxygenNote: 7.2.3
 NeedsCompilation: no
-Packaged: 2023-03-01 16:10:20 UTC; struckmanns
+Packaged: 2023-07-19 15:58:59 UTC; struckmanns
 Author: University Medicine Greifswald [cph],
   Elisa Kasbohm [aut] (<https://orcid.org/0000-0001-5261-538X>),
   Joany Marino [aut] (<https://orcid.org/0000-0002-4657-3758>),
@@ -80,4 +81,4 @@ Author: University Medicine Greifswald [cph],
     No. 825903) [fnd]
 Maintainer: Stephan Struckmann <stephan.struckmann@uni-greifswald.de>
 Repository: CRAN
-Date/Publication: 2023-03-01 16:30:02 UTC
+Date/Publication: 2023-07-19 16:20:10 UTC

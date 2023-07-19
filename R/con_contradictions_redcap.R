@@ -42,9 +42,10 @@
 #'                             the `meta_data_cross_item`.
 #'                             If set, a summary output is generated for the
 #'                             defined categories plus one plot per
-#'                             category.
-#' @param use_value_labels [logical] If set to `TRUE`, labels can be used in the
-#'                             REDCap syntax to specify contraction checks for
+#'                             category. TODO: Not yet controllable by metadata.
+#' @param use_value_labels [logical] Deprecated in favor of [DATA_PREPARATION].
+#'                             If set to `TRUE`, labels can be used in the
+#'                             `REDCap` syntax to specify contraction checks for
 #'                             categorical variables. If set to `FALSE`,
 #'                             contractions have to be specified using the coded
 #'                             values. In case that this argument is not set in
@@ -86,7 +87,7 @@
 #' @importFrom stats setNames
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html
 #' )
 #' @examples
 #' \dontrun{ # slow
@@ -109,19 +110,22 @@ con_contradictions_redcap <- function(study_data, meta_data,
                                label_col, threshold_value,
                                meta_data_cross_item = "cross-item_level",
                                use_value_labels,
-                               summarize_categories = FALSE
+                               summarize_categories = FALSE # TODO: make addressable from dq_report2
                                # flip_mode = "flip" # TODO: Fix noflip graph
                                ) {
 
   # preps ----------------------------------------------------------------------
   # map metadata to study data
-  prep_prepare_dataframes(.replace_hard_limits = TRUE)
+  prep_prepare_dataframes(.replace_hard_limits = FALSE,
+                          .replace_missings = FALSE) # replacements are performed later
 
-  if (missing(use_value_labels)) {
-    use_value_labels <- VALUE_LABELS %in% colnames(meta_data) &&
-      any(!util_empty(meta_data[[VALUE_LABELS]]))
+  if (!missing(use_value_labels)) {
+    util_deprecate_soft(when = "2.0.1",
+                        what = "con_contradictions_redcap(use_value_labels)",
+                        details =
+                  "Please use DATA_PREPARATION in meta_data_cross_item now."
+                        )
   }
-  util_expect_scalar(use_value_labels, check_type = is.logical)
 
   # table of specified contradictions
   util_expect_data_frame(meta_data_cross_item, list(
@@ -129,26 +133,37 @@ con_contradictions_redcap <- function(study_data, meta_data,
     CHECK_LABEL = is.character
   ))
 
+  meta_data_cross_item <- util_normalize_cross_item(
+    meta_data = meta_data,
+    meta_data_cross_item = meta_data_cross_item,
+    label_col = label_col
+  )
+
   # There might be rows without contradiction rules (NAs), which should be removed first.
-  if (any(is.na(meta_data_cross_item$CONTRADICTION_TERM))) {
-    meta_data_cross_item <- meta_data_cross_item[-which(is.na(meta_data_cross_item$CONTRADICTION_TERM)), ]
+  if (any(is.na(meta_data_cross_item[[CONTRADICTION_TERM]]))) {
+    meta_data_cross_item <- meta_data_cross_item[-which(is.na(meta_data_cross_item[[CONTRADICTION_TERM]])), ]
   }
 
   if ("VARIABLE_LIST" %in% colnames(meta_data_cross_item)) {
-    util_warning("VARIABLE_LIST is ignored for contradictions. The rule will be used for finding all related variables.")
+    old_vl <- meta_data_cross_item$VARIABLE_LIST
     meta_data_cross_item$VARIABLE_LIST <- NULL
+  } else {
+    old_vl <- NULL
   }
 
   # generate VARIABLE_LIST entries
   # TODO: Support "[" and "]" in variable labels
   # TODO: handle also VAR_NAMES here. The VARIABLE_LIST below should then likely be mapped back to one soft of identifiers.
-  needles_var_names <- unique(c(meta_data[[VAR_NAMES]], meta_data[[label_col]]))
+  needles_var_names <- unique(c(meta_data[[VAR_NAMES]],
+                                meta_data[[label_col]],
+                                meta_data[[LABEL]],
+                                meta_data[[LONG_LABEL]]))
   needles <- paste0("[",
                     needles_var_names,
                     "]")
   x <- vapply(setNames(needles, nm = needles_var_names),
         grepl,
-        setNames(nm = meta_data_cross_item$CONTRADICTION_TERM),
+        setNames(nm = meta_data_cross_item[[CONTRADICTION_TERM]]),
         fixed = TRUE,
         FUN.VALUE = logical(length = nrow(meta_data_cross_item))
   )
@@ -161,13 +176,33 @@ con_contradictions_redcap <- function(study_data, meta_data,
   variablelist <-
     lapply(variablelist, paste0, collapse = sprintf(" %s ", SPLIT_CHAR))
 
-  meta_data_cross_item$VARIABLE_LIST <- variablelist # TODO: To 000_globs.R
+  if (!is.null(old_vl)) { # FIXME: Remove!!
+    old_vars <- util_parse_assignments(old_vl)
+    new_vars <- util_parse_assignments(variablelist)
+    if (length(setdiff(variablelist, old_vl)) > 0) {
+      meta_data_cross_item$VARIABLE_LIST <- variablelist # TODO: To 000_globs.R
+      util_message("%s is incomplete for contradictions. %s will be used for finding all related variables.",
+                   dQuote(VARIABLE_LIST),
+                   dQuote(CONTRADICTION_TERM),
+                   applicability_problem = TRUE)
+    } else if (length(setdiff(old_vl, variablelist)) > 0) {
+      meta_data_cross_item$VARIABLE_LIST <- variablelist # TODO: To 000_globs.R
+      util_message("%s features more variables than the corresponding %s. %s will be used for finding all related variables.",
+                   dQuote(VARIABLE_LIST),
+                   dQuote(CONTRADICTION_TERM),
+                   dQuote(CONTRADICTION_TERM),
+                   applicability_problem = TRUE)
+    } else {
+      meta_data_cross_item$VARIABLE_LIST <- old_vl # TODO: To 000_globs.R
+    }
+  }
 
   if (missing(threshold_value)) {
     threshold_value <- 0
-    util_warning("No %s has been set, will use default %d",
-                 dQuote("threshold_value"), threshold_value,
-                 applicability_problem = TRUE)
+    if (!.called_in_pipeline)
+      util_message("No %s has been set, will use default %d",
+                   dQuote("threshold_value"), threshold_value,
+                   applicability_problem = TRUE)
   } else {
     util_expect_scalar(threshold_value, check_type = function(x) {
       is.numeric(x) && x >= 0 && x <= 100
@@ -177,7 +212,7 @@ con_contradictions_redcap <- function(study_data, meta_data,
   util_expect_scalar(summarize_categories, check_type = is.logical)
 
   # parse redcap rules to obtain interpretable contradiction checks
-  compiled_rules <- lapply(setNames(nm = meta_data_cross_item$CONTRADICTION_TERM),
+  compiled_rules <- lapply(setNames(nm = meta_data_cross_item[[CONTRADICTION_TERM]]),
                            util_parse_redcap_rule)
 
   # colors
@@ -185,14 +220,16 @@ con_contradictions_redcap <- function(study_data, meta_data,
 
   # summarize contradictions per category given in CONTRADICTION_TYPE -------------------------------------
   if (summarize_categories) {
-    if (!("CONTRADICTION_TYPE" %in% colnames(meta_data_cross_item))) {
+    if (!(CONTRADICTION_TYPE %in% colnames(meta_data_cross_item))) {
       util_error(c(
         "Cannot summerize categories of contradictions,",
-        "because these are not defined in the meta_data_cross_item as column 'CONTRADICTION_TYPE'."),
+        "because these are not defined in the meta_data_cross_item",
+        "as column %s."),
+        sQuote(CONTRADICTION_TYPE),
         applicability_problem = TRUE)
     }
 
-    split_tags <- lapply(strsplit(meta_data_cross_item$CONTRADICTION_TYPE, SPLIT_CHAR, fixed = TRUE), trimws)
+    split_tags <- lapply(strsplit(meta_data_cross_item[[CONTRADICTION_TYPE]], SPLIT_CHAR, fixed = TRUE), trimws)
     tags <- sort(unique(unlist(split_tags)))
     tags <- setNames(nm = tags)
     tags_ext <- tags
@@ -201,25 +238,30 @@ con_contradictions_redcap <- function(study_data, meta_data,
     result <- lapply(tags_ext, function(atag) {
       # generate one output per category (stratified)
       if (is.na(atag)) {
-        new_ct <- meta_data_cross_item[, -which(colnames(meta_data_cross_item) == "CONTRADICTION_TYPE"), drop = FALSE]
+        new_ct <- meta_data_cross_item[, -which(colnames(meta_data_cross_item) == CONTRADICTION_TYPE), drop = FALSE]
       } else {
         contains_tag <- function(x, tg) {
           any(x == tg, na.rm = TRUE)
         }
         rows_matching_tag <- vapply(split_tags, contains_tag, tg = atag,
                                     logical(1))
-        new_ct <- meta_data_cross_item[rows_matching_tag, -which(colnames(meta_data_cross_item) == "CONTRADICTION_TYPE"),
+        new_ct <- meta_data_cross_item[rows_matching_tag, -which(colnames(meta_data_cross_item) == CONTRADICTION_TYPE),
                               drop = FALSE]
       }
 
       # recursive call of the function only for the contradiction checks of the currently selected category in "atag"
-      con_contradictions_redcap(
+      r <- try(con_contradictions_redcap(
         study_data = study_data,
         meta_data = meta_data, label_col = label_col,
         threshold_value = threshold_value, meta_data_cross_item = new_ct,
         summarize_categories = FALSE
         # , flip_mode = flip_mode TODO
-      )
+      ), silent = TRUE)
+      if (inherits(r, "try-error")) {
+        list(FlaggedStudyData = data.frame())
+      } else {
+        r
+      }
     })
 
     # summarize the outputs of the recursive calls
@@ -251,14 +293,16 @@ con_contradictions_redcap <- function(study_data, meta_data,
       scale_fill_manual(values = cols, name = " ", guide = "none") +
       theme_minimal() +
       scale_y_continuous(name = "(%)",
-                         limits = (c(0, max(1.2 * max(rx$PCT_con_con),
+                         limits = (c(0, max(1.2 * suppressWarnings(
+                           max(rx$PCT_con_con)),
                                             threshold_value))),
                          expand = expansion(mult = c(0,0.05))) +
       scale_x_continuous(breaks = seq_len(nrow(rx)),
                          labels = rx$category,
                          position = "top",
                          trans = "reverse") +
-      xlab("Category of applied contradiction checks") +
+      # xlab("Category of applied contradiction checks") +
+      xlab("") +
       geom_hline(yintercept = threshold_value, color = "red", linetype = 2) +
       geom_text(label = paste0(" ", rx$PCT_con_con, "%"),
                 hjust = 0, vjust = 0.5) +
@@ -292,17 +336,82 @@ con_contradictions_redcap <- function(study_data, meta_data,
   } else {
     # run contradiction checks without summarizing -------------------------------------------------------
     # apply contradiction checks -------------------------------------------------------------------------
-    rule_match <- lapply(compiled_rules, function(rule) {
-      util_eval_rule(rule = rule,
-                     ds1 = ds1,
-                     meta_data = meta_data,
-                     use_value_labels = use_value_labels)
+    rule_match <- mapply(
+      SIMPLIFY = FALSE,
+      rule = compiled_rules,
+      prep = util_parse_assignments(
+        meta_data_cross_item[[DATA_PREPARATION]], multi_variate_text = TRUE),
+      FUN = function(rule, prep) {
+        prep <- as.character(names(prep))
+        use_value_labels <- ("LABEL"  # meta_data_cross_item has been normalized, already
+            %in% prep)
+        if ("MISSING_NA" %in% prep) {
+          replace_missing_by <- "NA"
+        } else if ("MISSING_LABEL" %in% prep) {
+          replace_missing_by <- "LABEL"
+        } else if ("MISSING_INTERPRET" %in% prep) {
+          replace_missing_by <- "INTERPRET"
+        } else {
+          replace_missing_by <- ""
+        }
+        replace_limits <- ("LIMITS"
+                             %in% prep)
+        if (is.list(rule) && !length(rule) && is.null(attr(rule, "class"))) {
+          r <- try(util_error("Parser error"), silent = TRUE)
+        } else {
+          r <- try(util_eval_rule(rule = rule,
+                                  ds1 = ds1,
+                                  meta_data = meta_data,
+                                  use_value_labels = use_value_labels,
+                                  replace_missing_by = replace_missing_by,
+                                  replace_limits = replace_limits
+          ),
+          silent = TRUE)
+        }
+        if (inherits(r, "try-error")) {
+          rule_src <- attr(rule, "src")
+          if (length(rule_src) == 0) {
+            rule_src <- util_deparse1(rule)
+          }
+          util_warning("Could not evaluate rule %s: %s",
+                       dQuote(rule_src),
+                       conditionMessage(attr(r, "condition")))
+          r <- TRUE
+        }
+        r
     })
 
     rule_match <- lapply(rule_match, as.logical) # TODO: if a rule returned "", this is NA, if it did not return TRUE, FALSE or "", this would be a warning
 
-    summary_df1 <- cbind(data.frame(Obs = seq_len(nrow(ds1))),
-                         as.data.frame(rule_match))
+    list_element_length <- vapply(rule_match, length, FUN.VALUE = integer(1))
+    if (any(list_element_length == 0) && !all(list_element_length == 0)) {
+    # not all columns of same length, fix this for as.data.frame
+      rule_match[list_element_length == 0] <-
+        list(rep(TRUE, nrow(ds1)))
+    }
+
+    list_element_length <- vapply(rule_match, length, FUN.VALUE = integer(1))
+    if (any(list_element_length == 1)) {
+      # not all columns of same length, fix this for as.data.frame
+      rule_match[list_element_length == 1] <- lapply(
+        rule_match[list_element_length == 1],
+        function(to_recycle) {
+          rep(to_recycle, nrow(ds1))
+      })
+    }
+
+  if (length(unique(vapply(rule_match, length, FUN.VALUE = integer(1)))) > 1) {
+      util_error(c("Internal error: unexpected inhomogeneous length of rules result.",
+                 "This is an internal error, please excuse and contact the dataquieR developers."))
+    }
+
+    if (length(unique(vapply(rule_match, length, FUN.VALUE = integer(1)))) == 0) {
+      summary_df1 <- data.frame(Obs = seq_len(nrow(ds1)))
+    } else {
+      summary_df1 <- cbind(data.frame(Obs = seq_len(nrow(ds1))),
+                           as.data.frame(rule_match))
+    }
+
     colnames(summary_df1)[-1] <- paste0("flag_con",
                                         formatC(seq_len(nrow(meta_data_cross_item)),
                                                 width = nchar(nrow(meta_data_cross_item)),
@@ -310,6 +419,7 @@ con_contradictions_redcap <- function(study_data, meta_data,
                                                 flag = "0"))
 
     summary_df2 <- meta_data_cross_item
+
     summary_df2$NUM_con_con <- as.numeric(lapply(rule_match, sum, na.rm = TRUE))
     summary_df2$PCT_con_con <- round(summary_df2$NUM_con_con / nrow(ds1) * 100,
                                      digits = 2)
@@ -325,10 +435,12 @@ con_contradictions_redcap <- function(study_data, meta_data,
       geom_bar(stat = "identity") +
       scale_fill_manual(values = cols, name = " ", guide = "none") +
       theme_minimal() +
-      xlab("Applied contradiction checks") +
+      # xlab("Applied contradiction checks") +
+      xlab("") +
       scale_y_continuous(name = "(%)",
-                         limits = (c(0, max(1.2 * max(summary_df2$PCT_con_con),
-                                            threshold_value))),
+                         limits = c(0, max(1.2 * suppressWarnings(
+                           max(summary_df2$PCT_con_con)),
+                                            threshold_value)),
                          expand = expansion(mult = c(0,0.05))) +
       scale_x_continuous(breaks = seq_len(nrow(meta_data_cross_item)),
                          labels = meta_data_cross_item$CHECK_LABEL,
@@ -364,6 +476,12 @@ con_contradictions_redcap <- function(study_data, meta_data,
       h <- h + 15
       p <- util_set_size(p, width_em = w, height_em = h)
     })
+
+    if (!prod(dim(summary_df3))) {
+      util_error("No contradiction check defined",
+                 applicability_problem = TRUE,
+                 intrinsic_applicability_problem = TRUE)
+    }
 
     # Output
     return(list(

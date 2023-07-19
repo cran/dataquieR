@@ -86,6 +86,6 @@ is here "DETECTION_LIMITS"
 \seealso{
 \itemize{
 \item \link{con_limit_deviations}
-\item \href{https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_limit_deviations.html}{Online Documentation}
+\item \href{https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_limit_deviations.html}{Online Documentation}
 }
 }

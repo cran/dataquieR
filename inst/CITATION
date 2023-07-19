@@ -16,14 +16,14 @@ bibentry(bibtype = "Manual",
 	                     as.person("Stephan Struckmann")),
          year = year,
          note = note,
-         url = "https://dataquality.ship-med.uni-greifswald.de/",
+         url = "https://dataquality.qihs.uni-greifswald.de/",
 
          textVersion =
            paste("Elisa Kasbohm, Joany Marino, Adrian Richter, Carsten Oliver Schmidt, Stephan Struckmann",
      	       sprintf("(%s).", year),
                  "dataquieR: Data Quality in Epidemiological Research.",
   	       paste(note, ".", sep = ""),
-                 "URL https://dataquality.ship-med.uni-greifswald.de/")
+                 "URL https://dataquality.qihs.uni-greifswald.de/")
 )
 
 bibentry(bibtype = "Article",

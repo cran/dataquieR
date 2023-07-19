@@ -1,7 +1,7 @@
 ## ----include=FALSE------------------------------------------------------------
 library(knitr)
 library(DT)
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, dpi = 54)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, dpi = 10)
 if (rmarkdown::pandoc_available(version = "1.12.3")) {
   knit_print.data.frame <- function(x, ...) {
     knit_print(DT::datatable(head(x, 10)), ...)
@@ -160,7 +160,7 @@ AnyContradictions$SummaryPlot
 ruol <- dataquieR:::acc_robust_univariate_outlier(study_data = sd1, meta_data = md1, label_col = LABEL)
 
 c(
-  head(ruol$SummaryPlotList, 2),
+#  head(ruol$SummaryPlotList, 2),
   tail(ruol$SummaryPlotList, 2)
 )
 

@@ -19,8 +19,6 @@ test_that("prep_study2meta works", {
                           LABEL = colnames(cars),
                           DATA_TYPE = "integer",
                           VALUE_LABELS = NA_character_,
-                          MISSING_LIST = SPLIT_CHAR,
-                          JUMP_LIST = NA_character_,
                           MISSING_LIST_TABLE = NA_character_,
                           HARD_LIMITS = NA_character_,
                           GROUP_VAR_OBSERVER = NA_character_,
@@ -33,6 +31,8 @@ test_that("prep_study2meta works", {
                           PROPORTION_RANGE = NA_character_,
                           CO_VARS = NA_character_,
                           LONG_LABEL = colnames(cars),
+                          MISSING_LIST = SPLIT_CHAR,
+                          JUMP_LIST = NA_character_,
                           row.names = colnames(cars))
   reference <- reference[, intersect(colnames(meta_data), colnames(reference))]
 
@@ -59,8 +59,6 @@ test_that("prep_study2meta handles tibbles correctly", {
                           LABEL = colnames(cars),
                           DATA_TYPE = "integer",
                           VALUE_LABELS = NA_character_,
-                          MISSING_LIST = SPLIT_CHAR,
-                          JUMP_LIST = NA_character_,
                           MISSING_LIST_TABLE = NA_character_,
                           HARD_LIMITS = NA_character_,
                           CO_VARS = NA_character_,
@@ -73,6 +71,8 @@ test_that("prep_study2meta handles tibbles correctly", {
                           LOCATION_RANGE = NA_character_,
                           LOCATION_METRIC = NA_character_,
                           PROPORTION_RANGE = NA_character_,
+                          MISSING_LIST = SPLIT_CHAR,
+                          JUMP_LIST = NA_character_,
                           stringsAsFactors = FALSE,
                           row.names = colnames(cars))
   )
@@ -95,8 +95,6 @@ test_that("prep_study2meta handles tibbles correctly", {
                           LABEL = colnames(cars),
                           DATA_TYPE = "integer",
                           VALUE_LABELS = NA_character_,
-                          MISSING_LIST = SPLIT_CHAR,
-                          JUMP_LIST = NA_character_,
                           MISSING_LIST_TABLE = NA_character_,
                           HARD_LIMITS = NA_character_,
                           CO_VARS = NA_character_,
@@ -109,6 +107,8 @@ test_that("prep_study2meta handles tibbles correctly", {
                           LOCATION_RANGE = NA_character_,
                           LOCATION_METRIC = NA_character_,
                           PROPORTION_RANGE = NA_character_,
+                          MISSING_LIST = SPLIT_CHAR,
+                          JUMP_LIST = NA_character_,
                           stringsAsFactors = FALSE,
                           row.names = colnames(cars))
   )
@@ -131,6 +131,18 @@ test_that("prep_study2meta works on study_data", {
       LABEL = meta_data$VAR_NAMES,
       DATA_TYPE = meta_data$DATA_TYPE,
       VALUE_LABELS = NA_character_,
+      MISSING_LIST_TABLE = NA_character_,
+      HARD_LIMITS = NA_character_,
+      CO_VARS = NA_character_,
+      GROUP_VAR_OBSERVER = NA_character_,
+      GROUP_VAR_DEVICE = NA_character_,
+      TIME_VAR = NA_character_,
+      PART_VAR = NA_character_,
+      STUDY_SEGMENT = NA_character_,
+      LONG_LABEL = meta_data$VAR_NAMES,
+      LOCATION_RANGE = NA_character_,
+      LOCATION_METRIC = NA_character_,
+      PROPORTION_RANGE = NA_character_,
       MISSING_LIST = c(
         SPLIT_CHAR,
         SPLIT_CHAR,
@@ -187,18 +199,6 @@ test_that("prep_study2meta works on study_data", {
         SPLIT_CHAR
       ),
       JUMP_LIST = NA_character_,
-      MISSING_LIST_TABLE = NA_character_,
-      HARD_LIMITS = NA_character_,
-      CO_VARS = NA_character_,
-      GROUP_VAR_OBSERVER = NA_character_,
-      GROUP_VAR_DEVICE = NA_character_,
-      TIME_VAR = NA_character_,
-      PART_VAR = NA_character_,
-      STUDY_SEGMENT = NA_character_,
-      LONG_LABEL = meta_data$VAR_NAMES,
-      LOCATION_RANGE = NA_character_,
-      LOCATION_METRIC = NA_character_,
-      PROPORTION_RANGE = NA_character_,
       stringsAsFactors = FALSE,
       row.names = colnames(study_data)
     )

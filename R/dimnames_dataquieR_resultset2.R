@@ -12,6 +12,6 @@ dimnames.dataquieR_resultset2 <- function(x) {
   col_indices <- attr(matrix_list, "col_indices")
   list(names(sort(row_indices)), # TODO: sort also in Square2's access function
        names(sort(col_indices)), # TODO: sort also in Square2's access function
-       sort(unique(unname(unlist(lapply(x, names)))))
+       resnames(x)
        )
 }

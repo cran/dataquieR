@@ -11,7 +11,7 @@ test_that("get dataquieR_result works", {
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
 
-  expect_warning({
+  expect_message({
       a <- pipeline_vectorized(
        fct = acc_margins, study_data = study_data,
        meta_data = meta_data, label_col = LABEL,

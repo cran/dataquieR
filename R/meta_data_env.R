@@ -45,14 +45,6 @@
   r
 }
 
-MULTIVARIATE_OUTLIER_CHECKTYPE <- "MULTIVARIATE_OUTLIER_CHECKTYPE" # TODO: Add to 000_globs
-
-UNIVARIATE_OUTLIER_CHECKTYPE <- "UNIVARIATE_OUTLIER_CHECKTYPE" # TODO: Add to 000_globs
-
-VARIABLE_LIST <- "VARIABLE_LIST" # TODO: Add to 000_globs
-
-N_RULES <- "N_RULES" # TODO: Add to 000_globs
-
 #' Extract selected outlier criteria for a given item or variable group
 #' @param entity vector of item- or variable group identifiers
 #' @details
@@ -61,13 +53,13 @@ N_RULES <- "N_RULES" # TODO: Add to 000_globs
 #' @return a vector with id-variables for each entity-entry, having the
 #'         `explode` attribute set to `FALSE`
 #' @seealso [meta_data_env]
-#' @name meta_data_env_id_vars
+#' @name meta_data_env_criteria
 .meta_data_env$criteria <- function(entity) {
   util_expect_scalar(entity, check_type = is.character)
   if (target_meta_data == "cross-item_level") {
     r <- tolower(trimws(unlist(util_parse_assignments(
-      meta_data_cross_item[!util_empty(meta_data_cross_item[[VARIABLE_LIST]]) &
-                             meta_data_cross_item[[VARIABLE_LIST]] ==
+      meta_data_cross_item[!util_empty(meta_data_cross_item[[CHECK_ID]]) &
+                             meta_data_cross_item[[CHECK_ID]] ==
                            entity, MULTIVARIATE_OUTLIER_CHECKTYPE]))))
 
   } else if (target_meta_data == "item_level") {
@@ -93,13 +85,13 @@ N_RULES <- "N_RULES" # TODO: Add to 000_globs
 #' @return a vector with id-variables for each entity-entry, having the
 #'         `explode` attribute set to `FALSE`
 #' @seealso [meta_data_env]
-#' @name meta_data_env_id_vars
+#' @name meta_data_env_n_rules
 .meta_data_env$n_rules <- function(entity) {
   util_expect_scalar(entity, check_type = is.character)
   if (target_meta_data == "cross-item_level") {
     r <- unname(unlist(util_parse_assignments(
-      meta_data_cross_item[!util_empty(meta_data_cross_item[[VARIABLE_LIST]]) &
-                              meta_data_cross_item[[VARIABLE_LIST]] ==
+      meta_data_cross_item[!util_empty(meta_data_cross_item[[CHECK_ID]]) &
+                              meta_data_cross_item[[CHECK_ID]] ==
                              entity, N_RULES])))
 
   } else if (target_meta_data == "item_level") {
@@ -114,13 +106,20 @@ N_RULES <- "N_RULES" # TODO: Add to 000_globs
   r1 <- suppressWarnings(as.integer(r))
   if (any(is.na(r) != is.na(r1))) {
     util_warning("For %s, %s must be an integer number, it is %s",
-                 dQuote(entity), sQuote(N_RULES), dQuote(r))
+                 dQuote(entity), sQuote(N_RULES), dQuote(r),
+                 applicability_problem = TRUE)
   }
   r <- r1
   if (length(r) > 0)
     attr(r, "explode") <- FALSE
   r
 }
+
+# TODO: Add the following
+#use_value_labels,  # TODO: make use_value_labels accessible from metadata
+# replace_missing_by c(NA, LABEL, INTERPRET)
+# use_replace_limits
+
 
 #' Extract co-variables for a given item
 #' @param entity vector of item-identifiers
@@ -174,6 +173,23 @@ N_RULES <- "N_RULES" # TODO: Add to 000_globs
   r
 }
 
+.meta_data_env$resp_vars <- function(resp_vars) {
+  util_stop_if_not(length(resp_vars) == 1)
+  only_roles <- util_get_concept_info("implementations", get("function_R")
+                                   == fkt, "only_roles")[["only_roles"]]
+  if (length(only_roles) == 1 && !util_empty(only_roles)) {
+    only_roles <- util_parse_assignments(only_roles)
+  } else {
+    only_roles <- c(VARIABLE_ROLES$PRIMARY, VARIABLE_ROLES$SECONDARY)
+  }
+  if (meta_data[meta_data[[label_col]] == resp_vars, VARIABLE_ROLE, TRUE]
+      %in% only_roles) {
+    resp_vars
+  } else {
+    character(0)
+  }
+}
+
 #' Extract group variables for a given item
 #' @param entity vector of item-identifiers
 #' @return a vector with possible group-variables (can be more than  one per
@@ -201,7 +217,7 @@ N_RULES <- "N_RULES" # TODO: Add to 000_globs
 }
 
 # make all the functions in the environment enclosed by this environment, too,
-# so that they can look up this environment for meta data
+# so that they can look up this environment for metadata
 for (f in ls(.meta_data_env)) {
   if (is.function(.meta_data_env[[f]])) {
     environment(.meta_data_env[[f]]) <- .meta_data_env

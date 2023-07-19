@@ -1,4 +1,4 @@
-#' Generate a RMarkdown-based report from a [dataquieR] report
+#' Generate a HTML-based report from a [dataquieR] report
 #'
 #' @param x [dataquieR report v2][dq_report2].
 #' @param dir [character] directory to store the rendered report's files,
@@ -7,16 +7,19 @@
 #'   overwritten inside that directory
 #' @param view [logical] display the report
 #' @param disable_plotly [logical] do not use `plotly`, even if installed
+#' @param block_load_factor [numeric] multiply size of parallel compute blocks
+#'                                    by this factor.
 #' @param ... additional arguments:
 #'
 #' @return file names of the generated report's HTML files
 #' @export
 #' @importFrom utils browseURL
-print.dataquieR_resultset2 <- function( # TODO: use parallel-mapping
-  x,# TODO: progress bar
+print.dataquieR_resultset2 <- function(
+  x,
   dir,
   view = TRUE,
   disable_plotly = FALSE,
+  block_load_factor = 4,
   ...) {
   opts <- c(as.list(environment()), list(...))
   opts$x <- NULL
@@ -32,7 +35,33 @@ print.dataquieR_resultset2 <- function( # TODO: use parallel-mapping
                         goal = "generate plain HTML-reports.")
 
   if (nrow(x) * ncol(x) * nres(x) == 0) {
-    util_error("Report is empty, no results at all.")
+    all_errors <- lapply(x, function(res) {
+      e <- attr(res, "error")
+      if (length(e)) {
+        stopifnot(length(e) == 1)
+        e <- e[[1]]
+        if (!is.null(attr(e, "applicability_problem")) &&
+            is.logical(attr(e, "applicability_problem")) &&
+            identical(attr(e, "applicability_problem"), TRUE)) {
+              "Applicabiility problem(s)"
+        } else {
+          paste(conditionMessage(e), collapse = "\n")
+        }
+      } else {
+        NULL
+      }
+    })
+    all_errors <- all_errors[!vapply(all_errors, is.null, FUN.VALUE =
+                                       logical(1))]
+    all_errors <- unlist(all_errors, recursive = TRUE)
+    all_errors <- gsub("\nwhen calling .*$", "", all_errors)
+    all_errors <- unique(all_errors)
+    if (length(all_errors) > 0)
+      reason <- paste0(", possible reasons are: \n", paste("-", all_errors, collapse = "\n"))
+    else
+      reason <- "."
+    util_error("Report is empty, no results at all%s",
+               reason)
   }
 
   dir <- NULL
@@ -113,7 +142,9 @@ print.dataquieR_resultset2 <- function( # TODO: use parallel-mapping
   pages <- util_generate_pages_from_report(report, template,
                                            disable_plotly = disable_plotly,
                                            progress = progress,
-                                           progress_msg = progress_msg)
+                                           progress_msg = progress_msg,
+                                           block_load_factor =
+                                             block_load_factor)
 
   logo <- "logo.png"
   loading <-
@@ -146,8 +177,10 @@ print.dataquieR_resultset2 <- function( # TODO: use parallel-mapping
   )
 
   fnms <- lapply(
-    setNames(nm = names(pages)),
+    setNames(nm = seq_along(pages)),
     util_create_page_file,
+    progress_msg = progress_msg,
+    progress = progress,
     pages = pages,
     rendered_pages = deps_prepro$rendered_pages,
     dir = dir,
@@ -169,7 +202,15 @@ print.dataquieR_resultset2 <- function( # TODO: use parallel-mapping
     file = file.path(dir, "renderinfo.json")
     )
 
-  util_message("Wrote %s", paste0(dQuote(fnms), collapse = ", "))
+  cat(sep = "",
+      "window.renderingData = {\"renderingTime\": \"",
+      paste(as.character(round(difftime(end_time, start_time, units = "mins"), 2)),
+            "min"),
+      "\"}",
+      file = file.path(dir, "renderinfo.js")
+  )
+
+  progress_msg(sprintf("Wrote %s", paste0(dQuote(fnms), collapse = ", ")))
 
   if (view) {
     util_view_file(fnms[[1]])
@@ -178,3 +219,4 @@ print.dataquieR_resultset2 <- function( # TODO: use parallel-mapping
     fnms
   }
 }
+# For PDF output, support https://cran.r-project.org/web/packages/xmpdf/index.html

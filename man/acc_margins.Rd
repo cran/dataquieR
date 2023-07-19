@@ -101,23 +101,15 @@ data but for the purpose of clarity this approach is chosen.
 # runs spuriously slow on rhub
 load(system.file("extdata/study_data.RData", package = "dataquieR"))
 load(system.file("extdata/meta_data.RData", package = "dataquieR"))
-co_vars <- c("AGE_0")
-label_col <- LABEL
-rvs <- c("DBP_0")
-group_vars <- prep_map_labels(rvs, meta_data = meta_data, from = label_col,
-  to = VAR_NAMES)
-group_vars <- prep_map_labels(group_vars, meta_data = meta_data,
-  to = GROUP_VAR_OBSERVER)
-group_vars <- prep_map_labels(group_vars, meta_data = meta_data)
-acc_margins(resp_vars = rvs,
+acc_margins(resp_vars = "DBP_0",
             study_data = study_data,
             meta_data = meta_data,
-            group_vars = group_vars,
-            label_col = label_col,
-            co_vars = co_vars)
+            group_vars = "USR_BP_0",
+            label_col = LABEL,
+            co_vars = "AGE_0")
 }
 }
 \seealso{
-\href{https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_margins.html}{Online Documentation}
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_margins.html}{Online Documentation}
 }
 \keyword{accuracy}

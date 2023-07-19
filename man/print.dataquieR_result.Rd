@@ -8,7 +8,8 @@
 \method{print}{dataquieR_result}(x, ...)
 }
 \arguments{
-\item{x}{\link{list} a dataquieR result from \link{pipeline_vectorized}}
+\item{x}{\link{list} a dataquieR result from \link{pipeline_vectorized} or
+\link{util_eval_to_dataquieR_result}}
 
 \item{...}{passed to print. Additionally, the argument \code{slot} may be passed
 to print only specific sub-results.}
@@ -18,4 +19,7 @@ see print
 }
 \description{
 Print a \link{dataquieR} result returned by pipeline_vectorized
+}
+\seealso{
+\code{\link[=util_pretty_print]{util_pretty_print()}}
 }

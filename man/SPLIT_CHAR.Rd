@@ -3,7 +3,7 @@
 \docType{data}
 \name{SPLIT_CHAR}
 \alias{SPLIT_CHAR}
-\title{Character used  by default as a separator in meta data such as
+\title{Character used  by default as a separator in metadata such as
 missing codes}
 \format{
 An object of class \code{character} of length 1.

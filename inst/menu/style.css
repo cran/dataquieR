@@ -206,18 +206,26 @@ div.default-target {
 div.table_top_spacer {
 }
 
+div.dataquieR_result {
+  margin-top: 1em;
+}
+
 div.table_result {
-  max-height: calc(100vh - 8em);
+  /* max-height: calc(100vh - 8em); */
   overflow-y: auto;
 }
 
 /* https://github.com/rstudio/DT/issues/951#issuecomment-1256844234 */
 .datatables.html-widget.html-widget-static-bound {
   height: auto !important;
-  width: calc(100vw - 20px) !important; /* TODO: 20px: heuristic quick fix for scrollbars hiding content. Scrollbar width could be detected using javascript, but then, the css class is hard to adjust from javascript, hence possible. */
+  width: calc(100vw - 40px) !important; /* TODO: 40px: heuristic quick fix for scrollbars hiding content/hidden scrollbar. Scrollbar width could be detected using javascript, but then, the css class is hard to adjust from javascript, hence possible. */
 }
 .dataTables_scrollBody {
   /* height: unset !important; */
+}
+td.max_60vw, th.max_60vw { /* for the first column in html tables, which are fixed, do not use more than 60vw */
+  max-width: 60vw;
+  overflow: auto;
 }
 
 /*

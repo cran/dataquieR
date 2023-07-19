@@ -20,7 +20,7 @@ DISTRIBUTIONS <- list(
 #' dimensions are Completeness, Consistency and Accuracy.
 #'
 #' @seealso [Data Quality Concept](
-#'   https://dataquality.ship-med.uni-greifswald.de/DQconceptNew.html)
+#'   https://dataquality.qihs.uni-greifswald.de/DQconceptNew.html)
 #'
 #' @return Only a definition, not a function, so no return value
 #'
@@ -50,13 +50,13 @@ dimensions = c("Completeness", "Consistency", "Accuracy")
 #'   [match.arg] with `several.ok = TRUE`.
 #' - `variable` Function arguments of this type expect a character scalar that
 #'              specifies one variable using the variable identifier given in
-#'              the meta data attribute `VAR_NAMES` or, if `label_col` is set,
-#'              given in the meta data attribute given in that argument.
+#'              the metadata attribute `VAR_NAMES` or, if `label_col` is set,
+#'              given in the metadata attribute given in that argument.
 #'              Labels can easily be translated using [prep_map_labels]
 #' - `variable list` Function arguments of this type expect a character vector
 #'                   that specifies variables using the variable identifiers
-#'                   given in the meta data attribute `VAR_NAMES` or,
-#'                   if `label_col` is set, given in the meta data attribute
+#'                   given in the metadata attribute `VAR_NAMES` or,
+#'                   if `label_col` is set, given in the metadata attribute
 #'                   given in that argument. Labels can easily be translated
 #'                   using [prep_map_labels]
 #'
@@ -102,6 +102,11 @@ DATA_TYPES_OF_R_TYPE <- list(
 #'   - `primary` a primary outcome variable
 #'   - `secondary` a secondary outcome variable
 #'   - `process` a variable describing the measurement process
+#'   - `suppress` a variable added on the fly computing sub-reports, i.e., by
+#'                [dq_report_by] to have all referred variables available,
+#'                even if they are not part of the currently processed segment.
+#'                But they will only be fully assessed in their real segment's
+#'                report.
 #'
 #' @rawRd \alias{variable roles}
 #' @export
@@ -109,17 +114,18 @@ VARIABLE_ROLES <- list(
   INTRO = "intro",
   PRIMARY = "primary",
   SECONDARY = "secondary",
-  PROCESS = "process"
+  PROCESS = "process",
+  SUPPRESS = "suppress"
 )
 
-#' Character used  by default as a separator in meta data such as
+#' Character used  by default as a separator in metadata such as
 #'           missing codes
 #'
 #' This 1 character is according to our metadata concept `r dQuote(SPLIT_CHAR)`.
 #' @export
 SPLIT_CHAR <- "|"
 
-# constants for the names of defined meta data attributes / meta reference
+# constants for the names of defined metadata attributes / meta reference
 # attributes
 REQUIREMENT_ATT <- "var_att_required"
 
@@ -158,7 +164,7 @@ VARATT_REQUIRE_LEVELS_ORDER <- c(
 
 #' Well-known metadata column names, names of metadata columns
 #'
-#' names of the variable attributes in the meta data frame holding
+#' names of the variable attributes in the metadata frame holding
 #' the names of the respective observers, devices, lower limits for plausible
 #' values, upper limits for plausible values, lower limits for allowed values,
 #' upper limits for allowed values, the variable name (column name, e.g.
@@ -193,12 +199,11 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
   VALUE_LABELS = structure("VALUE_LABELS", var_att_required =
                              VARATT_REQUIRE_LEVELS$RECOMMENDED),
   MISSING_LIST = structure("MISSING_LIST", var_att_required =
-                             VARATT_REQUIRE_LEVELS$REQUIRED),
+                             VARATT_REQUIRE_LEVELS$COMPATIBILITY),
   JUMP_LIST = structure("JUMP_LIST", var_att_required =
-                          VARATT_REQUIRE_LEVELS$RECOMMENDED),
-  # TODO: Support MISSING_LIST_TABLE in addition to MISSING_LIST/JUMP_LIST for item missingness / NA replacements
+                          VARATT_REQUIRE_LEVELS$COMPATIBILITY),
   MISSING_LIST_TABLE = structure("MISSING_LIST_TABLE", var_att_required =
-                                   VARATT_REQUIRE_LEVELS$RECOMMENDED),
+                                   VARATT_REQUIRE_LEVELS$REQUIRED),
   HARD_LIMITS = structure("HARD_LIMITS", var_att_required =
                             VARATT_REQUIRE_LEVELS$RECOMMENDED),
   DETECTION_LIMITS = structure("DETECTION_LIMITS", var_att_required =
@@ -212,6 +217,8 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
   DECIMALS = structure("DECIMALS", var_att_required =
                          VARATT_REQUIRE_LEVELS$OPTIONAL),
   DATA_ENTRY_TYPE = structure("DATA_ENTRY_TYPE", var_att_required =
+                                VARATT_REQUIRE_LEVELS$OPTIONAL),
+  END_DIGIT_CHECK = structure("END_DIGIT_CHECK", var_att_required =
                                 VARATT_REQUIRE_LEVELS$OPTIONAL),
   CO_VARS = structure("CO_VARS", var_att_required =
                         VARATT_REQUIRE_LEVELS$RECOMMENDED),
@@ -288,6 +295,13 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
 
 )
 
+.onAttach <- function(...) { # nocov start
+  if (length(user_hints$l) > 0) {
+    packageStartupMessage(paste(user_hints$l, collapse = "\n"))
+  }
+}
+# nocov end
+
 .onLoad <- function(...) { # nocov start
   if (getRversion() >= "2.15.1") {
     utils::globalVariables(
@@ -323,7 +337,11 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
         "progress",
         "progress_msg",
         "REQUIRED", # a var att requirement level, using NSE
-        "label_col" # generated by prep_prepare_dataframes like ds1
+        "label_col", # generated by prep_prepare_dataframes like ds1
+        "tr", # htmltools withTags
+        "td", # htmltools withTags
+        "th", # htmltools withTags
+        "table" # htmltools withTags
       )
     )
   }
@@ -355,14 +373,35 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
     return(..manual)
   }, environment(util_load_manual))
 
+  makeActiveBinding(".called_in_pipeline", function() {
+    .dq2_globs$.called_in_pipeline
+  }, environment(.onLoad))
+
   util_fix_rstudio_bugs()
+
+  if (!l10n_info()[["UTF-8"]]) {
+    update_recommended <-
+      (.Platform$OS.type == "windows" &&
+       (R.version$major < 4 || (R.version$major >= 4 && R.version$minor < 2)))
+    util_user_hint(sprintf(
+      paste("Your R session is not using a UTF-8 character set,",
+      "be prepared to encoding problems. Also use %s. %s"),
+      "Sys.setlocale() to select a UTF-8 locale in your .Rprofile",
+      ifelse(update_recommended,
+        paste(
+          "\nOn Windows, you should consider updating R to a version >= 4.2.0,",
+            "which supports UTF-8."),
+          "")
+    ))
+  }
+
 }
 # nocov end
 
 # name of the additional system missingness column in com_item_missingness
 .SM_LAB <- "ADDED: SysMiss"
 
-# TODO: Update the following block to also comprise the new columns for qualified missingness and add a link to the documentation of ? cause_label_df (CAVE: In the new version, we would not need it, but we should (do already?) support linking other names than VAR_NAMES, e.g., LABEL).
+# TODO JM: Update the following block to also comprise the new columns for qualified missingness and add a link to the documentation of ? cause_label_df (CAVE: In the new version, we would not need it, but we should (do already?) support linking other names than VAR_NAMES, e.g., LABEL).
 #' Data frame with labels for missing- and jump-codes
 #' @name cause_label_df
 #' @aliases missing_matchtable
@@ -381,12 +420,12 @@ NULL
 
 #' Data frame with contradiction rules
 #' @name check_table
-#' @aliases meta_data_cross_item
+#' @seealso [meta_data_cross]
 #' @description
 #' Two versions exist, the newer one is used by [con_contradictions_redcap] and
-#' is described [here](https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html#Example_output).,
-#' the older one used by [con_contradictions_redcap] is described
-#' [here](https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_contradictions.html#Example_output).
+#' is described [here](https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html#Example_output).,
+#' the older one used by [con_contradictions] is described
+#' [here](https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions.html#Example_output).
 NULL
 
 #' Data frame with metadata about the study data on variable level
@@ -396,7 +435,7 @@ NULL
 #'
 #' Variable level metadata.
 #'
-#' @seealso [further details on variable level metadata.](https://dataquality.ship-med.uni-greifswald.de/Annotation_of_Metadata.html)
+#' @seealso [further details on variable level metadata.](https://dataquality.qihs.uni-greifswald.de/Annotation_of_Metadata.html)
 #' @seealso [meta_data_segment]
 #' @seealso [meta_data_dataframe]
 #'
@@ -413,7 +452,7 @@ NULL
 #' Well known columns on the `meta_data_segment` sheet
 #' @name meta_data_segment
 #' @description
-#' Meta data describing study segments, e.g., a full questionnaire, not its
+#' Metadata describing study segments, e.g., a full questionnaire, not its
 #' items.
 NULL
 
@@ -481,11 +520,22 @@ SEGMENT_UNIQUE_ROWS <- "SEGMENT_UNIQUE_ROWS"
 #' @export
 SEGMENT_PART_VARS <- "SEGMENT_PART_VARS"
 
+#' Segment level metadata attribute name
+#'
+#' `true` or `false` to suppress crude segment missingness output
+#' (`Completeness/Misg. Segments` in the report). Defaults to compute
+#' the output, if more than one segment is available in the item-level
+#' metadata.
+#'
+#' @seealso [meta_data_segment]
+#'
+#' @export
+SEGMENT_MISS <- "SEGMENT_MISS"
 
 #' Well known columns on the `meta_data_dataframe` sheet
 #' @name meta_data_dataframe
 #' @description
-#' Meta data describing data delivered on one data frame/table sheet,
+#' Metadata describing data delivered on one data frame/table sheet,
 #' e.g., a full questionnaire, not its items.
 NULL
 
@@ -568,5 +618,210 @@ DF_ID_VARS <- "DF_ID_VARS"
 #' @export
 DF_UNIQUE_ROWS <- "DF_UNIQUE_ROWS"
 
+
+#' Well known columns on the `meta_data_cross-item` sheet
+#' @name meta_data_cross
+#' @seealso check_table
+#' @description
+#' Metadata describing groups of variables, e.g., for their multivariate
+#' distribution or for defining contradiction rules.
+NULL
+
+#' Cross-item level metadata attribute name
+#'
+#' Specifies the unique labels for cross-item level metadata records
+#'
+#' if missing, `dataquieR` will create such labels
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+CHECK_LABEL <- "CHECK_LABEL"
+
+#' Cross-item level metadata attribute name
+#'
+#' Specifies the unique IDs for cross-item level metadata records
+#'
+#' if missing, `dataquieR` will create such IDs
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+CHECK_ID <- "CHECK_ID"
+
+#' Cross-item level metadata attribute name
+#'
+#' Specifies a group of variables for multivariate analyses. Separated
+#' by `r SPLIT_CHAR`, please use variable names from [VAR_NAMES] or
+#' a label as specified in `label_col`, usually [LABEL] or [LONG_LABEL].
+#'
+#' if missing, `dataquieR` will create such IDs from [CONTRADICTION_TERM],
+#' if specified.
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+VARIABLE_LIST <- "VARIABLE_LIST" # TODO: STS Add to 000_globs
+
+#' Cross-item level metadata attribute name
+#'
+#' Specifies a contradiction rule. Use `REDCap` like syntax, see
+#' [online vignette](https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html)
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+CONTRADICTION_TERM <- "CONTRADICTION_TERM"
+
+#' Cross-item level metadata attribute name
+#'
+#' Specifies the type of a contradiction. According to the data quality
+#' concept, there are logical and empirical contradictions, see
+#' [online vignette](https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html)
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+CONTRADICTION_TYPE <- "CONTRADICTION_TYPE"
+
+#' Cross-item and item level metadata attribute name
+#'
+#' Select, how many violated outlier criteria make an observation an outlier,
+#' see [acc_multivariate_outlier].
+#'
+#' You can leave the cell empty, then, all applied checks must deem an
+#' observation an outlier to have it flagged. See
+#' [UNIVARIATE_OUTLIER_CHECKTYPE] and
+#' [MULTIVARIATE_OUTLIER_CHECKTYPE] for the selected outlier criteria.
+#'
+#' @seealso [meta_data_cross]
+#' @seealso [meta_data]
+#' @family meta_data_cross
+#'
+#' @export
+N_RULES <- "N_RULES" # TODO: STS add to WELL_KNOWN_META_VARIABLE_NAMES
+
+#' Cross-item level metadata attribute name
+#'
+#' Select, which outlier criteria to compute, see [acc_multivariate_outlier].
+#'
+#' You can leave the cell empty, then, all checks will apply. If you enter
+#' a set of methods, the maximum for [N_RULES] changes. See also
+#' [`UNIVARIATE_OUTLIER_CHECKTYPE`].
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+MULTIVARIATE_OUTLIER_CHECKTYPE <- "MULTIVARIATE_OUTLIER_CHECKTYPE"
+
+#' Item level metadata attribute name
+#'
+#' Select, which outlier criteria to compute, see [acc_univariate_outlier].
+#'
+#' You can leave the cell empty, then, all checks will apply. If you enter
+#' a set of methods, the maximum for [N_RULES] changes. See also
+#' [`MULTIVARIATE_OUTLIER_CHECKTYPE`].
+#'
+#' @seealso [WELL_KNOWN_META_VARIABLE_NAMES]
+#'
+#' @export
+UNIVARIATE_OUTLIER_CHECKTYPE <- "UNIVARIATE_OUTLIER_CHECKTYPE"  # TODO: STS add to WELL_KNOWN_META_VARIABLE_NAMES
+
+#' Cross-item level metadata attribute name
+#'
+#' TODO JM
+#'
+#' @family meta_data_cross
+#' @seealso [meta_data_cross]
+#'
+#' @export
+ASSOCIATION_RANGE <- "ASSOCIATION_RANGE"
+
+#' Cross-item level metadata attribute name
+#'
+#' TODO JM
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+ASSOCIATION_METRIC <- "ASSOCIATION_METRIC"
+
+#' Cross-item level metadata attribute name
+#'
+#' TODO
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+ASSOCIATION_DIRECTION <- "ASSOCIATION_DIRECTION"
+
+#' Cross-item level metadata attribute name
+#'
+#' TODO JM
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+ASSOCIATION_FORM <- "ASSOCIATION_FORM"
+
+#' Cross-item level metadata attribute name
+#'
+#' TODO JM
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+REL_VAL <- "REL_VAL"
+
+#' Cross-item level metadata attribute name
+#'
+#' TODO JM
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+GOLDSTANDARD <- "GOLDSTANDARD"
+
+#' Cross-item level metadata attribute name
+#'
+#' TODO JM: MISSING_LABEL will not work for non-factor variables
+#'
+#' LABEL MISSING LIMITS MISSING_LABEL MISSING_INTERPRET
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+DATA_PREPARATION <- "DATA_PREPARATION"
+
+#' Dimension Titles for Prefixes
+#'
+#' order does matter, because it defines the order in the `dq_report2`.
+#'
+#' @seealso [util_html_for_var()]
+#' @seealso [util_html_for_dims()]
+dims <- c(
+  int = "Integrity",
+  com = "Completeness",
+  con = "Consistency",
+  acc = "Accuracy"
+)
+
 # Use cli, if available.
 rlang::local_use_cli()
+
+# Maximum length for labels according to
+# file names https://stackoverflow.com/a/265782/4242747
+# and label handling in plot.ly
+MAX_LABEL_LEN <- min(200L, 30L)

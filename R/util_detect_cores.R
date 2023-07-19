@@ -4,12 +4,24 @@
 #'
 #' @return number of available CPU cores.
 util_detect_cores <- function() {
-  if (requireNamespace("parallel", quietly = TRUE)) {
+  if (requireNamespace("parallelly", quietly = TRUE)) {
+    return(parallelly::availableCores())
+  } else if (requireNamespace("rJava", quietly = TRUE)) {
+    rJava::.jinit()
+    rt <- rJava::.jcall("java/lang/Runtime", "Ljava/lang/Runtime;",
+                        method = "getRuntime")
+    cpus <- rJava::.jcall(rt, "I", "availableProcessors")
+    return(cpus)
+  } else if (requireNamespace("parallel", quietly = TRUE)) {
     return(parallel::detectCores())
   } else{
-    util_warning(c("Suggested package parallel not found,",
+    util_warning(c("None of the suggested packages %s are found,",
                    "autodetection of CPU cores disabled --",
-                   "using default of 1 core only."))
+                   "using default of 1 core only."),
+                 util_pretty_vector_string(c(
+                   "parallel",
+                   "parallelly",
+                   "rJava")))
     return(1)
   }
 }

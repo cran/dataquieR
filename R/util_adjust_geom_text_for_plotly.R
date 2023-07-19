@@ -6,7 +6,26 @@
 util_adjust_geom_text_for_plotly <- function(plotly) {
   util_ensure_suggested("plotly")
   util_stop_if_not(inherits(plotly, "plotly"))
-  pyb <- plotly::plotly_build(plotly)
+  withCallingHandlers(
+    pyb <- plotly::plotly_build(plotly),
+    warning = function(cond) { # suppress a waning caused by ggplotly for barplots
+      if (startsWith(conditionMessage(cond),
+                     "'bar' objects don't have these attributes: 'mode'")) {
+        invokeRestart("muffleWarning")
+      }
+      if (any(grepl("the mode", conditionMessage(cond)))) {
+        invokeRestart("muffleWarning")
+      }
+    },
+    message = function(cond) { # suppress a waning caused by ggplotly for barplots
+      if (startsWith(conditionMessage(cond),
+                     "'bar' objects don't have these attributes: 'mode'")) {
+        invokeRestart("muffleMessage")
+      }
+      if (any(grepl("the mode", conditionMessage(cond)))) {
+        invokeRestart("muffleMessage")
+      }
+    })
 
   no_type <-
     vapply(lapply(pyb$x$data, `[[`, "type"), is.null, FUN.VALUE = logical(1))
@@ -26,5 +45,25 @@ util_adjust_geom_text_for_plotly <- function(plotly) {
   mode_text[!no_mode] <-
     vapply(mode[!no_mode], `==`, "text", FUN.VALUE = logical(1))
 
-  plotly::style(pyb, textposition = "right", traces = mode_text & type_scatter)
+  # TODO: for ggvenn, we would need textposition = "middle center" - get from hjust and vjust in $hovertext of pyb$x?
+  withCallingHandlers(
+    plotly::style(pyb, textposition = "right", traces = mode_text & type_scatter),
+    warning = function(cond) { # suppress a waning caused by ggplotly for barplots
+      if (startsWith(conditionMessage(cond),
+                     "'bar' objects don't have these attributes: 'mode'")) {
+        invokeRestart("muffleWarning")
+      }
+      if (any(grepl("the mode", conditionMessage(cond)))) {
+        invokeRestart("muffleWarning")
+      }
+    },
+    message = function(cond) { # suppress a waning caused by ggplotly for barplots
+      if (startsWith(conditionMessage(cond),
+                     "'bar' objects don't have these attributes: 'mode'")) {
+        invokeRestart("muffleMessage")
+      }
+      if (any(grepl("the mode", conditionMessage(cond)))) {
+        invokeRestart("muffleMessage")
+      }
+    })
 }

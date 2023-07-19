@@ -31,7 +31,8 @@ util_warn_unordered <- function(x, varname) {
       ),
       dQuote(varname),
       paste0(sQuote(unique(c(class(x), typeof(x)))), collapse = ", "),
-      applicability_problem = TRUE
+      applicability_problem = TRUE,
+      intrinsic_applicability_problem = TRUE
     )
   }
   invisible(NULL)

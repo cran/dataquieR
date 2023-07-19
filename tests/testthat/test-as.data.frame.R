@@ -24,6 +24,9 @@ test_that("as.data.frame.dataquieR_resultset works", {
 
   x <- as.data.frame(report)
 
+  # x$meta_data_dataframe <- NULL
+  # x$meta_data_segment <- NULL
+
   expect_equal(dim(x), c(12, 7)) # NOTE: This must be changed, if more indicators are added to dq_report
   expect_equal(
     colnames(x),
@@ -55,7 +58,7 @@ test_that("as.data.frame.dataquieR_resultset works", {
     )
   )
   expect_equal(vapply(x$results, length, FUN.VALUE = integer(1)),
-               c(1L, 1L, 4L, 2L, 3L, 3L, 6L, 6L, 6L, 4L, 4L, 1L))
+               c(1L, 1L, 5L, 2L, 3L, 4L, 6L, 6L, 6L, 4L, 4L, 1L))
   expect_equal(lapply(setNames(x$results, nm = x$implementationform), names),
                list(
                  int_all_datastructure_dataframe = c(),
@@ -64,6 +67,7 @@ test_that("as.data.frame.dataquieR_resultset works", {
                    "SummaryPlot",
                    "DataTypePlotList",
                    "SummaryTable",
+                   "SummaryData",
                    "ReportSummaryTable"
                  ),
                  com_unit_missingness = c("FlaggedStudyData", "SummaryData"),
@@ -71,6 +75,7 @@ test_that("as.data.frame.dataquieR_resultset works", {
                    c("SummaryData", "ReportSummaryTable", "SummaryPlot"),
                  com_item_missingness = c(
                    "SummaryTable",
+                   "SummaryData",
                    "SummaryPlot",
                    "ReportSummaryTable"
                  ),

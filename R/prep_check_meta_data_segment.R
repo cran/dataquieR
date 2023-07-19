@@ -1,4 +1,4 @@
-#' Verify and normalize meta data on segment level
+#' Verify and normalize metadata on segment level
 #'
 #' if possible, mismatching data types are converted (`"true"` becomes `TRUE`)
 #'
@@ -81,7 +81,8 @@ prep_check_meta_data_segment <- function(meta_data_segment = "segment_level") {
     util_message("Removing %d rows from %s, because %s is empty.",
                  sum_no_key,
                  dQuote("meta_data_segment"),
-                 sQuote(STUDY_SEGMENT)
+                 sQuote(STUDY_SEGMENT),
+                 applicability_problem = TRUE
     )
   }
 

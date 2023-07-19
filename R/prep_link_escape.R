@@ -7,7 +7,12 @@
 #' @export
 #'
 prep_link_escape <- function(s, html = FALSE) {
-  r <- gsub("/", "", s, fixed = TRUE)
+  r <- gsub("*", "X", s, fixed = TRUE)
+  r <- gsub("\u00b2", "", r, fixed = TRUE)
+  r <- gsub("\u00b3", "", r, fixed = TRUE)
+  r <- gsub("\u00B0", "", r, fixed = TRUE)
+  r <- gsub("%", "", r, fixed = TRUE)
+  r <- gsub("/", "", r, fixed = TRUE)
   r <- gsub("'", "", r, fixed = TRUE)
   r <- gsub(":", "", r, fixed = TRUE)
   r <- gsub("\u20ac", "", r, fixed = TRUE)

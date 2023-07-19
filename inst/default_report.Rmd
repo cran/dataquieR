@@ -198,7 +198,7 @@ util_html_table(md, filter = "top", options = list(scrollCollapse = TRUE, scroll
 ```
 
 ```{markdown no_meta_data_dfr, include=is.null(report$meta_data_dataframe)}
-***ot provided.***
+***Not provided.***
 ```
 
 # Metadata on segment level {data-navmenu="General information"}

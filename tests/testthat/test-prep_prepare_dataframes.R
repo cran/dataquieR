@@ -1,9 +1,9 @@
 test_that("prep_prepare_dataframes works", {
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
-                   dataquieR.ERRORS_WITH_CALLER = TRUE,
-                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
-                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
+                       dataquieR.ERRORS_WITH_CALLER = TRUE,
+                       dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                       dataquieR.MESSAGES_WITH_CALLER = TRUE)
   acc_test1 <- function(resp_variable, aux_variable,
                         time_variable, co_variables,
                         group_vars, study_data, meta_data) {
@@ -47,17 +47,17 @@ test_that("prep_prepare_dataframes works", {
     acc_test1(study_data = study_data),
     regexp =
       sprintf(
-      "(?ms).*(%s|%s|%s|%s).*",
-      paste("Missing .+meta_data.+, try to guess a preliminary one from the",
-            "data using .+prep_prepare_dataframes.+. Please consider amending",
-            "this minimum guess manually."),
-      paste("Meta data does not provide a filled column called",
-            ".+MISSING_LIST.+ for replacing codes with NAs."),
-      paste("Meta data does not provide a filled column called .+JUMP_LIST.+",
-            "for replacing codes with NAs."),
-      paste("Some code labels or -values",
-            "are missing from .+meta_data.+.")
-    ),
+        "(?ms).*(%s|%s|%s|%s).*",
+        paste("Missing .+meta_data.+, try to guess a preliminary one from the",
+              "data using .+prep_prepare_dataframes.+. Please consider amending",
+              "this minimum guess manually."),
+        paste("Metadata does not provide a filled column called",
+              ".+MISSING_LIST.+ for replacing codes with NAs."),
+        paste("Metadata does not provide a filled column called .+JUMP_LIST.+",
+              "for replacing codes with NAs."),
+        paste("Some code labels or -values",
+              "are missing from .+meta_data.+.")
+      ),
     perl = TRUE
   )
   expect_error(
@@ -564,7 +564,7 @@ test_that("prep_prepare_dataframes works", {
   expect_silent(err_test4(study_data = study_data))
   md99 <- 42
   expect_error(err_test4(study_data = study_data),
-               regexp = "Need meta data as a data frame")
+               regexp = "Need metadata as a data frame")
   err_test5 <- function(resp_variable, aux_variable,
                         time_variable, co_variables,
                         group_vars, study_data,
@@ -580,12 +580,12 @@ test_that("prep_prepare_dataframes works", {
                                         ".+prep_prepare_dataframes.+. Please",
                                         "consider amending this minimum guess",
                                         "manually."),
-                                  paste("Meta data does not provide a filled",
+                                  paste("Metadata does not provide a filled",
                                         "column called .+JUMP_LIST.+ for",
                                         "replacing codes with NAs."),
                                   paste("Some code labels or -values",
                                         "are missing from .+meta_data.+.")
-                                  ),
+                 ),
                  perl = TRUE,
                  all = TRUE)
 
@@ -629,22 +629,20 @@ test_that("prep_prepare_dataframes works", {
         acc_test3(study_data = sd99, meta_data = md99),
         regexp = "No data left. Aborting"
       ),
-      regexp = sprintf("(%s|%s|%s|%s)",
+      regexp = sprintf("(%s|%s)",
                        paste("Lost 100. of the study data because of",
-                             "missing.not assignable meta.data"),
-                       paste("Lost 100. of the meta data because of",
-                             "missing.not assignable study.data"),
-                       paste("Did not find any meta data for the following",
-                             "variables from the study data. .+a.+, .+b.+"),
-                       paste("Found meta data for the following variables not",
-                             "found in the study data: .+v00000.+, .+v00001.+,",
-                             ".+v00002.+, .+v00003.+, .+v00004.+")),
+                             "missing.not assignable metadata"),
+                       paste("Lost 100. of the metadata because of",
+                             "missing.not assignable study.data")),
       perl = TRUE,
-      all = TRUE
-    ),
-    regexp =
-      paste("Did not find any meta data for the following variables",
-            "from the study data: .+a.+, .+b.+, .+z.+, .+"),
-    perl = TRUE
+      all = TRUE),
+    regexp = sprintf("(%s|%s)",
+                     paste("Did not find any metadata for the following",
+                           "variables from the study data. .+a.+, .+b.+"),
+                     paste("Found metadata for the following variables not",
+                           "found in the study data: .+v00000.+, .+v00001.+,",
+                           ".+v00002.+, .+v00003.+, .+v00004.+")),
+    perl = TRUE,
+    all = TRUE
   )
 })

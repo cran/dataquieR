@@ -131,7 +131,7 @@ util_optimize_histogram_bins <- function(x, iqr_bw, n_bw,
     if (length(likely) == 0) {
       likely <- c(max(x), min(x))
     }
-    util_warning(
+    util_message(
       c("The number of bins in the histogram were reduced below %d bins.",
         "Possible reasons for an excessive number of bins could be unspecified",
         "missing codes (perhaps %s?) or misspecified limits in the metadata."

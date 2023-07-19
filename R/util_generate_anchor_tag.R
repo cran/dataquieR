@@ -91,7 +91,7 @@ util_generate_anchor_link <- function(
     }
   }
   if (util_match_arg(order_context) == "variable") {
-    .title <- prep_title_escape(callname, html = TRUE)
+    .title <- prep_title_escape(util_alias2caption(callname), html = TRUE)
     href <- sprintf("VAR_%s.html#%s%s%s", varname, varname, dot, callname)
   } else {
     .title <- prep_title_escape(orig_varname, html = TRUE)

@@ -1,11 +1,11 @@
 #' utility function to dichotomize variables
 #'
-#' use the meta data attribute `RECODE` (=`r dQuote(RECODE)`) to
+#' use the metadata attribute `RECODE` (=`r dQuote(RECODE)`) to
 #' dichotomize the data
 #'
-#' @param study_data Study data including jump/missing codes as specified in the
+#' @param study_data study data including jump/missing codes as specified in the
 #'                   code conventions
-#' @param meta_data Meta data as specified in the code conventions
+#' @param meta_data metadata as specified in the code conventions
 #'
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables

@@ -4,12 +4,20 @@
 \alias{.util_internal_normalize_meta_data}
 \title{Make normalizations of v2.0 item_level metadata.}
 \usage{
-.util_internal_normalize_meta_data(meta_data = "item_level", verbose = TRUE)
+.util_internal_normalize_meta_data(
+  meta_data = "item_level",
+  label_col = LABEL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{meta_data}{\link{data.frame} the old item-level-metadata}
 
-\item{verbose}{\link{logical} display all estimated decisions}
+\item{label_col}{\link{variable attribute} the name of the column in the metadata
+with labels of variables}
+
+\item{verbose}{\link{logical} display all estimated decisions, defaults to \code{TRUE},
+except if called in a \link{dq_report2} pipeline.}
 }
 \description{
 Requires referred missing-tables being available by

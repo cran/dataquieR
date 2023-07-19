@@ -1,12 +1,12 @@
 {{ page_menu }}
 <h4 style = "margin-top: 3em">
 <!-- space needed to prevent plot.ly's overlap -->
-  <a target="_blank" href="{{online_ref(fkt)}}">{{title}}</a>
+  <a target="_blank" href="{{online_ref}}">{{title}}</a>
 </h4>
 
-<h5>
-  {{ paste(unique(c(fkt, fkt_name)), collapse = ": ") }}
-</h5>
+<!-- h5>
+  {{ paste(unique(c(cll, fkt)), collapse = ": ") }}
+</h5 -->
 
 <p>
   {{ description }}

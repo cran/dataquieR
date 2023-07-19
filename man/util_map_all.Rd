@@ -2,7 +2,7 @@
 % Please edit documentation in R/util_map_all.R
 \name{util_map_all}
 \alias{util_map_all}
-\title{Maps label column meta data on study data variable names}
+\title{Maps label column metadata on study data variable names}
 \usage{
 util_map_all(label_col = VAR_NAMES, study_data, meta_data)
 }
@@ -20,6 +20,6 @@ of study data}
 names
 }
 \description{
-Maps a certain label column from the meta data
+Maps a certain label column from the metadata
 to the study data frame.
 }

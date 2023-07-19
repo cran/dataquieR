@@ -58,7 +58,7 @@ being complete without any \code{NA}}
 values of a study variable}
 
 \item{need_type}{\link{character} if not \code{NA}, variables must be of data type
-\code{need_type} according to the meta data,
+\code{need_type} according to the metadata,
 can be a pipe (\code{|}) separated list of
 allowed data types. Use \code{!} to exclude
 a type. See \link{DATA_TYPES} for the
@@ -106,8 +106,8 @@ of the calling function specified in \code{arg_name} is normalized (set to its
 default or a general default if missing, variable names being all white
 space replaced by NAs).
 It expects two objects in the caller's environment: \code{ds1} and \code{meta_data}.
-\code{meta_data} is the meta data frame and \code{ds1} is produced by a preceding call
-of \link{util_prepare_dataframes} using \code{meta_data} and \code{study_data}.
+\code{meta_data} is the metadata data frame and \code{ds1} is produced by a preceding
+call of \link{util_prepare_dataframes} using \code{meta_data} and \code{study_data}.
 }
 \details{
 \link{util_correct_variable_use} and \link{util_correct_variable_use2} differ only in

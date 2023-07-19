@@ -34,8 +34,8 @@ test_that("con_contradictions works", {
   threshold_value <- 1
   check_table[1, "tag"] <- "Logical, Age-Related"
   check_table[10, "tag"] <- "Empirical, Age-Related"
-  expect_message(
-    expect_warning({
+  expect_warning(
+    expect_message({
         default <- con_contradictions(
           study_data = study_data, meta_data = meta_data, label_col = label_col,
           threshold_value = threshold_value, check_table = check_table
@@ -58,17 +58,16 @@ test_that("con_contradictions works", {
                              "been above HARD_LIMITS and were removed."),
                        paste("N = 24 values in SMOKE_SHOP_0 have been",
                              "above HARD_LIMITS and were removed."),
-                       paste("Variables: AGE_0, AGE_1, EXAM_DT_0, LAB_DT_0",
-                             "have no assigned labels and levels.")
+                       paste("Labels of variables from .LABEL. will be used.",
+                             "In this case",
+                             "columns A and B in check_tables must refer to",
+                             "labels.")
                        ),
-      perl = TRUE,
-      all = TRUE
+      perl = TRUE
     ),
     regexp =
-      paste("Labels of variables from .LABEL. will be used. In this case",
-            "columns A and B in check_tables must refer to labels."),
-    perl = TRUE,
-    all = TRUE
+      paste("Variables: AGE_0, AGE_1, EXAM_DT_0, LAB_DT_0",
+            "have no assigned labels and levels.")
   )
   # expect_equal(off, default) because of plots not always true,
   # e.g.:   Component "SummaryPlot": Component "layers": Component 1:

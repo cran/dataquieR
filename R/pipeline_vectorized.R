@@ -36,7 +36,7 @@
 #'                                       with labels of variables
 #' @param ... additional arguments for the function
 #' @param key_var_names [character] character vector named by arguments to be
-#'                      filled by meta data GROUP_VAR-entries as follows:
+#'                      filled by metadata GROUP_VAR-entries as follows:
 #'                      c(group_vars = GROUP_VAR_OBSERVER) -- may be missing,
 #'                      then all possible combinations will be analyzed.
 #'                      Cannot contain resp_vars.
@@ -170,6 +170,8 @@ pipeline_vectorized <- function(fct, resp_vars = NULL, study_data, meta_data,
                                 ),
                                 result_groups, use_cache = FALSE,
                                 compute_plan_only = FALSE) {
+  util_deprecate_soft("2.0.0", what = "pipeline_vectorized()",
+                      with = "dq_report2()")
   # --------------------- Preps and Checks ----------------
   # if not in global environment go to parent environment
   try(caller. <- sys.call(0), silent = TRUE)
@@ -333,7 +335,7 @@ pipeline_vectorized <- function(fct, resp_vars = NULL, study_data, meta_data,
 
   if (any(c("co_vars", "id_vars") %in%
           names(which(!filled, useNames = TRUE)))) {
-    util_warning(
+    util_message(
       "For co_vars and id_vars, auto-fill has not yet been implemented.",
       applicability_problem = TRUE)
   }

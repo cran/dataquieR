@@ -50,13 +50,13 @@ use the term \code{numeric}.
 \link{match.arg} with \code{several.ok = TRUE}.
 \item \code{variable} Function arguments of this type expect a character scalar that
 specifies one variable using the variable identifier given in
-the meta data attribute \code{VAR_NAMES} or, if \code{label_col} is set,
-given in the meta data attribute given in that argument.
+the metadata attribute \code{VAR_NAMES} or, if \code{label_col} is set,
+given in the metadata attribute given in that argument.
 Labels can easily be translated using \link{prep_map_labels}
 \item \verb{variable list} Function arguments of this type expect a character vector
 that specifies variables using the variable identifiers
-given in the meta data attribute \code{VAR_NAMES} or,
-if \code{label_col} is set, given in the meta data attribute
+given in the metadata attribute \code{VAR_NAMES} or,
+if \code{label_col} is set, given in the metadata attribute
 given in that argument. Labels can easily be translated
 using \link{prep_map_labels}
 }

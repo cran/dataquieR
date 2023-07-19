@@ -2,7 +2,7 @@
 % Please edit documentation in R/prep_check_meta_names.R
 \name{prep_check_meta_names}
 \alias{prep_check_meta_names}
-\title{Checks the validity of meta data w.r.t. the provided column names}
+\title{Checks the validity of metadata w.r.t. the provided column names}
 \usage{
 prep_check_meta_names(meta_data = "item_level", level, character.only = FALSE)
 }
@@ -19,12 +19,12 @@ assumed to be character strings.}
 \value{
 a logical with:
 \itemize{
-\item invisible(TRUE). In case of problems with the meta data, a condition is
+\item invisible(TRUE). In case of problems with the metadata, a condition is
 raised (\code{stop()}).
 }
 }
 \description{
-This function verifies, if a data frame complies to meta data conventions and
+This function verifies, if a data frame complies to metadata conventions and
 provides a given richness of meta information as specified by \code{level}.
 }
 \details{
@@ -74,6 +74,7 @@ prep_check_meta_names(
     DECIMALS = "DECIMALS", VARIABLE_ROLE = "VARIABLE_ROLE",
     DATA_ENTRY_TYPE = "DATA_ENTRY_TYPE",
     CO_VARS = "CO_VARS",
+    END_DIGIT_CHECK = "END_DIGIT_CHECK",
     VARIABLE_ORDER = "VARIABLE_ORDER", LONG_LABEL =
       "LONG_LABEL", recode = "recode",
       MISSING_LIST_TABLE = "MISSING_LIST_TABLE"

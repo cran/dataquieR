@@ -92,4 +92,22 @@ test_that("util_parse_redcap_rule works", {
     util_eval_rule(util_parse_redcap_rule("if([speed] > 5, 1, 0)", debug = 0), ds1 = cars, use_value_labels = FALSE),
     with(cars, ifelse(speed > 5, 1, 0))
   )
+
+  x <- tibble::tribble( ~ con_consentdt, ~ cont_inddt, ~ sda_osd1dt,
+    as.POSIXct("2020-01-01"), as.POSIXct("2020-01-20"), as.POSIXct("2020-01-20"),
+    as.POSIXct("2020-10-20"), as.POSIXct("2020-10-20 15:00:00"), as.POSIXct("2020-10-20 17:00:00")
+  )
+
+  expect_equal(
+    util_eval_rule(util_parse_redcap_rule("successive_dates([con_consentdt], [cont_inddt], [sda_osd1dt])", debug = 0),
+                   ds1 = x, use_value_labels = FALSE),
+    with(x, con_consentdt <= cont_inddt & cont_inddt <= sda_osd1dt)
+  )
+
+  expect_equal(
+    util_eval_rule(util_parse_redcap_rule("strictly_successive_dates([con_consentdt], [cont_inddt], [sda_osd1dt])", debug = 0),
+                   ds1 = x, use_value_labels = FALSE),
+    with(x, con_consentdt < cont_inddt & cont_inddt < sda_osd1dt)
+  )
+
 })

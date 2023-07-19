@@ -270,7 +270,7 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     )
 
   if (inherits(.meta_data, "try-error")) {
-    util_error("Need meta data as a data frame: %s",
+    util_error("Need metadata as a data frame: %s",
                conditionMessage(attr(.meta_data, "condition")))
   }
 
@@ -364,7 +364,7 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
 
   if (var_names == "meta_data") {
     if (!"VAR_NAMES" %in% colnames(meta_data)) {
-      util_error("'VAR_NAMES' not found in meta data [%s]",
+      util_error("'VAR_NAMES' not found in metadata [%s]",
                  paste0(colnames(meta_data), collapse = ", "),
                  applicability_problem = TRUE)
     }
@@ -402,7 +402,7 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
                  .all - .mapped, dQuote(label_col),
                  applicability_problem = TRUE)
   } # nocov end
-  if (!.allow_empty) { # this would delete the meta data, if the mapping has failed totally
+  if (!.allow_empty) { # this would delete the metadata, if the mapping has failed totally
     meta_data <- meta_data[meta_data[[label_col]] %in% colnames(ds1), , FALSE]
   }
 

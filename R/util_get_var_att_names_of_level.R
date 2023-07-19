@@ -1,7 +1,7 @@
 #' Get variable attributes of a certain provision level
 #'
 #' This function returns all variable attribute names of a certain
-#' meta data provision level or of more than one level.
+#' metadata provision level or of more than one level.
 #'
 #' @param level level(s) of requirement
 #' @param cumulative include all names from more basic levels

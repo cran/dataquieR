@@ -27,7 +27,7 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
   if (!(label_col %in% names(mdf))) {
     if (warning_if_no_list) {
       util_warning(
-        "Meta data does not provide a column called %s for the labels.",
+        "Metadata does not provide a column called %s for the labels.",
         dQuote(label_col),
         applicability_problem = TRUE)
     }
@@ -36,7 +36,7 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
   if (!(code_name %in% names(mdf))) {
     if (warning_if_no_list) {
       util_warning(
-        c("Meta data does not provide a column called %s",
+        c("Metadata does not provide a column called %s",
           "for replacing codes with NAs."),
         dQuote(code_name),
         applicability_problem = TRUE)

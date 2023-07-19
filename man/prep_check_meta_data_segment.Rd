@@ -2,7 +2,7 @@
 % Please edit documentation in R/prep_check_meta_data_segment.R
 \name{prep_check_meta_data_segment}
 \alias{prep_check_meta_data_segment}
-\title{Verify and normalize meta data on segment level}
+\title{Verify and normalize metadata on segment level}
 \usage{
 prep_check_meta_data_segment(meta_data_segment = "segment_level")
 }

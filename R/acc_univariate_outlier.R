@@ -76,7 +76,7 @@
 #' @seealso
 #' - [acc_robust_univariate_outlier]
 #' - [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_robust_univariate_outlier.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_robust_univariate_outlier.html
 #' )
 #'
 #' @importFrom reshape melt
@@ -103,12 +103,17 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
                                                 "hubert", "sigmagap")) {
 
   # TODO: Remove all obsoleted checks on resp_vars, the funcion uses util_correct_variable_use
-
+  util_expect_scalar(criteria,
+                     allow_more_than_one = TRUE,
+                     allow_null = TRUE,
+                     check_type = is.character)
+  criteria <- trimws(tolower(criteria))
   if (length(unique(criteria)) < 1 ||
       length(unique(criteria)) >
         length(eval(formals(acc_univariate_outlier)$criteria)) ||
       !all(criteria %in% eval(formals(acc_univariate_outlier)$criteria))) {
-    util_warning(c("The formal criteria must have > 0 and < %d entries.",
+    if (!.called_in_pipeline)
+      util_message(c("The formal criteria must have > 0 and < %d entries.",
                    "Allowed values are %s.",
                    "I was called with %s, falling back to default %s."),
                  length(eval(formals(acc_univariate_outlier)$criteria)),
@@ -116,14 +121,15 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
                        collapse = ", "),
                  paste(dQuote(unique(criteria)), collapse = ", "),
                  paste(dQuote(eval(formals(acc_univariate_outlier)$criteria)),
-                       collapse = ", "))
+                       collapse = ", "), applicability_problem = TRUE)
     criteria <- eval(formals(acc_univariate_outlier)$criteria)
   }
 
   if (length(n_rules) != 1 || !is.numeric(n_rules) ||
       !all(util_is_integer(n_rules)) ||
       !(n_rules %in% seq_len(length(unique(criteria))))) {
-    util_warning(
+    if (!.called_in_pipeline)
+      util_message(
       "The formal n_rules is not an integer between 1 and %d, default (%d) is used.",
       length(unique(criteria)),
       min(eval(formals(acc_univariate_outlier)$n_rules),
@@ -137,7 +143,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
       !is.numeric(max_non_outliers_plot) ||
       !all(util_is_integer(max_non_outliers_plot)) ||
       (max_non_outliers_plot < 0)) {
-    util_warning(
+    util_message(
       c("The formal max_non_outliers_plot is not an integer >= 0,",
         "default (%d) is used."),
       formals(acc_univariate_outlier)$max_non_outliers_plot,
@@ -195,12 +201,14 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
     # which are float or integer?
     resp_vars <- meta_data[[label_col]][meta_data[[DATA_TYPE]] %in%
                                     c(DATA_TYPES$FLOAT, DATA_TYPES$INTEGER)]
-    util_warning(paste0("The following variables: ",
+    util_message(paste0("The following variables: ",
                         paste0(resp_vars, collapse = ", "), " were selected."),
-                 applicability_problem = TRUE)
+                 applicability_problem = TRUE,
+                 intrinsic_applicability_problem = TRUE)
     if (length(resp_vars) == 0) {
-      util_error(paste0("No variables suitable data type defined."),
-                 applicability_problem = TRUE)
+      util_error(paste0("No variables with suitable data type defined."),
+                 applicability_problem = TRUE,
+                 intrinsic_applicability_problem = TRUE)
     }
 
     resp_vars <- intersect(resp_vars, colnames(ds1))
@@ -216,7 +224,8 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
       if (!all(!isrvs | isfloat)) util_warning(paste0("Only: ",
                                       paste0(resp_vars, collapse = ", "),
                           " are defined to be of type float or integer."),
-                          applicability_problem = TRUE)
+                          applicability_problem = TRUE,
+                          intrinsic_applicability_problem = TRUE)
     }
   }
 
@@ -230,10 +239,11 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
       which_vars_not <- meta_data[[label_col]][meta_data[[VARIABLE_ROLE]] %in%
                                                  exclude_roles]
       if (length(intersect(resp_vars, which_vars_not)) > 0) {
-        util_warning(paste0("Study variables: ",
+        util_message(paste0("Study variables: ",
                             paste(dQuote(intersect(resp_vars, which_vars_not)),
                                   collapse = ", "), " have been excluded."),
-                     applicability_problem = TRUE)
+                     applicability_problem = TRUE,
+                     intrinsic_applicability_problem = TRUE)
       }
       resp_vars <- setdiff(resp_vars, which_vars_not)
     }
@@ -244,11 +254,12 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
                         function(x) is.numeric(x))
 
   if (!all(whicharenum)) {
-    util_warning(paste0(
+    util_message(paste0(
       "Variables ", paste0(dQuote(resp_vars[!whicharenum]), collapse = ", "),
       " are not of type float or integer and will be removed",
       " from univariate outlier analysis."
-    ), applicability_problem = TRUE)
+    ), applicability_problem = TRUE,
+    intrinsic_applicability_problem = TRUE)
     resp_vars <- resp_vars[whicharenum]
   }
 
@@ -256,10 +267,10 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
                      function(x) all(util_is_integer(x), na.rm = TRUE))
 
   if (any(intcheck)) {
-    util_warning(paste0(
+    util_message(paste0(
       "Variables: ", paste0(dQuote(resp_vars[intcheck]), collapse = ", "),
       " show integer values only, but will be nonetheless considered."
-    ), applicability_problem = FALSE)
+    ), applicability_problem = TRUE, intrinsic_applicability_problem = TRUE)
   }
 
   if (length(resp_vars) > 0) {
@@ -285,7 +296,8 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
 
   if (length(resp_vars) == 0) {
     util_error("No suitable response variables left.",
-               applicability_problem = TRUE)
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
   } else if (length(resp_vars) == 1) {
     ds2 <- ds1_ll[, resp_vars, drop = FALSE]
     ds2$variable <- resp_vars
@@ -348,7 +360,8 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   st1$"SD" <- aggregate(ds2plot$value, list(ds2plot$variable), sd)$x
   st1$"Median" <- aggregate(ds2plot$value, list(ds2plot$variable), median)$x
   st1$"Skewness" <-
-    aggregate(ds2plot$value, list(ds2plot$variable), robustbase::mc)$x
+    aggregate(ds2plot$value, list(ds2plot$variable), robustbase::mc, ,
+              doScale = FALSE)$x
   st1$"Tukey (N)" <- aggregate(ds2plot$tukey, list(ds2plot$variable), sum)$x
   st1$"6-Sigma (N)" <-
     aggregate(ds2plot$sixsigma, list(ds2plot$variable), sum)$x
@@ -403,7 +416,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
 
       ds_i <- rbind.data.frame(dsi_non_ol[subsel_non_ol, , FALSE], dsi_ol)
 
-      util_warning(
+      util_message(
         c("For %s, %d from %d non-outlier data values were",
           "sampled to avoid large plots."),
         dQuote(i),
@@ -424,6 +437,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
         scale_color_manual(values = disc_cols) +
         facet_wrap(vars(variable), scales = "free") +
         scale_alpha(guide = "none") +
+        xlab("") + ylab("") +
         theme_minimal()
     } else {
       p_i <- ggplot() +
@@ -448,7 +462,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
     plot_list[[i]] <- util_set_size(p_i, width_em = 10, height_em = 25)
   }
 
-  return(list(SummaryTable = st1, SummaryPlotList = plot_list))
+  return(list(SummaryTable = st1, SummaryData = st1, SummaryPlotList = plot_list))
 }
 
 #' @inherit acc_univariate_outlier

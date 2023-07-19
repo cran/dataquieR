@@ -74,7 +74,7 @@
 #' @importFrom rlang .data
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_multivariate_outlier.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_multivariate_outlier.html
 #' )
 acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
                                      label_col,
@@ -85,11 +85,17 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
                                      study_data, meta_data) { # TODO: see univ.out to select criteria to use
 
   # preps ----------------------------------------------------------------------
+  util_expect_scalar(criteria,
+                     allow_more_than_one = TRUE,
+                     allow_null = TRUE,
+                     check_type = is.character)
+  criteria <- trimws(tolower(criteria))
   if (length(unique(criteria)) < 1 ||
       length(unique(criteria)) >
       length(eval(formals(acc_multivariate_outlier)$criteria)) ||
       !all(criteria %in% eval(formals(acc_multivariate_outlier)$criteria))) {
-    util_warning(c("The formal criteria must have > 0 and < %d entries.",
+    if (!.called_in_pipeline)
+      util_message(c("The formal criteria must have > 0 and < %d entries.",
                    "Allowed values are %s.",
                    "I was called with %s, falling back to default %s."),
                  length(eval(formals(acc_multivariate_outlier)$criteria)),
@@ -97,14 +103,15 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
                        collapse = ", "),
                  paste(dQuote(unique(criteria)), collapse = ", "),
                  paste(dQuote(eval(formals(acc_multivariate_outlier)$criteria)),
-                       collapse = ", "))
+                       collapse = ", "), applicability_problem = TRUE)
     criteria <- eval(formals(acc_multivariate_outlier)$criteria)
   }
 
   if (length(n_rules) != 1 || !is.numeric(n_rules) ||
       !all(util_is_integer(n_rules)) ||
       !(n_rules %in% seq_len(length(unique(criteria))))) {
-    util_warning(
+    if ((!.called_in_pipeline))
+      util_message(
       "The formal n_rules is not an integer between 1 and %d, default (%d) is used.",
       length(unique(criteria)),
       min(eval(formals(acc_multivariate_outlier)$n_rules),
@@ -117,7 +124,7 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
     # rules in 1:4?
   if (n_rules != 4) {
     if (!(n_rules %in% 1:4)) {
-      util_warning(
+      util_message(
         "The formal n_rules is not an integer of 1 to 4, default (4) is used. ",
         applicability_problem = TRUE)
       n_rules <- 4
@@ -128,7 +135,7 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
       !is.numeric(max_non_outliers_plot) ||
       !all(util_is_integer(max_non_outliers_plot)) ||
       (max_non_outliers_plot < 0)) {
-    util_warning(
+    util_message(
       c("The formal max_non_outliers_plot is not an integer >= 0,",
         "default (%d) is used."),
       formals(acc_multivariate_outlier)$max_non_outliers_plot,
@@ -159,10 +166,10 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
   )
 
   # no use of id_vars?
-  if (is.null(id_vars)) {
+  if (!length(id_vars)) {
     ds1$dq_id <- rownames(ds1)
     id_vars <- "dq_id"
-    util_warning("As no ID-var has been specified the rownumbers will be used.",
+    util_message("As no ID-var has been specified the rownumbers will be used.",
                  applicability_problem = TRUE)
   }
 
@@ -187,7 +194,7 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
   }
 
   if (n_post < n_prior) {
-    util_warning(paste0(
+    util_message(paste0(
       "Due to missing values in ", paste0(variable_group, collapse = ", "),
       " or ", id_vars, " N=", n_prior - n_post,
       " observations were excluded."
@@ -205,7 +212,8 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
 
   if (length(variable_group) < 2) {
     util_error(
-      "Fewer than two variables left, no multivariate analysis possible.")
+      "Fewer than two variables left, no multivariate analysis possible.",
+      applicability_problem = TRUE)
   }
 
   # Mahalanobis ----------------------------------------------------------------
@@ -251,7 +259,7 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
 
     ds1plot <- rbind.data.frame(dsi_non_ol[subsel_non_ol, , FALSE], dsi_ol)
 
-    util_warning(
+    util_message(
       c("For %s, %d from %d non-outlier data values were",
         "sampled to avoid large plots."),
       sQuote(sprintf("acc_multivariate_outlier(%s)",
@@ -315,10 +323,12 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
                             function(n) {
                               c(0.05, 0.2, 0.3, 0.4, 0.5)
                             }) +
+    xlab("") + ylab("") +
     theme_minimal()
 
   return(list(FlaggedStudyData = ds1plot,
               SummaryTable = st1,  # TODO: VariableGroupTable, maybe other functions, too?
+              SummaryData = st1,  # TODO: VariableGroupTable, maybe other functions, too?
               SummaryPlot =
                 util_set_size(p,
                               width_em = 25 +

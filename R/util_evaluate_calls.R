@@ -8,6 +8,7 @@
 #' @param cores [integer] number of cpu cores to use or a named list with
 #'                        arguments for [parallelMap::parallelStart] or NULL,
 #'                        if parallel has already been started by the caller.
+#'                        Can also be a cluster.
 #' @param debug_parallel [logical] print blocks currently evaluated in parallel
 #' @param meta_data_segment [data.frame] -- optional: Segment level metadata
 #' @param meta_data_dataframe [data.frame] -- optional: Data frame level
@@ -24,6 +25,7 @@
 #'                                               be used for the report. If
 #'                                               of length zero, no filtering
 #'                                               is performed.
+#' @inheritParams dq_report2
 #'
 #' @return a [dataquieR_resultset2]. Can be printed creating a RMarkdown-report.
 util_evaluate_calls <-
@@ -37,35 +39,143 @@ util_evaluate_calls <-
            resp_vars,
            filter_result_slots,
            cores,
-           debug_parallel) {
+           debug_parallel,
+           mode = c("default", "futures", "queue", "parallel"),
+           mode_args) {
+
+    if (length(mode_args) > 0) {
+      if (!is.list(mode_args) || is.null(names(mode_args)) ||
+          any(util_empty(names(mode_args)))) {
+        util_message("%s needs to be a named list",
+                     sQuote("mode_args"))
+        mode_args <- list()
+      }
+    } else {
+      mode_args <- list()
+    }
+
+
+    mode <- util_match_arg(mode)
+
+    invisible(force(parallelMap::parallelGetOptions()$settings$mode)) # ensure, that this package is loaded here: it sets onLoad some options that
+                                                                      # we want to overwrite below. doing so w/o having th package loaded will
+                                                                      # overwrite the options, if parallelMap is acutally loaded after the option
+                                                                      # setting code below.
+
+    # maybe also https://cran.r-project.org/web/packages/parabar/readme/README.html
     # TODO: add all the objects, that Square2 writes for being full compatible
     r <- NULL
     util_ensure_suggested("parallel")
-    if (length(all_calls) > 0) {
+    util_setup_rstudio_job(
+      "Computing dq_report2, parallel computation")
 
-      if (!is.null(cores)) {
-        if (inherits(cores, "list")) {
-          suppressMessages(do.call(parallelMap::parallelStart, cores))
-        } else {
-          suppressMessages(parallelMap::parallelStart("socket", cpus = cores,
-                                                      logging = FALSE,
-                                                      load.balancing = TRUE))
+    if (mode == "queue") {
+      if ((eval.parent(call("missing", as.symbol("cores"))) &&
+          identical(cores,
+                    eval.parent(formals(rlang::caller_fn())$cores))) ||
+          missing(cores)) {
+        cores <- util_detect_cores()
+      }
+      if (length(cores) != 1 ||
+          !util_is_integer(cores) ||
+          is.na(cores) ||
+          cores > util_detect_cores()) {
+        cores <- util_detect_cores()
+        util_message(c("For mode %s, %s can only be an integer(1) <= %d,",
+                       "it to its maximum"),
+                     dQuote(mode),
+                     sQuote("cores"),
+                     cores)
+      }
+      q <- util_queue_cluster_setup(n_nodes = cores,
+                                    progress = progress,
+                                    debug_parallel = debug_parallel)
+    } else {
+      q <- NULL
+    }
+
+    if (length(all_calls) > 0) {
+      if (is.null(q)) {
+        if (!is.null(cores)) {
+          if (inherits(cores, "cluster")) {
+            old_def_cl <- parallel::getDefaultCluster()
+            parallel::setDefaultCluster(cores)
+            on.exit(parallel::setDefaultCluster(old_def_cl), add = TRUE)
+            old_o_def_cl <- options(
+              parallelMap.cpus = length(parallel::getDefaultCluster()),
+              parallelMap.load.balancing = TRUE,
+              parallelMap.mode = "socket"
+            )
+            on.exit(options(old_o_def_cl), add = TRUE)
+          } else if (inherits(cores, "list")) {
+            suppressMessages(do.call(parallelMap::parallelStart, cores))
+            on.exit(suppressMessages(parallelMap::parallelStop()), add = TRUE)
+          } else {
+            suppressMessages(parallelMap::parallelStart("socket", cpus = cores,
+                                                        logging = FALSE,
+                                                        load.balancing = TRUE))
+            on.exit(suppressMessages(parallelMap::parallelStop()), add = TRUE)
+          }
+          cores <- NULL
+        } else if
+        (getOption("parallelMap.mode") != "BatchJobs" &&
+         getOption("parallelMap.mode") != "batchtools" &&
+         !is.null(parallel::getDefaultCluster())) {
+          old_o_def_cl <- options(
+            parallelMap.cpus = length(parallel::getDefaultCluster()),
+            parallelMap.load.balancing = TRUE,
+            parallelMap.mode = "socket"
+          )
+          on.exit(options(old_o_def_cl), add = TRUE)
         }
-        on.exit(suppressMessages(parallelMap::parallelStop()))
-        cores <- NULL
+
+        oldO <- options(parallelMap.show.info = FALSE)
+        on.exit(options(oldO), add = TRUE)
+
+        parlib <- parallelMap::parallelLibrary
+        parexp <- parallelMap::parallelExport
+        par_eval_q <- function(expr) {
+          do.call(
+            parallel::clusterEvalQ,
+            list(cl = NULL, expr)
+          )
+        }
+
+      } else {
+        parlib <- function(lib) {
+          q$workerEval(function(lib) {
+            require(lib, character.only = TRUE)
+          }, list(lib = lib))
+        }
+        parexp <- function(...) {
+          q$export(...)
+        }
+        par_eval_q <- function(expr) { # may not work as expected
+          q$workerEval(function(expr) {
+            eval(expr)
+            }, list(expr = substitute(expr)))
+        }
       }
 
-      util_setup_rstudio_job(
-        "Computing dq_report2, parallel computation")
+      parlib(utils::packageName())
 
-      oldO <- options(parallelMap.show.info = FALSE)
-      on.exit(options(oldO), add = TRUE)
-      parallelMap::parallelLibrary(utils::packageName())
-      parallelMap::parallelExport("study_data", "meta_data", "label_col", "meta_data_segment", "meta_data_dataframe", "meta_data_cross_item")
-      parallelMap::parallelExport(".dataframe_environment")
-      if (!is.null(parallel::getDefaultCluster())) {
-        parallel::clusterEvalQ(cl = NULL, dataquieR::prep_add_data_frames(
+      suppressWarnings(parexp("study_data", "meta_data", "label_col", "meta_data_segment", "meta_data_dataframe", "meta_data_cross_item"))
+
+      suppressWarnings(parexp(".dataframe_environment"))
+
+      if (!is.null(q) || !is.null(parallel::getDefaultCluster())) {
+        par_eval_q(dataquieR::prep_add_data_frames(
           data_frame_list = as.list(.dataframe_environment)))
+        u8 <- par_eval_q(l10n_info()[["UTF-8"]])
+        u8 <- vapply(u8, identity, FUN.VALUE = logical(1))
+        if (!all(u8)) {
+          util_warning(c("%d of the %d cluster nodes do not support",
+                         "UTF-8, this may cause trouble with the encoding.",
+                         "For Windows nodes, you should use R > 4.2.0",
+                         "on all nodes. Also, all nodes should use a UTF-8",
+                         "character set by default (see Sys.setlocale())"),
+                       sum(!u8), length(u8))
+        }
       } else {
         dataquieR::prep_add_data_frames(
           data_frame_list = as.list(.dataframe_environment))
@@ -76,49 +186,56 @@ util_evaluate_calls <-
       # already avail. functions don't touch the exported data.
       currentCpus <- parallelMap::parallelGetOptions()$settings$cpus
 
-      .worker <- util_eval_to_dataquieR_result
+      worker <- util_eval_to_dataquieR_result
+      formals(worker)$filter_result_slots = filter_result_slots
+      force(formals(worker)$filter_result_slots)
 
       if (parallelMap::parallelGetOptions()$settings$mode == "local") {
-        environment(.worker) <- new.env(parent = asNamespace(utils::packageName()))
+        environment(worker) <- new.env(parent = asNamespace(utils::packageName()))
       } else if (parallelMap::parallelGetOptions()$settings$mode == "multicore") {
-        environment(.worker) <- environment()
+        environment(worker) <- environment()
       } else {
-        environment(.worker) <- asNamespace(utils::packageName())
+        environment(worker) <- asNamespace(utils::packageName())
       }
 
       n_nodes <- max(1, as.integer(currentCpus[[1]]), na.rm = TRUE)
-      # was length(parallel::getDefaultCluster()), but parallelMap doesn't use
-      # defaultcluster any more!!
-      tasks_per_node <- ceiling(length(all_calls) / n_nodes)
-      indices <- 1:length(all_calls)
-      length(indices) <- n_nodes * tasks_per_node # make equal length
-      task_matrix <- matrix(indices, ncol = n_nodes, nrow = tasks_per_node,
-                            byrow = TRUE)
-      r <- unlist(lapply(
-        1:nrow(task_matrix),
-        function(row) {
-          slices <- task_matrix[row, ]
-          slices <- slices[!is.na(slices)]
-          if (length(all_calls))
-            progress(100 * row / nrow(task_matrix))
-          util_message(
-            sprintf("%s [%s] %d of %d, %s", Sys.time(), "INFO",
-                    row, nrow(task_matrix), "DQ")
-          ) # TODO: Use RStudio job if available
-          if (debug_parallel) {
-            # TODO: log something about the current chunk
+
+      if (mode == "futures") { # have/use futures
+        r <- util_parallel_futures(
+          all_calls = all_calls,
+          n_nodes = n_nodes,
+          progress = progress,
+          worker = worker,
+          debug_parallel = debug_parallel
+        )
+      } else if (mode == "queue") {
+        step <- 15
+        if ("step" %in% names(mode_args)) {
+          step <- mode_args[["step"]]
+          if (length(step) != 1 || !is.numeric(step) ||
+              !is.vector(step) || !is.finite(step) || !util_is_integer(step) ||
+            step <= 0 || step > 10000) {
+            util_message(
+              c("%s needs to be a positive scalar integer value <= %d, falling",
+                "back to default %d"),
+              dQuote("step"),
+              10000,
+              15)
+            step <- 15
           }
-          R.devices::suppressGraphics(
-            # don't use any auto graphics device (needed for certain
-            # parallelization methods)
-            parallelMap::parallelLapply(impute.error = identity,
-                                        all_calls[slices], .worker,
-                                        filter_result_slots =
-                                          filter_result_slots,
-                                        env = environment())
-          )
         }
-      ), recursive = FALSE)
+        r <- q$compute_report(all_calls = all_calls,
+                              worker = worker,
+                              step = step)
+      } else {
+        r <- util_parallel_classic(
+          all_calls = all_calls,
+          n_nodes = n_nodes,
+          progress = progress,
+          worker = worker,
+          debug_parallel = debug_parallel
+        )
+      }
 
       util_message(
         sprintf("%s [%s], %s", Sys.time(), "INFO",
@@ -129,7 +246,8 @@ util_evaluate_calls <-
     function_names <- vapply(lapply(all_calls, `[[`, 1), as.character,
                              FUN.VALUE = character(1))
 
-    r[] <- mapply(function_names, all_calls, r, FUN = function(nm, cl, r) {
+    r[] <- mapply(function_names, all_calls, r, SIMPLIFY = FALSE,
+                  FUN = function(nm, cl, r) {
       attr(r, "function_name") <- nm
       attr(r, "call") <- cl
       r
@@ -145,9 +263,14 @@ util_evaluate_calls <-
                           function(alias) {
                             lapply(setNames(nm = resp_vars),
                                    function(vn) {
-                                     rlang::call_args(
-                                       all_calls[[paste0(alias, ".", vn)]]
-                                     )
+                                     if (is.call(
+                                       all_calls[[paste0(alias, ".", vn)]])) {
+                                       rlang::call_args(
+                                         all_calls[[paste0(alias, ".", vn)]]
+                                       )
+                                     } else {
+                                       setNames(list(), nm = character(0))
+                                     }
                                    })
                           })
 
@@ -206,7 +329,7 @@ util_evaluate_calls <-
     fnr <- rank(function_names)
     alr <- rank(aliases)
 
-    base <- max(c(drr, fnr, alr), na.rm = TRUE)
+    base <- max(c(drr, fnr, alr, 10), na.rm = TRUE)
 
     attr(matrix_list, "col_indices") <- setNames(
       (drr * base * base + fnr * base + alr) * 10,
@@ -275,4 +398,4 @@ util_evaluate_calls <-
 
     # Return report ----
     r
-  }
+}

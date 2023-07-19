@@ -4,6 +4,6 @@
 \alias{meta_data_dataframe}
 \title{Well known columns on the \code{meta_data_dataframe} sheet}
 \description{
-Meta data describing data delivered on one data frame/table sheet,
+Metadata describing data delivered on one data frame/table sheet,
 e.g., a full questionnaire, not its items.
 }

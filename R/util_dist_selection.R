@@ -3,7 +3,7 @@
 #' This function differentiates the type of measurement variables.
 #'
 #' @param measurements study data
-#' @param meta_data meta data, not yet used
+#' @param meta_data metadata, not yet used
 #'
 #' @return data frame with one column for each variable in study data giving
 #'                                    `IsInteger`, `IsMultCat` and `IsNCategory`

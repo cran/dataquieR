@@ -61,7 +61,7 @@
 #' @seealso
 #' - [con_detection_limits]
 #' - [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_limit_deviations.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_limit_deviations.html
 #' )
 con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
                                  meta_data, limits = c(
@@ -91,11 +91,13 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
   if (length(resp_vars) == 0) {
     if (all(util_empty(meta_data[[LIMITS]]))) {
       util_error(paste0("No variables with defined ", LIMITS, "."),
-                 applicability_problem = TRUE)
+                 applicability_problem = TRUE,
+                 intrinsic_applicability_problem = TRUE)
     } else {
-      util_warning(paste0("All variables with ", LIMITS,
+      util_message(paste0("All variables with ", LIMITS,
                           " in the metadata are used."),
-                   applicability_problem = TRUE)
+                   applicability_problem = TRUE,
+                   intrinsic_applicability_problem = TRUE)
       resp_vars <- meta_data[[label_col]][!(util_empty(meta_data[[LIMITS]])) &
                                             meta_data$DATA_TYPE != "string"]
     }
@@ -105,15 +107,17 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
     if (all(util_empty(meta_data[[LIMITS]][meta_data[[label_col]] %in%
                                            resp_vars]))) {
       util_error(paste0("No variables with defined ", LIMITS, "."),
-                 applicability_problem = TRUE)
+                 applicability_problem = TRUE,
+                 intrinsic_applicability_problem = TRUE)
     }
     rvs_with_lim <- meta_data[[label_col]][!(util_empty(meta_data[[LIMITS]])) &
                                         meta_data[[label_col]] %in% resp_vars]
     if (length(rvs_with_lim) < length(unique(resp_vars))) {
-      util_warning(paste0("The variables ",
+      util_message(paste0("The variables ",
                           resp_vars[!(resp_vars %in% rvs_with_lim)],
                           " have no defined limits."),
-                   applicability_problem = TRUE)
+                   applicability_problem = TRUE,
+                   intrinsic_applicability_problem = TRUE)
     }
     resp_vars <- rvs_with_lim
   }
@@ -136,7 +140,8 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
   # Stop if no resp_vars are left after these checks.
   if (length(resp_vars) == 0) {
     util_error("No variables left, no limit checks possible.",
-               applicability_problem = TRUE)
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
   }
 
   util_correct_variable_use("resp_vars",
@@ -258,8 +263,11 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
     ) # angle = 0,
 
     # define plot colors for the different sections
-    out_cols <- c("#B2182B", "#2166AC", "#B2182B")
-    names(out_cols) <- c("below", "within", "above")
+    out_cols <- c(
+      above = "#B2182B",
+      within = "#2166AC",
+      below = "#B2182B"
+    )
 
 
     if (plot_histogram) {
@@ -337,10 +345,10 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
         # TODO: estimate w and h, if p is not using discrete axes
         scale_fill_manual(values = out_cols,
                           breaks = names(out_cols),
-                          labels = paste(names(out_cols),
+                          labels = paste(names(out_cols), # TODO: labels do not work with plotly
                                          tolower(infix),
                                          "limits:",
-                                         freq_lim_viol[[rv]]),
+                                         freq_lim_viol[[rv]][names(out_cols)]),
                           name = "Number of values") +
         labs(x = "", y = paste0(rv)) +
         theme_minimal() +
@@ -394,7 +402,7 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
                           labels = paste(names(out_cols),
                                          tolower(infix),
                                          "limits:",
-                                         freq_lim_viol[[rv]]),
+                                         freq_lim_viol[[rv]][names(out_cols)]),
                           name = "Number of values") +
         labs(x = "", y = paste0(rv)) +
         theme_minimal() +
@@ -449,11 +457,11 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
   # modified study data --------------------------------------------------------
   msdf <- ds1
   # remove violations of value limits
-  for (rv in resp_vars) {
+  for (rv in resp_vars) { # TODO: Will we still compute this? we have now prep_prepare_dataframes for this.
     to_remove <- which(as.character(sd_lim[[rv]]) %in% c("below", "above"))
     if (length(to_remove) > 0) {
       msdf[[rv]][to_remove] <- NA
-      util_warning(paste0(
+      if (!.called_in_pipeline) util_message(paste0(
         "N = ", length(to_remove), " values in ", rv,
         " lie outside ", tolower(infix), " limits and were removed."
       ),
@@ -489,16 +497,29 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
              NA)
     )
     df_out <- as.data.frame(df_out, stringsAsFactors = FALSE)
-    colnames(df_out) <- c("Variables",
-                          "NUM_con_rvv_inum",
-                          "PCT_con_rvv_inum",
-                          "FLG_con_rvv_inum",
-                          "NUM_con_rvv_itdat",
-                          "PCT_con_rvv_itdat",
-                          "FLG_con_rvv_itdat")
-    # GRADING for backwards compatibility
-    df_out$GRADING <- as.numeric(df_out$FLG_con_rvv_inum |
-                                   df_out$FLG_con_rvv_itdat)
+    if (LIMITS == "SOFT_LIMITS") {
+      colnames(df_out) <- c("Variables",
+                            "NUM_con_rvv_unum",
+                            "PCT_con_rvv_unum",
+                            "FLG_con_rvv_unum",
+                            "NUM_con_rvv_utdat",
+                            "PCT_con_rvv_utdat",
+                            "FLG_con_rvv_utdat")
+      # GRADING for backwards compatibility
+      df_out$GRADING <- as.numeric(df_out$FLG_con_rvv_unum |
+                                     df_out$FLG_con_rvv_utdat)
+    } else {
+      colnames(df_out) <- c("Variables",
+                            "NUM_con_rvv_inum",
+                            "PCT_con_rvv_inum",
+                            "FLG_con_rvv_inum",
+                            "NUM_con_rvv_itdat",
+                            "PCT_con_rvv_itdat",
+                            "FLG_con_rvv_itdat")
+      # GRADING for backwards compatibility
+      df_out$GRADING <- as.numeric(df_out$FLG_con_rvv_inum |
+                                     df_out$FLG_con_rvv_itdat)
+    }
     df_out$GRADING <- ifelse(is.na(df_out$GRADING), 0, df_out$GRADING)
     return(df_out)
   })
@@ -543,14 +564,14 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
                           FUN.VALUE = integer(1))
   class(heatmap_tab) <- union("ReportSummaryTable", class(heatmap_tab))
 
-  return(list(
+  return(util_attach_attr(list(
     FlaggedStudyData = fsd,
     SummaryTable = sumtab,
     SummaryData = sumdat,
     ReportSummaryTable = heatmap_tab,
     SummaryPlotList = plot_list,
     ModifiedStudyData = msdf
-  ))
+  ), as_plotly = "util_as_plotly_con_limit_deviations"))
 }
 
 #' Detects variable values exceeding detection limits
@@ -559,7 +580,7 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
 #' @seealso
 #' - [con_limit_deviations]
 #' - [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_limit_deviations.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_limit_deviations.html
 #' )
 con_detection_limits <- function(resp_vars = NULL, label_col, study_data,
                                  meta_data, limits = c(
@@ -579,7 +600,7 @@ con_detection_limits <- function(resp_vars = NULL, label_col, study_data,
 #' @seealso
 #' - [con_limit_deviations]
 #' - [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_limit_deviations.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_limit_deviations.html
 #' )
 con_soft_limits <- function(resp_vars = NULL, label_col, study_data,
                                  meta_data, limits = c(
@@ -600,7 +621,7 @@ con_soft_limits <- function(resp_vars = NULL, label_col, study_data,
 #' @seealso
 #' - [con_limit_deviations]
 #' - [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_limit_deviations.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_limit_deviations.html
 #' )
 con_hard_limits <- function(resp_vars = NULL, label_col, study_data,
                             meta_data, limits = c(
@@ -613,4 +634,36 @@ con_hard_limits <- function(resp_vars = NULL, label_col, study_data,
     resp_vars = resp_vars, label_col = label_col, study_data = study_data,
     meta_data = meta_data, limits = match.arg(limits), flip_mode = flip_mode
   )
+}
+
+
+util_as_plotly_con_limit_deviations <- function(res, ...) {
+  res$SummaryPlot <- util_remove_dataquieR_result_class(res$SummaryPlot)
+  util_ensure_suggested("plotly")
+  p <- res$SummaryPlotList
+  util_stop_if_not(length(p) == 1)
+  p <- p[[1]]
+  lb <- ggplot_build(p)$plot$scales$scales[[1]]$get_labels(1)
+  cl <- ggplot_build(p)$plot$scales$scales[[1]]$palette(1)
+  br <- ggplot_build(p)$plot$scales$scales[[1]]$breaks
+  py <- plotly::ggplotly(p)
+  .lbs <- setNames(lb, nm = br)
+  for (i in seq_along(py$x$data)) {
+    nm <- py$x$data[[i]]$name
+    if (nm %in% names(.lbs)) {
+      py$x$data[[i]]$name <- .lbs[[nm]]
+    }
+  }
+  py <- plotly::layout(py, legend = list(traceorder = "reversed"))
+  # for (i in seq_len(length(lb))) {
+  #   lb <- ggplot_build(p)$plot$scales$scales[[1]]$get_labels(i)
+  #   cl <- ggplot_build(p)$plot$scales$scales[[1]]$palette(i)
+  #   # suppressWarnings(py <- plotly::style(py,
+  #   #                                       # marker = list(
+  #   #                                       #   color = cl[[br[[i]]]]
+  #   #                                       # ),
+  #   #                                      name = lb[[i]],
+  #   #                                      traces = i))
+  # }
+  py
 }

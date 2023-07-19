@@ -54,7 +54,7 @@
 #' @importFrom utils capture.output
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_inadmissible_categorical.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_inadmissible_categorical.html
 #' )
 con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
                                          meta_data, label_col,
@@ -74,7 +74,8 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
   if (!VALUE_LABELS %in% colnames(meta_data)) {
     util_error(paste0("Function con_inadmissible_categorical requires",
                       "the metadata column VALUE_LABELS."),
-               applicability_problem = TRUE)
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
   }
 
   util_correct_variable_use("resp_vars",
@@ -88,10 +89,12 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
     # Select all variables with VALUE_LABELS (if any), if resp_vars were not specified.
     if (all(util_empty(meta_data[[VALUE_LABELS]]))) {
       util_error(paste0("No variables with defined VALUE_LABELS."),
-                 applicability_problem = TRUE)
+                 applicability_problem = TRUE,
+                 intrinsic_applicability_problem = TRUE)
     } else {
-      util_warning("All variables with VALUE_LABELS in the metadata are used.",
-                   applicability_problem = TRUE)
+      util_message("All variables with VALUE_LABELS in the metadata are used.",
+                   applicability_problem = TRUE,
+                   intrinsic_applicability_problem = TRUE)
       resp_vars <-
         intersect(meta_data[[label_col]][!(util_empty(meta_data[[VALUE_LABELS]]))],
                   colnames(ds1))
@@ -101,15 +104,17 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
     if (all(util_empty(
       meta_data[[VALUE_LABELS]][meta_data[[label_col]] %in% resp_vars]))) {
       util_error("No variables with defined VALUE_LABELS.",
-                 applicability_problem = TRUE)
+                 applicability_problem = TRUE,
+                 intrinsic_applicability_problem = TRUE)
     }
     # check whether VALUE_LABELS are missing for some of the specified resp_vars
     rvs <- meta_data[[label_col]][!(util_empty(meta_data[[VALUE_LABELS]])) &
                                     meta_data[[label_col]] %in% resp_vars]
     if (length(rvs) < length(resp_vars)) {
-      util_warning(paste0("The variables ", resp_vars[!(resp_vars %in% rvs)],
-                          " have no defined VALUE_LABELS."),
-                   applicability_problem = TRUE)
+      util_message(paste0("The variables ", resp_vars[!(resp_vars %in% rvs)],
+                          " have no defined VALUE_LABELS."), # TODO: SCALE_TYPE, when avail.
+                   applicability_problem = TRUE,
+                   intrinsic_applicability_problem = TRUE)
     }
     resp_vars <- rvs
   }
@@ -211,7 +216,7 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
   # any IAVs?
   checkIAV <- names(ds1)[grep("_IAV", names(ds1))]
   if (length(checkIAV) > 0) {
-    util_warning(paste0("The following variable(s): ",
+    if (!.called_in_pipeline) util_message(paste0("The following variable(s): ",
                         paste0(checkIAV, collapse = ", "),
                         " flag(s) inadmissible values."),
                  applicability_problem = FALSE)

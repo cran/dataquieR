@@ -37,7 +37,7 @@
     hash_if_needed <- ""
     link <- sub("#.*$", "", id)
     hash <- sub("^.*?#", "", id)
-    hash <- htmltools::urlEncodePath(hash)
+    hash <- htmltools::urlEncodePath(as.character(hash))
     id <- paste0(link, "#", hash)
   }
   htmltools::a(href=sprintf(
@@ -136,11 +136,11 @@
     })
     concept_info <- subset(util_get_concept_info("dqi"),
            get("Dimension") == ddn & get("Level") == 1 &
-             get("Concept include") == 1,
+             get("dataquierR pipeline include") == 1,
            select = c("Definition", "Explanation", "Guidance", "abbreviation",
                       "IndicatorID"),
            drop = FALSE)
-    if (nrow(concept_info) == 1) { # https://dataquality.ship-med.uni-greifswald.de/PDQC_DQ_1_0_0_0.html
+    if (nrow(concept_info) == 1) { # https://dataquality.qihs.uni-greifswald.de/PDQC_DQ_1_0_0_0.html
       menu_description <-
         htmltools::tagList(
           htmltools::h2(ddn),
@@ -148,14 +148,14 @@
             htmltools::a(
               href=
                 sprintf(
-          "https://dataquality.ship-med.uni-greifswald.de/PDQC_%s.html",
+          "https://dataquality.qihs.uni-greifswald.de/PDQC_%s.html",
                   concept_info$IndicatorID),
               target="_blank",
               title="Online reference",
               ddn
             ),
             sprintf(
-              " -- related inidicator function names are prefixed with %s",
+              " -- related indicator function names are prefixed with %s",
               dQuote(concept_info$abbreviation))
           ),
           htmltools::h3("Definition"),
@@ -166,7 +166,7 @@
           htmltools::h3("Explanation"),
           htmltools::tags$p(
             htmltools::HTML(markdown::markdownToHTML(
-              text = concept_info$Definition, fragment.only = TRUE))
+              text = concept_info$Explanation, fragment.only = TRUE))
           ),
           htmltools::h3("Guidance"),
           htmltools::tags$p(
@@ -195,7 +195,7 @@
 }
 
 # make all the functions in the environment enclosed by this environment, too,
-# so that they can look up this environment for meta data
+# so that they can look up this environment for metadata
 for (f in ls(.menu_env)) {
   if (is.function(.menu_env[[f]])) {
     environment(.menu_env[[f]]) <- .menu_env

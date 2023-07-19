@@ -23,12 +23,14 @@ util_generate_calls_for_function <-
            specific_args,
            arg_overrides,
            resp_vars) { # TODO: Document
+  .meta_data_env$fkt <- fkt
   .meta_data_env$meta_data <- meta_data
   .meta_data_env$label_col <- label_col
   .meta_data_env$meta_data_segment <- meta_data_segment
   .meta_data_env$meta_data_dataframe <- meta_data_dataframe
   .meta_data_env$meta_data_cross_item <- meta_data_cross_item
   on.exit({
+    .meta_data_env$fkt <- NULL
     .meta_data_env$meta_data <- NULL
     .meta_data_env$label_col <- NULL
     .meta_data_env$meta_data_segment <- NULL
@@ -78,7 +80,7 @@ util_generate_calls_for_function <-
         lapply(setNames(nm = can_fill), function(filler) {
           .meta_data_env[[filler]](rv)
         })
-      to_fill$resp_vars <- rv
+      # to_fill$resp_vars <- rv
       to_fill
     })
   } else if ("variable_group" %in% names(.to_fill)) {
@@ -86,27 +88,25 @@ util_generate_calls_for_function <-
       util_error("")
     }
     .meta_data_env$target_meta_data <- "cross-item_level"
-    VARIABLE_LIST <- "VARIABLE_LIST" # TODO: Move to 000_globals.R
-    CHECK_LABEL <- "CHECK_LABEL" # TODO: Move to 000_globals.R
-    vl <- meta_data_cross_item[[VARIABLE_LIST]]
-    vl[util_empty(vl)] <- NA_character_
+    ck_id <- meta_data_cross_item[[CHECK_ID]]
+    ck_id[util_empty(ck_id)] <- NA_character_
     nm <- meta_data_cross_item[[CHECK_LABEL]]
     nm[util_empty(nm)] <- NA_character_
     if (any(is.na(nm))) {
-      util_warning("Removing rows from %s because %s is missing.",
+      util_message("Removing rows from %s because %s is missing.",
                    sQuote("cross-item_level"),
                    sQuote(CHECK_LABEL),
                    applicability_problem = TRUE)
     }
-    vl <- setNames(vl[!is.na(nm) & ! is.na(vl)],
-                   nm = nm[!is.na(nm) & ! is.na(vl)])
-    # TODO: only select vl that incorporate variables that match var_list
-    lapply(vl, function(vg) {
-      if (!util_empty(vg)) {
+    ck_id <- setNames(ck_id[!is.na(nm) & ! is.na(ck_id)],
+                   nm = nm[!is.na(nm) & ! is.na(ck_id)])
+    # TODO: only select ck_id that incorporate variables that match var_list
+    lapply(ck_id, function(ci) {
+      if (!util_empty(ci)) {
         on.exit(.meta_data_env$meta_data_cross_item <- meta_data_cross_item)
         .meta_data_env$meta_data_cross_item <- meta_data_cross_item[
-          (is.na(meta_data_cross_item[[VARIABLE_LIST]]) & is.na(vg)) |
-            (meta_data_cross_item[[VARIABLE_LIST]] == vg), , drop = FALSE]
+          (is.na(meta_data_cross_item[[CHECK_ID]]) & is.na(ci)) |
+            (meta_data_cross_item[[CHECK_ID]] == ci), , drop = FALSE]
         fillers <- names(.meta_data_env)
         fillers <- fillers[vapply(FUN.VALUE = logical(1),
                                   fillers,
@@ -116,11 +116,13 @@ util_generate_calls_for_function <-
         can_fill <- intersect(names(.to_fill), fillers)
         to_fill[can_fill] <- # TODO: Find a solution to deliver NULL as missing.
           lapply(setNames(nm = can_fill), function(filler) {
-            .meta_data_env[[filler]](vg)
+            .meta_data_env[[filler]](ci)
           })
 
+        vg <- .meta_data_env$meta_data_cross_item[[VARIABLE_LIST]]
+
         variable_group <- names(util_parse_assignments(vg))
-        variable_group <- util_find_var_by_meta(variable_group,
+        variable_group <- util_find_var_by_meta(variable_group, ## TODO: Still needed? Has normalized always been called before??
                                                 meta_data,
                                                 label_col = label_col,
                                                 target = label_col,

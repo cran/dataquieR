@@ -6,7 +6,7 @@
 \usage{
 util_get_html_cell_for_result(
   result,
-  aspect = c("applicability", "error", "issue"),
+  aspect = c("applicability", "error", "issue", "anamat", "indicator_or_descriptor"),
   rn,
   cn,
   ...

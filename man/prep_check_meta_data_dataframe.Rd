@@ -2,7 +2,7 @@
 % Please edit documentation in R/prep_check_meta_data_dataframe.R
 \name{prep_check_meta_data_dataframe}
 \alias{prep_check_meta_data_dataframe}
-\title{Verify and normalize meta data on data frame level}
+\title{Verify and normalize metadata on data frame level}
 \usage{
 prep_check_meta_data_dataframe(meta_data_dataframe = "dataframe_level")
 }

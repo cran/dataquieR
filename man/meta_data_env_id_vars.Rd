@@ -9,34 +9,14 @@
 \value{
 a vector with id-variables for each entity-entry, having the
 \code{explode} attribute set to \code{FALSE}
-
-a vector with id-variables for each entity-entry, having the
-\code{explode} attribute set to \code{FALSE}
-
-a vector with id-variables for each entity-entry, having the
-\code{explode} attribute set to \code{FALSE}
 }
 \description{
 Extract id variables for a given item or variable group
-
-Extract selected outlier criteria for a given item or variable group
-
-Extract outlier rules-number-threshold for a given item or variable group
 }
 \details{
 In the environment, \code{target_meta_data} should be set either to
 \code{item_level} or to \code{cross-item_level}.
-
-In the environment, \code{target_meta_data} should be set either to
-\code{item_level} or to \code{cross-item_level}.
-
-In the environment, \code{target_meta_data} should be set either to
-\code{item_level} or to \code{cross-item_level}.
 }
 \seealso{
-\link{meta_data_env}
-
-\link{meta_data_env}
-
 \link{meta_data_env}
 }

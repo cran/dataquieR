@@ -22,7 +22,7 @@ test_that("util_interpret_limits works", {
   expect_error(util_interpret_limits(meta), regexp =
                  "No column containing the term LIMIT")
   meta[[WELL_KNOWN_META_VARIABLE_NAMES$HARD_LIMITS]] <- NA
-  expect_warning(util_interpret_limits(meta), regexp =
+  expect_message(util_interpret_limits(meta), regexp =
                    "HARD_LIMITS has no defined intervals and is omitted.")
   meta[[WELL_KNOWN_META_VARIABLE_NAMES$HARD_LIMITS]] <- "xx"
   expect_warning(util_interpret_limits(meta), regexp =

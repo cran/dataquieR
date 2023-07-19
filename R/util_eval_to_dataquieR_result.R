@@ -18,6 +18,10 @@
 #' @return a `dataquieR_result` object
 util_eval_to_dataquieR_result <- function(expression, env = parent.frame(),
                                           filter_result_slots) {
+  .dq2_globs$.called_in_pipeline <- TRUE
+  on.exit({
+    .dq2_globs$.called_in_pipeline <- FALSE
+  })
   errors <- list()
   warnings <- list()
   messages <- list()
@@ -38,9 +42,12 @@ util_eval_to_dataquieR_result <- function(expression, env = parent.frame(),
   suppressWarnings(suppressMessages(try(withCallingHandlers(
     {
       r <-  eval(expression, envir = env)
-      if (length(r) && length(filter_result_slots)) {
-        r <- util_filter_names_by_regexps(r,
-                                          filter_result_slots)
+      if (length(r)) {
+        if (length(filter_result_slots)) {
+          r <- util_filter_names_by_regexps(r,
+                                            filter_result_slots)
+        }
+        r <- util_compress_ggplots_in_res(r)
       }
     },
     error = collect_condition,
@@ -57,3 +64,6 @@ util_eval_to_dataquieR_result <- function(expression, env = parent.frame(),
   class(r) <- union("dataquieR_result", class(r))
   r
 }
+
+.dq2_globs <- new.env(parent = emptyenv())
+.dq2_globs$.called_in_pipeline <- FALSE

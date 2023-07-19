@@ -74,7 +74,7 @@ prep_add_cause_label_df <- function(meta_data = "item_level",
     } else {
       cl <- NA_character_
     }
-    if (is.na(cl) && !replace_meta_data) {
+    if (any(is.na(cl)) && !replace_meta_data) {
       NA_character_
     } else {
       if ("CODE_CLASS" %in% colnames(cause_label_df)) {

@@ -30,7 +30,7 @@ as usually pipe separated and assigned with
 \link{prep_create_meta}}
 }
 \value{
-a data frame with amended meta data.
+a data frame with amended metadata.
 }
 \description{
 adds an annotation to static metadata

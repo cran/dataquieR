@@ -485,7 +485,7 @@ dq_report <- function(study_data,
 
     oldO <- options(parallelMap.show.info = FALSE)
     on.exit(options(oldO), add = TRUE)
-    parallelMap::parallelExport("study_data", "meta_data", "label_col")
+    suppressWarnings(parallelMap::parallelExport("study_data", "meta_data", "label_col"))
     # this exports the static data to the cluster, this is always done, even if
     # already avail. functions don't touch the exported data.
     currentCpus <- parallelMap::parallelGetOptions()$settings$cpus

@@ -71,7 +71,7 @@
 #' @importFrom grDevices hcl.colors
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_distributions.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_distributions.html
 #' )
 acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
                               study_data, meta_data,
@@ -86,10 +86,10 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
 
   # If no response variable is defined, all suitable variables will be selected.
   if (length(resp_vars) == 0) {
-    util_warning(
+    util_message(
       c("All variables defined to be integer or float in the metadata are used",
         "by acc_distributions."),
-      applicability_problem = FALSE)
+      applicability_problem = TRUE, intrinsic_applicability_problem = TRUE)
     resp_vars <- meta_data[[label_col]][meta_data$DATA_TYPE %in%
                                           c("integer", "float")]
     resp_vars <- intersect(resp_vars, colnames(ds1))
@@ -143,15 +143,16 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
       }
 
       # The grouping variable(s) should not be included as response variable(s).
-      if (group_vars %in% resp_vars) {
-        resp_vars <- resp_vars[-which(resp_vars == group_vars)]
+      if (any(group_vars %in% resp_vars)) {
+        resp_vars <- resp_vars[-which(resp_vars %in% group_vars)]
         util_warning(paste("Removed grouping variable from response variables",
                            "for acc_distributions."),
                      applicability_problem = TRUE)
       }
       if (length(resp_vars) == 0) {
         util_warning("No variables left to analyse for acc_distributions.",
-                     applicability_problem = TRUE)
+                     applicability_problem = TRUE,
+                     intrinsic_applicability_problem = TRUE)
         return(list(SummaryTable = list(),
                     SummaryPlotList = list(),
                     SummaryData = list()))
@@ -177,10 +178,11 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
   # DQ indicator "Unexpected proportion" requires metadata for the range of
   # expected percentages for the categories.
   if (!any(grepl("_RANGE", colnames(meta_data)))) {
-    util_warning(paste("Metadata does not contain columns for expected ranges",
+    util_message(paste("Metadata does not contain columns for expected ranges",
                        "of location or proportions. So acc_distributions can",
                        "generate plots, but can not perform data quality",
-                       "checks."), applicability_problem = FALSE)
+                       "checks."), applicability_problem = TRUE,
+                 intrinsic_applicability_problem = TRUE)
     # create empty metadata list
     rvs_meta <- list("Metric" = setNames(nm = resp_vars,
                                          rep(NA, length(resp_vars))),
@@ -260,10 +262,11 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
       }
 
       if (length(rvs_with_none) > 0) {
-        util_warning(paste0("For ", paste(rvs_with_none, collapse = ", "),
+        util_message(paste0("For ", paste(rvs_with_none, collapse = ", "),
                             ", there is no metadata on expected location or",
                             " expected proportions available."),
-                     applicability_problem = FALSE)
+                     applicability_problem = TRUE,
+                     intrinsic_applicability_problem = TRUE)
         res_no_meta <- suppressWarnings(acc_distributions(
           resp_vars = rvs_with_none,
           group_vars = group_vars, study_data = study_data,
@@ -388,6 +391,8 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
     dq_check_list <- lapply(dq_check_list, function(x) {
       x[-which(names(x) == "flg_which")]
     })
+  } else {
+    dq_check_list <- list()
   }
 
   res_dq_check <- do.call(rbind.data.frame, dq_check_list)
@@ -421,7 +426,7 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
   ref_env <- environment()
   plot_list <- lapply(setNames(nm = resp_vars), function(rv) {
     # omit NAs from data to prevent ggplot2 warning messages
-    ds1 <- ds1[!(is.na(ds1[[rv]])), , FALSE]
+    ds1 <- ds1[!(is.na(ds1[[rv]])), , drop = FALSE]
 
     # Should the plot be a histogram? If not, it will be a bar chart.
     if ("VALUE_LABELS" %in% colnames(meta_data)) {
@@ -467,7 +472,7 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
       breaks_x <- bin_breaks$within
 
       # plot histogram
-      p <- ggplot(data = ds1, aes(x = .data[[rv]])) +
+      p <- ggplot(data = ds1[, rv, drop = FALSE], aes(x = .data[[rv]])) +
         geom_histogram(breaks = breaks_x,
                        fill = col_bars,
                        color = col_bars) +
@@ -499,9 +504,21 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
           !util_empty(meta_data$VALUE_LABELS[which(meta_data[[label_col]] ==
                                                    rv)])) {
         ds1[[rv]] <- factor(ds1[[rv]], levels = exp_bars)
+        val_lab <- util_parse_assignments(
+          meta_data[[VALUE_LABELS]][which(meta_data[[label_col]] == rv)])
+        if (all(levels(ds1[[rv]]) %in% names(val_lab))) {
+          # TODO: Should the other be discarded?
+          levels(ds1[[rv]]) <- vapply(levels(ds1[[rv]]),
+                                      function(old_lev) {
+                                        val_lab[[old_lev]]
+                                      },
+                                      FUN.VALUE = character(1))
+          exp_bars <- levels(ds1[[rv]])
+        }
       }
 
-      p <- ggplot(data = ds1, aes(x = .data[[rv]])) +
+      p <- ggplot(data = ds1[, rv, drop = FALSE],
+                  aes(x = .data[[rv]])) +
         geom_bar(fill = col_bars)
 
       if (is.factor(ds1[[rv]])) {
@@ -621,9 +638,11 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
       )
 
     # ecdf by group_vars -------------------------------------------------------
-    if (length(group_vars) > 0) {
-      pp <- ggplot(data = ds1, aes(x = .data[[rv]],
-                                   colour = .data[[group_vars]])) +
+    if (length(group_vars) > 0 & plot_histogram) {
+      ds1[[group_vars]] <- as.factor(ds1[[group_vars]]) # there is only one
+      # grouping variable, we have ensured this by allow_more_than_one = FALSE
+      pp <- ggplot(data = ds1[, c(rv, group_vars), drop = FALSE],
+                   aes(x = .data[[rv]], colour = .data[[group_vars]])) +
         fli +
         stat_ecdf(geom = "step") +
         labs(x = "", y = paste0("ECDF: ", rv, " (by ",
@@ -668,7 +687,7 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
 #' @seealso
 #' - [acc_distributions]
 #' - [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_distributions.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_distributions.html
 #' )
 acc_distributions_loc <- function(resp_vars = NULL,
                                   study_data,
@@ -694,7 +713,7 @@ acc_distributions_loc <- function(resp_vars = NULL,
 #' @seealso
 #' - [acc_distributions]
 #' - [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_distributions.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_distributions.html
 #' )
 acc_distributions_loc_ecdf <- function(resp_vars = NULL,
                                        group_vars = NULL,
@@ -721,7 +740,7 @@ acc_distributions_loc_ecdf <- function(resp_vars = NULL,
 #' @seealso
 #' - [acc_distributions]
 #' - [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_distributions.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_distributions.html
 #' )
 acc_distributions_prop <- function(resp_vars = NULL,
                                    study_data,
@@ -745,38 +764,117 @@ acc_distributions_prop <- function(resp_vars = NULL,
   )
 }
 
-#' Plots and checks for distributions -- Proportion, ECDF
+util_has_no_group_vars <- function(resp_vars,
+                                   meta_data = "item_level",
+                                   label_col = LABEL) {
+  util_expect_scalar(resp_vars)
+  util_expect_data_frame(meta_data)
+  columns <- grep("^GROUP_VAR_.*", colnames(meta_data), value = TRUE)
+  resp_vars <- util_find_var_by_meta(resp_vars,
+                        meta_data = meta_data,
+                        label_col = label_col)
+  if (is.na(resp_vars)) {
+    return(TRUE)
+  }
+  rowSums(!util_empty(meta_data[meta_data[["VAR_NAMES"]] == resp_vars,
+            columns, FALSE])) == 0
+}
+
+#' Plots and checks for distributions -- only
 #' @inherit acc_distributions
 #' @export
 #' @seealso
 #' - [acc_distributions]
 #' - [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_distributions.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_distributions.html
 #' )
-acc_distributions_prop_ecdf <- function(resp_vars = NULL,
-                                        group_vars = NULL,
-                                        study_data,
-                                        meta_data,
-                                        label_col,
-                                        check_param = "proportion",
-                                        plot_ranges = TRUE,
-                                        flip_mode = "noflip") {
-  md_prep <- util_prep_proportion_check(
-    resp_vars = resp_vars,
-    meta_data = meta_data,
-    study_data = study_data,
-    report_problems = "error"
-  )
+acc_distributions_only <- function(resp_vars = NULL,
+                                   study_data,
+                                   meta_data,
+                                   label_col,
+                                   flip_mode = "noflip") {
+  loc_avail <- !inherits(try(util_prep_location_check(resp_vars = resp_vars,
+                                       meta_data = meta_data,
+                                       report_problems = "error"),
+                   silent = TRUE), "try-error")
+  if (loc_avail) {
+    util_error("%s is already in a distribution location check plot figure",
+               dQuote(resp_vars),
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
+  }
+  prop_avail <- !inherits(try(util_prep_proportion_check(
+                    resp_vars = resp_vars,
+                    meta_data = meta_data,
+                    study_data = study_data,
+                    report_problems = "error"
+                  ), silent = TRUE), "try-error")
+  if (prop_avail) {
+    util_error("%s is already in a distribution proportion check plot figure",
+               dQuote(resp_vars),
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
+  }
 
+  if (!util_has_no_group_vars(resp_vars = resp_vars,
+                         meta_data = meta_data,
+                         label_col = label_col)) {
+    util_error("%s is already in a ecdf/distribution plot figure",
+               dQuote(resp_vars),
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
+  }
   acc_distributions(
-    resp_vars = resp_vars, group_vars = group_vars, study_data = study_data,
+    resp_vars = resp_vars, group_vars = NULL, study_data = study_data,
     meta_data = meta_data, label_col = label_col,
-    check_param = "proportion", plot_ranges = plot_ranges,
     flip_mode = flip_mode
   )
 }
 
-# res <- report$acc_distributions_loc_observer.SBP_0
+#' Plots and checks for distributions -- only, but with ecdf
+#' @inherit acc_distributions
+#' @export
+#' @seealso
+#' - [acc_distributions]
+#' - [Online Documentation](
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_distributions.html
+#' )
+acc_distributions_only_ecdf <- function(resp_vars = NULL,
+                                   study_data,
+                                   group_vars = NULL,
+                                   meta_data,
+                                   label_col,
+                                   flip_mode = "noflip") {
+  prep_prepare_dataframes()
+  util_correct_variable_use(group_vars)
+  loc_avail <- !inherits(try(util_prep_location_check(resp_vars = resp_vars,
+                                                      meta_data = meta_data,
+                                                      report_problems = "error"),
+                             silent = TRUE), "try-error")
+  if (loc_avail) {
+    util_error("%s is already in a distribution location check plot figure",
+               dQuote(resp_vars),
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
+  }
+  prop_avail <- !inherits(try(util_prep_proportion_check(
+    resp_vars = resp_vars,
+    meta_data = meta_data,
+    study_data = study_data,
+    report_problems = "error"
+  ), silent = TRUE), "try-error")
+  if (prop_avail) {
+    util_error("%s is already in a distribution proportion check plot figure",
+               dQuote(resp_vars),
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
+  }
+  acc_distributions(
+    resp_vars = resp_vars, group_vars = group_vars, study_data = study_data,
+    meta_data = meta_data, label_col = label_col,
+    flip_mode = flip_mode
+  )
+}
 
 util_as_plotly_acc_distributions <- function(res, ...) {
   if (length(res$SummaryPlotList) != 1) {

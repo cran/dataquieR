@@ -22,7 +22,7 @@
 #'            [dataquieR::prep_create_meta]
 #' @param meta_data [data.frame] the metadata to extend
 #'
-#' @return a data frame with amended meta data.
+#' @return a data frame with amended metadata.
 #'
 #' @export
 #'

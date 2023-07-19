@@ -1,6 +1,8 @@
-#' Title
+#' Clear data frame cache
 #'
-#' @return TODO
+#' @return nothing
+#'
+#' @family data-frame-cache
 #' @export
 prep_purge_data_frame_cache <- function() {
   rm(list = ls(.dataframe_environment, all.names = TRUE),

@@ -81,4 +81,26 @@ test_that("dq_report_by works", {
       com_item_missingness$results[[1]]$SummaryTable$GRADING,
     na.rm = TRUE), 34)
 
+  # # check for label problems
+  # md1 <- meta_data
+  # md1$LABEL[1:7] <- c("CENTER_0",
+  #                     "",
+  #                     "CENTER_0 DUPLICATE", # will become a duplicated label
+  #                     "CENTER_0", # direct duplication of the first label
+  #                     "CENTER_0 DUPLICATE 01", # will also become a duplicated label
+  #                     "Have you been physically vigorously active in the past 12 hours ('physically vigorously active' means at least 30 minutes of jogging or fast cycling, digging up your garden, carrying heavy objects weighing more than 10 kg for a long time, or similar physical activities)?", # very long label
+  #                     "Hybpvaitp1h(vamal3mojofcduygchowmt1kfaltospa") # matches the very long label after abbreviation
+  #
+  # reports <- suppressWarnings(dq_report_by(v1.0 = FALSE,
+  #                         meta_data_split = STUDY_SEGMENT,
+  #                         cores = 1,
+  #                         study_data_split = "CENTER_0",
+  #                         subset(study_data, # speed: CENTER_0 1:2
+  #                                v00000 %in% 1:2),
+  #                         meta_data = md1,
+  #                         label_col = LABEL,
+  #                         dimensions = # for speed, omit Accuracy
+  #                           c("Completeness")
+  # ))
+  # reports$CENTER_0_1 # has the expected Notes in Summary overview
 })

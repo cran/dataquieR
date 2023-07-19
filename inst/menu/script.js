@@ -17,40 +17,50 @@ if (!SVGElement.prototype.contains) {
 }
 
 function single_page_switch(event) {
-  $( ".navbar a").removeClass("target")
-  $( ".navbar a[href='" + window.location.hash + "']").addClass("target")
-  if (!supportsSelector(":has(:target)")) { // only FireFox (2023 -- can be removed, once FireFox has it, they guess, in 2023)
-    if ($("div.content:has(:target)").length > 0) {
-      $(".default-target").hide()
-    } else {
-      $(".default-target").show()
+  $(function() {
+    $( ".navbar a").removeClass("target")
+    $( ".navbar a[href='" + window.location.hash + "']").addClass("target")
+    if (!supportsSelector(":has(:target)")) { // only FireFox (2023 -- can be removed, once FireFox has it, they guess, in 2023)
+      if ($("div.content:has(:target)").length > 0) {
+        $(".default-target").hide()
+      } else {
+        $(".default-target").show()
+      }
+      $("div.singlePageFinal").hide();
+      $("div.singlePageFinal:target").show();
+      $("div.singlePageFinal:has(:target)").show();
+      if (window.matchMedia('screen and (max-width: 835px)').matches) { // also adjust in CSS at line tagged with !!MEDIA!!
+        $(".navbar.responsive").css({
+          "float": "",
+          "display": "",
+          "text-align": ""
+        })
+        $(".navbar.responsive *").css({
+          "float": "",
+          "display": "",
+          "text-align": ""
+        })
+        $(".navbar.responsive div:has(*.target)").css({
+          "float": "none",
+          "display": "block",
+          "text-align": "left"
+        })
+        $(".navbar.responsive div:has(*.target) *").css({
+          "float": "none",
+          "display": "block",
+          "text-align": "left"
+        })
+      }
+      $(function() {
+        try {
+          document.getElementById(location.hash.replace("#", "")).scrollIntoView();
+        } catch(e) {
+
+        }
+      })
     }
-    $("div.singlePageFinal").hide();
-    $("div.singlePageFinal:target").show();
-    $("div.singlePageFinal:has(:target)").show();
-    if (window.matchMedia('screen and (max-width: 835px)').matches) { // also adjust in CSS at line tagged with !!MEDIA!!
-      $(".navbar.responsive").css({
-        "float": "",
-        "display": "",
-        "text-align": ""
-      })
-      $(".navbar.responsive *").css({
-        "float": "",
-        "display": "",
-        "text-align": ""
-      })
-      $(".navbar.responsive div:has(*.target)").css({
-        "float": "none",
-        "display": "block",
-        "text-align": "left"
-      })
-      $(".navbar.responsive div:has(*.target) *").css({
-        "float": "none",
-        "display": "block",
-        "text-align": "left"
-      })
-    }
-  }
+    window.setTimeout(resizeAll, 20)
+  })
   event.stopPropagation()
 }
 
@@ -108,8 +118,29 @@ $(function() {
     handleEnableTippy()
   }
   $(window).scroll(float_menus);
+  hideMatrices()
   $(float_menus)
 })
+
+/*.prliminary hide matrices which are too technical */
+function hideMatrices() {
+  hideMatrix("ermat")
+  hideMatrix("anamat")
+}
+function hideMatrix(id) {
+  $("#" + id).prev("h2").nextUntil("h2").css("display", "none")
+  $("#" + id).prev("h2").css("display", "none")
+  $("a[href='report.html#"+ id + "']").css("display", "none")
+}
+function showMatrices() {
+  showMatrix("ermat")
+  showMatrix("anamat")
+}
+function showMatrix(id) {
+  $("#" + id).prev("h2").nextUntil("h2").css("display", "")
+  $("#" + id).prev("h2").css("display", "")
+  $("a[href='report.html#"+ id + "']").css("display", "")
+}
 
 /* Toggle between adding and removing the "responsive" class to topnav when the user clicks on the icon */
 function toggleTopNav(event) {
@@ -197,6 +228,115 @@ function context_menu(event) {
   */
 }
 
+const min_pixels_per_tick = 40; // TODO: Depends on the kind of the plot
+const min_width_in_em = 30;
+const min_height_in_em = 15;
+const def_height_in_vh = 80;
+
+function resizeAll() {
+  var div = $('<div style="width: 1em;"></div>').appendTo('body');
+  var em = div.width();
+  div.remove();
+  $(document).find(".js-plotly-plot").each(function(i, py) {
+    var cont = $(py).parent();
+    cont.css("overflow", "auto")
+    var x = JSON.parse(Plotly.Plots.graphJson(py)).layout.xaxis.tickvals.length;
+    var y = JSON.parse(Plotly.Plots.graphJson(py)).layout.yaxis.tickvals.length;
+    if (JSON.parse(Plotly.Plots.graphJson(py)).layout.hasOwnProperty("xaxis2")) {
+      var x2 = JSON.parse(Plotly.Plots.graphJson(py)).layout.xaxis2.tickvals.length;
+      x <- x + x2;
+    }
+    if (JSON.parse(Plotly.Plots.graphJson(py)).layout.hasOwnProperty("yaxis2")) {
+      var y2 = JSON.parse(Plotly.Plots.graphJson(py)).layout.yaxis2.tickvals.length;
+      y <- y + y2;
+    }
+    var h = def_height_in_vh * window.innerHeight / 100 - 45 ; // 45 for the scrollbar
+    var w = cont.width() - 45; // for the scrollbar
+    if (min_pixels_per_tick * x > w) {
+      w = min_pixels_per_tick * x;
+    }
+    if (min_width_in_em*em > w) {
+      w = min_width_in_em*em;
+    }
+    var h = Math.max(h, cont.height() - 45); // for the scrollbar
+    if (min_pixels_per_tick * y > h) {
+      h = min_pixels_per_tick * y;
+    }
+    if (min_height_in_em*em > h) {
+      h = min_height_in_em * em;
+    }
+    $(py).width(w);
+    $(py).height(h);
+    var max_xlab = Math.max.apply(Math, JSON.parse(Plotly.Plots.graphJson(py)).layout.xaxis.ticktext.map(x => x.length))
+    var max_ylab = Math.max.apply(Math, JSON.parse(Plotly.Plots.graphJson(py)).layout.yaxis.ticktext.map(x => x.length))
+    if (JSON.parse(Plotly.Plots.graphJson(py)).layout.hasOwnProperty("xaxis2")) {
+      var max_xlab2 = Math.max.apply(Math, JSON.parse(Plotly.Plots.graphJson(py)).layout.xaxis2.ticktext.map(x => x.length))
+      max_xlab = Math.max(max_xlab, max_xlab2)
+    }
+    if (JSON.parse(Plotly.Plots.graphJson(py)).layout.hasOwnProperty("yaxis2")) {
+      var max_ylab2 = Math.max.apply(Math, JSON.parse(Plotly.Plots.graphJson(py)).layout.yaxis2.ticktext.map(x => x.length))
+      max_ylab = Math.max(max_ylab, max_ylab2)
+    }
+    var update = py.layout;
+    update.xaxis.tickangle = "auto";
+    update.width = Math.min(w, window.innerWidth - 45);
+    update.height = Math.min(h, window.innerHeight - 45);
+    update.autosize =  false;
+    // update.margin.l = 0.5 * em * max_ylab; // rotation is now auto, so have space for full label
+    update.margin.l = em * max_ylab;
+    // update.margin.b = 0.3 * em * max_xlab; // rotation is now auto, so have space for full label
+    update.margin.b = em * max_xlab;
+    update.margin.autoexpand = false;
+    if (update.width * 0.2 < update.margin.l) {
+      update.margin.l = update.width * 0.2;
+    }
+    update.margin.l = Math.max(update.margin.l, 1.2 * em)
+    if (update.height * 0.2 < update.margin.b) {
+      update.margin.b = update.height * 0.2;
+    }
+    update.margin.b = Math.max(update.margin.b, 1.2 * em)
+    try {
+      Plotly.relayout(py, update); // this may crash
+    } catch(e) {
+      console.log(e);
+    }
+/*    window.setTimeout(function() { // work around error from this may crash
+    // see also https://community.plotly.com/t/cant-show-heatmap-inside-div-error-something-went-wrong-with-axis-scaling/30616/2
+      // py.querySelector('a[data-attr="zoom"][data-val="out"]').click()
+      py.querySelector('a[data-attr="zoom"][data-val="reset"]').click()
+//      window.setTimeout(function() {
+//        py.querySelector('a[data-attr="zoom"][data-val="in"]').click()
+//      }, 500)
+    }, 500)*/
+  })
+}
+
+$(function() {
+  var resized = true;
+  $(window).on("resize", function() {
+    resized = true;
+  });
+  window.setInterval(function() {
+    try {
+      if (resized) {
+        resizeAll();
+      }
+    } finally {
+      resized = false;
+    }
+  }, 100);
+})
+
+function resize(resultId) {
+  var cont = $(document.getElementById(resultId)).next()
+  var py = cont.find(".js-plotly-plot")[0]
+  var update = {
+    width: $(py).parent().width(),
+    height: $(py).parent().height()
+  };
+  Plotly.relayout(py, update);
+}
+
 function dlResult(event) {
   try {
     var py = $(currentContextMenu.reference).find(".js-plotly-plot")[0]
@@ -234,6 +374,43 @@ function dlResult(event) {
 currentContextMenu = null;
 
 $(function() {
+  $('div.dataquieR_result').each(function() {
+    var stderr = this.getAttribute("data-stderr").trim();
+    if (stderr != "") {
+        var btn1 = $('<input />', {
+                type: 'button',
+                value: '\u26A0',
+                style: 'background-color: white; color: lightgrey; border: 0;',
+                'data-stderr': stderr,
+                on: {
+                   mouseenter: function() {
+                     showTip(this.getAttribute("data-stderr").trim());
+                   },
+                   mouseleave: function() {
+                     messenger.hide()
+                   }
+                }
+        });
+        var btn2 = $('<input />', {
+                type: 'button',
+                value: '\u26A0',
+                style: 'background-color: white; color: lightgrey; border: 0;',
+                'data-stderr': stderr,
+                on: {
+                   mouseenter: function() {
+                     showTip(this.getAttribute("data-stderr").trim());
+                   },
+                   mouseleave: function() {
+                     messenger.hide()
+                   }
+                }
+        });
+        $(this).prepend(btn1);
+        $(this).prepend("<br />");
+        // $(this).append(btn2);
+        $(this).append("<br />");
+    }
+  });
   tippy('div.dataquieR_result', {
     content(reference) {
       const call = $(reference).attr("data-call");
@@ -264,6 +441,11 @@ $(function() {
     },
     onShown(instance) {
       currentContextMenu = instance;
+      var stderr =
+        currentContextMenu.reference.getAttribute("data-stderr").trim()
+      if (stderr != "") {
+        // showTip(stderr)
+      }
       instance._clipboard = new ClipboardJS($(instance.popper).find("button")[0])
       instance._clipboard.on('success', function(e) {
         showTip("Call Copied to Clipboard.");

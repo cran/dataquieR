@@ -161,8 +161,8 @@
 <rect x='596.98' y='292.32' width='15.86' height='15.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #B2182B;' />
 <rect x='596.98' y='292.32' width='15.86' height='15.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #B2182B;' />
 <rect x='596.98' y='292.32' width='15.86' height='15.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #B2182B;' />
-<text x='619.03' y='286.00' style='font-size: 8.80px; font-family: sans;' textLength='90.01px' lengthAdjust='spacingAndGlyphs'>below hard limits: 2644</text>
-<text x='619.03' y='303.28' style='font-size: 8.80px; font-family: sans;' textLength='81.21px' lengthAdjust='spacingAndGlyphs'>above hard limits: 42</text>
+<text x='619.03' y='286.00' style='font-size: 8.80px; font-family: sans;' textLength='81.21px' lengthAdjust='spacingAndGlyphs'>above hard limits: 42</text>
+<text x='619.03' y='303.28' style='font-size: 8.80px; font-family: sans;' textLength='90.01px' lengthAdjust='spacingAndGlyphs'>below hard limits: 2644</text>
 <text x='37.69' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='210.62px' lengthAdjust='spacingAndGlyphs'>con_limit_deviations_nothing_within</text>
 </g>
 </svg>

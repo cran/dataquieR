@@ -68,30 +68,8 @@ util_expect_data_frame <- function(x, col_names, convert_if_possible,
     # Handle data frame as char
     x <- prep_get_data_frame(x)
   }
-  if (requireNamespace("tibble", quietly = TRUE)) {
-    if (tibble::is_tibble(x)) {
-      x <- as.data.frame(x)
-    }
-  } else { # nocov start
-    if (inherits(x, "tbl_df")) {
-      util_warning(
-        paste(
-          "%s looks like a tibble. However, the package %s seems not",
-          "to be available, which is quite strange.",
-          "I cannot convert the tibble to a data.frame therefore.",
-          "Tibbles do not always work like base R data.frames (see %s),",
-          "so this can cause errors,",
-          "because %s expects %s in base R data.frames, not in tibbles."
-        ),
-        dQuote(symb),
-        dQuote("tibble"),
-        dQuote("https://r4ds.had.co.nz/tibbles.html#tibbles-vs.data.frame"),
-        dQuote("dataquieR"),
-        dQuote(symb),
-        applicability_problem = FALSE
-      )
-    }
-  } # nocov end
+
+  x <- util_cast_off(x, as.character(symb), .dont_cast_off_cols = TRUE)
 
   if (!is.data.frame(x)) {
     util_error("%s is not a data frame.", dQuote(symb))
@@ -122,7 +100,7 @@ util_expect_data_frame <- function(x, col_names, convert_if_possible,
           r <- all(r, na.rm = TRUE)
         }
         if (length(r) != 1 || is.na(r) || !is.logical(r)) {
-          util_error(c("Internel error in util_expect_data_frame:",
+          util_error(c("Internal error in util_expect_data_frame:",
                        "lambda %s did not return %s or %s"),
                      sQuote(cl), dQuote(TRUE), dQuote(FALSE),
                      applicability_problem = TRUE)

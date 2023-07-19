@@ -84,7 +84,7 @@
 #'                   cov
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_loess.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_loess.html
 #' )
 acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
                       min_obs_in_subgroup, label_col = NULL, study_data,
@@ -108,7 +108,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
 
   if (missing(min_obs_in_subgroup)) {
     min_obs_in_subgroup <- 30
-    util_warning(
+    if (!.called_in_pipeline) util_message(
       "No min_obs_in_subgroup was set. Default n=30 per level is used.",
       applicability_problem = TRUE
       )
@@ -120,7 +120,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
     }
     .min_obs_in_subgroup <- suppressWarnings(as.integer(min_obs_in_subgroup))
     if (is.na(.min_obs_in_subgroup) != is.na(min_obs_in_subgroup)) {
-      util_warning(c(
+      util_message(c(
         "Coulud not convert min_obs_in_subgroup %s to a number.",
         "Set to standard value n=30."),
         dQuote(as.character(min_obs_in_subgroup)),
@@ -132,7 +132,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
     }
     if (is.na(min_obs_in_subgroup)) {
       min_obs_in_subgroup <- 30
-      util_warning("No min_obs_in_subgroup. Default n=30 per level is used.",
+      util_message("No min_obs_in_subgroup. Default n=30 per level is used.",
                    applicability_problem = TRUE)
     }
   }
@@ -171,7 +171,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
 
   # missing in resp_vars?
   if (any(is.na(ds1[[resp_vars]]))) {
-    util_warning(paste0(sum(is.na(ds1[[resp_vars]])),
+    util_message(paste0(sum(is.na(ds1[[resp_vars]])),
                         " observations were omitted due to missing values in '",
                         resp_vars, "'",
       collapse = " "),
@@ -185,7 +185,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
   n_post <- dim(ds1)[1]
 
   if (n_post < n_prior) {
-    util_warning(paste0("Due to missing values in ", time_vars, " ",
+    util_message(paste0("Due to missing values in ", time_vars, " ",
                         n_prior - n_post, " observations were deleted."),
                  applicability_problem = FALSE)
   }
@@ -196,7 +196,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
   n_post <- dim(ds1)[1]
 
   if (n_post < n_prior) {
-    util_warning(paste0("Due to missing values in ", group_vars, " ",
+    util_message(paste0("Due to missing values in ", group_vars, " ",
                         n_prior - n_post, " observations were deleted."),
                  applicability_problem = FALSE)
   }
@@ -242,7 +242,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
   n_post <- dim(ds1)[1]
 
   if (n_post < n_prior) {
-    util_warning(paste0("Due to missing values in any of ",
+    util_message(paste0("Due to missing values in any of ",
                         paste0(co_vars, collapse = ", "), " ",
                         n_prior - n_post, " observations were deleted."),
                  applicability_problem = FALSE)
@@ -258,7 +258,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
 
   # min_obs_in_subgroup is always defined, if not specified set to 30
   if (length(obs_lt_minobs) > 0) {
-    util_warning(paste0(c("The following levels:", obs_lt_minobs,
+    util_message(paste0(c("The following levels:", obs_lt_minobs,
                           "have < 30 observations and were discarded."),
                         collapse = " "),
                  applicability_problem = FALSE)
@@ -292,18 +292,20 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
     # }
     # if (TRUE || is.null(reference_category) || is.na(reference_category)) {
       if (!is.ordered(ds2[[resp_vars]])) {
-        util_warning(c("%s is a categorial but not an ordinal variable.",
+        util_message(c("%s is a categorial but not an ordinal variable.",
                        "I'll use the levels as ordinals, but this may lead",
                         "to wrong conclusions."), paste0(dQuote(resp_vars),
                                                          collapse = ", "),
-                     applicability_problem = TRUE)
+                     applicability_problem = TRUE,
+                     intrinsic_applicability_problem = TRUE)
       }
       util_warning(
         c("%s is not a metric variable. Ordinal variables may in some cases",
           "still be interpretable with the LOESS plots, but be aware that",
           "distances are meaningless."), paste0(dQuote(resp_vars), collapse =
                                                   ", "),
-        applicability_problem = TRUE)
+        applicability_problem = TRUE,
+        intrinsic_applicability_problem = TRUE)
       ds2[[resp_vars]] <- suppressWarnings(as.integer(ds2[[resp_vars]]))
     # } else {
     #   # too complicated, unclear concept. cancelled so far.
@@ -583,7 +585,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
   if (missing(plot_data_time)) {
     dots_per_group <- table(fit_df$GROUP)
     if (max(dots_per_group) > 4000) {
-      util_warning(
+      if (!.called_in_pipeline) util_message(
         c("Argument %s was not set. Based on the maximum of observations of %d",
           "for group %s > 4000, marks for timepoints featuring data will be",
           "turned off."),
@@ -683,7 +685,7 @@ acc_loess <- function(resp_vars, group_vars, time_vars, co_vars = NULL,
     return(list(SummaryPlotList = setNames(pl["Loess_fits_facets"],
                     nm = resp_vars)))
   } else if (plot_format != "AUTO") {
-    util_warning("Unknown %s: %s -- will switch to default value AUTO.",
+    util_message("Unknown %s: %s -- will switch to default value AUTO.",
                dQuote("plot_format"), dQuote(plot_format),
                applicability_problem = TRUE)
   }

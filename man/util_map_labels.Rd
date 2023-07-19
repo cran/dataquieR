@@ -16,7 +16,7 @@ util_map_labels(
 \arguments{
 \item{x}{\link{character} variable names, character vector, see parameter from}
 
-\item{meta_data}{\link{data.frame} meta data frame, if, as a \code{dataquieR}
+\item{meta_data}{\link{data.frame} metadata data frame, if, as a \code{dataquieR}
 developer, you do not have
 \strong{item-level-metadata}, you should use
 \link{util_map_labels} instead to avoid consistency
@@ -44,7 +44,7 @@ Map variables to certain attributes, e.g. by default their labels.
 \details{
 This function basically calls \code{colnames(study_data) <- meta_data$LABEL},
 ensuring correct merging/joining of study data columns to the corresponding
-meta data rows, even if the orders differ. If a variable/study_data-column
+metadata rows, even if the orders differ. If a variable/study_data-column
 name is not found in \code{meta_data[[from]]} (default \code{from = VAR_NAMES}),
 either stop is called or, if \code{ifnotfound} has been assigned a value, that
 value is returned. See \code{\link{mget}}, which is internally used by this function.

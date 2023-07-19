@@ -38,7 +38,7 @@ with labels of variables}
 \item{...}{additional arguments for the function}
 
 \item{key_var_names}{\link{character} character vector named by arguments to be
-filled by meta data GROUP_VAR-entries as follows:
+filled by metadata GROUP_VAR-entries as follows:
 c(group_vars = GROUP_VAR_OBSERVER) -- may be missing,
 then all possible combinations will be analyzed.
 Cannot contain resp_vars.}

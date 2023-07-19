@@ -160,22 +160,22 @@ test_that("acc_distributions robust with miss-codes", {
   sd0$v00003[8:50] <- 8:50 # ensure that we get a histogram, either by
   # having > 30 values or fractions.
   sd0$v00003[[6]] <- 9999999
-  expect_warning(
+  expect_message(
     res1 <-
       acc_distributions(resp_vars = "v00003",
       study_data = sd0, meta_data = md0,
       group_vars =
         c("v00012")),
     regexp =
-      paste("The number of bins in the histogram were reduced below 100 bins.",
+      paste("(The number of bins in the histogram were reduced below 100 bins.",
             "Possible reasons for an excessive number of bins could be",
             "unspecified missing codes .+perhaps .+9999999.+ or",
-            "misspecified limits in the metadata."),
+            "misspecified limits in the metadata.|.*doScale.*)"),
     all = TRUE,
     perl = TRUE
   )
   sd0$v00003[[6]] <- 10000000
-  expect_warning(
+  expect_message(
     res1 <-
       acc_distributions(resp_vars = "v00003",
                         study_data = sd0, meta_data = md0,

@@ -1,3 +1,53 @@
+# dataquieR 2.0.1
+
+## Reporting 
+  * New functions `prep_save_report` and `prep_load_report`
+  * Update and simplification of summary overview, empty columns/rows omitted from the matrices. Also, better classification of errors
+  * Many small updates in the usability of the report
+  * Fixes in `HTML/JS` output for `Firefox`
+  * Bug fixes of report outputs that were not looking as expected (in contradiction checks and limit violations)
+  * Fixed mixed distribution plots called several times
+  * Enable auto-resizing of `plot.ly`-plots
+  * Fixed rendering problems for the new, automatically size-reduced plots causing the report rendering to fail if having `gginnards` installed; removed dependency from `gginnards`.
+  * Do not show superfluous axis labels (e.g., variables, if variable names are on an axis because these usually overlap without improving the output)
+  * Prevent a warning of `robustbase` about `doScale`
+  * Less noisy display of conditions (e.g., warnings, errors, messages) with the results in `dq_report2` reports
+  * `summarytools` are included in `dq_report2` reports, if installed.
+  * New report rendering code polished, parallel execution of `HTML` generation prepared
+  * New parallel mode for `dq_report2` using a queue improves speed
+  * Full support for `VARIABLE_ROLES` in `dq_report2` and suppressing helper variable outputs in `dq_report_by`
+  * Do not show conditions (e.g., warnings, messages, errors) in reports if they address the call of the function (e.g., "using default for argument...") by `dq_report2` and not directly by the user
+  * No unit-missingness in `dq_report2` because it is not so useful in its current implementation
+  * More robust `dq_report_by` for large reports (can write and optionally render results to disk rather than returning them)
+  * Bug fix in `dq_report_by` causing `DATA_PROCESS` not to work
+  * Fixed some errors and `TODO`'s in `dq_report_by` and add dependent variables on the fly but with `VARIABLE_ROLE` suppress:
+     - If no role is given, add "primary" by default for single reports as well as for `dq_report_by`
+     - Support meta_data_v2 in `dq_report_by`
+     - FIXED: referred variables did not correctly resolve co_vars and labels instead of variable names
+  * Several bug fixes:
+     - Addressed most parts of https://gitlab.com/libreumg/dataquier/-/issues/242    
+     - Addressed https://gitlab.com/libreumg/dataquier/-/issues/244 and https://gitlab.com/libreumg/dataquier/-/issues/212
+     - Default for result-slot-filter was not set (`filter_result_slots` in `dq_report2`)
+     - Sometimes, long labels in the first columns of a `JS`-table prevented controlling the table
+
+## (Indicator) Functions related 
+  * Fixed missed check for missing cross-item level metadata and earlier check for valid item-level metadata
+  * Control crude segment missingness output, so that we see it only if there is more than one segment on the item-level after the removal of `VARIABLE_ROLES` filtered items
+  * Outliers should work with empty metadata in `UNIVARIATE_OUTLIER_CHECKTYPE` and `MULTIVARIATE_OUTLIER_CHECKTYPE`
+  * Fixed successive dates to ignore empty dates
+  * New functions in `REDCap` syntax: `strictly_successive_dates` and `successive_dates`
+  * Bug fixes for `REDCap` rules and `NA` handling and `DATA_PROCESS`.
+  * Checked, that code is in line with https://gitlab.com/libreumg/dataquier/-/issues/243#note_1419465360
+  * Default for contradictions with the new syntax is now that hard limits and missing codes are not removed. The argument `use_value_labels` is not supported anymore. You can specify the behavior on the rules level in the new cross-item-level metadata column `DATA_PREPARATION`
+  * Compute end digit preferences only if explicitly requested by a new item-level metadata column `END_DIGIT_CHECK` in `dq_report2`, (`DATA_ENTRY_TYPE` is still supported and auto-converted). If missing, `END_DIGIT_CHECK` defaults to `FALSE`
+  * Bug fix: Contradiction rules failed in specific cases if `NA` were in the data
+  * Bug fix: cross-item_level normalization crashed, causing rules to fail, e.g., `JUMP_LIST` could be added to the item-level metadata if missing, but causing this type of failing rules
+  * Bug fixes for `Windows` and uncommon variable names
+
+## General 
+  * Workbooks can now be loaded from the internet (using `prep_load_workbook_like_file` and `meta_data_v2 = ` formal in `dq_report2`) supporting `http` and `https` URLs (e.g., `Excel` or `OpenOffice` workbooks)
+  * Documentation updates
+    
 # dataquieR 2.0.0
   * `dq_report2` replaces `dq_report`. Please use `dq_report2` from now on.
   * Full new reporting engine (needs `htmtools` and supports `plotly`)
@@ -22,8 +72,6 @@
 # dataquieR 1.0.13
   * fixed a left-over `~` from the `ggplot2` updates causing `acc_margins` to
     fail for categorical variables
-
-# dataquieR 1.0.12
 
 # dataquieR 1.0.12
   * Addressed a problem with the markdown template underlying the
@@ -68,7 +116,7 @@
     for those.
 
 # dataquieR 1.0.6
-  * Robustness: Ensure `DT JS` is always loaded when a dq_report report is 
+  * Robustness: Ensure `DT JS` is always loaded when a `dq_report` report is 
     rendered
   * Bug fix: More robust handling of DECIMALS variable attribute, if
     this is delivered as a character.
@@ -95,7 +143,7 @@
   * Added a classification system for warnings and error messages to
     distinguish errors based on mismatching variables for a function from
     other error messages.
-  * https://github.com/openjournals/joss-reviews/issues/3093#issuecomment-840695360
+  * [JOSS](https://github.com/openjournals/joss-reviews/issues/3093#issuecomment-840695360)
   * Some tidy up and more tests.
   
 # dataquieR 1.0.5

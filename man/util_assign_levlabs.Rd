@@ -10,7 +10,8 @@ util_assign_levlabs(
   splitchar,
   assignchar,
   ordered = TRUE,
-  variable_name = ""
+  variable_name = "",
+  warn_if_inadmissible = TRUE
 )
 }
 \arguments{
@@ -34,6 +35,9 @@ e.g. for \code{1 = male | 2 = female} or
 
 \item{variable_name}{\link{character} the name of the variable being converted
 for warning messages}
+
+\item{warn_if_inadmissible}{\link{logical} warn on \link{con_inadmissible_categorical}
+values}
 }
 \value{
 a \link{data.frame} with labels assigned to categorical variables

@@ -11,17 +11,24 @@ dq_report2(
   meta_data_segment = "segment_level",
   meta_data_dataframe = "dataframe_level",
   meta_data_cross_item = "cross-item_level",
+  meta_data_v2,
   ...,
   dimensions = c("Completeness", "Consistency"),
   cores = list(mode = "socket", logging = FALSE, cpus = util_detect_cores(),
     load.balancing = TRUE),
   specific_args = list(),
   author = prep_get_user_name(),
+  title = "Data quality report",
+  subtitle = "Report information",
   user_info = NULL,
   debug_parallel = FALSE,
   resp_vars = character(0),
   filter_indicator_functions = character(0),
-  filter_result_slots = character(0)
+  filter_result_slots = c("^Summary", "^Segment", "^DataTypePlotList",
+    "^ReportSummaryTable", "^Dataframe", "^Result", "^VariableGroup"),
+  mode = c("default", "futures", "queue", "parallel"),
+  mode_args = list(),
+  notes_from_wrapper = list()
 )
 }
 \arguments{
@@ -41,6 +48,12 @@ metadata}
 \item{meta_data_cross_item}{\link{data.frame} -- optional: Cross-item level
 metadata}
 
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
 \item{...}{arguments to be passed to all called indicator functions if
 applicable.}
 
@@ -57,7 +70,8 @@ for more details. Integrity is always included.}
 
 \item{cores}{\link{integer} number of cpu cores to use or a named list with
 arguments for \link[parallelMap:parallelStart]{parallelMap::parallelStart} or NULL,
-if parallel has already been started by the caller.}
+if parallel has already been started by the caller.
+Can also be a cluster.}
 
 \item{specific_args}{\link{list} named list of arguments specifically for one of
 the called functions, the of the list elements
@@ -66,6 +80,12 @@ should be modified. The elements are lists of
 arguments.}
 
 \item{author}{\link{character} author for the report documents.}
+
+\item{title}{\link{character} optional argument to specify the title for
+the first page of the data quality report}
+
+\item{subtitle}{\link{character} optional argument to specify a subtitle for
+the first page of the data quality report}
 
 \item{user_info}{\link{list} additional info stored with the report, e.g.,
 comments, title, ...}
@@ -91,9 +111,32 @@ matches one of these, it'll
 be used for the report. If
 of length zero, no filtering
 is performed.}
+
+\item{mode}{\link{character} work mode for parallel execution. default is
+"default", the values mean:
+- default: use \code{queue} except \code{cores} has been set explicitly
+- futures: use the \code{future} package
+- queue: use a queue as described in the examples
+from the \code{callr} package by Csárdi and Chang and start
+sub-processes as workers that evaluate the queue.
+- parallel: use the cluster from \code{cores} to evaluate all
+calls of indicator functions using the classic
+R \code{parallel} back-ends}
+
+\item{mode_args}{\link{list} of arguments for the selected \code{mode}. As of writing
+this manual, only for the mode \code{queue} the argument
+\code{step} is supported, which gives the number of
+function calls that are run by one worker at a time.
+the default is 15, which gives on most of the tested
+systems a good balance between synchronization
+overhead and idling workers.}
+
+\item{notes_from_wrapper}{\link{list} a list containing notes about changed labels
+by \code{dq_report_by} (otherwise NULL)}
 }
 \value{
-a \link{dataquieR_resultset2}. Can be printed creating a RMarkdown-report.
+a \link{dataquieR_resultset2} that can be
+\link[=print.dataquieR_resultset2]{printed} creating a \code{HTML}-report.
 }
 \description{
 Generate a full DQ report, v2
@@ -118,7 +161,10 @@ eval(x$`acc_multivariate_outlier.Blood pressure checks`)
 }
 \seealso{
 \itemize{
-\item \link{as.data.frame.dataquieR_resultset},  * \link{as.list.dataquieR_resultset},  * \link{print.dataquieR_resultset},  * \link{summary.dataquieR_resultset}
+\item \link{as.data.frame.dataquieR_resultset}
+\item \link{as.list.dataquieR_resultset}
+\item \link{print.dataquieR_resultset}
+\item \link{summary.dataquieR_resultset}
 \item \link{dq_report_by}
 }
 }

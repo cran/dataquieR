@@ -11,8 +11,8 @@ util_html_table(
   autoWidth = FALSE,
   hideCols = character(0),
   rowCallback = DT::JS("function(r,d) {$(r).attr('height', '2em')}"),
-  copy_row_names_to_column = length(rownames(tb)) == nrow(tb) && !is.integer(attr(tb,
-    "row.names")) && !all(seq_len(nrow(tb)) == rownames(tb)),
+  copy_row_names_to_column = !is.null(tb) && length(rownames(tb)) == nrow(tb) &&
+    !is.integer(attr(tb, "row.names")) && !all(seq_len(nrow(tb)) == rownames(tb)),
   link_variables = TRUE,
   tb_rownames = FALSE,
   meta_data,
@@ -22,10 +22,12 @@ util_html_table(
   colnames,
   options = list(),
   is_matrix_table = FALSE,
-  colnames_aliases2acronyms = is_matrix_table,
+  colnames_aliases2acronyms = is_matrix_table && !cols_are_indicatormetrics,
+  cols_are_indicatormetrics = FALSE,
   label_col = LABEL,
   output_format = c("RMD", "HTML"),
-  dl_fn = "*"
+  dl_fn = "*",
+  rotate_for_one_row = FALSE
 )
 }
 \arguments{
@@ -69,6 +71,12 @@ passed to \code{DT::datatable}}
 analysis matrix columns by their acronyms
 defined in square.}
 
+\item{cols_are_indicatormetrics}{\link{logical} cannot be \code{TRUE},
+\code{colnames_aliases2acronyms} is \code{TRUE}. \code{cols_are_indicatormetrics}
+controls, if the columns are really function calls or, if
+\code{cols_are_indicatormetrics} has been set to \code{TRUE}, the columns are
+indicator metrics.}
+
 \item{label_col}{label col used for mapping labels in case of
 \code{link_variables} is used (that argument set to \code{TRUE} and
 \code{Variables} or \code{VAR_NAMES} in \code{meta_data})}
@@ -78,6 +86,8 @@ be used in the output, for \code{HTML}, only \code{HTML} code is being generated
 
 \item{dl_fn}{file name for downloaded table -- see
 \url{https://datatables.net/reference/button/excel})}
+
+\item{rotate_for_one_row}{\link{logical} rotate one-row-tables}
 }
 \value{
 the table to be added to an \code{rmd}/´\code{html} file as
@@ -85,4 +95,7 @@ the table to be added to an \code{rmd}/´\code{html} file as
 }
 \description{
 The jack of all trades device for tables
+}
+\seealso{
+\code{\link[=util_formattable]{util_formattable()}}
 }

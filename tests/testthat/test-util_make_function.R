@@ -25,11 +25,17 @@ test_that("util_make_function works", {
   capture_output(
     expect_condition(print(a1))
   )
-  errorm <- paste(capture.output(print(s), type = "message"), collapse = "\n")
 
-  expect_match(errorm,
-               regexp = "ErrorMessage",
-               perl = TRUE)
+  # https://github.com/dcomtois/summarytools/issues/186
+  if (requireNamespace("callr", quietly = TRUE)) {
+    errorm <- callr::r(function(s, print) {
+      paste(capture.output(print(s), type = "message"), collapse = "\n")
+    }, list(s = s, print = get("print.dataquieR_result")))
+    expect_match(errorm,
+                 regexp = "ErrorMessage",
+                 perl = TRUE)
+  }
+
   capture_output(
     expect_equal(expect_warning(print(w)), "SEX_0")
   )

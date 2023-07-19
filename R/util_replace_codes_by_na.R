@@ -35,7 +35,7 @@ util_replace_codes_by_NA <- function(study_data, meta_data = "item_level",
     if (!(code_name %in% names(mdf)) || all(is.na(mdf[[code_name]]) |
                                             trimws(mdf[[code_name]]) == "")) {
       util_warning(
-        c("Meta data does not provide a filled column",
+        c("Metadata does not provide a filled column",
           "called %s for replacing codes with NAs."),
         dQuote(code_name),
         applicability_problem = TRUE)

@@ -3,8 +3,11 @@ test_that("nres works", {
 
   prep_load_workbook_like_file("meta_data_v2")
   withr::defer(prep_purge_data_frame_cache())
+  # item_level <- prep_get_data_frame("item_level")
+  # item_level$MISSING_LIST_TABLE <- NULL
+  # prep_add_data_frames(item_level)
   report <-
     dq_report2("study_data", dimensions = c("int"), label_col = "LABEL",
-               cores = 1);
-  expect_equal(nres(report), 10)
+               cores = 1, filter_result_slots = NULL);
+  expect_equal(nres(report), 11)
 })

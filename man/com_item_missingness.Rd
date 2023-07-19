@@ -116,5 +116,5 @@ each variable) are generated
 }
 
 \seealso{
-\href{https://dataquality.ship-med.uni-greifswald.de/VIN_com_impl_item_missingness.html}{Online Documentation}
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_com_impl_item_missingness.html}{Online Documentation}
 }

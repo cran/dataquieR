@@ -84,24 +84,16 @@
 #' # runs spuriously slow on rhub
 #' load(system.file("extdata/study_data.RData", package = "dataquieR"))
 #' load(system.file("extdata/meta_data.RData", package = "dataquieR"))
-#' co_vars <- c("AGE_0")
-#' label_col <- LABEL
-#' rvs <- c("DBP_0")
-#' group_vars <- prep_map_labels(rvs, meta_data = meta_data, from = label_col,
-#'   to = VAR_NAMES)
-#' group_vars <- prep_map_labels(group_vars, meta_data = meta_data,
-#'   to = GROUP_VAR_OBSERVER)
-#' group_vars <- prep_map_labels(group_vars, meta_data = meta_data)
-#' acc_margins(resp_vars = rvs,
+#' acc_margins(resp_vars = "DBP_0",
 #'             study_data = study_data,
 #'             meta_data = meta_data,
-#'             group_vars = group_vars,
-#'             label_col = label_col,
-#'             co_vars = co_vars)
+#'             group_vars = "USR_BP_0",
+#'             label_col = LABEL,
+#'             co_vars = "AGE_0")
 #' }
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_acc_impl_margins.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_margins.html
 #' )
 acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
                         threshold_type = NULL, threshold_value,
@@ -131,11 +123,12 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
 
   colnames(ds1) <- gsub("$", dollar, fixed = TRUE, colnames(ds1))
   if (any(grepl('$', fixed = TRUE, c(resp_vars, group_vars, co_vars)))) {
-    util_warning(c("emmeans used by acc_margins does not support variable",
+    util_message(c("emmeans used by acc_margins does not support variable",
                    "names containing %s, replacing this symbol by an",
                    "equivalent unicode character %s"),
                  dQuote("$"),
-                 dQuote(dollar), applicability_problem = TRUE)
+                 dQuote(dollar), applicability_problem = TRUE,
+                 intrinsic_applicability_problem = FALSE)
   }
   resp_vars <- gsub("$", dollar, fixed = TRUE, resp_vars)
   group_vars <- gsub("$", dollar, fixed = TRUE, group_vars)
@@ -147,14 +140,15 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   # no minimum observations specified
   # TODO: util_expect_scalar(min_obs_in_subgroup, is.integer, ...)
   if (missing(min_obs_in_subgroup) || length(min_obs_in_subgroup) != 1) {
-    min_obs_in_subgroup <- 5
-    util_warning(
+    if (!missing(min_obs_in_subgroup) ||
+        !.called_in_pipeline) util_message(
       "No or many minimum observation count was specified and is set to n=5.",
       applicability_problem = TRUE)
+    min_obs_in_subgroup <- 5
   } else {
     .min_obs_in_subgroup <- as.integer(min_obs_in_subgroup)
     if (is.na(.min_obs_in_subgroup)) {
-      util_warning(
+      util_message(
        "min_obs_in_subgroup is not integer: %s, setting it to default value 5.",
         dQuote(try(as.character(min_obs_in_subgroup))),
        applicability_problem = TRUE)
@@ -167,7 +161,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
 
   if (min_obs_in_subgroup < 5) {
     min_obs_in_subgroup <- 5
-    util_warning("min_obs_in_subgroup cannot be set below 5.",
+    util_message("min_obs_in_subgroup cannot be set below 5.",
                  applicability_problem = TRUE)
   }
 
@@ -207,7 +201,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   n_post <- dim(ds1)[1]
 
   if (n_post < n_prior) {
-    util_warning(paste0(
+    util_message(paste0(
       "Due to missing values in ", paste0(co_vars, collapse = ", "),
       " or ", group_vars, " N=", n_prior - n_post,
       " observations were excluded."
@@ -221,7 +215,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   n_post <- dim(ds1)[1]
 
   if (n_post < n_prior) {
-    util_warning(paste0(
+    util_message(paste0(
       "Due to missing values in ", paste0(rvs), " N=",
       n_prior - n_post, " observations were excluded."
     ), applicability_problem = FALSE)
@@ -237,7 +231,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
       .threshold_value <- NA
     }
     if (length(threshold_value) != 1 || is.na(.threshold_value)) {
-      util_warning(
+      util_message(
         "threshold_value is not numeric(1): %s, setting it to default value 1.",
                    dQuote(head(try(as.character(threshold_value)), 1)),
         applicability_problem = TRUE)
@@ -250,7 +244,11 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
 
   if (is.null(threshold_type) || (!is.list(threshold_type)
                                   && length(threshold_type) != 1)) {
-    util_warning("No or many threshold type specified and set to empirical.",
+    if (
+      !is.null(threshold_type)
+      ||
+      !.called_in_pipeline
+    ) util_message("No or many threshold type specified and set to empirical.",
                  applicability_problem = TRUE)
     threshold_type <- "empirical"
   }
@@ -264,7 +262,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
 
   # threshold is user but no value defined -> switch to empirical
   if (threshold_type == "user" & missing(threshold_value)) {
-    util_warning(
+    util_message(
      c(
       "Threshold was set to user but no value for the unit of measurements",
       "was defined.\n",
@@ -283,7 +281,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   if (min(check_df[, 2]) < min_obs_in_subgroup) {
     critical_levels <- levels(check_df$Var1)[check_df$Freq <
                                                min_obs_in_subgroup]
-    util_warning(paste0(c(
+    util_message(paste0(c(
       "The following levels:", head(critical_levels, 100),
       if (length(critical_levels) > 100)  {", ..." }, "have <",
       min_obs_in_subgroup, " observations and will be removed."
@@ -345,7 +343,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
       # could be other than 1
       lf <- as.numeric(head(names(sort(table(ds1[[rvs]]))), 1))
       ds1[[rvs]][ds1[[rvs]] == lf] <- 1
-      util_warning(paste0("The levels of ", rvs, " (", mf, " and ", lf,
+      util_message(paste0("The levels of ", rvs, " (", mf, " and ", lf,
                           ") have been recoded to 0 and 1)"),
                    applicability_problem = FALSE)
     }
@@ -490,8 +488,8 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     warn_code <- c("1" = "#B2182B", "0" = "#2166AC")
 
 
-    p1 <- ggplot(data = ds1, aes(x = .data[[group_vars]],
-                                  y = .data[[rvs]])) +
+    p1 <- ggplot(data = ds1[, c(rvs, group_vars), drop = FALSE],
+                 aes(x = .data[[group_vars]], y = .data[[rvs]])) +
       geom_violin(alpha = 0.9, draw_quantiles = TRUE, fill = "gray99") +
       geom_boxplot(width = 0.1, fill = "white", color = "gray", alpha = 0.5) +
       geom_pointrange(
@@ -528,8 +526,8 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   if (seldist$IsInteger == 1 & seldist$NCategory <= 20) {
     warn_code <- c("1" = "#B2182B", "0" = "#2166AC")
 
-    p1 <- ggplot(data = ds1, aes(x =  .data[[group_vars]],
-                                 y =  .data[[rvs]])) +
+    p1 <- ggplot(data = ds1[, c(rvs, group_vars), drop = FALSE],
+                 aes(x =  .data[[group_vars]], y =  .data[[rvs]])) +
       geom_count(aes(alpha = 0.9), color = "gray") +
       geom_pointrange(
         data = res_df, aes(
@@ -564,12 +562,11 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   }
 
   # Plot 2: overall distributional plot flipped on y-axis of plot 1
-  get_y_scale <- ggplot(ds1, aes(x = .data[[rvs]])) +
+  get_y_scale <- ggplot(ds1[, rvs, drop = FALSE], aes(x = .data[[rvs]])) +
     geom_density(alpha = 0.35)
   aty <- mean(range(ggplot_build(get_y_scale)$data[[1]]$y))
 
-
-  p2 <- ggplot(ds1, aes(.data[[rvs]])) +
+  p2 <- ggplot(ds1[, rvs, drop = FALSE], aes(.data[[rvs]])) +
     geom_density(alpha = 0.35) +
     coord_flip() +
     theme_minimal() +

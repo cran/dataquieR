@@ -2,7 +2,7 @@ test_that("con_inadmissible_categorical works", {
   skip_on_cran() # slow
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  expect_message(
     IAVCatAll <- con_inadmissible_categorical(study_data = study_data,
                                               meta_data  = meta_data,
                                               label_col  = "LABEL"),

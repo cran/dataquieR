@@ -150,7 +150,7 @@ int_datatype_matrix <- function(resp_vars = NULL,
                                                              max_vars_per_plot))
   } else if (strata_defined && split_segments) {
     if (any(is.na(meta_data$STUDY_SEGMENT))) {
-      util_warning(c(
+      util_message(c(
         "Some STUDY_SEGMENT are NA. Will assign those to an artificial",
         "segment %s"), dQuote("Other"),
         applicability_problem = TRUE
@@ -160,7 +160,7 @@ int_datatype_matrix <- function(resp_vars = NULL,
     too_big_blocks <- table(meta_data$STUDY_SEGMENT) > max_vars_per_plot
     too_big_blocks <- names(too_big_blocks)[too_big_blocks]
     for (too_big_block in too_big_blocks) {
-      util_warning(
+      util_message(
         "Will split segemnt %s arbitrarily avoiding too large figures",
         dQuote(too_big_block),
         applicability_problem = FALSE
@@ -285,10 +285,27 @@ int_datatype_matrix <- function(resp_vars = NULL,
   class(ReportSummaryTable) <- union("ReportSummaryTable",
                                      class(ReportSummaryTable))
 
+  SummaryData <- app_matrix
+
+  SummaryData$MATCH <- factor(SummaryData$MATCH,
+                                      levels = c(2:0),
+                                      ordered = TRUE,
+                                      labels = c(
+                                        "Non-matching datatype",
+                                        "Non-Matching datatype, convertible",
+                                        "Matching datatype"
+                                      )
+  )
+
+
+  SummaryTable <- app_matrix
+  SummaryTable$GRADING <- SummaryTable$MATCH == 2
+
   return(list(
     SummaryPlot = p,
     DataTypePlotList = pl,
-    SummaryTable = app_matrix,
+    SummaryTable = SummaryTable,
+    SummaryData = SummaryData,
     ReportSummaryTable = ReportSummaryTable
   ))
 }

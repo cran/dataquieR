@@ -8,8 +8,8 @@
 #' @return binary vector
 #'
 util_hubert <- function(x) {
-  lth <- robustbase::adjboxStats(x)$stats[1]
-  uth <- robustbase::adjboxStats(x)$stats[5]
+  lth <- robustbase::adjboxStats(x, doScale = FALSE)$stats[1]
+  uth <- robustbase::adjboxStats(x, doScale = FALSE)$stats[5]
   xbin <- ifelse(x < lth | x > uth, 1, 0)
   return(xbin)
 }

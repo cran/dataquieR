@@ -26,4 +26,12 @@ dataquieR.force_item_specific_missing_codes_default <- FALSE
 options("dataquieR.force_item_specific_missing_codes" =
           dataquieR.force_item_specific_missing_codes_default)
 
+dataquieR.progress_fkt <- NULL
+options("dataquieR.progress_fkt" =
+          dataquieR.progress_fkt)
+
+dataquieR.progress_msg_fkt <- NULL
+options("dataquieR.progress_msg_fkt" =
+          dataquieR.progress_msg_fkt)
+
 #TODO: document all options, how?

@@ -120,6 +120,18 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
     out_int_sts_element_dataframe <- mapply(SIMPLIFY = FALSE,
                                             FUN = function(...) {
         r <- int_sts_element_dataframe(...)
+        # if (nrow(r$DataframeData) == 0) {
+        #   r$DataframeData <- setNames(
+        #     as.data.frame(matrix(data = 0,
+        #                          ncol = ncol(r$DataframeData))),
+        #     colnames(r$DataframeData))
+        # }
+        if (nrow(r$DataframeTable) == 0) {
+          r$DataframeTable <- setNames(
+            as.data.frame(matrix(data = 0,
+                                 ncol = ncol(r$DataframeTable))),
+              colnames(r$DataframeTable))
+        }
         r$DataframeTable
       },
       study_data_list,

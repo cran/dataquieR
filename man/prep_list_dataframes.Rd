@@ -12,3 +12,11 @@ names of all loaded data frames
 \description{
 List Loaded Data Frames
 }
+\seealso{
+Other data-frame-cache: 
+\code{\link{prep_add_data_frames}()},
+\code{\link{prep_get_data_frame}()},
+\code{\link{prep_load_workbook_like_file}()},
+\code{\link{prep_purge_data_frame_cache}()}
+}
+\concept{data-frame-cache}

@@ -3,7 +3,7 @@ test_that("prep_datatype_from_data works", {
                c(speed = "integer", dist = "integer"))
   expect_equal(prep_datatype_from_data("speed", cars),
                c(speed = "integer"))
-  expect_warning(
+  expect_message(
     expect_equal(prep_datatype_from_data("speedx", cars),
                c(speedx = NA_character_)),
     regexp = paste("The following .+resp_vars.+ are missing from",

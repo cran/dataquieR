@@ -18,7 +18,7 @@ e.g., spreadsheet-workbooks or \code{RData}-files.
 }
 \details{
 Note, that this function in contrast to \link{prep_get_data_frame} does neither
-support \code{URLs} nor selecting specific sheets/columns from a file.
+support selecting specific sheets/columns from a file.
 }
 \examples{
 \dontrun{
@@ -33,4 +33,11 @@ prep_get_data_frame(
 \link{prep_add_data_frames}
 
 \link{prep_get_data_frame}
+
+Other data-frame-cache: 
+\code{\link{prep_add_data_frames}()},
+\code{\link{prep_get_data_frame}()},
+\code{\link{prep_list_dataframes}()},
+\code{\link{prep_purge_data_frame_cache}()}
 }
+\concept{data-frame-cache}

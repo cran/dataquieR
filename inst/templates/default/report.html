@@ -7,6 +7,7 @@
   <title>dataquieR {{ as.character(packageVersion("dataquieR")) }} Report</title>
   <!-- needed to make media queries work: https://wpbuffs.com/media-query-for-mobile/#:~:text=Mobile%20Media%20Query%20Not%20Working&text=If%20your%20queries%20are%20working,the%20viewport%20and%20default%20zoom.&text=This%20tells%20the%20browser%20to,for%20making%20mobile%20breakpoints%20work. />
   <script src="https://polyfill.io/v3/polyfill.min.js?features=Array.prototype.find,Promise,Object.assign"></script><!-- TODO: Find a solution w/o inernet -->
+  <script src="renderinfo.js"></script>
   {{ deps }}
 </head>
 <body onhashchange="single_page_switch(event)" onload="single_page_switch(event)" onclick="hideTopNav(event)">
@@ -16,7 +17,7 @@
     <i class="fa fa-bars"></i>
   </a>
   {{ menu }}
-  <div class="opaque-on-hover-20 dropdown">
+  <div class="opaque-on-hover-20 dropdown" style="visibility: hidden;">
     <button class="dropbtn">
     <label for="_enabletippy">Tooltips on Plots</label>
     <input type="checkbox" id="_enabletippy", name="_enabletippy"></input>
@@ -27,9 +28,9 @@
 {{ spage }}
 </div>
 <div class="default-target">
-  <span>
+  <span><a href="https://dataquality.qihs.uni-greifswald.de/index.html" target="_blank">
     <img src="{{ logo }}" title="dataquieR {{ as.character(packageVersion("dataquieR")) }}" /> dataquieR {{ as.character(packageVersion("dataquieR")) }}
-  </span>
+  </a></span>
 </div>
 </body>
 </html>
