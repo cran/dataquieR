@@ -5,6 +5,10 @@
 #' @return the parsed interval with elements `inc_l` (Is the lower limit
 #' included?), `low` (the value of the lower limit), `inc_u` (Is the upper
 #' limit included?), `upp` (the value of the upper limit)
+#'
+#' @family parser_functions
+#' @concept metadata_management
+#' @keywords internal
 
 util_parse_interval <- function(int) {
   if (is.na(int)) {

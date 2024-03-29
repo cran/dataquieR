@@ -12,6 +12,10 @@
 #' - 2 data type matches but not applicable
 #' - 3 data type matches and applicable
 #' - 4 not applicable because of not suitable data type
+#'
+#' @seealso [pro_applicability_matrix]
+#' @keywords internal
+
 util_app_ed <- function(x, dta) {
   if ("DECIMALS" %in% names(x)) {
     c1 <- ifelse(is.na(x["DECIMALS"]), 0, 1)

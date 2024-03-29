@@ -13,4 +13,4 @@ An object of class \code{environment} of length 0.
 \description{
 Holds parts of the manual at run-time
 }
-\keyword{datasets}
+\keyword{internal}

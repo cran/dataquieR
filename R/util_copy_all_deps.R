@@ -6,6 +6,10 @@
 #'            pages, also
 #'
 #' @return `invisible(NULL)`
+#'
+#' @family reporting_functions
+#' @concept process
+#' @keywords internal
 util_copy_all_deps <- function(dir, pages, ...) {
 
   libdir <- file.path(dir, "lib")

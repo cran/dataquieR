@@ -30,6 +30,10 @@
 #'
 #' d$SummaryPlotList$v00004 + util_gg_var_label()
 #' }
+#'
+#' @concept process
+#' @keywords internal
+
 util_gg_var_label <- function(...,
                               meta_data = get("meta_data", parent.frame()),
                               label_col = get("label_col", parent.frame())) { # nocov start

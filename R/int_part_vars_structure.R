@@ -3,6 +3,8 @@
 #' For each participant, check, if an observation was expected, given the
 #' `PART_VARS` from item-level metadata
 #'
+#' [Descriptor]
+#'
 #' @param study_data [study_data] must have all relevant `PART_VARS` to avoid
 #'                                false-positives on `PART_VARS` missing from
 #'                                `study_data`
@@ -33,10 +35,14 @@ int_part_vars_structure <- # TODO: Support segment level metadata links to SEGME
   util_expect_scalar(disclose_problem_paprt_var_data, check_type = is.logical)
 
   util_expect_scalar(expected_observations, allow_more_than_one = TRUE)
-  expected_observations <- match.arg(expected_observations)
+  expected_observations <- util_match_arg(expected_observations)
   util_expect_scalar(expected_observations)
 
   prep_prepare_dataframes()
+
+  if (!PART_VAR %in% colnames(meta_data)) {
+    meta_data[[PART_VAR]] <- NA_character_
+  }
 
   pv <- meta_data[, PART_VAR]
   pv <- pv[!util_empty(pv)]
@@ -149,7 +155,7 @@ int_part_vars_structure <- # TODO: Support segment level metadata links to SEGME
       }
       util_warning(c("In %s, I found %d inconsistencies in %s hiearchy, an",
                      "observation of a sub-segment cannot be expected, if the",
-                     "segment the sub-segment belongs to is not exptected.",
+                     "segment where the sub-segment belongs to is not.",
                      "Found such cases, e.g., in lines %s%s of the %s%s"),
                    dQuote(util_map_labels(rv, meta_data, from = label_col,
                                           to = STUDY_SEGMENT)),

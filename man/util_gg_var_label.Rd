@@ -45,4 +45,7 @@ d <- acc_distributions("v00004", study_data = study_data,
 
 d$SummaryPlotList$v00004 + util_gg_var_label()
 }
+
 }
+\concept{process}
+\keyword{internal}

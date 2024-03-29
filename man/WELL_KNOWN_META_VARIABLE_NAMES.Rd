@@ -6,6 +6,8 @@
 \alias{VAR_NAMES}
 \alias{LABEL}
 \alias{DATA_TYPE}
+\alias{SCALE_LEVEL}
+\alias{UNIT}
 \alias{VALUE_LABELS}
 \alias{MISSING_LIST}
 \alias{JUMP_LIST}
@@ -53,9 +55,10 @@
 \alias{INCL_PROPORTION_LIMIT_LOW}
 \alias{INCL_PROPORTION_LIMIT_UP}
 \alias{RECODE}
+\alias{GRADING_RULESET}
 \title{Well-known metadata column names, names of metadata columns}
 \format{
-An object of class \code{list} of length 50.
+An object of class \code{list} of length 53.
 }
 \usage{
 WELL_KNOWN_META_VARIABLE_NAMES
@@ -69,13 +72,14 @@ v0020349) used in the study data,  the variable name used for processing
 (readable name, e.g. RR_DIAST_1) and in parameters of the QA-Functions, the
 variable label, variable long label, variable short label, variable data
 type (see also \link{DATA_TYPES}), re-code for definition of lists of event
-categories, missing lists and jump lists as CSV strings.
+categories, missing lists and jump lists as CSV strings. For valid units
+see \link{UNITS}.
 }
 \details{
 all entries of this list will be mapped to the package's exported NAMESPACE
 environment directly, i.e. they are available directly by their names too:
 \itemize{
-\item \link{VAR_NAMES},  - \link{LABEL},  - \link{DATA_TYPE},  - \link{VALUE_LABELS},  - \link{MISSING_LIST},  - \link{JUMP_LIST},  - \link{MISSING_LIST_TABLE},  - \link{HARD_LIMITS},  - \link{DETECTION_LIMITS},  - \link{SOFT_LIMITS},  - \link{CONTRADICTIONS},  - \link{DISTRIBUTION},  - \link{DECIMALS},  - \link{DATA_ENTRY_TYPE},  - \link{END_DIGIT_CHECK},  - \link{CO_VARS},  - \link{GROUP_VAR_OBSERVER},  - \link{GROUP_VAR_DEVICE},  - \link{KEY_OBSERVER},  - \link{KEY_DEVICE},  - \link{TIME_VAR},  - \link{KEY_DATETIME},  - \link{PART_VAR},  - \link{STUDY_SEGMENT},  - \link{KEY_STUDY_SEGMENT},  - \link{VARIABLE_ROLE},  - \link{VARIABLE_ORDER},  - \link{LONG_LABEL},  - \link{SOFT_LIMIT_LOW},  - \link{SOFT_LIMIT_UP},  - \link{HARD_LIMIT_LOW},  - \link{HARD_LIMIT_UP},  - \link{DETECTION_LIMIT_LOW},  - \link{DETECTION_LIMIT_UP},  - \link{INCL_SOFT_LIMIT_LOW},  - \link{INCL_SOFT_LIMIT_UP},  - \link{INCL_HARD_LIMIT_LOW},  - \link{INCL_HARD_LIMIT_UP},  - \link{LOCATION_RANGE},  - \link{LOCATION_METRIC},  - \link{PROPORTION_RANGE},  - \link{LOCATION_LIMIT_LOW},  - \link{LOCATION_LIMIT_UP},  - \link{INCL_LOCATION_LIMIT_LOW},  - \link{INCL_LOCATION_LIMIT_UP},  - \link{PROPORTION_LIMIT_LOW},  - \link{PROPORTION_LIMIT_UP},  - \link{INCL_PROPORTION_LIMIT_LOW},  - \link{INCL_PROPORTION_LIMIT_UP},  - \link{RECODE}
+\item \link{VAR_NAMES},  - \link{LABEL},  - \link{DATA_TYPE},  - \link{SCALE_LEVEL},  - \link{UNIT},  - \link{VALUE_LABELS},  - \link{MISSING_LIST},  - \link{JUMP_LIST},  - \link{MISSING_LIST_TABLE},  - \link{HARD_LIMITS},  - \link{DETECTION_LIMITS},  - \link{SOFT_LIMITS},  - \link{CONTRADICTIONS},  - \link{DISTRIBUTION},  - \link{DECIMALS},  - \link{DATA_ENTRY_TYPE},  - \link{END_DIGIT_CHECK},  - \link{CO_VARS},  - \link{GROUP_VAR_OBSERVER},  - \link{GROUP_VAR_DEVICE},  - \link{KEY_OBSERVER},  - \link{KEY_DEVICE},  - \link{TIME_VAR},  - \link{KEY_DATETIME},  - \link{PART_VAR},  - \link{STUDY_SEGMENT},  - \link{KEY_STUDY_SEGMENT},  - \link{VARIABLE_ROLE},  - \link{VARIABLE_ORDER},  - \link{LONG_LABEL},  - \link{SOFT_LIMIT_LOW},  - \link{SOFT_LIMIT_UP},  - \link{HARD_LIMIT_LOW},  - \link{HARD_LIMIT_UP},  - \link{DETECTION_LIMIT_LOW},  - \link{DETECTION_LIMIT_UP},  - \link{INCL_SOFT_LIMIT_LOW},  - \link{INCL_SOFT_LIMIT_UP},  - \link{INCL_HARD_LIMIT_LOW},  - \link{INCL_HARD_LIMIT_UP},  - \link{LOCATION_RANGE},  - \link{LOCATION_METRIC},  - \link{PROPORTION_RANGE},  - \link{LOCATION_LIMIT_LOW},  - \link{LOCATION_LIMIT_UP},  - \link{INCL_LOCATION_LIMIT_LOW},  - \link{INCL_LOCATION_LIMIT_UP},  - \link{PROPORTION_LIMIT_LOW},  - \link{PROPORTION_LIMIT_UP},  - \link{INCL_PROPORTION_LIMIT_LOW},  - \link{INCL_PROPORTION_LIMIT_UP},  - \link{RECODE},  - \link{GRADING_RULESET}
 }
 }
 \examples{
@@ -84,6 +88,13 @@ print(WELL_KNOWN_META_VARIABLE_NAMES$VAR_NAMES)
 }
 \seealso{
 \link{meta_data_segment} for \code{STUDY_SEGMENT}
+
+Other UNITS: 
+\code{\link{UNITS}},
+\code{\link{UNIT_IS_COUNT}},
+\code{\link{UNIT_PREFIXES}},
+\code{\link{UNIT_SOURCES}}
 }
+\concept{UNITS}
 \keyword{datasets}
 \alias{variable attribute}

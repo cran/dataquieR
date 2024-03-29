@@ -1,90 +1,135 @@
 #' Utility function to compute and optimize bin breaks for histograms
 #'
 #' @param x a vector of data values (numeric or datetime)
-#' @param iqr_bw the interquartile range of values which should be included to
+#' @param interval_freedman_diaconis range of values which should be included to
 #'               calculate the Freedman-Diaconis bandwidth (e.g., for
-#'               `con_limit_deviations` only values within limits)
-#' @param n_bw the number of values which should be included to calculate the
-#'             Freedman-Diaconis bandwidth (e.g., for `con_limit_deviations`
-#'             the number of values within limits)
-#' @param min_within the minimum value which is still within limits
-#'                   (needed for `con_limit_deviations`)
-#' @param max_within the maximum value which is still within limits
-#'                   (needed for `con_limit_deviations`)
-#' @param min_plot the minimum value which should be included in the plot
-#' @param max_plot the maximum value which should be included in the plot
+#'               `con_limit_deviations` only values within limits) in interval
+#'               notation (e.g., `[0;100]`)
 #' @param nbins_max the maximum number of bins for the histogram. Strong
 #'                  outliers can cause too many narrow bins, which might be
 #'                  even to narrow to be plotted. This also results in large
 #'                  files and rendering problems. So it is sensible to limit
-#'                  the number of bins. The function will produce a warning if
+#'                  the number of bins. The function will produce a message if
 #'                  it reduces the number of bins in such a case. Reasons
 #'                  could be unspecified missing value codes, or minimum or
-#'                  maximum values far away from most of the data values, or
-#'                  (for `con_limit_deviations`) no or few values within limits.
+#'                  maximum values far away from most of the data values, a few
+#'                  number of unique values, or (for `con_limit_deviations`)
+#'                  no or few values within limits.
+#' @param cuts a vector of values at which breaks between bins should occur
 #'
-#' @return a list with bin breaks below, within and above limits
+#' @return a list with bin breaks, if needed separated for each segment
+#'         of the plot
+#'
+#' @family figure_functions
+#' @concept figure
+#' @keywords internal
 
 
-util_optimize_histogram_bins <- function(x, iqr_bw, n_bw,
-                                         min_within = NULL, max_within = NULL,
-                                         min_plot = NULL, max_plot = NULL,
-                                         nbins_max = NULL) {
-  # check input ----------------------------------------------------------------
+util_optimize_histogram_bins <- function(x, interval_freedman_diaconis = NULL,
+                                         nbins_max = 100, cuts = NULL) {
+  # check and prepare input ----------------------------------------------------
+  if (inherits(x, "POSIXlt")) x <- as.POSIXct(x)
   util_expect_scalar(x, allow_more_than_one = TRUE, allow_na = TRUE,
                      check_type = function(x) {
     is.numeric(x) || "POSIXct" %in% class(x)
   })
+  if (any(is.infinite(x))) {
+    x[is.infinite(x)] <- NA
+  }
   if (length(x) == 0 || all(util_empty(x))) {
     util_error("Nothing to plot!", applicability_problem = TRUE)
   }
 
-  util_expect_scalar(iqr_bw, allow_na = TRUE, check_type = is.numeric)
-  if (is.na(iqr_bw)) iqr_bw <- 0
+  x <- x[!is.na(x)]
+  min_x <- min(x)
+  max_x <- max(x)
 
-  util_expect_scalar(n_bw, check_type = util_is_numeric_in(whole_num = TRUE))
-  if (n_bw == 0) n_bw <- 1
+  if (inherits(cuts, "POSIXlt")) cuts <- as.POSIXct(cuts)
+  util_expect_scalar(cuts, allow_null = TRUE, allow_more_than_one = TRUE,
+                     check_type = function(x) {
+                       is.numeric(x) || "POSIXct" %in% class(x)
+                     })
 
-  util_expect_scalar(min_plot, allow_null = TRUE, check_type = function(x) {
-    is.numeric(x) || "POSIXct" %in% class(x)
-  })
-  if (is.null(min_plot)) min_plot <- min(x)
+  util_expect_scalar(interval_freedman_diaconis,
+                     allow_null = TRUE, allow_more_than_one = TRUE)
+  if (is.null(interval_freedman_diaconis)) {
+    #interval_freedman_diaconis <- util_parse_interval(
+    #  paste0("[", min_x, ";", max_x, "]"))
+    interval_freedman_diaconis <-
+      redcap_env$interval(inc_l = TRUE, inc_u = TRUE,
+                          low = min_x, upp = max_x)
+  } else {
+    if (!("interval" %in% class(interval_freedman_diaconis))) {
+      interval_freedman_diaconis <-
+        util_parse_interval(interval_freedman_diaconis)
+    }
+    if (!("interval" %in% class(interval_freedman_diaconis))) {
+      util_error("The interval is incorrect.")
+    }
+    cuts <- c(cuts, interval_freedman_diaconis$low,
+              interval_freedman_diaconis$upp)
+  }
 
-  util_expect_scalar(max_plot, allow_null = TRUE, check_type = function(x) {
-    is.numeric(x) || "POSIXct" %in% class(x)
-  })
-  if (is.null(max_plot)) max_plot <- max(x)
+  min_x <- as.numeric(min_x)
+  max_x <- as.numeric(max_x)
+  cuts <- as.numeric(cuts)
+  cuts <- cuts[which(!is.na(cuts) & !is.infinite(cuts))]
+  cuts <- sort(unique(cuts))
+  if (length(cuts) > 1) {
+    # omit 'cuts' at (practically) the same value (not caught by 'unique')
+    cuts <- cuts[cuts[-1] - cuts[-length(cuts)] > .Machine$double.eps]
+  }
+  if (length(cuts) > 0) {
+    if (cuts[1] - min_x >= .Machine$double.eps) {
+      cuts <- c(-Inf, cuts)
+    }
+    if (max_x - cuts[length(cuts)] >= .Machine$double.eps) {
+      cuts <- c(cuts, Inf)
+    }
+  } # Note: 'cuts' can still be null
 
-  util_expect_scalar(min_within, allow_null = TRUE, check_type = function(x) {
-    is.numeric(x) || "POSIXct" %in% class(x)
-  })
-  if (is.null(min_within)) min_within <- min_plot
-
-  util_expect_scalar(max_within, allow_null = TRUE, check_type = function(x) {
-    is.numeric(x) || "POSIXct" %in% class(x)
-  })
-  if (is.null(max_within)) max_within <- max_plot
+  min_plot <- min(c(min_x, cuts[!is.infinite(cuts)]))
+  max_plot <- max(c(max_x, cuts[!is.infinite(cuts)]))
 
   util_expect_scalar(nbins_max,
-                     allow_null = TRUE,
-                     check_type = util_is_numeric_in(min = 40, max = 500,
+                     check_type = util_is_numeric_in(min = 1, max = 500,
                                                      whole_num = TRUE))
 
-  # step 1: Freedman-Diaconis bandwidth, adjusted to limits (if any) -----------
-  dif <- as.numeric(max_within) - as.numeric(min_within)
-  dif_below <- as.numeric(min_within) - as.numeric(min_plot)
-  dif_above <- as.numeric(max_plot) - as.numeric(max_within)
-  # If the distinction below / within / above limits is not needed, all values
-  # will be considered to be "within" limits here. The values of dif_below and
-  # dif_above will be 0.
-
+  # step 1: Freedman-Diaconis bandwidth ----------------------------------------
+  x_within <- x[redcap_env$`in`(x, interval_freedman_diaconis)]
+  # If there are no values within the specified interval, we discard the
+  # interval and consider all values instead.
+  if (length(x_within) == 0) {
+    x_within <- x
+    min_within <- min_x
+    max_within <- max_x
+  } else {
+    min_within <- min(x_within)
+    if (!is.infinite(interval_freedman_diaconis$low)) {
+      min_within <- min(min_within, interval_freedman_diaconis$low)
+    }
+    min_within <- as.numeric(min_within)
+    max_within <- max(x_within)
+    if (!is.infinite(interval_freedman_diaconis$upp)) {
+      max_within <- max(max_within, interval_freedman_diaconis$upp)
+    }
+    max_within <- as.numeric(max_within)
+  }
+  # - calculate span
+  dif <- max_within - min_within
   # - calculate bandwidth according to Freedman-Diaconis:
   #   (2 * IQR(data) / length(data)^(1/3))
+  iqr_bw <- IQR(x_within)
+  if (is.na(iqr_bw)) iqr_bw <- 0
+  n_bw <- length(x_within)
+  if (n_bw == 0) n_bw <- 1
   bw <- 2 * iqr_bw / n_bw^(1 / 3)
   if (bw == 0) bw <- 1
-  # - calculate the number of bins between the lower and upper limit, or between
-  #   the minimum and maximum value if there are no limits, based on the
-  #   calculated bandwidth
+
+  # step 2: adjust bandwidth ---------------------------------------------------
+  # - calculate the number of bins between the lower and upper limit of the
+  #   interval (or between the minimum and maximum value, see above), based on
+  #   the calculated bandwidth
   # - round the number of bins within limits to an integer value to obtain bin
   #   breaks at the limits
   # - get the new bandwidth for the rounded number of bins within limits
@@ -92,96 +137,114 @@ util_optimize_histogram_bins <- function(x, iqr_bw, n_bw,
   if (nbins_within == 0) nbins_within <- 1
   byX <- dif / nbins_within
 
-  # step 2: adjust bandwidth for nbins_max if needed ---------------------------
-  # - if a maximum number of bins has been specified, calculate the minimum
-  #   possible bandwidth
-  if (!is.null(nbins_max)) {
-    bw_min <- (as.numeric(max_plot) - as.numeric(min_plot)) / nbins_max
+  # - calculate a lower limit for the bandwidth based on the maximum number of
+  #   bins
+  bw_min <- (max_x - min_x) / nbins_max
+  # - for constant variables: dif = 0 => byX = 0 and also bw_min = 0
+  # - in this case, we have to provide a good default value for bw_min
+  # - for this, we can consider the distances between segments (if any), or
+  #   use the 'pretty' function
+  if (length(cuts) > 1) {
+    # calculate span for each segment
+    dif_seq <- cuts[-1] - cuts[-(length(cuts))]
   } else {
-    bw_min <- NULL
+    dif_seq <- max_plot - min_plot
+  }
+  if (bw_min == 0) {
+    # consider distance between cuts
+    min_dist <- suppressWarnings(
+      min(dif_seq[which(!is.infinite(dif_seq) & dif_seq > 0)]))
+    # consider proposal from 'pretty' function
+    pp <- pretty(c(min_plot, max_plot), min.n = 1)
+    bw_min <- min(c(min_dist, pp[2] - pp[1]))
+  }
+  # - if all values are integer values, then we have to ensure that the
+  #   bandwidth `byX` is not smaller than one
+  if (all(util_is_integer(c(x, cuts)))) {
+    bw_min <- max(bw_min, 1)
   }
   # - check whether the bandwidth `byX` is not below the minimum bandwidth.
   #   If it is, use 'floor' with the minimum bandwidth to calculate and round
-  #   the number of bins. This approach will fail in keeping the bandwidth
-  #   at or above 'bw_min', if 'dif' < 'bw_min' (i.e., the minimum possible bin
-  #   width is larger than the range within limits). Since we want to have at
-  #   least one bin within limits, we have to switch to different bin sizes in
-  #   this case to still be able to split the plot below, within and above
-  #   limits. So in this case, we will allow to have a smaller bin within
-  #   limits and otherwise use bandwidth 'bw_min'.
-  if (!is.null(bw_min) && byX < bw_min) {
+  #   the number of bins within limits.
+  #   This approach will fail in keeping the bandwidth at or above 'bw_min',
+  #   if 'dif' < 'bw_min' (i.e., the minimum possible bin width is larger than
+  #   the range within limits, or, respectively, larger than the range from the
+  #   minimum value to the maximum value). In this case, we have to switch to
+  #   different bin sizes for the segments and will allow to have a smaller bin
+  #   within limits, if needed. For constant variables, the single bar of the
+  #   histogram will have width 'bw_min'.
+  if (byX < bw_min) {
     nbins_within <- floor(dif / bw_min)
     if (nbins_within == 0) {
-      nbins_within <- 1
       byX <- bw_min
     } else {
       byX <- dif / nbins_within
     }
-    # throw an informative warning message hinting to possible problems
-    # (unspecified missing value codes, limits far away from observed values)
-    # TODO: util_looks_like_missing works only for numeric variables. Does
-    # as.numeric for datetime variables work here as intended?
-    likely <- x[intersect(
-      # search for typical patterns for missing value codes
-      which(util_looks_like_missing(as.numeric(x))),
-      # restrict these to values equal to or outside expected ranges
-      # (If limits had not been specified in the metadata, max_within and
-      # min_within will be the highest and lowest observed data value.)
-      which(x >= max_within | x <= min_within))]
-    if (length(likely) == 0) {
-      likely <- c(max(x), min(x))
-    }
-    util_message(
-      c("The number of bins in the histogram were reduced below %d bins.",
-        "Possible reasons for an excessive number of bins could be unspecified",
-        "missing codes (perhaps %s?) or misspecified limits in the metadata."
-      ),
-      nbins_max,
-      paste0(dQuote(likely), collapse = ", "),
-      applicability_problem = FALSE
-    )
   }
 
-  # - calculate the number of bins below and above limits
-  nbins_below <- ceiling(dif_below / byX)
-  nbins_above <- ceiling(dif_above / byX)
-  #   Due to the forced breaks at the limits, we could have now a few bins more
-  #   than nbins_max despite adjusting the bandwidth. If this happens, we will
-  #   increase the bandwidth slightly.
-  if (!is.null(nbins_max) &&
-      nbins_below + nbins_within + nbins_above > nbins_max) {
-    # increase the minimum bin width arbitrarily to get less bins
-    bw_min <- (as.numeric(max_plot) - as.numeric(min_plot)) / (nbins_max - 6)
-    nbins_within <- floor(dif / bw_min)
-    if (nbins_within == 0) {
-      nbins_within <- 1
-      byX <- bw_min
-    } else {
-      byX <- dif / nbins_within
+  # - calculate the number of bins for each segment
+  nbins_seq <- vapply(dif_seq, FUN.VALUE = numeric(1), function(dd) {
+    ceiling(dd / byX)
+  })
+  # Note: Due to the forced breaks at the limits, we could have now a few bins
+  # more than 'nbins_max'.
+
+  # The forced breaks can change the bandwidth in each segment. In case there
+  # is a segment with an open upper/lower limits, we could use the average of
+  # the bandwidths from the fixed segments for it, to improve the overall look
+  # of the segmented histogram.
+  if (length(cuts) > 1) {
+    byX_mean <- dif_seq / nbins_seq
+    byX_mean <- byX_mean[is.finite(byX_mean)]
+    if (length(byX_mean) > 0) {
+      byX_mean <- sum(byX_mean) / length(byX_mean)
+      if (byX_mean > bw_min) {
+        byX <- byX_mean
+      }
     }
-    nbins_below <- ceiling(dif_below / byX)
-    nbins_above <- ceiling(dif_above / byX)
+    if (is.infinite(nbins_seq[1])) {
+      nbins_seq[1] <- ceiling(abs(cuts[2] - min_plot) / byX)
+    }
+    if (is.infinite(nbins_seq[length(nbins_seq)])) {
+      nbins_seq[length(nbins_seq)] <-
+        ceiling(abs(max_plot - cuts[length(cuts) - 1]) / byX)
+    }
   }
 
   # step 3: get the position of bin breaks -------------------------------------
-  if (nbins_within == 1) {
-    breaks_within <- c(min_within, max_within)
+  if (length(cuts) <= 1) {
+    all_breaks <- list(pretty(c(min_plot, max_plot),
+                              n = max(nbins_seq, 1), min.n = 1))
+    if ("POSIXct" %in% class(x)) {
+      all_breaks[[1]] <- as.POSIXct(all_breaks[[1]],
+                                    origin = min(as.POSIXct(Sys.Date()), 0))
+    }
   } else {
-    breaks_within <- seq(from = min_within,
-                         to = max_within,
-                         by = byX)
+    all_breaks <- vector(mode = "list", length = length(nbins_seq))
+    for (i in seq_along(nbins_seq)) {
+      if (is.infinite(cuts[i])) {
+        # We ensured by construction that cuts[i] and cuts[i+1] can not both
+        # be infinite.
+        all_breaks[[i]] <- seq(from = cuts[i+1] - nbins_seq[i] * byX,
+                               to = cuts[i+1],
+                               length.out = nbins_seq[i] + 1)
+      } else if (is.infinite(cuts[i+1])) {
+        all_breaks[[i]] <- seq(from = cuts[i],
+                               to = cuts[i] + nbins_seq[i] * byX,
+                               length.out = nbins_seq[i] + 1)
+      } else if (nbins_seq[i] <= 1) {
+        all_breaks[[i]] <- c(cuts[i], cuts[i+1])
+      } else {
+        all_breaks[[i]] <- seq(from = cuts[i],
+                               to = cuts[i+1],
+                               length.out = nbins_seq[i] + 1)
+      }
+      if ("POSIXct" %in% class(x)) {
+        all_breaks[[i]] <- as.POSIXct(all_breaks[[i]],
+                                      origin = min(as.POSIXct(Sys.Date()), 0))
+      }
+    }
   }
-  breaks_below <- seq(from = min_within - nbins_below * byX,
-                      to = min_within,
-                      by = byX)
-  # If 'dif_below' is 0, 'nbins_below' will be 0 too, and breaks_below will
-  # contain only the value of 'min_within'. The same holds for values "above"
-  # the upper limit:
-  breaks_above <- seq(from = max_within,
-                      to = max_within + nbins_above * byX,
-                      by = byX)
 
-  return(breaks = list("below" = breaks_below,
-                       "within" = breaks_within,
-                       "above" = breaks_above))
+  return(breaks = all_breaks)
 }

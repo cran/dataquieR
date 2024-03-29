@@ -23,6 +23,12 @@
 #'
 #' @return [list] with entries:
 #'   - `cause_label_df` updated data frame with labels for missing codes
+#'
+#' @family metadata_management
+#' @concept robustness
+#' @keywords internal
+
+
 util_validate_missing_lists <-
   function(meta_data, cause_label_df,
            assume_consistent_codes = FALSE,
@@ -153,7 +159,9 @@ util_validate_missing_lists <-
     not_numbers <-
       (
          is.na(suppressWarnings(as.numeric(names(parsed_lists)))) &
-         is.na(suppressWarnings(lubridate::as_datetime(names(parsed_lists))))
+         suppressWarnings(vapply(lapply(
+           names(parsed_lists), lubridate::as_datetime), is.na,
+                FUN.VALUE = logical(1)))
       ) !=
       (is.na(names(parsed_lists)) |
       trimws(names(parsed_lists)) == "" |

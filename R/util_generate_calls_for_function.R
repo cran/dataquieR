@@ -13,6 +13,10 @@
 #' @param resp_vars variables to be respected
 #'
 #' @return function calls for the given function
+#'
+#' @family reporting_functions
+#' @concept process
+#' @keywords internal
 util_generate_calls_for_function <-
   function(fkt,
            meta_data,

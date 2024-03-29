@@ -9,6 +9,7 @@
 #' @seealso [meta_data_env_id_vars] [meta_data_env_co_vars]
 #'          [meta_data_env_time_vars] [meta_data_env_group_vars]
 #' @name meta_data_env
+#' @keywords internal
 .meta_data_env <- new.env(parent = environment())
 
 #' Extract id variables for a given item or variable group
@@ -20,6 +21,7 @@
 #'         `explode` attribute set to `FALSE`
 #' @seealso [meta_data_env]
 #' @name meta_data_env_id_vars
+#' @keywords internal
 .meta_data_env$id_vars <- function(entity) {
   util_expect_scalar(entity, check_type = is.character)
   if (target_meta_data == "cross-item_level") {
@@ -54,6 +56,7 @@
 #'         `explode` attribute set to `FALSE`
 #' @seealso [meta_data_env]
 #' @name meta_data_env_criteria
+#' @keywords internal
 .meta_data_env$criteria <- function(entity) {
   util_expect_scalar(entity, check_type = is.character)
   if (target_meta_data == "cross-item_level") {
@@ -86,6 +89,7 @@
 #'         `explode` attribute set to `FALSE`
 #' @seealso [meta_data_env]
 #' @name meta_data_env_n_rules
+#' @keywords internal
 .meta_data_env$n_rules <- function(entity) {
   util_expect_scalar(entity, check_type = is.character)
   if (target_meta_data == "cross-item_level") {
@@ -127,6 +131,7 @@
 #'         `explode` attribute set to `FALSE`
 #' @seealso [meta_data_env]
 #' @name meta_data_env_co_vars
+#' @keywords internal
 .meta_data_env$co_vars <- function(resp_vars) {
   util_expect_scalar(resp_vars, check_type = is.character)
   r <- lapply(intersect(colnames(meta_data), CO_VARS), function(gv) {
@@ -156,6 +161,7 @@
 #'         entity-entry, having the `explode` attribute set to `TRUE`
 #' @seealso [meta_data_env]
 #' @name meta_data_env_time_vars
+#' @keywords internal
 .meta_data_env$time_vars <- function(resp_vars) {
   util_expect_scalar(resp_vars, check_type = is.character)
   r <- vapply(FUN.VALUE = character(1),
@@ -173,6 +179,7 @@
   r
 }
 
+# TODO: write an internal documentation
 .meta_data_env$resp_vars <- function(resp_vars) {
   util_stop_if_not(length(resp_vars) == 1)
   only_roles <- util_get_concept_info("implementations", get("function_R")
@@ -180,7 +187,15 @@
   if (length(only_roles) == 1 && !util_empty(only_roles)) {
     only_roles <- util_parse_assignments(only_roles)
   } else {
-    only_roles <- c(VARIABLE_ROLES$PRIMARY, VARIABLE_ROLES$SECONDARY)
+    if (startsWith(fkt, "int_") ||
+        startsWith(fkt, "des_")) {
+      ## default for integrity and descripors
+      only_roles <- unname(vapply(VARIABLE_ROLES,  # for all variables
+                                  identity,
+                                  FUN.VALUE = character(1)))
+    } else { # default for neither int_ nor des_
+      only_roles <- c(VARIABLE_ROLES$PRIMARY, VARIABLE_ROLES$SECONDARY)
+    }
   }
   if (meta_data[meta_data[[label_col]] == resp_vars, VARIABLE_ROLE, TRUE]
       %in% only_roles) {
@@ -197,6 +212,7 @@
 #'         set to `TRUE`
 #' @name meta_data_env_group_vars
 #' @seealso [meta_data_env]
+#' @keywords internal
 .meta_data_env$group_vars <- function(resp_vars) {
   util_expect_scalar(resp_vars, check_type = is.character)
   r <- vapply(FUN.VALUE = character(1),
@@ -211,6 +227,8 @@
                                                                      ifnotfound = r)
 
                                              })
+  r <- r[!util_empty(r)]
+  r <- c(NA_character_, r)
   if (length(r) > 0)
     attr(r, "explode") <- TRUE
   r

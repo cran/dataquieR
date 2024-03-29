@@ -4,12 +4,14 @@
 \alias{util_pretty_vector_string}
 \title{Prepare a vector four output}
 \usage{
-util_pretty_vector_string(v, quote = dQuote)
+util_pretty_vector_string(v, quote = dQuote, n_max = length(v))
 }
 \arguments{
 \item{v}{the vector}
 
 \item{quote}{function, used for quoting -- \code{sQuote} or \code{dQuote}}
+
+\item{n_max}{maximum number of elements of \code{v} to display, if not missing.}
 }
 \value{
 the "pretty" collapsed vector as a string.
@@ -17,3 +19,14 @@ the "pretty" collapsed vector as a string.
 \description{
 Prepare a vector four output
 }
+\seealso{
+Other string_functions: 
+\code{\link{util_filter_names_by_regexps}()},
+\code{\link{util_set_dQuoteString}()},
+\code{\link{util_set_sQuoteString}()},
+\code{\link{util_sub_string_left_from_.}()},
+\code{\link{util_sub_string_right_from_.}()}
+}
+\concept{process}
+\concept{string_functions}
+\keyword{internal}

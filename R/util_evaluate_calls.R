@@ -28,6 +28,10 @@
 #' @inheritParams dq_report2
 #'
 #' @return a [dataquieR_resultset2]. Can be printed creating a RMarkdown-report.
+#'
+#' @family reporting_functions
+#' @concept process
+#' @keywords internal
 util_evaluate_calls <-
   function(all_calls,
            study_data,
@@ -68,6 +72,8 @@ util_evaluate_calls <-
     util_ensure_suggested("parallel")
     util_setup_rstudio_job(
       "Computing dq_report2, parallel computation")
+
+    progress_msg("Cluster setup", "initializing parallel mode, if applicable")
 
     if (mode == "queue") {
       if ((eval.parent(call("missing", as.symbol("cores"))) &&
@@ -157,15 +163,67 @@ util_evaluate_calls <-
         }
       }
 
+      progress_msg("Cluster setup: initializing parallel mode, if applicable", "loading library")
+
       parlib(utils::packageName())
 
+      progress_msg("Cluster setup: initializing parallel mode, if applicable",
+                   "consolidating data types...")
+
+      ## Adjust data type and compute int_data_type_matrix before
+
+      int_datatype_matrix_res <- int_datatype_matrix(
+        study_data = study_data,
+        meta_data = meta_data,
+        label_col = label_col
+      )
+
+      study_data <- util_adjust_data_type(
+        study_data = study_data,
+        meta_data = meta_data,
+        relevant_vars_for_warnings = NULL)
+
+      progress_msg("Cluster setup: initializing parallel mode, if applicable", "exporting data")
+
       suppressWarnings(parexp("study_data", "meta_data", "label_col", "meta_data_segment", "meta_data_dataframe", "meta_data_cross_item"))
+      .options <- options() #options to be copied to the children (child process)
+      .options <- .options[startsWith(names(.options), "dataquieR.")] #only dataquieR options selected
+
+      progress_msg("Cluster setup: initializing parallel mode, if applicable", "exporting options")
+
+      suppressWarnings(parexp(".options"))
+
+      progress_msg("Cluster setup: initializing parallel mode, if applicable", "exporting data frame cache")
 
       suppressWarnings(parexp(".dataframe_environment"))
 
+      progress_msg("Cluster setup: initializing parallel mode, if applicable", "exporting other caches")
+
+      if (getOption("dataquieR.precomputeStudyData", default = FALSE)) {
+        cache_as_list <- as.list(.cache[[".cache"]])
+        study_data_cache <- as.list(.study_data_cache)
+      } else {
+        cache_as_list <- list()
+        study_data_cache <- list()
+      }
+
+      suppressWarnings(parexp("cache_as_list"))
+      suppressWarnings(parexp("study_data_cache"))
+
+      progress_msg("Cluster setup: initializing parallel mode, if applicable", "finalizing setup of compute nodes")
+
       if (!is.null(q) || !is.null(parallel::getDefaultCluster())) {
+        par_eval_q(options(.options))
         par_eval_q(dataquieR::prep_add_data_frames(
           data_frame_list = as.list(.dataframe_environment)))
+        par_eval_q({
+          assign(
+            x = ".cache",
+            envir = get(".cache", envir = asNamespace("dataquieR")),
+            value = as.environment(cache_as_list))
+          list2env(study_data_cache, get(".study_data_cache",
+                                         envir = asNamespace("dataquieR")))
+        })
         u8 <- par_eval_q(l10n_info()[["UTF-8"]])
         u8 <- vapply(u8, identity, FUN.VALUE = logical(1))
         if (!all(u8)) {
@@ -179,6 +237,10 @@ util_evaluate_calls <-
       } else {
         dataquieR::prep_add_data_frames(
           data_frame_list = as.list(.dataframe_environment))
+        assign(
+          x = ".cache",
+          envir = get(".cache", envir = asNamespace("dataquieR")),
+          value = as.environment(cache_as_list))
       }
       # parallelMap::parallelLapply(1:10, function(x) {dataquieR::prep_list_dataframes()})
 
@@ -197,6 +259,8 @@ util_evaluate_calls <-
       } else {
         environment(worker) <- asNamespace(utils::packageName())
       }
+
+      progress_msg("Computation", "computing report")
 
       n_nodes <- max(1, as.integer(currentCpus[[1]]), na.rm = TRUE)
 
@@ -243,15 +307,67 @@ util_evaluate_calls <-
       ) # TODO: Use RStudio job if available
     }
 
+    progress_msg("Computation", "finalizing report")
+
     function_names <- vapply(lapply(all_calls, `[[`, 1), as.character,
                              FUN.VALUE = character(1))
 
-    r[] <- mapply(function_names, all_calls, r, SIMPLIFY = FALSE,
-                  FUN = function(nm, cl, r) {
+    r[] <- mapply(function_names, all_calls, r, attr(all_calls, "cn"),
+                  SIMPLIFY = FALSE,
+                  FUN = function(nm, cl, r, cn) {
+      # added to fix bug in unexpected crashing single jobs.
+      if (is.null(r)) {
+         r <-
+           util_eval_to_dataquieR_result(
+             util_error(paste("No result available for unkown reasons",
+                              "(out of memory? try to reduce the number",
+                              "of parallel running jobs using the",
+                              "`cores` argument)")),
+             filter_result_slots = ".*")
+      }
+
       attr(r, "function_name") <- nm
+      attr(r, "cn") <- cn
       attr(r, "call") <- cl
       r
     })
+
+    # overwrite the result for int_datatype_matrix_res
+
+    if (!is.null(r)) {
+      idtm_variable_labels <-
+        vapply(lapply(r[startsWith(names(r), "int_datatype_matrix.")],
+                      attr, "call"), attr, "entity_name",
+               FUN.VALUE = character(1))
+
+      r[startsWith(names(r), "int_datatype_matrix.")] <-
+        lapply(idtm_variable_labels, function(lab) {
+
+          res <- r[[paste0("int_datatype_matrix.", lab)]]
+
+          res$SummaryTable <-
+            int_datatype_matrix_res$SummaryTable[
+              int_datatype_matrix_res$SummaryTable$Variables == lab,
+              , FALSE
+            ]
+
+          res$SummaryData <-
+            int_datatype_matrix_res$SummaryData[
+              int_datatype_matrix_res$SummaryData$Variables == lab,
+              , FALSE
+            ]
+
+          res$ReportSummaryTable <-
+            int_datatype_matrix_res$ReportSummaryTable[
+              int_datatype_matrix_res$ReportSummaryTable$Variables == lab,
+              , FALSE
+            ]
+
+          res
+        })
+    }
+
+    # overwrite the result for int_datatype_matrix_res / DONE
 
     function_names <- setNames(nm = function_names)
 
@@ -301,6 +417,7 @@ util_evaluate_calls <-
     fn <- unique(function_names)
 
     function2category <- setNames(c(
+      des = "Descriptors",
       int = "Integrity",
       com = "Completeness",
       con = "Consistency",
@@ -314,10 +431,11 @@ util_evaluate_calls <-
     attr(matrix_list, "function2category") <- function2category
 
     dim_ranks <- setNames(c(
-      int = 0,
-      com = 1,
-      con = 2,
-      acc = 3
+      int = 1,
+      com = 2,
+      con = 3,
+      acc = 4,
+      des = 9
     )[gsub(
       "_.*$",
       "",
@@ -335,10 +453,14 @@ util_evaluate_calls <-
       (drr * base * base + fnr * base + alr) * 10,
       nm = aliases)
 
-    vo <- meta_data[[VARIABLE_ORDER]]
+    vo <- as.numeric(meta_data[[VARIABLE_ORDER]])
     if (0 == length(vo)) {
       vo <- seq_len(nrow(meta_data)) * 10
     }
+    offset <- max(vo, na.rm = TRUE) + 1
+    if (is.infinite(offset))
+      offset <- 1
+    vo[util_empty(vo)] <- offset + seq_len(sum(util_empty(vo)))
     attr(matrix_list, "row_indices") <- setNames(vo,
                                                  nm = meta_data[[label_col]])
     if (!length(r)) {
@@ -395,6 +517,8 @@ util_evaluate_calls <-
 
     class(r) <- union(dataquieR_resultset_class2,
                       "square_results")
+
+    progress_msg("Computation", "finished")
 
     # Return report ----
     r

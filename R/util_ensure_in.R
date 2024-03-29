@@ -13,6 +13,10 @@
 #' @param applicability_problem [logical] error indicates unsuitable resp_vars
 #'
 #' @return [character] invisible(intersect(x, set))
+#'
+#' @family robustness_functions
+#' @concept robustness
+#' @keywords internal
 util_ensure_in <- function(x, set, err_msg, error = FALSE, applicability_problem = NA) {
   util_expect_scalar(error, check_type = is.logical)
   if (missing(err_msg)) {

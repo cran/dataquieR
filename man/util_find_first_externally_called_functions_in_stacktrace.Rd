@@ -22,3 +22,15 @@ this stack
 \description{
 intended use: error messages for the user
 }
+\seealso{
+Other condition_functions: 
+\code{\link{util_condition_constructor_factory}()},
+\code{\link{util_deparse1}()},
+\code{\link{util_error}()},
+\code{\link{util_find_external_functions_in_stacktrace}()},
+\code{\link{util_find_indicator_function_in_callers}()},
+\code{\link{util_message}()},
+\code{\link{util_warning}()}
+}
+\concept{condition_functions}
+\keyword{internal}

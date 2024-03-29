@@ -4,6 +4,8 @@
 #' Checks data types of the study data and for the data type
 #' declared in the metadata
 #'
+#' [Indicator]
+#'
 #' @details
 #' This is a preparatory support function that compares study data with
 #' associated metadata. A prerequisite of this function is that the no. of
@@ -50,9 +52,17 @@
 #'   environment())
 #' load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
 #'   environment())
+#' study_data$v00000 <- as.character(study_data$v00000)
+#' study_data$v00002 <- as.character(study_data$v00002)
+#' study_data$v00002[3] <- ""
 #' appmatrix <- int_datatype_matrix(study_data = study_data,
 #'                                  meta_data = meta_data,
 #'                                  label_col = LABEL)
+#' study_data$v00002[5] <- "X"
+#' appmatrix <- int_datatype_matrix(study_data = study_data,
+#'                                  meta_data = meta_data,
+#'                                  label_col = LABEL)
+#' appmatrix$ReportSummaryTable
 #' }
 int_datatype_matrix <- function(resp_vars = NULL,
                                 study_data, meta_data, split_segments =
@@ -61,6 +71,12 @@ int_datatype_matrix <- function(resp_vars = NULL,
                                 threshold_value = 0
                                 # , flip_mode = "noflip" # TODO: Improve style
                                 ) {
+
+  if (.called_in_pipeline) {
+    return(list(
+      SummaryData =
+        "Dummy result, should not be displayed, internal error, please report."))
+  }
 
   if (length(max_vars_per_plot) != 1 || !util_is_integer(max_vars_per_plot) ||
       is.na(max_vars_per_plot) || is.nan(max_vars_per_plot) ||
@@ -71,7 +87,7 @@ int_datatype_matrix <- function(resp_vars = NULL,
     ), applicability_problem = TRUE)
   }
 
-  util_prepare_dataframes(.replace_missings = FALSE)
+  prep_prepare_dataframes(.replace_missings = FALSE, .adjust_data_type = FALSE)
 
   # correct variable use?
   util_correct_variable_use("resp_vars",
@@ -89,14 +105,14 @@ int_datatype_matrix <- function(resp_vars = NULL,
 
   Variables <- resp_vars
   # this matrix will be shown to users
-  app_matrix <- data.frame(Variables = Variables)
+  app_matrix <- data.frame(Variables = Variables, stringsAsFactors = FALSE)
   # this matrix can be used to trigger computations
   # tri_matrix <- data.frame(Variables = Variables)
   # defined for merge of strata (optional)
   by_y <- label_col
 
   # DATA_TYPE defined in metadata?
-  if (!("DATA_TYPE" %in% names(meta_data))) {
+  if (!(DATA_TYPE %in% names(meta_data))) {
     util_error(
       c("The attribute DATA_TYPE is not contained in the metadata but is",
         "required for this function."), applicability_problem = TRUE)
@@ -129,10 +145,18 @@ int_datatype_matrix <- function(resp_vars = NULL,
              as.numeric(util_compare_meta_with_study(sdf = ds1, mdf = meta_data,
                                                      label_col = label_col,
                                                      check_convertible = TRUE,
+                                                     check_conversion_stable = TRUE,
                                                      threshold_value =
                                                        threshold_value))
-  dt_appl <- recode(dt_appl, `1` = 0, `2` = 1, `0` = 2)
-#TODO: return_counts
+  dt_appl <- recode(dt_appl,
+                    `1` = 0,
+                    `2` = 1,
+                    `0` = 2,
+                    `3` = 3) # 3, convetible with drawbacks
+
+  # two columns in heatmap: percentage missmatch, percentage non-convertible
+  # percentage convertible?
+
   app_matrix$MATCH = dt_appl
 
   # SHOULD STRATIFICATION OF SEGMENTS BE USED? ---------------------------------
@@ -211,10 +235,27 @@ int_datatype_matrix <- function(resp_vars = NULL,
 
 
   # reshape wide to long
-  app_matrix_long <- melt(app_matrix, id.vars = c("Variables",
-                                                  STUDY_SEGMENT))
+#  app_matrix_long <- melt(app_matrix, id.vars = c("Variables",
+#                                                  STUDY_SEGMENT))
+  app_matrix_long <- stats::reshape(data = app_matrix,
+                                     idvar = c("Variables",
+                                               STUDY_SEGMENT),
+                                     varying = colnames(app_matrix)[2],
+                                     v.names = "value",
+                                     times = colnames(app_matrix)[2],
+                                     direction = "long")
+  app_matrix_long$time <- as.factor(app_matrix_long$time)
+
+  lev <- app_matrix$Variables
+  app_matrix_long$Variables <- factor(app_matrix_long$Variables,
+                                      levels = lev, ordered = FALSE)
+
+
+
   colnames(app_matrix_long) <- c("VARIABLES", "SEGMENT", "IMPLEMENTATION",
                                  "APP_SCORE")
+  rownames(app_matrix_long) <- NULL
+
 
   # assign factor labels
   app_matrix_long$APP_SCORE <- factor(app_matrix_long$APP_SCORE,
@@ -267,39 +308,156 @@ int_datatype_matrix <- function(resp_vars = NULL,
     plot_me
   )
 
-  ReportSummaryTable <- app_matrix;
+  ReportSummaryTable <- as.data.frame(
+    t(util_compare_meta_with_study(sdf = ds1, mdf = meta_data,
+                                                     label_col = label_col,
+                                                     check_convertible = TRUE,
+                                                check_conversion_stable = TRUE,
+                                                     return_percentages = TRUE,
+                                                     threshold_value =
+                                                       threshold_value)))
+  #######
+  match <- ReportSummaryTable$match
+  ReportSummaryTable$match <- NULL
+  ReportSummaryTable$convertible_mismatch_stable <-
+    ReportSummaryTable$convertible_mismatch_stable / 100
+  ReportSummaryTable$convertible_mismatch_unstable <-
+    ReportSummaryTable$convertible_mismatch_unstable / 100
+  ReportSummaryTable$nonconvertible_mismatch <-
+    ReportSummaryTable$nonconvertible_mismatch / 100
+  colnames(ReportSummaryTable)[colnames(ReportSummaryTable) ==
+                                 "convertible_mismatch_stable"] <-
+    "convertible mismatch, stable"
+  colnames(ReportSummaryTable)[colnames(ReportSummaryTable) ==
+                                 "convertible_mismatch_unstable"] <-
+    "convertible mismatch, unstable"
+  colnames(ReportSummaryTable)[colnames(ReportSummaryTable) ==
+                                 "nonconvertible_mismatch"] <-
+    "nonconvertible mismatch"
 
-  ReportSummaryTable$N <- 1;
+  ReportSummaryTable$N <- rep(1, nrow(ReportSummaryTable))
+  ReportSummaryTable$Variables <- rownames(ReportSummaryTable)
 
-  ReportSummaryTable$STUDY_SEGMENT <- NULL
+  rownames(ReportSummaryTable) <- NULL
 
-  attr(ReportSummaryTable, "colcode") <- setNames(
-    c("#B2182B", "#92C5DE", "#2166AC"),
-    nm = as.character(3:1))
-
-  attr(ReportSummaryTable, "level_names") <-
-    setNames(nm = 2:0, levels(app_matrix_long$APP_SCORE))
-
-  attr(ReportSummaryTable, "continuous") <- FALSE
+  attr(ReportSummaryTable, "continuous") <- TRUE
+  attr(ReportSummaryTable, "colscale") <- c("#B2182B", "#92C5DE", "#2166AC")
 
   class(ReportSummaryTable) <- union("ReportSummaryTable",
                                      class(ReportSummaryTable))
 
-  SummaryData <- app_matrix
+  app_matrix$PCT_int_vfe_type <-
+    setNames(100 * ReportSummaryTable$`nonconvertible mismatch`,
+             nm = ReportSummaryTable$Variables)[app_matrix$Variables]
 
-  SummaryData$MATCH <- factor(SummaryData$MATCH,
-                                      levels = c(2:0),
-                                      ordered = TRUE,
-                                      labels = c(
-                                        "Non-matching datatype",
-                                        "Non-Matching datatype, convertible",
-                                        "Matching datatype"
-                                      )
+  app_matrix$Variables <- as.character(app_matrix$Variables)
+
+  # create SummaryData table
+  SummaryData <- app_matrix[, c("Variables", "PCT_int_vfe_type")]
+
+  SummaryData$PCT_int_vfe_type <-
+    paste0(round(SummaryData$PCT_int_vfe_type * nrow(ds1), digits = 0),
+           " (",
+           base::format(SummaryData$PCT_int_vfe_type, digits = 2, nsmall = 2), "%)")
+
+  names(SummaryData)[names(SummaryData) == "PCT_int_vfe_type"] <-
+    "Data type mismatch N (%)"
+
+#  names(SummaryData)[names(SummaryData) == "PCT_int_vfe_type"] <-
+#   util_translate_indicator_metrics("PCT_int_vfe_type",
+#                                    short = FALSE, long = FALSE)
+
+  SummaryData$`Convertible mismatch, stable N (%)` <-
+    paste0( round(ReportSummaryTable$`convertible mismatch, stable` * nrow(ds1),
+                  digits = 0), " (",
+            base::format(100 * ReportSummaryTable$`convertible mismatch, stable`, digits = 2, nsmall = 2),
+            "%)")
+  SummaryData$`Convertible mismatch, unstable N (%)`<-
+    paste0(round(ReportSummaryTable$`convertible mismatch, unstable` * nrow(ds1),
+                 digits = 0), " (",
+           base::format(100 * ReportSummaryTable$`convertible mismatch, unstable`, digits = 2, nsmall = 2),
+           "%)")
+
+  SummaryData$`Data type match N (%)` <-
+    paste0(round(match / 100 * nrow(ds1), digits = 0), " (",
+           base::format(match, digits = 2, nsmall = 2), "%)" )
+
+  SummaryData$`Expected DATA_TYPE` <- setNames(meta_data[[DATA_TYPE]],
+                        nm = meta_data[[label_col]])[SummaryData$Variables]
+
+  SummaryData$`Observed DATA_TYPE` <-
+    setNames(prep_datatype_from_data(resp_vars = # TODO: Improve
+                                       SummaryData$Variables,
+                                     study_data = ds1),
+             nm = colnames(ds1))[SummaryData$Variables]
+
+  SummaryData <- cbind(SummaryData,
+                             app_matrix[, c("MATCH", "STUDY_SEGMENT"),
+                                        drop = FALSE])
+
+  SummaryData$MATCH <- factor(
+    SummaryData$MATCH,
+    levels = c(3:0),
+    ordered = TRUE,
+    labels = c(
+      "Non-matching datatype, convertible, unstable",
+      "Non-matching datatype",
+      "Non-Matching datatype, convertible, stable",
+      "Matching datatype"
+    )
   )
+
+  colnames(SummaryData)[colnames(SummaryData) == "MATCH"] <-
+    "State, given threshold"
+
+  #Add hover text to SummaryData table
+  text_to_display <- c(Variables = "",
+                       `Data type mismatch N (%)` =
+                         paste0("No. observational units with expected and ",
+                                "observed data types not matching"),
+                       `Convertible mismatch, stable N (%)` =
+                         paste0("No. observational units with expected and ",
+                                "observed data types not matching. A conversion ",
+                                "is possible without modifying the ",
+                                "data ",
+                                "(e.g., string '1.05' -> float 1.05)"),
+                       `Convertible mismatch, unstable N (%)` =
+                         paste0("No. observational units with expected and ",
+                                "observed data types not matching. A conversion ",
+                                "is possible but implies changes in",
+                                " the data (e.g., string '2.06' -> integer 2)"),
+                       `Match N (%)` =
+                         paste0("No. observational units with ",
+                                "matching expected-observed data types"),
+                       `Expected DATA_TYPE` =
+                         "Data type expected from the metadata",
+                       `Observed DATA_TYPE` =
+                         "Data type observed in the study data",
+                       `State, given threshold` =
+                         paste0("Classification of the variable in one of ",
+                         "the categories: 1) Non-matching datatype; ",
+                         "2) Non-matching datatype, convertible, unstable; ",
+                         "3) Non-Matching datatype, convertible, stable; ",
+                         "4) Matching datatype"),
+                       `STUDY_SEGMENT`= ""  )
+  attr(SummaryData, "description") <- text_to_display
+
 
 
   SummaryTable <- app_matrix
   SummaryTable$GRADING <- SummaryTable$MATCH == 2
+  names(SummaryTable)[names(SummaryTable) == "MATCH"] <- "CLS_int_vfe_type"
+
+  ReportSummaryTable[,
+                     c("convertible mismatch, stable",
+                       "convertible mismatch, unstable",
+                       "nonconvertible mismatch",
+                       "N")] <-
+    round(ReportSummaryTable[, c("convertible mismatch, stable",
+                           "convertible mismatch, unstable",
+                           "nonconvertible mismatch",
+                           "N")] / ReportSummaryTable$N * nrow(ds1), digits = 0)
+  attr(ReportSummaryTable, "relative") <- TRUE
 
   return(list(
     SummaryPlot = p,

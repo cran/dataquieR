@@ -12,6 +12,9 @@
 #' - 2 data type matches but not applicable
 #' - 3 data type matches and applicable
 #'
+#' @seealso [pro_applicability_matrix]
+#' @keywords internal
+
 util_app_sm <- function(x, dta) {
   if (all(c(PART_VAR, STUDY_SEGMENT) %in% names(x))) {
     c1 <- ifelse(is.na(x[[STUDY_SEGMENT]]) |

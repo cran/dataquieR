@@ -19,3 +19,4 @@ function name}
 get aliases from report attributes and then replace them by the actual
 function name
 }
+\keyword{internal}

@@ -18,10 +18,13 @@ prep_study2meta(
 
 \item{cumulative}{\link{logical} include attributes of all levels up to level}
 
-\item{convert_factors}{\link{logical} convert the}
+\item{convert_factors}{\link{logical} convert factor columns to coded integers.
+if selected, then also the study data will
+be updated and returned.}
 }
 \value{
-a meta_data data frame
+a meta_data data frame or a list with study data and metadata, if
+\code{convert_factors == TRUE}.
 }
 \description{
 Guess a minimum metadata data frame from study data. Minimum required variable
@@ -34,4 +37,9 @@ attributes are:
 }\if{html}{\out{</div>}}
 
 The function also tries to detect missing codes.
+}
+\examples{
+\dontrun{
+dataquieR::prep_study2meta(Orange, convert_factors = FALSE)
+}
 }

@@ -15,3 +15,4 @@ the description
 \description{
 Get description for an indicator function
 }
+\keyword{internal}

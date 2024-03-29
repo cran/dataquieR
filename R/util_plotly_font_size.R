@@ -1,3 +1,8 @@
+#' @seealso [print.ReportSummaryTableo]
+#' @family figure_functions
+#' @concept figure
+#' @keywords internal
+
 util_plotly_font_size <- function(n_labels, space = 200,
                                   max_font_size = 16, min_font_size = 12) {
   if (n_labels > 15 || min_font_size > max_font_size || n_labels == 0 ||

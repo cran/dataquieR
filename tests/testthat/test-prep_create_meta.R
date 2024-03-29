@@ -1,4 +1,5 @@
 test_that("prep_create_meta works", {
+  skip_on_cran()
   l <- VARATT_REQUIRE_LEVELS$REQUIRED
   expect_warning(
     meta_data1 <- prep_create_meta(

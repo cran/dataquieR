@@ -7,6 +7,13 @@ test_that("pro_applicability_matrix works", {
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
 
   for (max_vars_per_plot in list(
     1:10, -1, -Inf, NA, NaN, complex(real = 1), "A", letters
@@ -48,33 +55,26 @@ test_that("pro_applicability_matrix works", {
 
   md0 <- meta_data
   md0$DATA_TYPE[[2]] <- NA
-  expect_error(
+  expect_warning(
     appmatrix <- pro_applicability_matrix(study_data = study_data,
                                           meta_data = md0,
                                           label_col = LABEL,
                                           max_vars_per_plot =
                                             max_vars_per_plot),
     regexp =
-      paste("The DATA_TYPE for variable.s. ..PSEUDO_ID.. is not",
-            "defined in the metadata."),
+      paste("yielding .+v00001 = string.+"),
     perl = TRUE)
 
   md0 <- meta_data
   md0$DATA_TYPE[[2]] <- "Ordinal"
   expect_warning(
-    expect_error(
       appmatrix <- pro_applicability_matrix(study_data = study_data,
                                             meta_data = md0,
                                             label_col = LABEL,
                                             max_vars_per_plot =
                                               max_vars_per_plot),
       regexp =
-        paste("Please map data types to: .+integer.+, .+string.+,",
-              ".+float.+, .+datetime.+."),
-      perl = TRUE),
-    regexp =
-      paste("The data type.s.: ..Ordinal.. is not",
-            "eligible in the metadata concept."),
+        paste("yielding .+v00001 = string.+"),
     all = TRUE,
     perl = TRUE)
 
@@ -96,8 +96,8 @@ test_that("pro_applicability_matrix works", {
                                           label_col = LABEL,
                                           split_segments = TRUE),
     regexp =
-      paste("Some STUDY_SEGMENT are NA.",
-            "Will assign those to an artificial segment .+Other.+"),
+      paste("Some .+STUDY_SEGMENT.+ are NA.",
+            "Will assign those to an artificial segment .+SEGMENT.+"),
     all = TRUE,
     perl = TRUE
   )
@@ -142,7 +142,7 @@ test_that("pro_applicability_matrix works", {
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
-  skip_if_not(capabilities()["long.double"])
+  # TODO: skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("appmatrix plot ok",
                               appmatrix$ApplicabilityPlot)
   vdiffr::expect_doppelganger("appmatrix plot for segment v10000 ok",

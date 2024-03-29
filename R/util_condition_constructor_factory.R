@@ -2,6 +2,10 @@
 #'
 #' @param .condition_type [character] the type of the conditions being created
 #'   and signaled by the function, "error", "warning", or "message"
+#'
+#' @family condition_functions
+#' @concept process
+#' @keywords internal
 util_condition_constructor_factory <- function(
                        .condition_type = c("error", "warning", "message")) {
 
@@ -87,7 +91,9 @@ util_condition_constructor_factory <- function(
 
     if (identical(as.logical(getOption("dataquieR.CONDITIONS_WITH_STACKTRACE", FALSE)), FALSE)) {
       stacktrace <- ""
-      calling <- character(0)
+      if (.called_in_pipeline || .condition_type != "error") {
+        calling <- character(0)
+      }
     } else {
     }
     if (identical(as.logical(getOption(.caller_control_att, .caller_control_att_default)), FALSE)) {

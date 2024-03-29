@@ -20,6 +20,7 @@ util_html_table(
   fillContainer = TRUE,
   ...,
   colnames,
+  descs,
   options = list(),
   is_matrix_table = FALSE,
   colnames_aliases2acronyms = is_matrix_table && !cols_are_indicatormetrics,
@@ -27,7 +28,10 @@ util_html_table(
   label_col = LABEL,
   output_format = c("RMD", "HTML"),
   dl_fn = "*",
-  rotate_for_one_row = FALSE
+  rotate_for_one_row = FALSE,
+  title = dl_fn,
+  messageTop = NULL,
+  messageBottom = NULL
 )
 }
 \arguments{
@@ -62,6 +66,12 @@ row names to links to the variable specific reports}
 
 \item{colnames}{column names for the table (defaults to \code{colnames(tb)})}
 
+\item{descs}{\link{character} descriptions of the columns for the hover-box shown
+for the column names, if not missing, this overrides
+the existing description stuff from known column
+names. If you have an attribute "description" of the \code{tb}, then it
+overwrites everything and appears as hover text}
+
 \item{options}{individually overwrites defaults in \code{options}
 passed to \code{DT::datatable}}
 
@@ -85,9 +95,18 @@ indicator metrics.}
 be used in the output, for \code{HTML}, only \code{HTML} code is being generated}
 
 \item{dl_fn}{file name for downloaded table -- see
-\url{https://datatables.net/reference/button/excel})}
+\url{https://datatables.net/reference/button/excel}}
 
 \item{rotate_for_one_row}{\link{logical} rotate one-row-tables}
+
+\item{title}{\link{character} title for download formats, see
+\url{https://datatables.net/extensions/buttons/examples/html5/titleMessage.html}}
+
+\item{messageTop}{\link{character} subtitle for download formats, see
+\url{https://datatables.net/extensions/buttons/examples/html5/titleMessage.html}}
+
+\item{messageBottom}{\link{character} footer for download formats, see
+\url{https://datatables.net/extensions/buttons/examples/html5/titleMessage.html}}
 }
 \value{
 the table to be added to an \code{rmd}/´\code{html} file as
@@ -98,4 +117,29 @@ The jack of all trades device for tables
 }
 \seealso{
 \code{\link[=util_formattable]{util_formattable()}}
+
+Other summary_functions: 
+\code{\link{prep_combine_report_summaries}()},
+\code{\link{prep_extract_classes_by_functions}()},
+\code{\link{prep_extract_summary}()},
+\code{\link{prep_extract_summary.dataquieR_result}()},
+\code{\link{prep_extract_summary.dataquieR_resultset2}()},
+\code{\link{prep_render_pie_chart_from_summaryclasses_ggplot2}()},
+\code{\link{prep_render_pie_chart_from_summaryclasses_plotly}()},
+\code{\link{prep_summary_to_classes}()},
+\code{\link{util_as_cat}()},
+\code{\link{util_extract_indicator_metrics}()},
+\code{\link{util_get_category_for_result}()},
+\code{\link{util_get_colors}()},
+\code{\link{util_get_html_cell_for_result}()},
+\code{\link{util_get_labels_grading_class}()},
+\code{\link{util_get_message_for_result}()},
+\code{\link{util_get_rule_sets}()},
+\code{\link{util_get_ruleset_formats}()},
+\code{\link{util_get_thresholds}()},
+\code{\link{util_melt_summary}()},
+\code{\link{util_sort_by_order}()}
 }
+\concept{html}
+\concept{summary_functions}
+\keyword{internal}

@@ -26,6 +26,10 @@
 #'                     scale_y_discrete coord_flip facet_grid theme_minimal
 #'                     scale_x_discrete
 #'
+#'
+#' @family figure_functions
+#' @concept summary
+#' @keywords internal
 util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
                              invert, cols, strata
                              # , flip_mode # TODO: pass through from all usages of this function

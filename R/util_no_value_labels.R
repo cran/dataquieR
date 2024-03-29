@@ -15,6 +15,12 @@
 #' @return [character] vector of matching `resp_vars`.
 #'
 #' @importFrom stats setNames
+#'
+#' @family metadata_management
+#' @concept metadata_management
+#' @keywords internal
+
+
 util_no_value_labels <- function(resp_vars, meta_data, label_col, warn = TRUE,
                                  stop = TRUE) {
   util_stop_if_not(ncol(meta_data) > 1)

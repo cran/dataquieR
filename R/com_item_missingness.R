@@ -8,6 +8,8 @@
 #' by accident, a programming failure occurs or a provided answer were missed
 #' while entering the data.
 #'
+#' [Indicator]
+#'
 #' @details
 #' # ALGORITHM OF THIS IMPLEMENTATION:
 #'
@@ -67,13 +69,14 @@
 #'                                     initial variable is only
 #'                                     expected, if both segment variables are
 #'                                     1.
-#' @param pretty_print [logical] If FALSE, produce a table that can easily
-#'                               be processed further, because some cells
-#'                               feature two numbers (absolute and percentage)
-#'                               otherwise.
+#' @param pretty_print [logical] deprecated. If you want to have a human
+#'                               readable output, use `SummaryData` instead
+#'                               of `SummaryTable`
 #'
 #' @return a list with:
 #'   - `SummaryTable`: data frame about item missingness per response variable
+#'   - `SummaryData`: data frame about item missingness per response variable
+#'                    formatted for user
 #'   - `SummaryPlot`: ggplot2 heatmap plot, if show_causes was TRUE
 #'   - `ReportSummaryTable`: data frame underlying `SummaryPlot`
 #'
@@ -99,8 +102,20 @@ com_item_missingness  <- function(study_data,
                                   expected_observations = c("HIERARCHY",
                                                             "ALL",
                                                             "SEGMENT"),
-                                  pretty_print = TRUE) {
+                                  pretty_print = lifecycle::deprecated()) {
 
+  if (lifecycle::is_present(pretty_print)) {
+
+    # Signal the deprecation to the user
+    lifecycle::deprecate_stop("2.1.0",
+                              "dataquieR::com_item_missingness(pretty_print = 'FALSE')",
+                              "dataquieR::com_item_missingness()",
+                              details = c("Replace as follows: dataquieR::com_item_missingness(pretty_print = FALSE)$SummaryTable --> dataquieR::com_item_missingness()$SummaryTable",
+                                          "dataquieR::com_item_missingness(pretty_print = TRUE)$SummaryTable --> dataquieR::com_item_missingness()$SummaryData",
+                                          "dataquieR::com_item_missingness()$SummaryTable --> dataquieR::com_item_missingness()$SummaryData"))
+
+  }
+  expected_observations_missing <- missing(expected_observations)
   util_expect_scalar(expected_observations, allow_more_than_one = TRUE)
   expected_observations <- match.arg(expected_observations)
   util_expect_scalar(expected_observations)
@@ -109,9 +124,11 @@ com_item_missingness  <- function(study_data,
   util_expect_scalar(include_sysmiss, check_type = is.logical)
   util_expect_scalar(suppressWarnings, check_type = is.logical)
   util_expect_scalar(drop_levels, check_type = is.logical)
-  util_expect_scalar(pretty_print, check_type = is.logical)
 
+  study_data <- util_cast_off(study_data, "study_data", TRUE)
+  .sd <- study_data
   prep_prepare_dataframes(.replace_missings = FALSE)
+  study_data <- .sd
 
   if (missing(threshold_value)) {
     if (!.called_in_pipeline) util_message(
@@ -170,9 +187,9 @@ com_item_missingness  <- function(study_data,
     resp_vars <- meta_data[[label_col]]
   }
 
-  if (expected_observations != "ALL" && !(PART_VAR %in%
-                                          colnames(meta_data))) {
-    util_warning(c("For %s = %s, a column %s is needed in %s. Falling",
+  if (!expected_observations_missing && expected_observations != "ALL" &&
+      !(PART_VAR %in% colnames(meta_data))) {
+    util_message(c("For %s = %s, a column %s is needed in %s. Falling",
                    "back to %s = %s."),
                  sQuote("expected_observations"),
                  dQuote(expected_observations),
@@ -204,7 +221,11 @@ com_item_missingness  <- function(study_data,
                       to = VAR_NAMES,
                       from = label_col)
 
-    m <- vapply(lapply(util_seg_table(r, study_data, meta_data, expected_observations = expected_observations), `[[`, "Freq"), sum, FUN.VALUE = integer(1))
+    m <-
+      vapply(lapply(util_seg_table(r, study_data,
+                                   meta_data,
+                                   expected_observations = expected_observations),
+                    `[[`, "Freq"), sum, FUN.VALUE = integer(1))
   }
   {
     r <- util_study_var2factor(study_data = study_data, meta_data = meta_data,
@@ -218,39 +239,44 @@ com_item_missingness  <- function(study_data,
                       meta_data,
                       to = VAR_NAMES,
                       from = label_col)
-    j <- vapply(lapply(util_seg_table(r, study_data, meta_data, expected_observations = expected_observations), `[[`, "Freq"), sum, FUN.VALUE = integer(1))
+    j <-
+      vapply(lapply(util_seg_table(r, study_data,
+                                   meta_data,
+                                   expected_observations = expected_observations),
+                    `[[`, "Freq"), sum, FUN.VALUE = integer(1))
   }
-  SysMiss <- vapply(prep_map_labels(resp_vars,
-                                    meta_data =
-                                      meta_data,
-                                    to =
-                                      VAR_NAMES,
-                                    from =
-                                      label_col),
-                    function(rv) {
-                      sum(is.na(study_data[[rv]][
-                        util_observation_expected(rv = rv,
-                                                  study_data = study_data,
-                                                  meta_data = meta_data,
-                                                  label_col = VAR_NAMES,
-                                                  expected_observations = expected_observations)]))
+  SysMiss <-
+    vapply(prep_map_labels(resp_vars,
+                           meta_data =  meta_data,
+                           to = VAR_NAMES,
+                           from = label_col),
+           function(rv) {
+             sum(is.na(study_data[[rv]][
+               util_observation_expected(rv = rv,
+                                         study_data = study_data,
+                                         meta_data = meta_data,
+                                         label_col = VAR_NAMES,
+                                         expected_observations =
+                                           expected_observations)]))
                     },
                     FUN.VALUE = integer(1))
 
-  N_obs <- util_count_expected_observations(resp_vars,
-                                            study_data = ds1,
-                                            meta_data = meta_data,
-                                            label_col = label_col,
-                                            expected_observations = expected_observations)
+  N_obs <-
+    util_count_expected_observations(resp_vars,
+                                     study_data = ds1,
+                                     meta_data = meta_data,
+                                     label_col = label_col,
+                                     expected_observations = expected_observations)
 
   DV_N <- vapply(
     resp_vars,
     function(rv) {
-      in_seg <- util_observation_expected(rv = rv,
-                                          study_data = ds1,
-                                          meta_data = meta_data,
-                                          label_col = label_col,
-                                          expected_observations = expected_observations)
+      in_seg <-
+        util_observation_expected(rv = rv,
+                                  study_data = ds1,
+                                  meta_data = meta_data,
+                                  label_col = label_col,
+                                  expected_observations = expected_observations)
       {
         vn <- util_map_labels(rv, meta_data,
                               VAR_NAMES, label_col)
@@ -283,14 +309,11 @@ com_item_missingness  <- function(study_data,
                                                     VAR_NAMES, label_col)]))
     }, FUN.VALUE = integer(1))
 
-  N_meas <-
-    DV_N -
-    m -
-    j
+  N_meas <- DV_N - m -  j
 
   SummaryTable <- data.frame(check.names = FALSE,
                              Variables = resp_vars,
-                             `Observations N` = N_obs,
+                             `Expected observations N` = N_obs,
                              `Sysmiss N` = SysMiss,
                              `Datavalues N` = DV_N,
                              `Missing codes N` = m,
@@ -305,66 +328,80 @@ com_item_missingness  <- function(study_data,
   m_P <- round(m / N_obs * 100, digits = 2)
   j_P <- round(j / N_obs * 100, digits = 2)
   N_meas_P <- round(N_meas / (N_obs - j) * 100, digits = 2)
+  Missing_expected_obs<- SysMiss+j+m
 
+  SummaryTable$Missing_expected_obs<- Missing_expected_obs
+  Missing_expected_obs_P <- round((SysMiss+j+m)/N_obs*100, digits = 2)
+  PCT_com_crm_mv <- round((SysMiss+j+m)/ nrow(ds1)* 100, digits = 2)
+  SummaryTable$PCT_com_crm_mv<- PCT_com_crm_mv
   SummaryTable$GRADING <- ifelse(N_meas_P < threshold_value, 1, 0)
 
+  #Create SummaryData
+  SummaryData<-SummaryTable
 
-  if (pretty_print) {
+  names(SummaryData)[names(SummaryData) == "Observations N"] <-
+    "Expected observations N"
 
-    SummaryTable$`Sysmiss N` <- paste0(SysMiss, " (", SysMissP, ")")
-    colnames(SummaryTable)[colnames(SummaryTable) == "Sysmiss N"] <-
-      "Sysmiss N (%)"
+  names(SummaryData)[names(SummaryData) == "Sysmiss N"] <-
+    "Sysmiss N (%)"
+  SummaryData$`Sysmiss N (%)`<- paste0(SysMiss, " (", SysMissP, ")")
 
-    SummaryTable$`Datavalues N` <- paste0(DV_N, " (", DV_N_P, ")")
-    colnames(SummaryTable)[colnames(SummaryTable) == "Datavalues N"] <-
-      "Datavalues N (%)"
+  names(SummaryData)[names(SummaryData) == "Datavalues N"] <-
+    "Datavalues N (%)"
+  SummaryData$`Datavalues N (%)`<- paste0(DV_N, " (", DV_N_P, ")")
 
-    SummaryTable$`Missing codes N` <- paste0(m, " (", m_P, ")")
-    colnames(SummaryTable)[colnames(SummaryTable) == "Missing codes N"] <-
-      "Missing codes N (%)"
+  names(SummaryData)[names(SummaryData) == "Missing codes N"] <-
+    "Missing codes N (%)"
+  SummaryData$`Missing codes N (%)`<- paste0(m, " (", m_P, ")")
 
-    SummaryTable$`Jumps N` <- paste0(j, " (", j_P, ")")
-    colnames(SummaryTable)[colnames(SummaryTable) == "Jumps N"] <-
-      "Jumps N (%)"
+  names(SummaryData)[names(SummaryData) == "Jumps N"] <- "Jumps N (%)"
+  SummaryData$`Jumps N (%)`<- paste0(j, " (", j_P, ")")
 
-    SummaryTable$`Measurements N` <-
-      paste0(N_meas, " (", N_meas_P, ")")
-    colnames(SummaryTable)[colnames(SummaryTable) == "Measurements N"] <-
-      "Measurements N (%)"
+  names(SummaryData)[names(SummaryData) == "Measurements N"] <-
+    "Measurements N (%)"
+  SummaryData$`Measurements N (%)`<- paste0(N_meas, " (", N_meas_P, ")")
 
-  } else {
+  names(SummaryData)[names(SummaryData) == "Missing_expected_obs"] <-
+    "Missing expected obs. N (%)"
+  SummaryData$`Missing expected obs. N (%)`<- paste0(Missing_expected_obs,
+                                                     " (",
+                                                     Missing_expected_obs_P, ")")
 
-    SummaryTable$`Sysmiss %` <- SysMissP
-    SummaryTable$`Datavalues %` <- DV_N_P
-    SummaryTable$`Missing codes %` <- m_P
-    SummaryTable$`Jumps %` <- j_P
-    SummaryTable$`Measurements %` <- N_meas_P
+  names(SummaryData)[names(SummaryData) == "PCT_com_crm_mv"] <-
+    "Crude missingness N (%)"
+  SummaryData$`Crude missingness N (%)`<- paste0(SysMiss+j+m, " (",
+                                                 PCT_com_crm_mv, ")")
 
-    pc <- grep(' %$', colnames(SummaryTable), perl = TRUE, value = TRUE)
-    nc <- grep(' N$', colnames(SummaryTable), perl = TRUE, value = TRUE)
 
-    npc <-
-      intersect(sub(" %$", "", pc, perl = TRUE),
-                sub(" N$", "", nc, perl = TRUE))
+  # to add formulas in hover text:
+  # create a named vector with names = column names of the SummaryData and
+  # values = what you want to be displayed in the hover text
+  text_to_display <-
+    c(Variables = "",
+      `Expected observations N`= paste0("Number of observational units after",
+                                        " removing non-participants"),
+      `Sysmiss N (%)` = "Percentage = (Sysmiss/Expected observations)*100",
+      `Datavalues N (%)` = paste0("Number of datavalues = ",
+                                  "Expected observations - Sysmiss. ",
+                                  "Percentage = (Expected observations",
+                                  " - Sysmiss)/Expected observations*100"),
+      `Missing codes N (%)` = "Percentage = (Missing codes/Expected observations)*100",
+      `Jumps N (%)` = "Percentage = (Jumps/Expected observations)*100",
+      `Measurements N (%)` = paste0("Number of expected observations",
+                                    " = Expected observations - (Sysmiss + ",
+                                    "Missing codes + Jumps). ",
+                                    "Percentage = (Expected observations - Sysmiss - Missing ",
+                                    "codes - Jumps)/(Expected observations - Jumps) *100"),
+      `Missing expected obs. N (%)` = paste0("Number of missing measurements ",
+                                             "= Sysmiss + Missing codes + Jumps. ",
+                                             "Percentage = (Sysmiss + Missing codes + Jumps)",
+                                             "/Expected observations*100"),
+      `Crude missingness N (%)` = paste0("Crude missingness = Sysmiss + ",
+                                         "Missing codes + Jumps. ",
+                                         "Percentage = (Sysmiss + Missing ",
+                                         "codes + Jumps)/Number of observational units"),
+      `GRADING` = "1 = missing values are exceeding the defined threshold")
 
-    st <- SummaryTable[,
-                       setdiff(colnames(SummaryTable),
-                               c(
-                                 paste(npc, 'N'),
-                                 paste(npc, '%'),
-                                 "GRADING"
-                               )), drop = FALSE]
-
-    st <- cbind(st, SummaryTable[,
-                                 c(
-                                   unlist(lapply(npc, paste, c('N', '%')),
-                                          recursive = FALSE),
-                                   "GRADING"
-                                 ), drop = FALSE])
-
-    SummaryTable <- st
-
-  }
 
   #  result_table$check_MC <- paste0(N_class_MC, " (", N_MC_avail, ")")
   #  result_table$check_JC <- paste0(N_class_JC, " (", N_JC_avail, ")")
@@ -379,10 +416,12 @@ com_item_missingness  <- function(study_data,
                     meta_data,
                     to = VAR_NAMES,
                     from = label_col)
-  r <- util_seg_table(r, study_data, meta_data, expected_observations = expected_observations)
+  r <- util_seg_table(r, study_data, meta_data,
+                      expected_observations = expected_observations)
   r <- r[vapply(r, ncol, FUN.VALUE = integer(1)) == 2]
   r <- lapply(names(r), function(nm) setNames(r[[nm]], c("CODES", nm)))
-  mctab <- Reduce(function(dtf1, dtf2) merge(dtf1, dtf2, by = "CODES", all = TRUE), r)
+  mctab <- Reduce(function(dtf1, dtf2) merge(dtf1, dtf2, by = "CODES",
+                                             all = TRUE), r)
   rownames(mctab) <- mctab$CODES
   mctab$CODES <- NULL
   mctab <- t(mctab)
@@ -402,14 +441,19 @@ com_item_missingness  <- function(study_data,
                                        from = VAR_NAMES)
   }
   rownames(mctab) <- NULL
-  mctab$N <- util_count_expected_observations(mctab$Variables,
-                                              study_data = ds1,
-                                              meta_data = meta_data,
-                                              label_col = label_col,
-                                              expected_observations = expected_observations)
+  mctab$N <-
+    util_count_expected_observations(mctab$Variables,
+                                     study_data = ds1,
+                                     meta_data = meta_data,
+                                     label_col = label_col,
+                                     expected_observations = expected_observations)
   class(mctab) <- union("ReportSummaryTable", class(mctab))
+
+  attr(SummaryData, "description") <- text_to_display
+
+
   list(SummaryTable = SummaryTable,
-       SummaryData = SummaryTable,
+       SummaryData = SummaryData,
        SummaryPlot = print(mctab, view = FALSE, relative = FALSE),
        ReportSummaryTable = mctab)
 }

@@ -6,8 +6,8 @@
 \usage{
 \method{summary}{dataquieR_resultset2}(
   object,
-  aspect = c("applicability", "error", "issue", "anamat", "indicator_or_descriptor"),
-  FUN = util_get_html_cell_for_result,
+  aspect = c("applicability", "error", "anamat", "indicator_or_descriptor"),
+  FUN,
   collapse = "\\n<br />\\n",
   ...
 )
@@ -31,7 +31,7 @@ Generate a report summary table
 }
 \examples{
 \dontrun{
-  util_html_table(summary(report, aspect = "error", FUN = util_get_html_cell_for_result),
+  util_html_table(summary(report),
        filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"),
        is_matrix_table = TRUE, rotate_headers = TRUE, output_format = "HTML"
   )

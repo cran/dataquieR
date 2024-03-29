@@ -1,4 +1,5 @@
 test_that("util_ds1_eval_env works", {
+  skip_on_cran()
   md <- prep_get_data_frame("meta_data")
   sd <- prep_get_data_frame("study_data")
   md <- md[md$VAR_NAMES %in% colnames(sd), , FALSE]

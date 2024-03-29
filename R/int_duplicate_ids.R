@@ -5,6 +5,8 @@
 #' check duplicated identifiers by study segments or to consider only selected
 #' segments.
 #'
+#' [Indicator]
+#'
 #' @param level [character] a character vector indicating whether the assessment should be conducted at the study level (level = "dataframe") or at the segment level (level = "segment").
 #' @param ... Depending on `level`, passed to either
 #'            [util_int_duplicate_ids_segment] or

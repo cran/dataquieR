@@ -24,3 +24,7 @@ util_app_sm(x, dta)
 \description{
 Test for applicability of segment missingness
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

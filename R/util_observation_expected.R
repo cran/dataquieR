@@ -22,6 +22,10 @@
 #'
 #' @return a vector with `TRUE` or `FALSE` for each row of `study_data`, if for
 #'         `study_data[rv]` a value is expected.
+#'
+#' @family missing_functions
+#' @concept missing
+#' @keywords internal
 util_observation_expected <- # TODO: Support segment level metadata links to SEGMENT_PART_VARS
   function(rv, study_data, meta_data, label_col = LABEL,
            expected_observations =

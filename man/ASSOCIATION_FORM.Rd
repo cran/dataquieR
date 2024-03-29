@@ -11,7 +11,8 @@ An object of class \code{character} of length 1.
 ASSOCIATION_FORM
 }
 \description{
-TODO JM
+The allowable form of association. The string specifies the form based on a
+selected list.
 }
 \seealso{
 \link{meta_data_cross}

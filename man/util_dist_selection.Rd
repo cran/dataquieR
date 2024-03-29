@@ -2,27 +2,48 @@
 % Please edit documentation in R/util_dist_selection.R
 \name{util_dist_selection}
 \alias{util_dist_selection}
-\title{Utility function distribution-selection}
+\title{Utility function to characterize study variables}
 \usage{
-util_dist_selection(measurements, meta_data)
+util_dist_selection(study_data, val_lab = NULL)
 }
 \arguments{
-\item{measurements}{study data}
+\item{study_data}{study data, pre-processed with \code{prep_prepare_dataframes}
+to replace missing value codes by \code{NA}}
 
-\item{meta_data}{metadata, not yet used}
+\item{val_lab}{matching metadata column containing the \code{VALUE_LABELS}
+as vector (if available)}
 }
 \value{
-data frame with one column for each variable in study data giving
-\code{IsInteger}, \code{IsMultCat} and \code{IsNCategory}
-
-\code{IsInteger} contains a guess, if the variable contains integer values or is a
-factor
-
-\code{IsMultCat} contains a guess, if the variable has more than two categories,
-if  it is categorical or ordinal
-
-\code{NCategory} contains the number of distinct values detected for the variable
+data frame with one row for each variable in the study data and the
+following columns:
+\code{Variables} contains the names of the variables
+\code{IsInteger} contains a check whether the variable contains integer values
+only (variables coded as factor will be converted to integers)
+\code{IsMultCat} contains a check for variables with integer or string values
+whether there are more than two categories
+\code{NCategory} contains the number of distinct values for variables with
+values coded as integers or strings (excluding \code{NA} and
+empty entries)
+\code{AnyNegative} contains a check whether the variable contains any negative
+values
+\code{NDistinct} contains the number of distinct values
+\code{PropZeroes} reports the proportion of zeroes
 }
 \description{
-This function differentiates the type of measurement variables.
+This function summarizes some properties of measurement variables.
 }
+\seealso{
+Other metadata_management: 
+\code{\link{CAN_THIS_BE_REMOVED_util_combine_missing_lists}()},
+\code{\link{util_find_free_missing_code}()},
+\code{\link{util_find_var_by_meta}()},
+\code{\link{util_get_var_att_names_of_level}()},
+\code{\link{util_get_vars_in_segment}()},
+\code{\link{util_looks_like_missing}()},
+\code{\link{util_no_value_labels}()},
+\code{\link{util_validate_known_meta}()},
+\code{\link{util_validate_missing_lists}()}
+}
+\concept{metadata_management}
+\concept{process}
+\keyword{internal}

@@ -18,7 +18,7 @@ table.vertDT > thead > tr > th {
 }
 
 table.vertDT > tbody > tr > td {
-  padding: 2;
+  padding: 2px;
 }
 
 /* https://stackoverflow.com/a/50406895 */
@@ -36,20 +36,20 @@ table.matrixTable tbody th {
 }
 
 table.matrixTable thead td {
-    padding: 0px
+    padding: 0px!important
 }
 
 table.matrixTable tfoot td {
-    padding: 0px
+    padding: 0px!important
 }
 
 table.matrixTable tbody td {
-    padding: 0px
+    padding: 0px!important
 }
 
 table.matrixTable * {
-    padding: 0px;
-    margin:0px;
+    padding: 0px!important;
+    margin:0px!important;
 }
 
 /* TODO: FIND OUT; WHAT EXACTLY:

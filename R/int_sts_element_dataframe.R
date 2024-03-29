@@ -1,8 +1,10 @@
 #' Determine missing and/or superfluous data elements
 #'
-#' Depends on `dataquieR.RECORD_MISSMATCH_CHECKTYPE` option,
-#' see there -- # TODO: Rename this option and find out, how to document and link
+#' Depends on `dataquieR.ELEMENT_MISSMATCH_CHECKTYPE` option,
+#' see there -- # TODO: Rind out, how to document and link
 #' it here using `Roxygen`.
+#'
+#' [Indicator]
 #'
 #' @param study_data [data.frame] the data frame that contains the measurements
 #' @param meta_data [data.frame] the data frame that contains metadata

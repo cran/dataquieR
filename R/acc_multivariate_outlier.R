@@ -9,7 +9,7 @@
 #' univariate outliers:
 #' - the classical approach from Tukey: \eqn{1.5 * IQR} from the
 #'   1st (\eqn{Q_{25}}) or 3rd (\eqn{Q_{75}}) quartile.
-#' - the \eqn{6* \sigma} approach, i.e. any measurement of the Mahalanobis
+#' - the 3SD approach, i.e. any measurement of the Mahalanobis
 #'   distance not in the interval of \eqn{\bar{x} \pm 3*\sigma} is considered an
 #'   outlier.
 #' - the approach from Hubert for skewed distributions which is embedded in the
@@ -17,6 +17,8 @@
 #' - a completely heuristic approach named \eqn{\sigma}-gap.
 #'
 #' For further details, please see the vignette for univariate outlier.
+#'
+#' [Indicator]
 #'
 #' @details
 #' # ALGORITHM OF THIS IMPLEMENTATION:
@@ -45,7 +47,7 @@
 #'                                                points exist, a subsample will
 #'                                                be plotted only. Note, that
 #'                                                sampling is not deterministic.
-#' @param criteria [set] tukey | sixsigma | hubert | sigmagap. a vector with
+#' @param criteria [set] tukey | 3SD | hubert | sigmagap. a vector with
 #'                       methods to be used for detecting outliers.
 #' @param study_data [data.frame] the data frame that contains the measurements
 #' @param meta_data [data.frame] the data frame that contains metadata
@@ -58,7 +60,7 @@
 #'   - `SummaryPlot`: [ggplot2] outlier plot
 #'   - `FlaggedStudyData` [data.frame] contains the original data frame with
 #'                                     the additional columns `tukey`,
-#'                                     `sixsigma`,
+#'                                     `3SD`,
 #'                                     `hubert`, and `sigmagap`. Every
 #'                                     observation
 #'                                     is coded 0 if no outlier was detected in
@@ -80,16 +82,32 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
                                      label_col,
                                      n_rules = 4,
                                      max_non_outliers_plot = 10000,
-                                     criteria = c("tukey", "sixsigma",
+                                     criteria = c("tukey", "3sd",
                                                   "hubert", "sigmagap"),
                                      study_data, meta_data) { # TODO: see univ.out to select criteria to use
 
   # preps ----------------------------------------------------------------------
+
+  #campatibility with previous name (sixsigma)
+  #replace "sixsigma" (if any attributed in criteria) with 3SD
+  old_name<- "sixsigma"
+  if(any(trimws(tolower(criteria)) %in% old_name)== TRUE){
+    criteria[criteria=="sixsigma"] <- "3sd"
+  }
+
+  #all lowercase
+  criteria <- trimws(tolower(criteria))
+
+
   util_expect_scalar(criteria,
                      allow_more_than_one = TRUE,
                      allow_null = TRUE,
                      check_type = is.character)
-  criteria <- trimws(tolower(criteria))
+
+
+
+
+
   if (length(unique(criteria)) < 1 ||
       length(unique(criteria)) >
       length(eval(formals(acc_multivariate_outlier)$criteria)) ||
@@ -150,7 +168,8 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
   util_correct_variable_use("variable_group",
     allow_more_than_one = TRUE,
     allow_any_obs_na = TRUE,
-    need_type = "integer | float"
+    need_type = "integer | float",
+    need_scale = "interval | ratio"
   )
 
   if (length(variable_group) == 1) {
@@ -162,7 +181,8 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
   util_correct_variable_use("id_vars",
     allow_any_obs_na = TRUE,
     allow_null = TRUE,
-    need_type = "string | integer"
+    need_type = "string | integer",
+    need_scale = "nominal | ordinal | na"
   )
 
   # no use of id_vars?
@@ -230,16 +250,22 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
   # outlier identification
   # Initialize with NA
   ds1plot$tukey <- NA
-  ds1plot$sixsigma <- NA
+  ds1plot$threeSD <- NA
   ds1plot$hubert <- NA
   ds1plot$sigmagap <- NA
   # View(ds1)
   # apply outlier functions to plot-df
   # after export/final built  correct the call of the utility functions
   ds1plot$tukey <- util_tukey(ds1plot$MD)
-  ds1plot$sixsigma <- util_sixsigma(ds1plot$MD)
+  ds1plot$threeSD <- util_3SD(ds1plot$MD)
   ds1plot$hubert <- util_hubert(ds1plot$MD)
   ds1plot$sigmagap <- util_sigmagap(ds1plot$MD)
+
+  #Fix the problem with name 3SD starting with a number replacing it with threeSD---
+  orig_name<- "3sd"
+  if(any(criteria %in% orig_name)== TRUE){
+    criteria[criteria=="3sd"] <- "threeSD"
+  }
 
   # calculate summary of all outlier definitions
   ds1plot$Rules <-
@@ -276,20 +302,48 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
   n_devs <- ifelse(ds1plot$Rules >= n_rules, 1, 0)
   grading <- max(n_devs, na.rm = TRUE)
 
-  st1 <- data.frame(
-    Variables = paste0(variable_group, collapse = " | "),
-    Tukey = sum(ds1plot$tukey),
-    SixSigma = sum(ds1plot$sixsigma),
-    Hubert = sum(ds1plot$hubert),
-    SigmaGap = sum(ds1plot$sigmagap),
-    GRADING = grading
-  )
+  st1 <- data.frame(Variables = paste0(variable_group, collapse = " | "))
+  st1$"Tukey (N)" <- sum(ds1plot$tukey)
+  st1$"3SD (N)" <-  sum(ds1plot$threeSD)
+  st1$"Hubert (N)" <- sum(ds1plot$hubert)
+  st1$"Sigma-gap (N)" <- sum(ds1plot$sigmagap)
+  st1$"Outliers (N)" <- sum(ds1plot$Rules >= n_rules)
+  st1$"Outliers (%)" <- round(sum(ds1plot$Rules >= n_rules)/length(ds1plot$MD)*100, digits = 2)
+  st1$GRADING <- grading
 
+  SummaryTable <- st1
+  names(SummaryTable)[names(SummaryTable) == "Outliers (N)"] <- 'NUM_acc_ud_outlm'
+  names(SummaryTable)[names(SummaryTable) == 'Outliers (%)'] <- 'PCT_acc_ud_outlm'
 
   # reshape wide to long
+#  ds2plot <-
+#    melt(ds1plot[, c(variable_group, id_vars, "Rules")], measure.vars = variable_group, id.vars =
+#           c(id_vars, "Rules"))
   ds2plot <-
-    melt(ds1plot[, c(variable_group, id_vars, "Rules")], measure.vars = variable_group, id.vars =
-           c(id_vars, "Rules"))
+    stats::reshape(data = ds1plot[, c(variable_group, id_vars, "Rules")],
+                   idvar =  c(id_vars, "Rules"),
+                   varying =
+                     colnames(ds1plot[,
+                                      c(variable_group,
+                                        id_vars,
+                                        "Rules")])[!(colnames(ds1plot[,
+                                                                      c(variable_group,
+                                                                        id_vars, "Rules")]) %in%
+                                                       c(id_vars, "Rules"))],
+                   v.names = "value",
+                   times =
+                     colnames(ds1plot[, c(variable_group,
+                                          id_vars,
+                                          "Rules")])[!(colnames(ds1plot[,
+                                                                        c(variable_group,
+                                                                          id_vars,
+                                                                          "Rules")]) %in%
+                                                         c(id_vars, "Rules"))] ,
+                               direction = "long")
+  lev <- variable_group
+  ds2plot$time <- factor(ds2plot$time, levels = lev, ordered = FALSE)
+  rownames(ds2plot) <- NULL
+  names(ds2plot)[names(ds2plot) == "time"] <- "variable"
 
   # use neamed color vector
   disc_cols <- c("#2166AC", "#fdd49e", "#fc8d59", "#d7301f", "#7f0000")
@@ -313,21 +367,22 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
   # browser()
 
   # PLOT
-  p <- ggplot(ds2plot, aes(x = variable, y = value, colour = Rules,
+  p <- ggplot(ds2plot, aes(x = factor(ds2plot$variable, levels = variable_group),
+                           y = value, colour = Rules,
                            group = .data[[id_vars]])) +
     geom_path(aes(alpha = Rules, linewidth = Rules), position = "identity") +
     scale_color_manual(values = disc_cols) +
     geom_point(aes(alpha = Rules)) +
     scale_alpha_manual(values = .a) +
-    discrete_scale("linewidth", "outlier_rules_scale",
-                            function(n) {
+    discrete_scale("linewidth", # deprecated sicne ggplot 3.6.0: "outlier_rules_scale",
+                            palette = function(n) {
                               c(0.05, 0.2, 0.3, 0.4, 0.5)
                             }) +
     xlab("") + ylab("") +
     theme_minimal()
 
   return(list(FlaggedStudyData = ds1plot,
-              SummaryTable = st1,  # TODO: VariableGroupTable, maybe other functions, too?
+              SummaryTable = SummaryTable,  # TODO: VariableGroupTable, maybe other functions, too?
               SummaryData = st1,  # TODO: VariableGroupTable, maybe other functions, too?
               SummaryPlot =
                 util_set_size(p,

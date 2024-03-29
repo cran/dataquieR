@@ -16,3 +16,16 @@ vector of logical values:
 \description{
 Detect falsish values
 }
+\seealso{
+Other missing_functions: 
+\code{\link{util_all_intro_vars_for_rv}()},
+\code{\link{util_count_expected_observations}()},
+\code{\link{util_filter_missing_list_table_for_rv}()},
+\code{\link{util_get_code_list}()},
+\code{\link{util_observation_expected}()},
+\code{\link{util_remove_empty_rows}()},
+\code{\link{util_replace_codes_by_NA}()}
+}
+\concept{missing_functions}
+\concept{robustness}
+\keyword{internal}

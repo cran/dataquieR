@@ -16,3 +16,4 @@ row-bound combined results
 to, e.g., a data frame with one row per variable or a similar heat-map,
 see \code{\link[=print.ReportSummaryTable]{print.ReportSummaryTable()}}.
 }
+\keyword{internal}

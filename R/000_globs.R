@@ -73,6 +73,39 @@ DATA_TYPES <- list(
   DATETIME = "datetime"
 )
 
+#' Scale Levels
+#'
+#' ## Scale Levels of Study Data according to `Stevens's` Typology
+#' In the metadata, the following entries are allowed for the
+#' [variable attribute] [SCALE_LEVEL]:
+#'
+#'  - `nominal` for categorical variables
+#'  - `ordinal` for ordinal variables (i.e., comparison of values is possible)
+#'  - `interval` for interval scales, i.e., distances are meaningful
+#'  - `ratio` for ratio scales, i.e., ratios are meaningful
+#'  - `na` for variables, that contain e.g. unstructured texts, `json`,
+#'          `xml`, ... to distinguish them from variables, that still need to
+#'          have the `SCALE_LEVEL` estimated by
+#'          `prep_scalelevel_from_data_and_metadata()`
+#'
+#' ## Examples
+#'
+#' - sex, eye color -- `nominal`
+#' - income group, education level -- `ordinal`
+#' - temperature in degree Celsius -- `interval`
+#' - body weight, temperature in Kelvin -- `ratio`
+#'
+#' @seealso [Wikipedia](https://en.wikipedia.org/wiki/Level_of_measurement)
+#' @export
+SCALE_LEVELS <-
+  list(
+    NOMINAL = "nominal",
+    ORDINAL = "ordinal",
+    INTERVAL = "interval",
+    RATIO = "ratio",
+    'NA' = "na"
+  ) # TODO: validate item level metadata `SCALE_LEVEL` entries somewhere.
+
 #' All available data types, mapped from their respective
 #' R types
 #' @seealso [`prep_dq_data_type_of`]
@@ -172,7 +205,8 @@ VARATT_REQUIRE_LEVELS_ORDER <- c(
 #' (readable name, e.g. RR_DIAST_1) and in parameters of the QA-Functions, the
 #' variable label, variable long label, variable short label, variable data
 #' type (see also [DATA_TYPES]), re-code for definition of lists of event
-#' categories, missing lists and jump lists as CSV strings.
+#' categories, missing lists and jump lists as CSV strings. For valid units
+#' see [UNITS].
 #'
 #' all entries of this list will be mapped to the package's exported NAMESPACE
 #' environment directly, i.e. they are available directly by their names too:
@@ -184,6 +218,7 @@ VARATT_REQUIRE_LEVELS_ORDER <- c(
 #' @eval c("@aliases", paste(names(WELL_KNOWN_META_VARIABLE_NAMES)))
 #'
 #' @seealso [meta_data_segment] for `STUDY_SEGMENT`
+#' @family UNITS
 #'
 #' @examples
 #' print(WELL_KNOWN_META_VARIABLE_NAMES$VAR_NAMES)
@@ -196,6 +231,10 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
                       VARATT_REQUIRE_LEVELS$RECOMMENDED),
   DATA_TYPE = structure("DATA_TYPE", var_att_required =
                           VARATT_REQUIRE_LEVELS$REQUIRED),
+  SCALE_LEVEL = structure("SCALE_LEVEL", var_att_required =
+                            VARATT_REQUIRE_LEVELS$RECOMMENDED),
+  UNIT = structure("UNIT", var_att_required =
+                            VARATT_REQUIRE_LEVELS$RECOMMENDED),
   VALUE_LABELS = structure("VALUE_LABELS", var_att_required =
                              VARATT_REQUIRE_LEVELS$RECOMMENDED),
   MISSING_LIST = structure("MISSING_LIST", var_att_required =
@@ -291,8 +330,9 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
   #  VARSHORTLABEL = structure("varshortlabel", var_att_required =
   #                                     VARATT_REQUIRE_LEVELS$OPTIONAL),
   RECODE = structure("recode", var_att_required =
-                       VARATT_REQUIRE_LEVELS$OPTIONAL)
-
+                       VARATT_REQUIRE_LEVELS$OPTIONAL),
+  GRADING_RULESET = structure("GRADING_RULESET", var_att_required =
+                                VARATT_REQUIRE_LEVELS$OPTIONAL)
 )
 
 .onAttach <- function(...) { # nocov start
@@ -341,7 +381,8 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
         "tr", # htmltools withTags
         "td", # htmltools withTags
         "th", # htmltools withTags
-        "table" # htmltools withTags
+        "table", # htmltools withTags
+        "." # dplyr
       )
     )
   }
@@ -370,7 +411,26 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
     if (!length(ls(..manual))) {
       util_load_manual()
     }
+    if (!length(..manual$titles)) {
+      wrnPat <- paste("Did not find the reference manual for %s.",
+                      "This can cause all-white summmaries")
+      if (suppressWarnings(util_ensure_suggested("cli", err = FALSE))) {
+        wrnPat <- cli::cli_alert_warning(
+          cli::bg_black(cli::col_yellow(wrnPat)))
+      }
+      rlang::warn(sprintf(
+        wrnPat,
+        dQuote(rlang::ns_env_name())),
+        .frequency = "regularly", .frequency_id = "dataquieRManual")
+    }
     return(..manual)
+  }, environment(util_load_manual))
+
+  makeActiveBinding(".indicator_or_descriptor", function() {
+    if (!length(ls(..indicator_or_descriptor))) {
+      util_load_manual()
+    }
+    return(..indicator_or_descriptor)
   }, environment(util_load_manual))
 
   makeActiveBinding(".called_in_pipeline", function() {
@@ -395,27 +455,96 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
     ))
   }
 
+  unit_env <- new.env(parent = emptyenv())
+
+  makeActiveBinding("UNITS", function() {
+    if (!exists("valud", envir = unit_env)) {
+      if (!requireNamespace("xml2", quietly = TRUE)) { # for units
+        return(character(0))
+      }
+      valud <- suppressMessages(units::valid_udunits())
+      assign("valud", valud, envir = unit_env)
+    }
+    valud <- get("valud", envir = unit_env)
+    u <- valud[["symbol"]]
+    u <- u[!util_empty(u)]
+    u
+  }, env = asNamespace(packageName()))
+
+  makeActiveBinding("UNIT_IS_COUNT", function() {
+    if (!exists("valud", envir = unit_env)) {
+      if (!requireNamespace("xml2", quietly = TRUE)) { # for units
+        return(character(0))
+      }
+      valud <- suppressMessages(units::valid_udunits())
+      assign("valud", valud, envir = unit_env)
+    }
+    valud <- get("valud", envir = unit_env)
+    valud <- valud[!util_empty(valud[["symbol"]]), , FALSE]
+    u <- valud[is.na(valud$def) ==
+             is.na(suppressWarnings(as.numeric(valud$def))), "symbol", TRUE]
+    u <- u[!util_empty(u)]
+    u <- setNames(nm = u)
+    u
+  }, env = asNamespace(packageName()))
+
+  makeActiveBinding("UNIT_SOURCES", function() {
+    if (!exists("valud", envir = unit_env)) {
+      if (!requireNamespace("xml2", quietly = TRUE)) { # for units
+        return(character(0))
+      }
+      valud <- suppressMessages(units::valid_udunits())
+      assign("valud", valud, envir = unit_env)
+    }
+    valud <- get("valud", envir = unit_env)
+    valud <- valud[!util_empty(valud[["symbol"]]), , FALSE]
+    u <- setNames(nm = valud[["symbol"]], valud[["source_xml"]])
+    u
+  }, env = asNamespace(packageName()))
+
+  makeActiveBinding("UNIT_PREFIXES", function() {
+    if (!exists("p", envir = unit_env)) {
+      if (!requireNamespace("xml2", quietly = TRUE)) { # for units
+        return(character(0))
+      }
+      p <- suppressMessages(unique(
+        unname(unlist(units::valid_udunits_prefixes()[, 1:3]))))
+      p <- p[!util_empty(p)]
+      assign("p", trimws(unlist(strsplit(p, ",", fixed = TRUE))), envir =
+               unit_env)
+    }
+    get("p", envir = unit_env)
+  }, env = asNamespace(packageName()))
+
+  namespaceExport(asNamespace("dataquieR"),
+                  c("UNITS", "UNIT_PREFIXES", "UNIT_SOURCES", "UNIT_IS_COUNT"))
+
 }
 # nocov end
 
 # name of the additional system missingness column in com_item_missingness
 .SM_LAB <- "ADDED: SysMiss"
 
-# TODO JM: Update the following block to also comprise the new columns for qualified missingness and add a link to the documentation of ? cause_label_df (CAVE: In the new version, we would not need it, but we should (do already?) support linking other names than VAR_NAMES, e.g., LABEL).
 #' Data frame with labels for missing- and jump-codes
 #' @name cause_label_df
-#' @aliases missing_matchtable
+#' @aliases missing_matchtable CODE_VALUE CODE_LABEL CODE_CLASS CODE_INTERPRET
 #' @description
 #' [data.frame] with the following columns:
-#'   - `CODE_VALUE`: [numeric] Missing code (the number)
+#'   - `CODE_VALUE`: [numeric] | [DATETIME] Missing code
+#'                                (the number or date representing a missing)
 #'   - `CODE_LABEL`: [character] a label for the missing code
 #'   - `CODE_CLASS`: [enum] JUMP | MISSING. Class of the missing code.
+#'   - `CODE_INTERPRET` [enum] I | P | PL | R | BO | NC | O | UH | UO | NE.
+#'                             Class of the missing code according to
+#'       [`AAPOR`](https://aapor.org/standards-and-ethics/standard-definitions/).
 #'   - `resp_vars`: [character] optional, if a missing code is specific for some
 #'                              variables, it is listed for each such variable
 #'                              with one entry in `resp_vars`, If `NA`, the
 #'                              code is assumed shared among all variables.
 #'                              For v1.0 metadata, you need to refer to
 #'                              `VAR_NAMES` here.
+#'
+#' @seealso [Online](https://dataquality.qihs.uni-greifswald.de/Item_Level_Metadata.html#MISSING_LIST_TABLE)
 NULL
 
 #' Data frame with contradiction rules
@@ -479,7 +608,17 @@ SEGMENT_RECORD_COUNT <- "SEGMENT_RECORD_COUNT"
 #' @seealso [meta_data_segment]
 #'
 #' @export
-SEGMENT_ID_TABLE <- "SEGMENT_ID_TABLE"
+SEGMENT_ID_REF_TABLE <- "SEGMENT_ID_REF_TABLE"
+
+#' Deprecated segment level metadata attribute name
+#'
+#' The name of the data frame containing the reference IDs to be compared
+#' with the IDs in the targeted segment.
+#'
+#' Please use [SEGMENT_ID_REF_TABLE]
+#'
+#' @export
+SEGMENT_ID_TABLE <- SEGMENT_ID_REF_TABLE
 
 #' Segment level metadata attribute name
 #'
@@ -627,6 +766,40 @@ DF_UNIQUE_ROWS <- "DF_UNIQUE_ROWS"
 #' distribution or for defining contradiction rules.
 NULL
 
+#' Valid unit symbols according to [units::valid_udunits()]
+#'
+#' like m, g, N, ...
+#'
+#' @name UNITS
+#' @family UNITS
+NULL
+
+#' Is a unit a count according to [units::valid_udunits()]
+#'
+#' see column `def`, therein
+#'
+#' like `%`, `ppt`, `ppm`
+#'
+#' @name UNIT_IS_COUNT
+#' @family UNITS
+NULL
+
+#' Maturity stage of a unit according to [units::valid_udunits()]
+#'
+#' see column `source_xml` therein, i.e., base, derived, accepted, or common
+#'
+#' @name UNIT_SOURCES
+#' @family UNITS
+NULL
+
+#' Valid unit prefixes according to [units::valid_udunits_prefixes()]
+#'
+#' like k, m, M, c, ...
+#'
+#' @name UNIT_PREFIXES
+#' @family UNITS
+NULL
+
 #' Cross-item level metadata attribute name
 #'
 #' Specifies the unique labels for cross-item level metadata records
@@ -735,7 +908,10 @@ UNIVARIATE_OUTLIER_CHECKTYPE <- "UNIVARIATE_OUTLIER_CHECKTYPE"  # TODO: STS add 
 
 #' Cross-item level metadata attribute name
 #'
-#' TODO JM
+#' Specifies the allowable range of an association. The inclusion of the
+#' endpoints follows standard mathematical notation using round brackets
+#' for open intervals and square brackets for closed intervals.
+#' Values must be separated by a semicolon.
 #'
 #' @family meta_data_cross
 #' @seealso [meta_data_cross]
@@ -745,7 +921,8 @@ ASSOCIATION_RANGE <- "ASSOCIATION_RANGE"
 
 #' Cross-item level metadata attribute name
 #'
-#' TODO JM
+#' The metric underlying the association in [ASSOCIATION_RANGE]. The input is
+#' a string that specifies the analysis algorithm to be used.
 #'
 #' @seealso [meta_data_cross]
 #' @family meta_data_cross
@@ -755,7 +932,8 @@ ASSOCIATION_METRIC <- "ASSOCIATION_METRIC"
 
 #' Cross-item level metadata attribute name
 #'
-#' TODO
+#' The allowable direction of an association. The input is a string that can be
+#' either "positive" or "negative".
 #'
 #' @seealso [meta_data_cross]
 #' @family meta_data_cross
@@ -765,7 +943,8 @@ ASSOCIATION_DIRECTION <- "ASSOCIATION_DIRECTION"
 
 #' Cross-item level metadata attribute name
 #'
-#' TODO JM
+#' The allowable form of association. The string specifies the form based on a
+#' selected list.
 #'
 #' @seealso [meta_data_cross]
 #' @family meta_data_cross
@@ -775,7 +954,9 @@ ASSOCIATION_FORM <- "ASSOCIATION_FORM"
 
 #' Cross-item level metadata attribute name
 #'
-#' TODO JM
+#' Specifies the type of reliability or validity analysis. The string specifies
+#' the analysis algorithm to be used, and can be either "inter-class" or
+#' "intra-class".
 #'
 #' @seealso [meta_data_cross]
 #' @family meta_data_cross
@@ -785,7 +966,8 @@ REL_VAL <- "REL_VAL"
 
 #' Cross-item level metadata attribute name
 #'
-#' TODO JM
+#' Defines the measurement variable to be used as a known gold standard. Only
+#' one variable can be defined as the gold standard.
 #'
 #' @seealso [meta_data_cross]
 #' @family meta_data_cross
@@ -795,6 +977,7 @@ GOLDSTANDARD <- "GOLDSTANDARD"
 
 #' Cross-item level metadata attribute name
 #'
+#' For contradiction rules, the required pre-processing steps that can be given.
 #' TODO JM: MISSING_LABEL will not work for non-factor variables
 #'
 #' LABEL MISSING LIMITS MISSING_LABEL MISSING_INTERPRET
@@ -812,6 +995,7 @@ DATA_PREPARATION <- "DATA_PREPARATION"
 #' @seealso [util_html_for_var()]
 #' @seealso [util_html_for_dims()]
 dims <- c(
+  des = "Descriptors",
   int = "Integrity",
   com = "Completeness",
   con = "Consistency",

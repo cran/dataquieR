@@ -11,7 +11,8 @@ An object of class \code{character} of length 1.
 ASSOCIATION_METRIC
 }
 \description{
-TODO JM
+The metric underlying the association in \link{ASSOCIATION_RANGE}. The input is
+a string that specifies the analysis algorithm to be used.
 }
 \seealso{
 \link{meta_data_cross}

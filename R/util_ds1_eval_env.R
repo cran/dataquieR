@@ -11,6 +11,10 @@
 #'                                       `study_data` has already been mapped,
 #'                                       i.e., `util_ds1_eval_env(ds1, ...)` is
 #'                                       called, this will work too
+#'
+#' @family rule_functions
+#' @concept process
+#' @keywords internal
 util_ds1_eval_env <- function(study_data,
                               meta_data = "item_level",
                               label_col = LABEL) {

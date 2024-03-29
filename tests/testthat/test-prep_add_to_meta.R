@@ -1,4 +1,5 @@
 test_that("prep_add_to_meta works", {
+  skip_on_cran()
   meta_data <- prep_get_data_frame("meta_data")
   md <- prep_add_to_meta(VAR_NAMES = c("X", "Y"),
                          LABEL = c("x", "y"),

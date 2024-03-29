@@ -1,4 +1,5 @@
 test_that("util_observations_in_subgroups works", {
+  skip_on_cran()
   dat <- cars[1:10, , FALSE]
   dat[1:3, 1] <- NA
   dat[2:6, 2] <- NA

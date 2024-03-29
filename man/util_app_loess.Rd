@@ -25,3 +25,7 @@ util_app_loess(x, dta)
 \description{
 Test for applicability of LOESS smoothed time course plots
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

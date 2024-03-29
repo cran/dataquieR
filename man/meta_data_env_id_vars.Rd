@@ -20,3 +20,4 @@ In the environment, \code{target_meta_data} should be set either to
 \seealso{
 \link{meta_data_env}
 }
+\keyword{internal}

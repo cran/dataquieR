@@ -8,6 +8,9 @@
 #' @return vector of [logical]s stating for each index, if it had been called
 #'          externally
 #'
+#' @family condition_functions
+#' @concept process
+#' @keywords internal
 util_find_external_functions_in_stacktrace <-
   function(sfs = rev(sys.frames()),
            cls = rev(sys.calls())) {
@@ -17,21 +20,26 @@ util_find_external_functions_in_stacktrace <-
         parent.env(...))
   }
 
-  frame_parents <- lapply(sfs, safe_parent_env)
-  frame_grand_parents <- lapply(frame_parents, safe_parent_env)
-  frame_great_grand_parents <- lapply(frame_grand_parents, safe_parent_env)
-  is_me <- vapply(frame_parents, identical, parent.env(environment()),
-                  FUN.VALUE = logical(1))
-  is_me <- is_me | vapply(frame_grand_parents, identical,
-                          parent.env(environment()), FUN.VALUE = logical(1))
-  is_me <- is_me | vapply(frame_great_grand_parents, identical,
-                          parent.env(environment()),
-                          FUN.VALUE = logical(1))
-  is_base <- vapply(frame_parents, identical, asNamespace("base"),
+  is_me <-
+    vapply(sfs, rlang::env_inherits, ancestor = parent.env(environment()),
+           FUN.VALUE = logical(1))
+
+  # frame_parents <- lapply(sfs, safe_parent_env)
+  # frame_grand_parents <- lapply(frame_parents, safe_parent_env)
+  # frame_great_grand_parents <- lapply(frame_grand_parents, safe_parent_env)
+  # is_me <- vapply(frame_parents, identical, parent.env(environment()),
+  #                 FUN.VALUE = logical(1))
+  # is_me <- is_me | vapply(frame_grand_parents, identical,
+  #                         parent.env(environment()), FUN.VALUE = logical(1))
+  # is_me <- is_me | vapply(frame_great_grand_parents, identical,
+  #                         parent.env(environment()),
+  #                         FUN.VALUE = logical(1))
+  is_base <- vapply(sfs, identical, asNamespace("base"),
                     FUN.VALUE =
                       logical(1)) # base never calls me, but by using do.call
   if (requireNamespace("parallel", quietly = TRUE))
-    is_parallel <- vapply(frame_parents, identical, asNamespace("parallel"),
+    is_parallel <- vapply(sfs, rlang::env_inherits,
+                          asNamespace("parallel"),
                       FUN.VALUE =
                         logical(1)) # base never calls me, but by using do.call
   else
@@ -61,6 +69,6 @@ util_find_external_functions_in_stacktrace <-
     }, FUN.VALUE = logical(1)),
   error = browser
   )
-  which(!is_me & !is_base & !is_parallel & !is_exception_handler_or_lambda) # FIXME: Off-by-one? (env is the **target** of a call)
+  which(!is_me & !is_base & !is_parallel & !is_exception_handler_or_lambda)
 
 }

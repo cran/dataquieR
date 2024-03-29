@@ -3,6 +3,10 @@
 #' @param plotly the `plotly`
 #'
 #' @return modified `plotly`-built object
+#'
+#' @family plotly
+#' @concept reporting
+#' @keywords internal
 util_adjust_geom_text_for_plotly <- function(plotly) {
   util_ensure_suggested("plotly")
   util_stop_if_not(inherits(plotly, "plotly"))

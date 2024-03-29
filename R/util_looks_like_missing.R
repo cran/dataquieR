@@ -13,6 +13,11 @@
 #'
 #' @seealso [`acc_univariate_outlier`]
 #'
+#' @family metadata_management
+#' @concept missing
+#' @keywords internal
+
+
 util_looks_like_missing <- function(x, n_rules = 1) {
   if (any(prep_dq_data_type_of(x) %in%
           tolower(c(DATA_TYPES$INTEGER, DATA_TYPES$FLOAT)))) {
@@ -40,7 +45,7 @@ util_looks_like_missing <- function(x, n_rules = 1) {
 
   tuk <- util_tukey(x)
   tuk[sysmiss] <- 0
-  ssig <- util_sixsigma(x)
+  ssig <- util_3SD(x)
   ssig[sysmiss] <- 0
   hub <- util_hubert(x)
   hub[sysmiss] <- 0

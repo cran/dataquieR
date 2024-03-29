@@ -49,6 +49,26 @@ prep_add_to_meta <- function(VAR_NAMES, DATA_TYPE, LABEL, VALUE_LABELS,
 
   colnames(mini_md) <- new_names
 
+  partvar_vector <-
+    mini_md[[PART_VAR]]
+
+  partvar_vector <-
+    partvar_vector[!util_empty(partvar_vector)]
+
+  if (PART_VAR %in% names(mini_md) &&
+      any(is.na(util_find_var_by_meta(resp_vars = as.character(
+        partvar_vector))))) {
+    miss <-
+      partvar_vector[
+        is.na(util_find_var_by_meta(resp_vars = as.character(
+          partvar_vector)))]
+    util_error(c("In the existing %s, in the column %s, at least one of the",
+                  "referred variables does not exist: %s."),
+               sQuote("meta_data"),
+               dQuote(PART_VAR),
+               util_pretty_vector_string(miss))
+  }
+
   meta_data <- dplyr::bind_rows(meta_data, mini_md)
   # Column order is auto-repaired for 2 DFs in R >= 3.3.0 by rbind too,
   # but I did not find an offical source for that. Only:

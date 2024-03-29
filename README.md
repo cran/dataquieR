@@ -8,15 +8,15 @@
 [![minimal R
 version](https://img.shields.io/badge/R%3E%3D-3.6.0-6666ff.svg)](https://cran.r-project.org/)
 [![Pipeline
-Status](https://travis-ci.com/libreumg/dataquier.svg?branch=master)](https://app.travis-ci.com/gitlab/libreumg/dataquier)
+Status](https://gitlab.com/libreumg/dataquier/badges/master/pipeline.svg?ignore_skipped=true)](https://libreumg.gitlab.io/dataquier/)
 [![Coverage](https://codecov.io/gl/libreumg/dataquier/branch/master/graph/badge.svg?token=79TK6GQTMG)](https://app.codecov.io/gl/libreumg/dataquier)
 [![CRAN-Version](https://www.r-pkg.org/badges/version/dataquieR)](https://cran.r-project.org/package=dataquieR)
-[![CRAN-Downloads](https://cranlogs.r-pkg.org/badges/dataquieR)](https://cran.r-project.org/package=dataquieR)
+[![CRAN-Downloads](https://cranlogs.r-pkg.org/badges/dataquieR)](https://www.r-pkg.org/pkg/dataquieR)
 [![Project Status: Active – The project has reached a stable, usable
 state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![`Lifecycle`](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![license](https://img.shields.io/badge/license-BSD_2_clause%20+%20file%20LICENSE-00be00.svg)](https://choosealicense.com/)
+[![license](https://img.shields.io/badge/license-BSD_2_clause%20+%20file%20LICENSE-00be00.svg)](https://opensource.org/license/bsd-2-clause)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.03093/status.svg)](https://doi.org/10.21105/joss.03093)
 
 <!-- badges: end -->
@@ -81,7 +81,7 @@ install.packages("plotly")
 - [Data Quality Concept and Software Web
   Site](https://dataquality.qihs.uni-greifswald.de)
 
-## Funding
+## Funding – see also [here](https://dataquality.qihs.uni-greifswald.de/Contact.html)
 
 - [German Research Foundation](https://www.dfg.de/) (DFG:
   `SCHM 2744/3–1` – initial concept and dataquieR development,
@@ -98,3 +98,7 @@ install.packages("plotly")
 - [National Research Data Infrastructure for Personal Health
   Data](https://www.nfdi4health.de/en/): `NFDI 13/1` – extension based
   on revised metadata concept, ongoing.
+
+- [German National Cohort (NAKO Gesundheitsstudie)
+  NAKO](https://nako.de/): `BMBF` (`https://www.bmbf.de/`): `01ER1301A`
+  and `01ER1801A`

@@ -5,7 +5,7 @@ test_that("distribution plot works", { # acc_distributions.R ----
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
   ({
-    group_vars <- prep_map_labels("DBP_0", meta_data = "meta_data", from = LABEL,
+    group_vars <- prep_map_labels("DBP_0", meta_data = "meta_data_v2|item_level", from = LABEL,
                                   to = GROUP_VAR_OBSERVER)
     r <-
       acc_distributions(
@@ -47,9 +47,9 @@ test_that("loess plot works", { # acc_loess.R ----
   }
 
   ({
-    time_vars <- prep_map_labels("DBP_0", meta_data = "meta_data", from = LABEL,
+    time_vars <- prep_map_labels("DBP_0", meta_data = "meta_data_v2|item_level", from = LABEL,
                                  to = TIME_VAR)
-    group_vars <- prep_map_labels("DBP_0", meta_data = "meta_data", from = LABEL,
+    group_vars <- prep_map_labels("DBP_0", meta_data = "meta_data_v2|item_level", from = LABEL,
                                   to = GROUP_VAR_OBSERVER)
     r <-
       acc_loess(  resp_vars = "DBP_0",
@@ -62,16 +62,16 @@ test_that("loess plot works", { # acc_loess.R ----
 
     vdiffr::expect_doppelganger("loess def dbp0", r$SummaryPlotList$DBP_0)
 
-    r <-
-      acc_loess(  resp_vars = "EDUCATION_0",
-                  study_data = "study_data",
-                  meta_data = "meta_data",
-                  time_vars = time_vars,
-                  group_vars = group_vars,
-                  label_col = LABEL,
-                  co_vars = "AGE_0")
-
-    vdiffr::expect_doppelganger("loess def edu0", r$SummaryPlotList$EDUCATION_0)
+    # r <- # this test is pointless as long as acc_loess cannot handle ordinal variables
+    #   acc_loess(  resp_vars = "EDUCATION_0",
+    #               study_data = "study_data",
+    #               meta_data = "meta_data",
+    #               time_vars = time_vars,
+    #               group_vars = group_vars,
+    #               label_col = LABEL,
+    #               co_vars = "AGE_0")
+    #
+    # vdiffr::expect_doppelganger("loess def edu0", r$SummaryPlotList$EDUCATION_0)
 
     r <-
       acc_loess(  resp_vars = "DBP_0",
@@ -85,17 +85,17 @@ test_that("loess plot works", { # acc_loess.R ----
 
     vdiffr::expect_doppelganger("loess fac dbp0", r$SummaryPlotList$DBP_0)
 
-    r <-
-      acc_loess(  resp_vars = "EDUCATION_0",
-                  study_data = "study_data",
-                  meta_data = "meta_data",
-                  time_vars = time_vars,
-                  group_vars = group_vars,
-                  plot_format = "FACETS",
-                  label_col = LABEL,
-                  co_vars = "AGE_0")
-
-    vdiffr::expect_doppelganger("loess fac edu0", r$SummaryPlotList$EDUCATION_0)
+    # r <- # this test is pointless as long as acc_loess cannot handle ordinal variables
+    #   acc_loess(  resp_vars = "EDUCATION_0",
+    #               study_data = "study_data",
+    #               meta_data = "meta_data",
+    #               time_vars = time_vars,
+    #               group_vars = group_vars,
+    #               plot_format = "FACETS",
+    #               label_col = LABEL,
+    #               co_vars = "AGE_0")
+    #
+    # vdiffr::expect_doppelganger("loess fac edu0", r$SummaryPlotList$EDUCATION_0)
 
   })
 })
@@ -106,7 +106,9 @@ test_that("margins plot works", { # acc_margins.R -----
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
   ({
-    group_vars <- prep_map_labels("DBP_0", meta_data = "meta_data", from = LABEL,
+    group_vars <- prep_map_labels("DBP_0",
+                                  meta_data = "meta_data_v2|item_level",
+                                  from = LABEL,
                                   to = GROUP_VAR_OBSERVER)
     r <-
       acc_margins(resp_vars = "DBP_0",
@@ -118,10 +120,18 @@ test_that("margins plot works", { # acc_margins.R -----
 
     vdiffr::expect_doppelganger("margins dbp0", r$SummaryPlot)
 
+    prep_purge_data_frame_cache()
+
+    prep_load_workbook_like_file("meta_data_v2")
+    md <- prep_get_data_frame("item_level")
+
+    # tweak metadata to enable the test
+    md$SCALE_LEVEL[md$LABEL == "EDUCATION_0"] <- SCALE_LEVELS$INTERVAL
+
     r <-
       acc_margins(resp_vars = "EDUCATION_0",
                   study_data = "study_data",
-                  meta_data = "meta_data",
+                  meta_data = md,
                   group_vars = group_vars,
                   label_col = LABEL,
                   co_vars = "AGE_0")
@@ -184,8 +194,10 @@ test_that("univariate outlier plot works", { # acc_univariate_outlier.R ----
     vdiffr::expect_doppelganger("acc_univariate_outlier.R DBP_0",
                                 r$SummaryPlotList$DBP_0)
 
-    vdiffr::expect_doppelganger("acc_univariate_outlier.R DEV_NO_0",
-                                r$SummaryPlotList$DEV_NO_0)
+    # Argument “resp_vars”: Variable 'DEV_NO_0' (nominal) does not have an
+    # allowed scale level (interval | ratio)
+    # In “resp_vars”, variables “DEV_NO_0” were excluded.
+    expect_null(r$SummaryPlotList$DEV_NO_0)
 
   })
 })

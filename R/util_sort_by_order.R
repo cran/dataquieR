@@ -8,6 +8,11 @@
 #' \dontrun{
 #' util_sort_by_order(c("a", "b", "a", "c", "d"), letters)
 #' }
+#'
+#' @family summary_functions
+#' @concept reporting
+#' @keywords internal
+
 util_sort_by_order <- function(x, order, ...) {
   x <- ordered(x, order)
   as.character(sort(x, ...))
@@ -23,6 +28,9 @@ util_sort_by_order <- function(x, order, ...) {
 #' \dontrun{
 #' util_order_by_order(c("a", "b", "a", "c", "d"), letters)
 #' }
+#' @family reporting_functions
+#' @concept summary
+#' @keywords internal
 util_order_by_order <- function(x, order, ...) {
   x <- ordered(x, order)
   order(x, ...)
@@ -36,6 +44,10 @@ util_order_by_order <- function(x, order, ...) {
 #' \dontrun{
 #' util_sub_string_left_from_.(c("a.b", "asdf.xyz", "asdf.jkl.zuio"))
 #' }
+#'
+#' @family string_functions
+#' @concept reporting
+#' @keywords internal
 util_sub_string_left_from_. <- function(x) {
   util_stop_if_not(all(grepl(fixed = TRUE, ".", x))) # there must be at least one dot to separated the col. name from the row name (wolog this is the first dots)
   vapply(strsplit(x, ".", fixed = TRUE), `[[`, 1, FUN.VALUE = character(1))
@@ -51,6 +63,10 @@ util_sub_string_left_from_. <- function(x) {
 #' util_sub_string_right_from_.(c("a.b", "asdf.xy.z"))
 #' util_sub_string_right_from_.(c("ab", "asdxy.z"))
 #' }
+#'
+#' @family string_functions
+#' @concept reporting
+#' @keywords internal
 util_sub_string_right_from_. <- function(x) {
   util_stop_if_not(all(grepl(fixed = TRUE, ".", x))) # there must be at least one dot to separated the col. name from the row name (wolog this is the first dots)
   vapply(lapply(strsplit(x, ".", fixed = TRUE), `[`, -1),

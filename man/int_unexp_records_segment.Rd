@@ -30,6 +30,8 @@ a \link{list} with
 \description{
 This function contrasts the expected record number in each study segment in
 the metadata with the actual record number in each segment data frame.
+
+\link{Indicator}
 }
 \details{
 The current implementation does not take into account jump or missing codes, the function is rather based on checking whether NAs are present in the study data

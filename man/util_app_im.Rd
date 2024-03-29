@@ -24,3 +24,7 @@ util_app_im(x, dta)
 \description{
 Test for applicability of item missingness
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

@@ -78,9 +78,11 @@
 #' @param notes_from_wrapper [list] a list containing notes about changed labels
 #'                                  by `dq_report_by` (otherwise NULL)
 #' @param title [character] optional argument to specify the title for
-#'                          the first page of the data quality report
+#'                          the data quality report
 #' @param subtitle [character] optional argument to specify a subtitle for
-#'                             the first page of the data quality report
+#'                             the data quality report
+#' @param advanced_options [list] options to set during report computation,
+#'                                see [options()]
 #'
 #' @return a [dataquieR_resultset2] that can be
 #' [printed][print.dataquieR_resultset2] creating a `HTML`-report.
@@ -123,12 +125,13 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                                     cpus = util_detect_cores(),
                                     load.balancing = TRUE),
                        specific_args = list(), # TODO: check if list of lists
+                       advanced_options =  list(),
                        author = prep_get_user_name(),
                        title = "Data quality report",
-                       subtitle = "Report information",
+                       subtitle = as.character(Sys.Date()),
                        user_info = NULL,
                        debug_parallel = FALSE,
-                       resp_vars = character(0), # FIXME: If we have only one, the report breaks down.
+                       resp_vars = character(0),
                        filter_indicator_functions = character(0),
                        filter_result_slots = c(
                          "^Summary",
@@ -143,6 +146,26 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                        mode_args = list(),
                        notes_from_wrapper = list()) {
   mode <- util_match_arg(mode)
+
+  if (missing(title)) {
+    attr(title, "default") <- TRUE
+  } else {
+    attr(title, "default") <- FALSE
+  }
+
+  if (missing(subtitle)) {
+    attr(subtitle, "default") <- TRUE
+  } else {
+    attr(subtitle, "default") <- FALSE
+  }
+
+  util_expect_scalar(title, check_type = is.character,
+                     error_message = sprintf("%s needs to be character(1)",
+                                             sQuote("title")))
+
+  util_expect_scalar(subtitle, check_type = is.character,
+                     error_message = sprintf("%s needs to be character(1)",
+                                             sQuote("subtitle")))
 
   if (!is.null(cores) && (missing(cores) || (
     is.vector(cores) && length(cores) == 1 && util_is_integer(cores)) &&
@@ -165,13 +188,14 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
       if (mode != "parallel") {
         util_warning(
           "Internal problem: %s should be %s or %s in the context of %s",
-                     sQuote("mode"), dQuote("parallel"), dQuote("default"))
+                     sQuote("mode"), dQuote("parallel"), dQuote("default"),
+          sQuote("testthat"))
       }
       if (!identical(cores, 1) &&
           !identical(cores, 1L)) {
         util_warning(
           "Internal problem: %s should be %s or %s in the context of %s",
-          sQuote("cores"), dQuote("1"), sQuote("NULL"))
+          sQuote("cores"), dQuote("1"), sQuote("NULL"), sQuote("testthat"))
       }
     }
   }
@@ -198,13 +222,18 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
   } else {
     name_of_study_data <- "??No study data found??"
   }
-  util_expect_data_frame(study_data)
+  util_expect_data_frame(study_data, keep_types = TRUE)
+#  if (ncol(study_data) == 0) {
+#    util_error("Study data has no column")
+#  }
   prep_add_data_frames(data_frame_list = setNames(list(study_data),
                                                   nm = name_of_study_data))
+  prep_add_data_frames(data_frame_list = setNames(list(study_data),
+                                                  nm = "study_data"))
   try(meta_data <- prep_meta_data_v1_to_item_level_meta_data(meta_data),
                    silent = TRUE)
   warning_pred_meta <- NULL
-  if (!is.data.frame(meta_data)) {
+  if (!is.data.frame(meta_data) || !prod(dim(meta_data))) {
     w <- paste("No item level metadata %s found. Will guess some from the study data.",
            "This will not be very helpful, please consider passing an item level",
            "metadata file.")
@@ -213,13 +242,16 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
       w <- gsub("%S", "%s", w)
     }
     util_warning(w,
-                 dQuote(meta_data),
+                 dQuote(paste0(meta_data, collapse = " ")),
                  immediate = TRUE)
     predicted <- prep_study2meta(study_data, convert_factors = TRUE)
     meta_data <- predicted$MetaData
     study_data <- predicted$ModifiedStudyData
     warning_pred_meta <- paste("The item-level metadata could not be found",
                                "and was guessed from the study data.")
+  } else {
+    # strip rownames from metadata to prevent confusing the html_table function
+    rownames(meta_data) <- NULL
   }
   try(util_expect_data_frame(meta_data_segment), silent = TRUE)
   if (!is.data.frame(meta_data_segment)) {
@@ -227,6 +259,9 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                  dQuote(meta_data_segment))
     meta_data_segment <- data.frame(STUDY_SEGMENT =
                                       unique(meta_data$STUDY_SEGMENT))
+  } else {
+    # strip rownames from metadata to prevent confusing the html_table function
+    rownames(meta_data_segment) <- NULL
   }
   try(util_expect_data_frame(meta_data_dataframe), silent = TRUE)
   if (!is.data.frame(meta_data_dataframe)) {
@@ -234,6 +269,9 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                  dQuote(meta_data_dataframe))
     meta_data_dataframe <- data.frame(DF_NAME =
                                         name_of_study_data)
+  } else {
+    # strip rownames from metadata to prevent confusing the html_table function
+    rownames(meta_data_dataframe) <- NULL
   }
   try(util_expect_data_frame(meta_data_cross_item), silent = TRUE)
   if (!is.data.frame(meta_data_cross_item)) {
@@ -241,6 +279,9 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                    dQuote(meta_data_cross_item))
     meta_data_cross_item <- data.frame(VARIABLE_LIST = character(0),
                                       CHECK_LABEL = character(0))
+  } else {
+    # strip rownames from metadata to prevent confusing the html_table function
+    rownames(meta_data_cross_item) <- NULL
   }
   suppressWarnings(util_ensure_in(VAR_NAMES, names(meta_data), error = TRUE,
                  err_msg =
@@ -269,11 +310,6 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
     meta_data$VARIABLE_ROLE[] <- VARIABLE_ROLES$PRIMARY
   }
 
-  meta_data_cross_item <- util_normalize_cross_item(
-    meta_data = meta_data,
-    meta_data_cross_item = meta_data_cross_item,
-    label_col = label_col
-  )
   util_expect_scalar(label_col, check_type = is.character)
   util_ensure_in(label_col, names(meta_data), error = TRUE,
                  err_msg =
@@ -281,13 +317,29 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                 sQuote("label_col"),
                     sQuote("meta_data")))
 
-  # ensure that labels exist, are unique and not too long
-  mod_label <- util_ensure_label(meta_data = meta_data,
+  # ensure that VAR_NAMES and labels exist, are unique and not too long
+  mod_label <- util_ensure_label(study_data = study_data,
+                                 meta_data = meta_data,
                                  label_col = label_col)
   if (!is.null(mod_label$label_modification_text)) {
     # There were changes in the metadata.
+    study_data <- mod_label$study_data
     meta_data <- mod_label$meta_data
   }
+  # Since we may also map to other metadata label columns, we have to ensure
+  # that none of them contains empty fields to prevent errors.
+  for (lcol in unique(c(label_col, LABEL, LONG_LABEL))) {
+    if (is.data.frame(meta_data) && lcol %in% colnames(meta_data)) {
+      meta_data[[lcol]][which(util_empty(meta_data[[lcol]]))] <-
+        meta_data[[VAR_NAMES]][which(util_empty(meta_data[[lcol]]))]
+    }
+  }
+
+  meta_data_cross_item <- util_normalize_cross_item(
+    meta_data = meta_data,
+    meta_data_cross_item = meta_data_cross_item,
+    label_col = label_col
+  )
 
   util_expect_scalar(dimensions,
                      allow_more_than_one = TRUE,
@@ -300,9 +352,11 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
   dimensions[dimensions == "con"] <- "Consistency"
   dimensions[dimensions == "com"] <- "Completeness"
   dimensions[dimensions == "int"] <- "Integrity"
+  dimensions[dimensions == "des"] <- "Descriptors"
   .dimensions <-
     util_ensure_in(dimensions,
-                   c("Completeness", "Consistency", "Accuracy", "Integrity"),
+                   c("Completeness", "Consistency", "Accuracy", "Integrity",
+                     "Descriptors"),
                    error = FALSE,
                    applicability_problem = TRUE
               )
@@ -354,6 +408,17 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
     resp_vars <- resp_vars_m[!is.na(resp_vars_m)]
   }
 
+  util_message("Pre-computing curated study data frames...")
+
+  util_reset_cache()
+  if (getOption("dataquieR.precomputeStudyData", default = FALSE)) {
+    util_populate_study_data_cache(study_data, meta_data, label_col = LABEL)
+  } else {
+    util_purge_study_data_cache()
+  }
+
+  util_message("Pre-computing curated study data frames... done")
+
   util_expect_scalar(filter_indicator_functions,
                      allow_more_than_one = TRUE,
                      allow_null = TRUE,
@@ -362,6 +427,26 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                      allow_more_than_one = TRUE,
                      allow_null = TRUE,
                      check_type = is.character)
+
+  scale_level_predicted <- FALSE
+
+  if (!(SCALE_LEVEL %in% colnames(meta_data)) ||
+      any(util_empty(meta_data[[SCALE_LEVEL]]))) {
+    util_message("Estimating %s...", sQuote(SCALE_LEVEL))
+    scale_level_predicted <- TRUE
+    function_e <- environment()
+    local(suppressWarnings(suppressMessages({
+      prep_prepare_dataframes(.replace_hard_limits = FALSE,
+                              .replace_missings = FALSE,
+                              .adjust_data_type = TRUE,
+                              .amend_scale_level = TRUE)
+      vec_sl <- setNames(meta_data[[SCALE_LEVEL]],
+                         nm = meta_data[[VAR_NAMES]])
+      function_e$meta_data[[SCALE_LEVEL]] <-
+        vec_sl[function_e$meta_data[[VAR_NAMES]]]
+    })))
+    util_message("Estimating %s... done", sQuote(SCALE_LEVEL))
+  }
 
   all_calls <- util_generate_calls(dimensions = dimensions,
                                    meta_data = meta_data,
@@ -375,11 +460,20 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                                      filter_indicator_functions,
                                    resp_vars = resp_vars)
 
+  util_stop_if_not(is.list(advanced_options))
+
   old_O <- options(
-    dataquieR.CONDITIONS_WITH_STACKTRACE = FALSE,
-    dataquieR.ERRORS_WITH_CALLER = FALSE,
-    dataquieR.MESSAGES_WITH_CALLER = FALSE,
-    dataquieR.WARNINGS_WITH_CALLER = FALSE)
+    c(
+      list(
+        dataquieR.CONDITIONS_WITH_STACKTRACE = FALSE,
+        dataquieR.ERRORS_WITH_CALLER = FALSE,
+        dataquieR.MESSAGES_WITH_CALLER = FALSE,
+        dataquieR.WARNINGS_WITH_CALLER = FALSE,
+        dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "none"
+      ),
+      advanced_options
+    )
+  )
   on.exit(options(old_O))
 
   tm <- system.time(
@@ -399,50 +493,6 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
       mode_args = mode_args
     )
   )
-
-  if (util_ensure_suggested("summarytools",
-                            goal =
-                            "descriptive summary statistics in the report",
-                            err = FALSE)) {
-    prep_prepare_dataframes()
-    # TODO: Maybe make a labelled, since this is supported by summarytools
-    summary_stat <- summarytools::dfSummary(ds1, headings = FALSE)
-    summary_descr <- summarytools::descr(ds1, transpose = TRUE,
-                                         headings = FALSE)
-
-    summary_descr$Pct.Valid <- scales::percent(summary_descr$Pct.Valid,
-                                               scale = 1)
-
-    colnames(summary_descr) <-
-      c(Pct.Valid = "Percentage Valid",
-        N.Valid = "Number Valid",
-        Std.Dev = "Standard Deviation",
-        setNames(nm = colnames(summary_descr))
-        )[colnames(summary_descr)]
-
-    # remove unneded cols from summarytools tables.
-    summary_stat$Variable <- gsub("\\\\$", "",
-                                  perl = TRUE,
-                                  gsub("(?msi)\\s*\\[[, a-z]+\\]",
-                                       "",
-                                       perl = TRUE,
-
-                                       summary_stat$Variable)
-                                  )
-    colnames(summary_stat) <-
-      gsub("Variable", "Variables", colnames(summary_stat), fixed = TRUE)
-
-    summary_stat$No <- NULL
-    summary_stat$text.graph <- NULL
-    summary_stat[] <-
-      lapply(summary_stat,
-             gsub,
-             pattern = "\\",
-             replacement = "<br />", fixed = TRUE)
-  } else {
-    summary_stat <- NULL
-    summary_descr <- NULL
-  }
 
   start_from_call <- util_find_first_externally_called_functions_in_stacktrace()
   start_from_call <- length(sys.calls()) - start_from_call # refers to reverted sys.calls, so mirror the number
@@ -471,6 +521,45 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
     p <- c(user_info, p)
   }
 
+  dq_report2_env <- environment()
+  meta_data_hints <- list()
+  capture <- function(cnd) {
+    dq_report2_env$meta_data_hints <-
+      c(dq_report2_env$meta_data_hints, list(cnd))
+    if (inherits(cnd, "warning")) {
+      invokeRestart("muffleWarning")
+    }
+    if (inherits(cnd, "message")) {
+      invokeRestart("muffleMessage")
+    }
+  }
+
+  # TODO: Do we need this if we run prep_prepare_dataframes above?
+  suppressWarnings(suppressMessages(
+    try(withCallingHandlers(util_validate_known_meta(meta_data),
+                           error = capture,
+                           warning = capture,
+                           message = capture), silent = TRUE)))
+
+
+  if (scale_level_predicted) { # TODO: sort all the hints and have only one metadata integrity hints object?
+    suppressWarnings(suppressMessages(
+      try(withCallingHandlers(util_message(c("Did not find any %s column in item-level %s. Predicting",
+                   "it from the data -- please verify these predictions, they",
+                   "may be wrong and lead to functions claiming not to be",
+                   "reasonably applicable to a variable."),
+                 sQuote(SCALE_LEVEL), "meta_data",
+                 applicability_problem = TRUE,
+                 intrinsic_applicability_problem = FALSE),
+                 error = capture,
+                 warning = capture,
+                 message = capture), silent = TRUE)))
+  }
+
+  if (util_really_rstudio()) {
+    rstudioapi::executeCommand("activateConsole")
+  }
+
   util_attach_attr(r,
                    properties = p,
                    min_render_version = as.numeric_version("1.0.0"),
@@ -481,9 +570,94 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                    label_modification_table = rbind(
                      notes_from_wrapper[["label_modification_table"]],
                      mod_label$label_modification_table),
-                   summary_stat = summary_stat,
-                   summary_descr = summary_descr,
+                   label_meta_data_hints = meta_data_hints,
                    title = title,
                    subtitle = subtitle)
 }
 
+.study_data_cache <- new.env(parent = emptyenv())
+util_purge_study_data_cache <- function() {
+  rm(list = ls(.study_data_cache), envir = .study_data_cache)
+}
+
+# util_populate_study_data_cache(prep_get_data_frame("study_data"), prep_get_data_frame("meta_data"), LABEL)
+#
+#
+# options(dataquieR.study_data_cache_quick_fill = FALSE)
+#
+# options(dataquieR.study_data_cache_quick_fill = TRUE)
+# options(dataquieR.study_data_cache_metrics = TRUE)
+# metrics <- new.env(parent = emptyenv())
+# options(dataquieR.study_data_cache_metrics_env = metrics)
+# rx <- dq_report2("study_data", meta_data_v2 = "meta_data_v2", dimensions = NULL, cores = NULL)
+# to_populate <- lapply(names(metrics$usage), function(key) attr(dataquieR:::.study_data_cache[[key]], "call"))
+# cat(unlist(lapply(to_populate, deparse, width.cutoff = 300)), sep = "\n", file = "|pbcopy") # but add ".study_data = study_data, .meta_data = meta_data, .label_col = label_col," everywhere, if missing
+# options(dataquieR.study_data_cache_quick_fill = TRUE)
+# options(dataquieR.study_data_cache_metrics = FALSE)
+# options(dataquieR.study_data_cache_metrics_env = NULL)
+# rm(metrics)
+# rx <- dq_report2("study_data", meta_data_v2 = "meta_data_v2", dimensions = NULL)
+util_populate_study_data_cache <- function(study_data, meta_data, label_col, quick = getOption("dataquieR.study_data_cache_quick_fill", TRUE)) {
+  util_purge_study_data_cache()
+  if (quick) {
+    try(silent = TRUE, prep_prepare_dataframes(.study_data = study_data, .meta_data = meta_data, .label_col = label_col, .replace_hard_limits = TRUE, .replace_missings = TRUE, .adjust_data_type = TRUE, .amend_scale_level = TRUE))
+    try(silent = TRUE, prep_prepare_dataframes(.study_data = study_data, .meta_data = meta_data, .label_col = label_col, .replace_missings = FALSE))
+    try(silent = TRUE, prep_prepare_dataframes(.study_data = study_data, .meta_data = meta_data, .label_col = label_col, .replace_missings = FALSE))
+    try(silent = TRUE, prep_prepare_dataframes(.study_data = study_data, .meta_data = meta_data, .label_col = label_col))
+    try(silent = TRUE, prep_prepare_dataframes(.study_data = study_data, .meta_data = meta_data, .label_col = label_col, .allow_empty = TRUE))
+    try(silent = TRUE, prep_prepare_dataframes(.study_data = study_data, .meta_data = meta_data, .label_col = label_col, .replace_hard_limits = TRUE))
+    try(silent = TRUE, prep_prepare_dataframes(.study_data = study_data, .meta_data = meta_data, .label_col = label_col, .replace_missings = FALSE, .adjust_data_type = FALSE))
+  } else {
+    combinations <- unlist(lapply(c(0, seq_along(.to_combine)),
+                                  function(x) utils::combn(.to_combine, x,simplify = FALSE)), recursive = FALSE)
+    calls <- lapply(combinations, function(set_true) {
+      res <- .call_template
+      res[set_true] <- TRUE
+      res
+    })
+    study_data_hash <- rlang::hash(study_data)
+    meta_data_hash <- rlang::hash(meta_data)
+    a <- lapply(lapply(lapply(calls, rlang::call_args), `[`, .to_combine),
+                rlang::hash)
+    names(calls) <-
+      paste0(a, "@", study_data_hash,
+             "@", meta_data_hash, "@", label_col)
+
+    my_env <- new.env(parent = parent.env(environment()))
+    my_env$study_data <- study_data
+    my_env$meta_data <- meta_data
+    my_env$label_col <- label_col
+    # TODO: Remove unneded, rarely used, calls
+
+    # HINT: Do not touch my_env (use new.env(parent = my_env)) to
+    #       keep the original study data for all cases.
+
+    # parallelMap::parallelLibrary("dataquieR")
+    # parallelMap::parallelExport("study_data", "meta_data", "label_col")
+    # for_cache <- parallelMap::parallelLapply(calls,
+    #                                          function(cl, my_env) {
+    #                                            try(eval(cl, envir = new.env(parent = my_env)),
+    #                                                silent = TRUE)
+    #                                           },
+    #                                          my_env = my_env)
+    for_cache <- lapply(calls,
+                        function(cl, my_env) { try(util_attach_attr(eval(cl, envir = new.env(parent = my_env)), call = cl),
+                                                   silent = TRUE) },
+                        my_env = my_env)
+    for_cache <- for_cache[vapply(for_cache, is.data.frame,
+                                  FUN.VALUE = logical(1))]
+    list2env(for_cache, .study_data_cache)
+  }
+}
+
+.call_template <- quote(prep_prepare_dataframes(
+  .study_data = study_data,
+  .meta_data = meta_data,
+  .label_col = label_col,
+  .replace_hard_limits = FALSE,
+  .replace_missings = FALSE,
+  .adjust_data_type = FALSE,
+  .amend_scale_level = FALSE
+))
+.to_combine <- setdiff(names(.call_template),
+                      c("", ".study_data", ".meta_data", ".label_col"))

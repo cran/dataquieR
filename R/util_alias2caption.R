@@ -4,6 +4,11 @@
 #' @param long not for menu entry
 #'
 #' @return caption
+#'
+#' @seealso [util_html_table]
+#' @family reporting_functions
+#' @concept html
+#' @keywords internal
 util_alias2caption <- function(alias, long = FALSE) {
 
   util_expect_scalar(long, check_type = is.logical)

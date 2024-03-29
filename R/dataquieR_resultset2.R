@@ -11,6 +11,7 @@
 #' @return an object of the class [`r dataquieR_resultset_class2`].
 #' @seealso [dq_report2]
 #' @aliases .dataquieR_resultset2
+#' @keywords internal
 dataquieR_resultset2 <- function(...) {
   this <- list(...)
   # dataquieR_resultset_verify2(this) # TODO: Implement me!!

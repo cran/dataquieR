@@ -1,4 +1,5 @@
 test_that("prep_check_meta_names works", {
+  skip_on_cran()
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                   dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -12,6 +13,8 @@ test_that("prep_check_meta_names works", {
   expect_silent(prep_check_meta_names(
     data.frame(
       VAR_NAMES = 1, DATA_TYPE = 2, MISSING_LIST = 3,
+      SCALE_LEVEL = NA_character_,
+      UNIT = NA_character_,
       LABEL = "LABEL", VALUE_LABELS = "VALUE_LABELS",
       JUMP_LIST = "JUMP_LIST", HARD_LIMITS = "HARD_LIMITS",
       GROUP_VAR_OBSERVER = "GROUP_VAR_OBSERVER",
@@ -32,6 +35,8 @@ test_that("prep_check_meta_names works", {
   expect_silent(prep_check_meta_names(
     data.frame(
       VAR_NAMES = 1, DATA_TYPE = 2, MISSING_LIST = 3,
+      SCALE_LEVEL = NA_character_,
+      UNIT = NA_character_,
       LABEL = "LABEL", VALUE_LABELS = "VALUE_LABELS",
       JUMP_LIST = "JUMP_LIST", HARD_LIMITS = "HARD_LIMITS",
       GROUP_VAR_OBSERVER = "GROUP_VAR_OBSERVER",
@@ -50,7 +55,8 @@ test_that("prep_check_meta_names works", {
       LOCATION_METRIC = "LOCATION_METRIC",
       PROPORTION_RANGE = "PROPORTION_RANGE",
       MISSING_LIST_TABLE = "MISSING_LIST_TABLE",
-      CO_VARS = "CO_VARS"
+      CO_VARS = "CO_VARS",
+      GRADING_RULESET = "GRADING_RULESET"
     ),
     OPTIONAL
   ))

@@ -9,6 +9,10 @@
 #' \dontrun{ # internal function
 #' util_filter_names_by_regexps(iris, c("epa", "eta"))
 #' }
+#'
+#' @family string_functions
+#' @concept process
+#' @keywords internal
 util_filter_names_by_regexps <- function(collection, regexps) {
 
   if (is.null(names(collection))) {

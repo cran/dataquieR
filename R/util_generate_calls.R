@@ -35,6 +35,10 @@
 #'                                               is performed.
 #'
 #' @return a list of calls
+#'
+#' @family reporting_functions
+#' @concept process
+#' @keywords internal
 util_generate_calls <- function(dimensions,
                                 meta_data,
                                 label_col,
@@ -45,7 +49,7 @@ util_generate_calls <- function(dimensions,
                                 arg_overrides,
                                 resp_vars,
                                 filter_indicator_functions) {
-  .dimensions <- unique(c("Integrity", dimensions))
+  .dimensions <- unique(c("Descriptors", "Integrity", dimensions))
   .dimensions <- substr(tolower(.dimensions), 1, 3)
   .dimensions[.dimensions == "int"] <- "int_all" # use the wrappers, only
   .dimensions <- paste(paste0(.dimensions, "_"), collapse = "|")
@@ -59,11 +63,10 @@ util_generate_calls <- function(dimensions,
            mode = "function", FUN.VALUE = logical(1))]
   ind_functions <- c(setdiff(ind_functions, c(
     "con_contradictions", # we use the new cross-item-level now
-    "con_limit_deviations", # there is a specific function for each limit type, now
     "acc_robust_univariate_outlier", # is just a synonym for acc_univariate_outlier
     "acc_distributions", # there are specific functions for location and proportion checks
     "com_unit_missingness" # function does not really create something reasonable, currently
-  )), "int_datatype_matrix") # the data type matrix function does not start with int_all, but integrity should always run.
+  )), "int_datatype_matrix") # the data type matrix function does not start with int_all, but integrity should always run. However, it is still run before the pipeline, see util_evalute_calls and int_data_type_matrix
 
   ind_functions <- setNames(nm = ind_functions)
 
@@ -94,6 +97,34 @@ util_generate_calls <- function(dimensions,
                      args = c(list(name = fkt), splinter),
                      quote = TRUE)
       attr(res, "entity_name") <- entity_name
+      attr(res, VAR_NAMES) <- util_map_labels(
+        x = entity_name,
+        to = VAR_NAMES,
+        from = label_col,
+        ifnotfound = NA_character_,
+        meta_data = meta_data
+      )
+      if (!(STUDY_SEGMENT %in% colnames(meta_data))) {
+        meta_data[[STUDY_SEGMENT]] <- rep(NA_character_, nrow(meta_data))
+      }
+      attr(res, STUDY_SEGMENT) <- util_map_labels(
+        x = entity_name,
+        to = STUDY_SEGMENT,
+        from = label_col,
+        ifnotfound = NA_character_,
+        meta_data = meta_data
+      )
+      if (!(GRADING_RULESET %in% colnames(meta_data))) {
+        meta_data[[GRADING_RULESET]] <- rep(0, nrow(meta_data))
+      }
+      attr(res, GRADING_RULESET) <- util_map_labels(
+        x = entity_name,
+        to = GRADING_RULESET,
+        from = label_col,
+        ifnotfound = 0,
+        meta_data = meta_data
+      )
+      attr(res, "label_col") <- label_col
       return(res)
     }
     my_splinter <- head(splinter[to_explode], 1)

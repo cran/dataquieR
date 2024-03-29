@@ -6,6 +6,10 @@
 #'
 #' @return flagged binary vector
 #'
+#' @seealso [util_correct_variable_use]
+#' @family robustness_functions
+#' @concept data_management
+#' @keywords internal
 util_only_NAs <- function(x) {
   Ns <- length(x)
   NNAs <- sum(is.na(x))

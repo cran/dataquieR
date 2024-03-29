@@ -12,7 +12,7 @@
 #' measurements which are falsely interpreted as true outliers.
 #'
 #' A somewhat more conservative approach in terms of symmetric and/or normal
-#' distributions is the \eqn{6 * \sigma} approach, i.e. any measurement not in
+#' distributions is the 3SD approach, i.e. any measurement not in
 #' the interval of \eqn{mean(x) +/- 3 * \sigma} is considered an outlier.
 #'
 #' Both methods mentioned above are not ideally suited to skewed distributions.
@@ -36,6 +36,8 @@
 #' Note, that the plots are not deterministic, because they use
 #' [ggplot2::geom_jitter].
 #'
+#' [Indicator]
+#'
 #' @details
 #'
 #' ***Hint***: *The function is designed for unimodal data only.*
@@ -45,14 +47,14 @@
 #'  - Select all variables of type float in the study data
 #'  - Remove missing codes from the study data (if defined in the metadata)
 #'  - Remove measurements deviating from limits defined in the metadata
-#'  - Identify outlier according to the approaches of Tukey (Tukey 1977),
-#'    SixSigma (-Bakar et al. 2006), Hubert (Hubert and Vandervieren 2008),
+#'  - Identify outliers according to the approaches of Tukey (Tukey 1977),
+#'    3SD (Saleem et al. 2021), Hubert (Hubert and Vandervieren 2008),
 #'    and SigmaGap (heuristic)
-#'  - A output data frame is generated which indicates the no. of possible
-#'    outlier, the direction of deviations (to low, to high) for all methods
+#'  - An output data frame is generated which indicates the no. possible
+#'    outliers, the direction of deviations (Outliers, low; Outliers, high) for all methods
 #'    and a summary score which sums up the deviations of the different rules
 #'  - A scatter plot is generated for all examined variables, flagging
-#'    observations according to the no. of violated rules (step 5).
+#'    observations according to the no. violated rules (step 5).
 #'
 #' @param resp_vars [variable list] the name of the continuous measurement
 #'                                  variable
@@ -63,14 +65,14 @@
 #'                                       with labels of variables
 #' @param exclude_roles [variable roles] a character (vector) of variable roles
 #'                                       not included
-#' @param n_rules [integer] from=1 to=4. the no. of rules that must be violated
+#' @param n_rules [integer] from=1 to=4. the no. rules that must be violated
 #'        to flag a variable as containing outliers. The default is 4, i.e. all.
 #' @param max_non_outliers_plot [integer] from=0. Maximum number of non-outlier
 #'                                                points to be plot. If more
 #'                                                points exist, a subsample will
 #'                                                be plotted only. Note, that
 #'                                                sampling is not deterministic.
-#' @param criteria [set] tukey | sixsigma | hubert | sigmagap. a vector with
+#' @param criteria [set] tukey | 3SD | hubert | sigmagap. a vector with
 #'                       methods to be used for detecting outliers.
 #'
 #' @seealso
@@ -79,7 +81,6 @@
 #' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_robust_univariate_outlier.html
 #' )
 #'
-#' @importFrom reshape melt
 #' @importFrom dplyr %>%
 #' @importFrom ggplot2 ggplot geom_jitter position_jitter aes
 #'                     scale_size_continuous scale_color_manual
@@ -88,10 +89,14 @@
 #' @export
 #'
 #' @return a list with:
-#'   - `SummaryTable`: [`data.frame`] with the columns
+#' - `SummaryTable`: [`data.frame`] with the columns
 #'        `Variables`, `Mean`, `SD`, `Median`, `Skewness`, `Tukey (N)`,
-#'        `6-Sigma (N)`, `Hubert (N)`, `Sigma-gap (N)`, `Most likely (N)`,
-#'        `To low (N)`, `To high (N)` `Grading`
+#'        `3SD (N)`, `Hubert (N)`, `Sigma-gap (N)`, `NUM_acc_ud_outlu`,
+#'        `Outliers, low (N)`, `Outliers, high (N)` `Grading`
+#'   - `SummaryData`: [`data.frame`] with the columns
+#'        `Variables`, `Mean`, `SD`, `Median`, `Skewness`, `Tukey (N)`,
+#'        `3SD (N)`, `Hubert (N)`, `Sigma-gap (N)`, `Outliers (N)`,
+#'        `Outliers, low (N)`, `Outliers, high (N)` `Grading`
 #'   - `SummaryPlotList`: [`ggplot`] univariate outlier plots
 #'
 #'
@@ -99,15 +104,30 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
                                    meta_data, exclude_roles,
                                    n_rules = length(unique(criteria)),
                                    max_non_outliers_plot = 10000,
-                                   criteria = c("tukey", "sixsigma",
+                                   criteria = c("tukey", "3sd",
                                                 "hubert", "sigmagap")) {
 
-  # TODO: Remove all obsoleted checks on resp_vars, the funcion uses util_correct_variable_use
+  # preps ----------------------------------------------------------------------
+
+
+  #campatibility with previous name (sixsigma)
+  #replace "sixsigma" (if any attributed in criteria) with 3SD
+  old_name<- "sixsigma"
+    if(any(criteria %in% old_name)== TRUE){
+    criteria[criteria=="sixsigma"] <- "3sd"
+  }
+
+  #all lowercase
+  criteria <- trimws(tolower(criteria))
+
+  # TODO: Remove all obsoleted checks on resp_vars, the function uses util_correct_variable_use
   util_expect_scalar(criteria,
                      allow_more_than_one = TRUE,
                      allow_null = TRUE,
                      check_type = is.character)
-  criteria <- trimws(tolower(criteria))
+
+
+
   if (length(unique(criteria)) < 1 ||
       length(unique(criteria)) >
         length(eval(formals(acc_univariate_outlier)$criteria)) ||
@@ -152,7 +172,6 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
       formals(acc_univariate_outlier)$max_non_outliers_plot
   }
 
-  # preps ----------------------------------------------------------------------
   # map metadata to study data
   prep_prepare_dataframes(.replace_hard_limits = TRUE)
 
@@ -160,7 +179,10 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
     allow_more_than_one = TRUE,
     allow_null = TRUE,
     allow_any_obs_na = TRUE,
-    need_type = "integer | float"
+    need_type = "integer | float",
+    need_scale = "interval | ratio",
+    do_not_stop = TRUE,
+    remove_not_found = TRUE
   )
 
   if (is.null(meta_data[[DATA_TYPE]]) ||
@@ -304,7 +326,18 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
     ds2 <- ds2[, c(2, 1)]
     names(ds2) <- c("variable", "value")
   } else {
-    ds2 <- melt(ds1_ll[, c(resp_vars)], measure.vars = resp_vars)
+   # ds2 <- melt(ds1_ll[, c(resp_vars)], measure.vars = resp_vars)
+    ds2 <- stats::reshape(data = ds1_ll[, resp_vars],
+                             varying = colnames(ds1_ll[, resp_vars]),
+                             v.names = "value",
+                          times = colnames(ds1_ll[, resp_vars]),
+                          direction = "long")
+    ds2 <- ds2[, -which(names(ds2) == "id")]
+    #ds2$time <- as.factor(ds2$time)
+    ds2$time <- factor(ds2$time, levels = resp_vars, ordered = FALSE)
+    names(ds2)[names(ds2) == "time"] <- "variable"
+    rownames(ds2) <- NULL
+
   }
 
   ds2$value <- as.numeric(ds2$value)
@@ -318,7 +351,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
 
   # Initialize with NA
   ds2plot$tukey <- NA
-  ds2plot$sixsigma <- NA
+  ds2plot$threeSD <- NA
   ds2plot$hubert <- NA
   ds2plot$sigmagap <- NA
   # browser()
@@ -328,7 +361,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   ds2plotOL <- ds2plot %>%
     dplyr::group_by(variable) %>%
     dplyr::mutate(tukey = util_tukey(value)) %>%
-    dplyr::mutate(sixsigma = util_sixsigma(value)) %>%
+    dplyr::mutate(threeSD = util_3SD(value)) %>%
     dplyr::mutate(hubert = util_hubert(value)) %>%
     dplyr::mutate(sigmagap = util_sigmagap(value))
 
@@ -336,6 +369,13 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
 
   # tibble to df
   ds2plot <- as.data.frame(ds2plotOL)
+
+
+  #Fix the problem with name 3SD starting with a number replacing it with threeSD---
+  orig_name<- "3sd"
+  if(any(criteria %in% orig_name)== TRUE){
+    criteria[criteria=="3sd"] <- "threeSD"
+  }
 
   # calculate summary of all outlier definitions
   ds2plot$Rules <- apply(ds2plot[, criteria, drop = FALSE], 1, sum)
@@ -355,38 +395,42 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   }
 
   # create summary table here --------------------------------------------------
-  st1 <- aggregate(ds2plot$value, list(ds2plot$variable), mean)
+  st1 <- aggregate(ds2plot$value, list(ds2plot$variable), mean) # TODO: here and in multi, add standard columns for inidcator metrics
   colnames(st1) <- c("Variables", "Mean")
+  st1$"No.records"<- aggregate(ds2plot$value, list(ds2plot$variable), length)$x
   st1$"SD" <- aggregate(ds2plot$value, list(ds2plot$variable), sd)$x
   st1$"Median" <- aggregate(ds2plot$value, list(ds2plot$variable), median)$x
   st1$"Skewness" <-
-    aggregate(ds2plot$value, list(ds2plot$variable), robustbase::mc, ,
-              doScale = FALSE)$x
+    aggregate(ds2plot$value, list(ds2plot$variable), robustbase::mc, doScale = FALSE)$x
   st1$"Tukey (N)" <- aggregate(ds2plot$tukey, list(ds2plot$variable), sum)$x
-  st1$"6-Sigma (N)" <-
-    aggregate(ds2plot$sixsigma, list(ds2plot$variable), sum)$x
+  st1$"3SD (N)" <-
+    aggregate(ds2plot$threeSD, list(ds2plot$variable), sum)$x
   st1$"Hubert (N)" <- aggregate(ds2plot$hubert, list(ds2plot$variable), sum)$x
   st1$"Sigma-gap (N)" <-
     aggregate(ds2plot$sigmagap, list(ds2plot$variable), sum)$x
-  st1$"Most likely (N)" <- aggregate(ds2plot$Rules, list(ds2plot$variable),
+  st1$"Outliers (N)" <- aggregate(ds2plot$Rules, list(ds2plot$variable),
                                      function(x) {
     sum(x >= n_rules)
   })$x
-  st1$"To low (N)" <- aggregate(ds2plot$tlta, list(ds2plot$variable),
+  st1$"Outliers, low (N)" <- aggregate(ds2plot$tlta, list(ds2plot$variable),
                                 function(x) {
     sum(x == -1)
   })$x
-  st1$"To high (N)" <- aggregate(ds2plot$tlta, list(ds2plot$variable),
+  st1$"Outliers, high (N)" <- aggregate(ds2plot$tlta, list(ds2plot$variable),
                                  function(x) {
     sum(x == 1)
   })$x
-  st1$GRADING <- ifelse(st1$"Most likely (N)" > 0, 1, 0)
+  st1$GRADING <- ifelse(st1$"Outliers (N)" > 0, 1, 0)
 
   # format output
   st1$Mean <- round(st1$Mean, digits = 2)
   st1$Median <- round(st1$Median, digits = 2)
   st1$SD <- round(st1$SD, digits = 2)
   st1$Skewness <- round(st1$Skewness, digits = 2)
+
+  SummaryTable<- st1
+  names(SummaryTable)[names(SummaryTable) == "Outliers (N)"] <- "NUM_acc_ud_outlu"
+  SummaryTable$PCT_acc_ud_outlu <- round(SummaryTable$NUM_acc_ud_outlu/SummaryTable$No.records*100, digits = 2)
 
   # create plot list here ------------------------------------------------------
   # format to factor for plot
@@ -429,16 +473,29 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
     ds_i$Rules <- factor(ds_i$Rules)
 
     if (nrow(ds_i) > 0) {
-      p_i <- ggplot(ds_i, aes(x = variable, y = value)) +
-        geom_jitter(data = ds_i, position = position_jitter(0.1),
-                    aes(color = Rules, alpha = 0.5, size =
-                          as.numeric(Rules) / 10)) +
-        scale_size_continuous(range = c(0.5, 3), guide = "none") +
-        scale_color_manual(values = disc_cols) +
-        facet_wrap(vars(variable), scales = "free") +
-        scale_alpha(guide = "none") +
-        xlab("") + ylab("") +
-        theme_minimal()
+      if (length(unique(ds_i$variable)) == 1 && .called_in_pipeline) {
+        p_i <- ggplot(ds_i, aes(x = variable, y = value)) +
+          geom_jitter(data = ds_i, position = position_jitter(0.1),
+                      aes(color = Rules, alpha = 0.5, size =
+                            as.numeric(Rules) / 10)) +
+          scale_size_continuous(range = c(0.5, 3), guide = "none") +
+          scale_color_manual(values = disc_cols) +
+          scale_alpha(guide = "none") +
+          xlab("") + ylab("") +
+          theme_minimal() +
+          theme(axis.text.x = element_blank())
+      } else {
+        p_i <- ggplot(ds_i, aes(x = variable, y = value)) +
+          geom_jitter(data = ds_i, position = position_jitter(0.1),
+                      aes(color = Rules, alpha = 0.5, size =
+                            as.numeric(Rules) / 10)) +
+          scale_size_continuous(range = c(0.5, 3), guide = "none") +
+          scale_color_manual(values = disc_cols) +
+          facet_wrap(vars(variable), scales = "free") +
+          scale_alpha(guide = "none") +
+          xlab("") + ylab("") +
+          theme_minimal()
+      }
     } else {
       p_i <- ggplot() +
         annotate("text", x = 0, y = 0, label =
@@ -462,7 +519,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
     plot_list[[i]] <- util_set_size(p_i, width_em = 10, height_em = 25)
   }
 
-  return(list(SummaryTable = st1, SummaryData = st1, SummaryPlotList = plot_list))
+  return(list(SummaryTable = SummaryTable, SummaryData = st1, SummaryPlotList = plot_list))
 }
 
 #' @inherit acc_univariate_outlier

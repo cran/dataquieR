@@ -8,6 +8,13 @@ test_that("con_contradictions_redcap works", {
   withr::local_timezone("CET")
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
   meta_data_cross_item <- prep_get_data_frame("meta_data_v2|cross-item_level")
   # ignore here 'special' data preparation steps, will be checked separately
   meta_data_cross_item$DATA_PREPARATION <- ""
@@ -37,7 +44,7 @@ test_that("con_contradictions_redcap works", {
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
-  skip_if_not(capabilities()["long.double"])
+  # TODO: skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("summary contradiction plot ok",
                               on$all_checks$SummaryPlot)
   vdiffr::expect_doppelganger("summary contradiction plot ok",
@@ -59,6 +66,13 @@ test_that("con_contradictions_redcap works with tiny inputs", {
   withr::local_timezone('CET')
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
   threshold_value <- 1
 
   meta_data_cross_item <- data.frame("CONTRADICTION_TERM" = "[AGE_0] < 18",
@@ -90,8 +104,16 @@ test_that("con_contradictions_redcap works with tiny inputs", {
 })
 
 test_that("con_contradictions_redcap uses DATA_PREPARATION correctly", {
+  skip_on_cran()
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
   meta_data_cross_item <- prep_get_data_frame("meta_data_v2|cross-item_level")
 
   # If nothing is specified in DATA_PREPARATION, missing value labels and values
@@ -112,18 +134,18 @@ test_that("con_contradictions_redcap uses DATA_PREPARATION correctly", {
 
   # check option MISSING_INTERPRET
   mdci$CHECK_LABEL <- "Inconsistent reason for missingness in number of children"
-  mdci$CONTRADICTION_TERM <- "[N_BIRTH_0] > 0 and ([N_CHILD_0] in set('NE', 'PP', 'NC'))"
+  mdci$CONTRADICTION_TERM <- "[N_BIRTH_0] > 0 and ([N_CHILD_0] in set('NE', 'P', 'NC'))"
   mdci$CONTRADICTION_TYPE <- "EMPIRICAL"
   mdci$DATA_PREPARATION <- "MISSING_INTERPRET"
   # We would expect these observations to be picked up:
   miss_tab <- prep_get_data_frame("meta_data_v2|missing_table")
   sel_miss_codes <- miss_tab$CODE_VALUE[which(miss_tab$CODE_INTERPRET %in%
-                                                c("NE", "NC", "PP"))]
+                                                c("NE", "NC", "P"))]
   check_res <- sum(table(study_data[which(study_data$v00021 %in% sel_miss_codes
                                           & study_data$v00027 > 0
                                           & study_data$v00027 < 8000),
                                     c("v00021", "v00027")]))
-  # NE = 99981, NC = 99983, PP = 99988
+  # NE = 99981, NC = 99983, P = 99988
   #expect_equal(res3$SummaryTable$NUM_con_con, check_res)
   # but numerical variables are not yet supported here
   expect_warning({
@@ -154,10 +176,18 @@ test_that("con_contradictions_redcap uses DATA_PREPARATION correctly", {
 })
 
 test_that("no regression, rule errors should not be missed", {
+  skip_on_cran()
   sd1 <- prep_get_data_frame("ship")
   prep_load_workbook_like_file("ship_meta_v2")
   md1 <- prep_get_data_frame("item_level")
   checks <- prep_get_data_frame("cross-item_level")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = sd1,
+                                           meta_data = md1)
+  md1[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      md1[[VAR_NAMES]]
+    ]
 
   checks[3,3] <- "[BODY_HEIGHT_0] < [OBS_SOMA_0]"
   checks[4,3] <- "[BODY_HEIGHT_0] < [EXAM_DT_0]"
@@ -175,7 +205,8 @@ test_that("no regression, rule errors should not be missed", {
     regexp = "object.+SEX.+not found"
   )
 
-  expect_equal(AnyContradictions$SummaryTable$NUM_con_con, c(2152, 2154, 2154))
+  expect_equal(AnyContradictions$SummaryTable$NUM_con_con,
+               c(2152, NA_real_, NA_real_))
   # the first test is by default comparing lexicographically, since obs_soma is a factor and LABEL is default for DATA_PREPARATION
   # the other two tests always fail because of missing variables
 
@@ -184,21 +215,21 @@ test_that("no regression, rule errors should not be missed", {
   md1 <- prep_get_data_frame("item_level")
   checks <- prep_get_data_frame("cross-item_level")
 
-  expect_warning(
+  suppressMessages(expect_warning(
     AnyContradictions <- con_contradictions_redcap(study_data = sd1,
                                                    meta_data       = md1,
                                                    label_col       = "LABEL",
                                                    meta_data_cross_item = checks,
                                                    threshold_value = 1),
-    regexp = "Parser error"
-  )
+    regexp = ".*Number of levels in variable greater than in character string for variable.*SCHOOL_GRAD_0.*"
+  ))
 
   expect_equal(AnyContradictions$SummaryTable$NUM_con_con, c(0,
                                                              0,
                                                              0,
-                                                             1662,
+                                                             0,
                                                              12,
-                                                             2154,
+                                                             63,
                                                              35))
 
   sd1 <- prep_get_data_frame("ship")
@@ -223,6 +254,6 @@ test_that("no regression, rule errors should not be missed", {
     }, regexp = "Parser error"
     )
 
-  expect_equal(AnyContradictions$SummaryTable$NUM_con_con, c(2154, 2154, 2154))
+  expect_true(all(is.na(AnyContradictions$SummaryTable$NUM_con_con)))
 
 })

@@ -15,3 +15,12 @@ binary vector
 \description{
 This function calculates outliers according to the rule of Tukey.
 }
+\seealso{
+Other outlier_functions: 
+\code{\link{util_3SD}()},
+\code{\link{util_hubert}()},
+\code{\link{util_sigmagap}()}
+}
+\concept{outlier}
+\concept{outlier_functions}
+\keyword{internal}

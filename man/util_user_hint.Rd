@@ -15,3 +15,11 @@ util_user_hint(x)
 \description{
 Save a hint to the user during package load
 }
+\seealso{
+Other system_functions: 
+\code{\link{util_detect_cores}()},
+\code{\link{util_view_file}()}
+}
+\concept{process}
+\concept{system_functions}
+\keyword{internal}

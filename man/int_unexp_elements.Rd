@@ -21,6 +21,8 @@ a \link{list} with
 \description{
 This function contrasts the expected element number in each study in
 the metadata with the actual element number in each study data frame.
+
+\link{Indicator}
 }
 \examples{
 \dontrun{

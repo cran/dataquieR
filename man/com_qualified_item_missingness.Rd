@@ -33,7 +33,7 @@ explanation.}
 \link{list} list with entries:
 }
 \description{
-Compute Indicators for Qualified Item Missingness
+\link{Indicator}
 }
 \examples{
 \dontrun{
@@ -58,9 +58,9 @@ number_of_mis <- ceiling(nrow(ship) / 20)
 resp_vars <- sample(colnames(ship), ceiling(ncol(ship) / 20), FALSE)
 mistab <- prep_get_data_frame("missing_matchtable1")
 valid_replacement_codes <-
-  mistab[mistab$CODE_INTERPRET != "P", "CODE_VALUE",
+  mistab[mistab$CODE_INTERPRET != "I", "CODE_VALUE",
     drop =
-    TRUE] # sample only replacement codes on item level. P uses the actual
+    TRUE] # sample only replacement codes on item level. I uses the actual
           # values
 for (rv in resp_vars) {
   values <- sample(as.numeric(valid_replacement_codes), number_of_mis,

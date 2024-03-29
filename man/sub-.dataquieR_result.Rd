@@ -21,3 +21,4 @@ Extract Parts of a \code{dataquieR} Result Object
 \seealso{
 \link[base:Extract]{base::Extract}
 }
+\keyword{internal}

@@ -20,3 +20,4 @@ util_cast_off(df, symb, .dont_cast_off_cols = FALSE)
 if \code{df} is/contains a \code{haven} \code{labelled} or \code{tibble} object, convert it to
 a base R data frame
 }
+\keyword{internal}

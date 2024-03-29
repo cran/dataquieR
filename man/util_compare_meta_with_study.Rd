@@ -10,7 +10,9 @@ util_compare_meta_with_study(
   mdf,
   label_col,
   check_convertible = FALSE,
-  threshold_value = 0
+  threshold_value = 0,
+  return_percentages = FALSE,
+  check_conversion_stable = FALSE
 )
 }
 \arguments{
@@ -27,15 +29,41 @@ declared data type would work.}
 \item{threshold_value}{\link{numeric} from=0 to=100. percentage failing
 conversions allowed if \code{check_convertible}
 is \code{TRUE}.}
+
+\item{return_percentages}{\link{logical} return the percentage of
+mismatches.}
+
+\item{check_conversion_stable}{\link{logical} do not distinguish convertible
+from convertible, but with issues}
 }
 \value{
-if \code{check_convertible} is \code{FALSE},
+for \code{return_percentages == FALSE}: if \code{check_convertible} is \code{FALSE},
 a binary vector \verb{(0, 1)} if data type applies,
-if \code{check_convertible} is \verb{TRUE`` a vector with the states }0, 1, 2`: 0 = Mismatch, not convertible
-1 = Match
-2 = Mismatch, but convertible
+if \code{check_convertible} is \verb{TRUE`` a vector with the states }0, 1, 2, 3\verb{: 0 = Mismatch, not convertible 1 = Match 2 = Mismatch, but convertible 3 = Mismatch, convertible, but with issues (e.g., loss of decimal places) for }return_percentages == TRUE`: a data frame with percentages of
+non-matching datatypes according, each column is a variable, the
+rows follow the vectors returned by \link{util_check_data_type}.
 }
 \description{
 Utility function to compare data type of study data with those defined
 in metadata
 }
+\seealso{
+\link{prep_dq_data_type_of}
+
+\link{prep_datatype_from_data}
+
+Other data_management: 
+\code{\link{util_assign_levlabs}()},
+\code{\link{util_check_data_type}()},
+\code{\link{util_check_group_levels}()},
+\code{\link{util_dichotomize}()},
+\code{\link{util_merge_data_frame_list}()},
+\code{\link{util_rbind}()},
+\code{\link{util_remove_na_records}()},
+\code{\link{util_replace_hard_limit_violations}()},
+\code{\link{util_study_var2factor}()},
+\code{\link{util_table_of_vct}()}
+}
+\concept{data_management}
+\concept{robustness}
+\keyword{internal}

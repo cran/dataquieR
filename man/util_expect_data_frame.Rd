@@ -4,7 +4,14 @@
 \alias{util_expect_data_frame}
 \title{Verify, that argument is a data frame}
 \usage{
-util_expect_data_frame(x, col_names, convert_if_possible, dont_assign)
+util_expect_data_frame(
+  x,
+  col_names,
+  convert_if_possible,
+  custom_errors,
+  dont_assign,
+  keep_types = FALSE
+)
 }
 \arguments{
 \item{x}{an object that is verified to be a \code{data.frame}.}
@@ -20,7 +27,15 @@ a conversion fails (returns \code{NA}, where the
 input was not `util_empty'), an error
 is still thrown, the data is converted, otherwise}
 
+\item{custom_errors}{\link{list} with error messages, specifically per column.
+names of the list are column names, values are messages
+(\link{character}).}
+
 \item{dont_assign}{set \code{TRUE} to keep \code{x} in the caller environment untouched}
+
+\item{keep_types}{\link{logical} keep types as possibly defined in a file, if the
+data frame is loaded from one. set \code{TRUE} for
+study data.}
 }
 \value{
 \code{invisible} data frame
@@ -32,3 +47,6 @@ calling environment, if #' \code{x} is empty (data frames easily break to
 0-columns in R, if they have not rows, e.g. using some \code{split}/\code{rbind}
 pattern)
 }
+\concept{data_frame}
+\concept{io}
+\keyword{internal}

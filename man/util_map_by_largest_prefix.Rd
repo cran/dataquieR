@@ -4,7 +4,12 @@
 \alias{util_map_by_largest_prefix}
 \title{Map based on largest common prefix}
 \usage{
-util_map_by_largest_prefix(needle, haystack, split_char = "_")
+util_map_by_largest_prefix(
+  needle,
+  haystack,
+  split_char = "_",
+  remove_var_suffix = TRUE
+)
 }
 \arguments{
 \item{needle}{\link{character}\code{(1)} item to search}
@@ -14,6 +19,10 @@ prefix with \code{needle}}
 
 \item{split_char}{\link{character}\code{(1)} to split entries to atomic words (like
 letters, if "" or \code{snake_elements}, if "_")}
+
+\item{remove_var_suffix}{\link{logical}\code{(1)} remove potential suffix
+after the first dot \code{.}, before
+finding needle in haystack.}
 }
 \value{
 \link{character}\code{(1)} with the fitting function name or \link{NA_character_}
@@ -40,4 +49,14 @@ util_map_by_largest_prefix(
   names(dataquieR:::.manual$titles)
 )
 }
+
 }
+\seealso{
+Other mapping: 
+\code{\link{util_map_all}()},
+\code{\link{util_map_labels}()},
+\code{\link{util_recode}()}
+}
+\concept{concept}
+\concept{mapping}
+\keyword{internal}

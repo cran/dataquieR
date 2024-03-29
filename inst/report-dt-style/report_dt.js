@@ -44,6 +44,7 @@ sort_vert_dt = function(data, type, row, meta) {
 // Convert filter widgets for all traffic lights to drop-downs:
 // https://stackoverflow.com/a/28625937
 $(function() {
+/*
   var availableQS = [
     "",
     "grey",
@@ -51,16 +52,30 @@ $(function() {
     "yellow",
     "red"
   ];
-  
+*/
+
   $(".matrixTable .dataTables_filter").hide();
-  
+
   $(".matrixTable thead td input[type=search]:not(:first)").autocomplete({
-    source: availableQS,
+//    source: availableQS,
+   source: function(req, res) {
+          let colIdx = this.element.parent().parent().index()
+          let cats = $($(this.element.closest(".datatables").find("table")[1]).DataTable().column(colIdx).cells().nodes()).find("pre").map(function(x) { return $(this).attr("filter"); })
+          cats = Array.from(new Set(cats)).sort(); // requires ES6, https://stackoverflow.com/a/36270406
+          // https://stackoverflow.com/a/2405109
+          let re = $.ui.autocomplete.escapeRegex(req.term);
+          let matcher = new RegExp( "^" + re, "i" );
+          let a = $.grep( cats, function(item, index){
+          return matcher.test(item);
+      });
+      res(a)
+    },
     select: function(event, ui) {
           let colIdx = $(this).parent().parent().index();
-          let tName = $(this).closest(".html-widget").find("table[aria-describedby]").first()[0].
-              getAttribute("aria-describedby").replaceAll("_info", "");
-          let oTable = new $.fn.dataTable.Api("#" + tName)
+          //let tName = $(this).closest(".html-widget").find("table[aria-describedby]").first()[0].
+          //    getAttribute("aria-describedby").replaceAll("_info", "");
+          //let oTable = new $.fn.dataTable.Api("#" + tName)
+          let oTable = $($(this).closest(".datatables").find("table")[1]).DataTable();
           let that = $(this);
           let my_value = ui.item.value;
           that.val(my_value);

@@ -7,12 +7,12 @@
 util_extract_matches(data, pattern)
 }
 \arguments{
-\item{data}{TODO}
+\item{data}{a character vector}
 
-\item{pattern}{TODO}
+\item{pattern}{a character string containing a regular expression}
 }
 \value{
-TODO
+A list with matching elements or NULL (in case on non-matching elements)
 }
 \description{
 return all matches of an expression
@@ -24,10 +24,26 @@ dat0 <- list("a sentence with citation (Ref. 12), (Ref. 13), and then (Ref. 14)"
 pat <- "Ref. (\\\\d+)"
 util_extract_matches(dat0, pat)
 }
+
 }
 \seealso{
 \href{https://stackoverflow.com/a/10215257}{Stack Overflow}
+
+Other process_functions: 
+\code{\link{util_abbreviate}()},
+\code{\link{util_all_is_integer}()},
+\code{\link{util_attach_attr}()},
+\code{\link{util_bQuote}()},
+\code{\link{util_backtickQuote}()},
+\code{\link{util_coord_flip}()},
+\code{\link{util_count_NA}()},
+\code{\link{util_par_pmap}()},
+\code{\link{util_setup_rstudio_job}()},
+\code{\link{util_suppress_output}()}
 }
 \author{
 Josh O'Brien
 }
+\concept{process_functions}
+\concept{string}
+\keyword{internal}

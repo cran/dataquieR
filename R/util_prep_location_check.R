@@ -9,6 +9,10 @@
 #' @return a [list] with the location metric (mean or median) and expected
 #'         range for the location check
 #'
+#' @family lookup_functions
+#' @concept metadata_management
+#' @keywords internal
+
 util_prep_location_check <- function(resp_vars,
                                      meta_data,
                                      report_problems = c("error", "warning",

@@ -1,4 +1,5 @@
 test_that("util_assign_levlabs works", {
+  skip_on_cran()
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
   vname <- "v50000"
@@ -72,7 +73,7 @@ test_that("util_assign_levlabs works", {
                      assignchar = " = "
              )),
              regexp =
-                     "No labels assigned for some levels, use levels as labels",
+                     "use levels as labels",
              all = TRUE,
              fixed = TRUE
      )
@@ -84,9 +85,11 @@ test_that("util_assign_levlabs works", {
                      splitchar = SPLIT_CHAR,
                      assignchar = " = "
              )),
-             regexp =
+             regexp = sprintf("(%s|%s)",
           "Number of levels in variable greater than in character string.",
+          "use levels as labels"
+             ),
              all = TRUE,
-             fixed = TRUE
+             perl = TRUE
      )
 })

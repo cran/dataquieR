@@ -10,6 +10,11 @@
 #'
 #' @return augments metadata by interpretable limit columns
 #'
+#' @seealso [util_parse_interval]
+#' @family parser_functions
+#' @concept robustness
+#' @keywords internal
+
 util_interpret_range <- function(mdata) {
   # grep specific columns with limit notation: LOCATION_RANGE and PROPORTION_RANGE
   lv <- colnames(mdata[grep("_RANGE", colnames(mdata))])

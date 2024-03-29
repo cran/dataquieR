@@ -15,6 +15,10 @@
 #' integer. Usually, users want to know, if the values are integer. As suggested
 #' by \link[base]{is.integer}'s documentation, `is.wholenumber` does so.
 #'
+#'
+#' @family robustness_functions
+#' @concept data_management
+#' @keywords internal
 util_is_integer <- function(x, tol = .Machine$double.eps^0.5) {
   if (is.numeric(x)) {
     r <- abs(x - round(x)) < tol & !is.nan(x)

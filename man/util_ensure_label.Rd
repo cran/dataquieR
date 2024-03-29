@@ -2,21 +2,37 @@
 % Please edit documentation in R/util_ensure_label.R
 \name{util_ensure_label}
 \alias{util_ensure_label}
-\title{Utility function ensuring valid labels}
+\title{Utility function ensuring valid labels and variable names}
 \usage{
-util_ensure_label(meta_data, label_col)
+util_ensure_label(
+  study_data,
+  meta_data,
+  label_col,
+  max_label_len = MAX_LABEL_LEN
+)
 }
 \arguments{
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
+
 \item{meta_data}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
+
+\item{max_label_len}{\link{integer} maximum length for the labels, defaults to
+30.}
 }
 \value{
-a list containing the metadata, possibly with adapted labels,
-and a string informing about the changes
+a list containing the study data, possibly with adapted column names,
+the metadata, possibly with adapted labels, and a string and a
+table informing about the changes
 }
 \description{
-Utility function ensuring valid labels
+Valid labels should not be empty, be unique and do not exceed a certain
+length. This also applies to the VAR_NAMES. When adjusting the VAR_NAMES, we
+have to ensure that we do not introduce additional matches or mismatches
+between the column names of the study data and the VAR_NAMES column in the
+metadata.
 }
+\keyword{internal}

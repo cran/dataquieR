@@ -17,3 +17,18 @@ invisible(NULL)
 This function goes through metadata columns, \code{dataquieR} supports
 and verifies for these, that they follow its metadata conventions.
 }
+\seealso{
+Other metadata_management: 
+\code{\link{CAN_THIS_BE_REMOVED_util_combine_missing_lists}()},
+\code{\link{util_dist_selection}()},
+\code{\link{util_find_free_missing_code}()},
+\code{\link{util_find_var_by_meta}()},
+\code{\link{util_get_var_att_names_of_level}()},
+\code{\link{util_get_vars_in_segment}()},
+\code{\link{util_looks_like_missing}()},
+\code{\link{util_no_value_labels}()},
+\code{\link{util_validate_missing_lists}()}
+}
+\concept{metadata_management}
+\concept{robustness}
+\keyword{internal}

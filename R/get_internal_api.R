@@ -1,6 +1,6 @@
 #' Get Access to Utility Functions
 #'
-#' `r if (suppressWarnings(util_ensure_suggested("lifecycle", err = FALSE))) { lifecycle::badge("experimental") }`
+#' `r lifecycle::badge("experimental")`
 #' TODO: more life-cycle stuff, also for deprecation
 #'
 #' @param fkt function name

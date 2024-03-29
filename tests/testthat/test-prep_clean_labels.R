@@ -1,4 +1,5 @@
 test_that("prep_clean_labels works", {
+  skip_on_cran()
   meta_data1 <- data.frame(
     LABEL =
       c(

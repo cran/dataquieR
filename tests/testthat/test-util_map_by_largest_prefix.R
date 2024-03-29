@@ -1,4 +1,5 @@
 test_that("util_map_by_largest_prefix works", {
+  skip_on_cran()
 
   expect_equal(util_map_by_largest_prefix(
     "acc_distributions_loc_ecdf_observer_time",

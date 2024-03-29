@@ -2,6 +2,9 @@ test_that("acc_end_digits works with 2 args", {
   skip_on_cran() # slow, errors obvious
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
   expect_error(
     res1 <-
       acc_end_digits(study_data = study_data, meta_data = meta_data),
@@ -15,25 +18,25 @@ test_that("acc_end_digits works with 2 args", {
     regexp =
       sprintf(
         "(%s)",
-        paste("Due to missing values in v00014_x_last 301",
+        paste("Due to missing values in v00014 301",
               "observations were deleted.")
       ),
     perl = TRUE,
     all = TRUE
   )
 
-  expect_true(all(c("SummaryData", "SummaryPlot") %in% names(res1)))
+  expect_true(all(c("SummaryTable", "SummaryPlot") %in% names(res1)))
   expect_equal(
-    nrow(res1$SummaryData),
+    nrow(res1$SummaryTable),
     1
   )
   expect_equal(
-    ncol(res1$SummaryData),
+    ncol(res1$SummaryTable),
     2
   )
   expect_equal(
     suppressWarnings(sum(as.numeric(
-      as.matrix(res1$SummaryData)),
+      as.matrix(res1$SummaryTable)),
       na.rm = TRUE)), 1
   )
 })
@@ -42,42 +45,47 @@ test_that("acc_end_digits works with label_col", {
   skip_on_cran() # slow, errors obvious
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
   expect_message(
     res1 <-
-      acc_end_digits(resp_vars = "CRP_0",
-                     study_data = study_data, meta_data = meta_data,
-                        label_col = LABEL),
+      acc_end_digits(resp_vars = "CRP_0", study_data = study_data,
+                     meta_data = meta_data, label_col = LABEL),
     regexp =
       sprintf(
         "(%s)",
-        paste("Due to missing values in CRP_0_x_last",
+        paste("Due to missing values in CRP_0",
               "301 observations were deleted.")
       ),
     perl = TRUE,
     all = TRUE
   )
-  expect_true(all(c("SummaryData", "SummaryPlot") %in% names(res1)))
+  expect_true(all(c("SummaryTable", "SummaryPlot") %in% names(res1)))
   expect_equal(
-    nrow(res1$SummaryData),
+    nrow(res1$SummaryTable),
     1
   )
   expect_equal(
-    ncol(res1$SummaryData),
+    ncol(res1$SummaryTable),
     2
   )
   expect_equal(
     suppressWarnings(sum(as.numeric(
-      as.matrix(res1$SummaryData)),
+      as.matrix(res1$SummaryTable)),
       na.rm = TRUE)), 1
   )
 })
 
 test_that("acc_end_digits works image check", {
   skip_on_cran()
-  skip_if_not(capabilities()["long.double"])
+  # TODO: skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
   expect_message(
     res1 <-
       acc_end_digits(resp_vars = "CRP_0",
@@ -86,7 +94,7 @@ test_that("acc_end_digits works image check", {
     regexp =
       sprintf(
         "(%s)",
-        paste("Due to missing values in CRP_0_x_last",
+        paste("Due to missing values in CRP_0",
               "301 observations were deleted.")
       ),
     perl = TRUE,
@@ -101,6 +109,9 @@ test_that("acc_end_digits is robust", {
   skip_on_cran() # slow, errors obvious
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
   sd0 <- study_data
   sd0$v00014[[2]] <- Inf
   expect_error(
@@ -134,24 +145,14 @@ test_that("acc_end_digits is robust", {
   sd0 <- study_data
   sd0$v00010[[2]] <- sd0$v00010[[2]] + 0.5
   md0 <- meta_data
-  expect_message(
-    expect_error(
-      res1 <-
-        acc_end_digits(resp_vars = "ARM_CUFF_0",
-                       study_data = sd0, meta_data = md0,
-                       label_col = LABEL),
-      regexp =
-        sprintf(
-          "(%s)",
-          paste(".+resp_vars.+ are categorical.*")
-        ),
-      perl = TRUE
-    ),
+  expect_error(
+    res1 <-
+      acc_end_digits(resp_vars = "ARM_CUFF_0",
+                     study_data = sd0, meta_data = md0,
+                     label_col = LABEL),
     regexp =
-      paste(
-        "Argument .+resp_vars.+: Variable .+ARM_CUFF_0.+ .integer. does not",
-        "have matching data type in the study data .float."
-      ),
+      paste("Argument .+resp_vars.+: Variable .+ARM_CUFF_0.+ .nominal. does",
+            "not have an allowed scale level"),
     perl = TRUE
   )
 

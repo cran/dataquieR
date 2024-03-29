@@ -25,3 +25,7 @@ util_app_hl(x, dta)
 \description{
 Test for applicability of hard limits checks
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

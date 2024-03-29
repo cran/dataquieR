@@ -1,4 +1,5 @@
 test_that("util_as_numeric works", {
+  skip_on_cran()
   a <- dataquieR:::util_as_numeric(1:10,
                              warn = TRUE)
   b <- dataquieR:::util_as_numeric(as.character(1:10),

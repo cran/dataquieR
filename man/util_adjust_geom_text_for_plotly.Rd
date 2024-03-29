@@ -15,3 +15,6 @@ modified \code{plotly}-built object
 \description{
 Place all geom_texts also in \code{plotly} right from the x position
 }
+\concept{plotly}
+\concept{reporting}
+\keyword{internal}

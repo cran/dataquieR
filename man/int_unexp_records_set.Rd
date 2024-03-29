@@ -22,6 +22,8 @@ a \link{list}. Depending on \code{level}, see
 This function tests that the identifiers match a provided record set. It is possible to
 check for unexpected data record sets by study segments or to consider only selected
 segments.
+
+\link{Indicator}
 }
 \examples{
 \dontrun{

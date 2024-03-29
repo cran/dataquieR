@@ -1,0 +1,9 @@
+div.plotly, img.dataquieRfigure {
+  position: absolute!important;
+  width: 100%!important;
+  height: 100%!important;
+}
+
+body {
+  overflow: hidden;
+}

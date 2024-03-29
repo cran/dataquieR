@@ -48,8 +48,11 @@ prep_map_labels <- function(x, meta_data = "item_level",
                             to = LABEL, from = VAR_NAMES, ifnotfound,
                             warn_ambiguous = FALSE) {
   util_expect_data_frame(meta_data)
-  meta_data <- prep_meta_data_v1_to_item_level_meta_data(
-    meta_data = meta_data, verbose = TRUE, label_col = LABEL)
+
+  # This is not needed, since labels have not significantly changed
+  # meta_data <- suppressMessages(
+  #   prep_meta_data_v1_to_item_level_meta_data(
+  #     meta_data = meta_data, verbose = TRUE, label_col = LABEL))
   if (!is.data.frame(meta_data)) {
     util_error(
       c("Need metadata as a data frame for mapping",

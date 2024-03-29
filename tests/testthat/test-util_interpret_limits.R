@@ -1,4 +1,5 @@
 test_that("posix offset is 1970-01-01 01:00:00 CET)", {
+  skip_on_cran()
   skip_if_not_installed("withr")
   withr::local_timezone("CET")
   expect_equal(as.POSIXct(as.numeric(as.POSIXct("1975-12-16 03:46:00 CET")),

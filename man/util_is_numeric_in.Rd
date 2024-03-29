@@ -4,7 +4,13 @@
 \alias{util_is_numeric_in}
 \title{Create a predicate function to check for certain numeric properties}
 \usage{
-util_is_numeric_in(min = -Inf, max = +Inf, whole_num = FALSE, set = NULL)
+util_is_numeric_in(
+  min = -Inf,
+  max = +Inf,
+  whole_num = FALSE,
+  finite = FALSE,
+  set = NULL
+)
 }
 \arguments{
 \item{min}{if given, minimum for numeric values}
@@ -13,13 +19,17 @@ util_is_numeric_in(min = -Inf, max = +Inf, whole_num = FALSE, set = NULL)
 
 \item{whole_num}{if TRUE, expect a whole number}
 
+\item{finite}{Are \code{Inf} and \code{-Inf} invalid values? (FALSE by default)}
+
 \item{set}{if given, a set, the value must be in (see \link{util_match_arg})}
 }
 \value{
 a function that checks an \code{x} for the properties.
 }
 \description{
-useful, e.g., for \link{util_expect_data_frame} and \link{util_expect_scalar}.
+useful, e.g., for \link{util_expect_data_frame} and \link{util_expect_scalar}. The
+generated function returns on \code{TRUE} or \code{FALSE}, even if called with a
+vector.
 }
 \examples{
 \dontrun{
@@ -31,4 +41,27 @@ util_is_numeric_in(whole_num = TRUE)(42.1)
 util_is_numeric_in(set = c(1, 3, 5))(1)
 util_is_numeric_in(set = c(1, 3, 5))(2)
 }
+
 }
+\seealso{
+Other robustness_functions: 
+\code{\link{util_as_valid_missing_codes}()},
+\code{\link{util_check_one_unique_value}()},
+\code{\link{util_correct_variable_use}()},
+\code{\link{util_empty}()},
+\code{\link{util_ensure_character}()},
+\code{\link{util_ensure_in}()},
+\code{\link{util_ensure_suggested}()},
+\code{\link{util_expect_scalar}()},
+\code{\link{util_fix_rstudio_bugs}()},
+\code{\link{util_is_integer}()},
+\code{\link{util_is_valid_missing_codes}()},
+\code{\link{util_match_arg}()},
+\code{\link{util_observations_in_subgroups}()},
+\code{\link{util_only_NAs}()},
+\code{\link{util_stop_if_not}()},
+\code{\link{util_warn_unordered}()}
+}
+\concept{data_management}
+\concept{robustness_functions}
+\keyword{internal}

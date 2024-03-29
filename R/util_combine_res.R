@@ -6,6 +6,8 @@
 #' @param all_of_f all results of a function
 #'
 #' @return row-bound combined results
+#'
+#' @keywords internal
 util_combine_res <- function(all_of_f) {
 
   # combine results for the indicator functions related overview
@@ -75,6 +77,12 @@ util_combine_res <- function(all_of_f) {
   clls <- paste0(clls, "$", slot, collapse = ", \n\t")
   clls <- paste0("rbind(\n\t", clls, "\n)")
 
+  # copy hover text for table headers
+  description <- lapply(lapply(all_of_f[RESs & !NULLs], `[[`, slot), attr, "description")
+  description <- unique(description)
+
+
+
   # combine results (ReportSummaryTable and tables)
   # select results according to the logical vectors, extract the corresponding slots, and then bind by row
   # then write the combined result to all_of_f keeping its original structure (a list of encapsulated lists)
@@ -82,6 +90,16 @@ util_combine_res <- function(all_of_f) {
                                                        `[[`,
                                                        slot))), nm = slot))
   attr(all_of_f[[1]], "call") <- clls
+
+  # add attribute "description" for hover text
+  if (length(description)>1) {
+    util_warning(c("Internal error: sorry please report to the developers",
+                   " - util_combine_res incompatible results"))
+  } else if (length(description)==1) {
+    attr(all_of_f[[1]][[slot]], "description") <- description[[1]]
+  }
+
+
   # reattach the error/message/warning attributes but now using the combined version (in ERRORs/WARNINGs,...)
   if (any(trimws(ERRORs) != ""))
     attr(all_of_f[[1]], "error") <- list(simpleError(paste(ERRORs, collapse = "\n")))

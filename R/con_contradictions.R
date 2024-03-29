@@ -11,6 +11,8 @@
 #' to be impossible. The approach does not consider implausible or inadmissible
 #' values.
 #'
+#' [Descriptor]
+#'
 #' @details
 #' ### Algorithm of this implementation:
 #'
@@ -38,7 +40,7 @@
 #' @param threshold_value [numeric] from=0 to=100. a numerical value
 #'                                                 ranging from 0-100
 #' @param check_table [data.frame] contradiction rules table.  Table defining
-#'                                 contractions. See details for
+#'                                 contradictions. See details for
 #'                                 its required structure.
 #' @param summarize_categories [logical] Needs a column 'tag' in the
 #'                             `check_table`.
@@ -467,7 +469,7 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
       "GRADING", "Label"
     )
 
-    summary_df2$GRADING <- ordered(summary_df2$GRADING)
+    summary_df2$GRADING <- ordered(summary_df2$GRADING) # FIXME: Update GRADING -> Standard Name
 
     x <- util_as_numeric(reorder(summary_df2[, 1], -summary_df2[, 1]))
     lbs <- as.character(reorder(summary_df2[, 9], -summary_df2[, 1]))

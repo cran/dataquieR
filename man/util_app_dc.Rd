@@ -25,3 +25,7 @@ util_app_dc(x, dta)
 \description{
 Test for applicability of distribution plots
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

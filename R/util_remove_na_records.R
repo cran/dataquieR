@@ -13,6 +13,11 @@
 #' dim(util_remove_na_records(dta))
 #' dim(util_remove_na_records(dta, c("Sepal.Length", "Petal.Length")))
 #' }
+#'
+#'
+#' @family data_management
+#' @concept missing
+#' @keywords internal
 util_remove_na_records <- function(study_data, vars = colnames(study_data)) {
   obs_wo_na <- rowSums(is.na(study_data[, vars, FALSE])) == 0
   if (sum(!obs_wo_na) > 0) {

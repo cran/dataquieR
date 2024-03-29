@@ -2,7 +2,12 @@
 #' systems with R 4
 #'
 #' @return invisible null
+#'
+#' @family robustness_functions
+#' @concept system
+#' @keywords internal
 util_fix_rstudio_bugs <- function() { # nocov start
+  if (!util_really_rstudio()) return(invisible(NULL))
   # https://github.com/rstudio/rstudio/issues/6692
   if (Sys.getenv("RSTUDIO") == "1" && !nzchar(Sys.getenv("RSTUDIO_TERM")) &&
     Sys.info()["sysname"] == "Darwin" && getRversion() >= "4.0.0") {

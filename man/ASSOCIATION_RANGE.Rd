@@ -11,7 +11,10 @@ An object of class \code{character} of length 1.
 ASSOCIATION_RANGE
 }
 \description{
-TODO JM
+Specifies the allowable range of an association. The inclusion of the
+endpoints follows standard mathematical notation using round brackets
+for open intervals and square brackets for closed intervals.
+Values must be separated by a semicolon.
 }
 \seealso{
 \link{meta_data_cross}

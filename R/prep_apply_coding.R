@@ -7,7 +7,7 @@
 #' @return [data.frame] modified study data with labels replaced by the codes
 #' @export
 prep_apply_coding <- function(study_data, meta_data = "item_level") {
-  util_expect_data_frame(study_data)
+  util_expect_data_frame(study_data, keep_types = TRUE)
   util_expect_data_frame(meta_data, c(VAR_NAMES, VALUE_LABELS))
   prep_prepare_dataframes()
   resp_vars <-
@@ -17,7 +17,9 @@ prep_apply_coding <- function(study_data, meta_data = "item_level") {
                                   meta_data = meta_data)
   sdrv <-
     mapply(resp_vars, value_labels, SIMPLIFY = FALSE, FUN = function(rv, vl) {
-      .vl <- util_parse_assignments(vl)
+      .vl <- util_parse_assignments(vl,
+                                    split_on_any_split_char = TRUE,
+                                    split_char = c(SPLIT_CHAR, '<'))
       VL <- setNames(names(.vl), nm = .vl)
       dt <- study_data[, rv, drop = TRUE]
       r <- VL[as.character(dt)]

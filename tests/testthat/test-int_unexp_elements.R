@@ -1,5 +1,6 @@
 test_that("int_unexp_elements works", {
-skip("TODO") # TODO
+  skip_on_cran()
+  skip("TODO") # TODO
   sd1 <- prep_get_data_frame("ship")
   md1 <- prep_get_data_frame("ship_meta")
 

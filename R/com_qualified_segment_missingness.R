@@ -1,5 +1,7 @@
 #' Compute Indicators for Qualified Segment Missingness
 #'
+#' [Indicator]
+#'
 #' @param study_data [data.frame] the data frame that contains the measurements
 #' @param meta_data [data.frame] the data frame that contains metadata
 #'                               attributes of study data
@@ -23,10 +25,6 @@ com_qualified_segment_missingness <- function(study_data,
                                                                   "ALL",
                                                                   "SEGMENT")) {
 
-  # TODO (JM): See library(roxygen2)
-  # ?"tags-index-crossref"
-  #
-
   # Preparation of the input ----
 
   prep_prepare_dataframes(.replace_missings = FALSE)
@@ -36,7 +34,7 @@ com_qualified_segment_missingness <- function(study_data,
   meta_data_segment <- prep_check_meta_data_segment(meta_data_segment)
 
   # allowed AAPOR-States
-  AAPOR_STATES <- c("P", "PP", "PL", "R", "BO", "NC", "O", "UH", "OH", "NE")
+  AAPOR_STATES <- c("I", "P", "PL", "R", "BO", "NC", "O", "UH", "UO", "NE")
 
   # Loop over all segments defined on segment-level metadata ----
 
@@ -78,13 +76,18 @@ com_qualified_segment_missingness <- function(study_data,
                                                dont_assign = TRUE, # don't replace the value of .cur_miss by the data frame, just return it
                                                col_names = # check/ensure, content of the data frame matches expectations
                                                list(
-          CODE_VALUE = is.numeric,
+          CODE_VALUE = util_is_valid_missing_codes,
           CODE_INTERPRET = function(x) {
             is.character(x) & x %in% AAPOR_STATES
           }
         ),
+        custom_errors = list(
+          CODE_VALUE = "CODE_VALUE must be numeric or DATETIME",
+          CODE_INTERPRET = paste("CODE_INTERPRET must be one of",
+                                 util_pretty_vector_string(AAPOR_STATES))
+        ),
         convert_if_possible = list( # try to convert values to match expectations, if produces NAs, an error is thrown. Thereafter, checks from col_names above will re-run.
-          CODE_VALUE = as.numeric,
+          CODE_VALUE = util_as_valid_missing_codes,
           CODE_INTERPRET = function(x) {
             trimws(toupper(x))
           }
@@ -123,7 +126,7 @@ com_qualified_segment_missingness <- function(study_data,
           # Enter 0 for NULL in replacement list to always enable computations
           for (name in AAPOR_STATES) {
             if (is.null(rclean[[name]])) {
-              rclean[[name]]<-0
+              rclean[[name]] <- 0
             }
           }
 
@@ -131,10 +134,10 @@ com_qualified_segment_missingness <- function(study_data,
 
           # DQI-2002    Based on participation only
           # NRR1 for all who did not participate
-          # Minimal information: Study, Segment: (P | PP ) -> NOTE NE not used in denominator
-          # RR1<-(P+PP)/((P+PP+PL) + (R+BO+NC+O) + (UH+UO)
-          if(!is.null(r$P) | !is.null(r$PP) ) {
-            r$RR1 <- (rclean$P + rclean$PP) / ((rclean$P+rclean$PP+rclean$PL) + (rclean$R+rclean$BO+rclean$NC+rclean$O) + (rclean$UH+rclean$OH))
+          # Minimal information: Study, Segment: (I | P ) -> NOTE NE not used in denominator
+          # RR1<-(I+P)/((I+P+PL) + (R+BO+NC+O) + (UH+UO)
+          if(!is.null(r$I) | !is.null(r$P) ) {
+            r$RR1 <- (rclean$I + rclean$P) / ((rclean$I+rclean$P+rclean$PL) + (rclean$R+rclean$BO+rclean$NC+rclean$O) + (rclean$UH+rclean$UO))
             r$NRR1 <- 1 - r$RR1
             r$PCT_com_qum_nonresp <- 100 * r$NRR1
           } else {
@@ -148,10 +151,10 @@ com_qualified_segment_missingness <- function(study_data,
           }
 
           # NRR2 based on participation and scheduled dates
-          # Minimal information: Study, Segment: (P | PP | PL ) -> NOTE NE not used in denominator
-          # RR2<-(P+PP+PL)/((P+PP+PL) + (R+BO+NC+O) + (UH+UO)
-          if(!is.null(r$P) | !is.null(r$PP)  | !is.null(r$PL) ) {
-            r$RR2 <- (rclean$P + rclean$PP + rclean$PL) / ((rclean$P+rclean$PP+rclean$PL) + (rclean$R+rclean$BO+rclean$NC+rclean$O) + (rclean$UH+rclean$OH))
+          # Minimal information: Study, Segment: (I | P | PL ) -> NOTE NE not used in denominator
+          # RR2<-(I+P+PL)/((I+P+PL) + (R+BO+NC+O) + (UH+UO)
+          if(!is.null(r$I) | !is.null(r$P)  | !is.null(r$PL) ) {
+            r$RR2 <- (rclean$I + rclean$P + rclean$PL) / ((rclean$I+rclean$P+rclean$PL) + (rclean$R+rclean$BO+rclean$NC+rclean$O) + (rclean$UH+rclean$UO))
             r$NRR2 <- 1 - r$RR2
           } else {
             util_warning(
@@ -166,9 +169,9 @@ com_qualified_segment_missingness <- function(study_data,
           # DQI-2003    Refusal rate
           # NRR1 for all who refused at any stage
           # Minimal information: Study, Segment: R | BO
-          # REF1<-(R+BO)/((P+PP+PL) + (R+BO+NC+O) + (UH+UO)
+          # REF1<-(R+BO)/((I+P+PL) + (R+BO+NC+O) + (UH+UO)
           if(!is.null(r$R) | !is.null(r$BO) ) {
-            r$REF1 <- (rclean$R + rclean$BO) / ((rclean$P+rclean$PP+rclean$PL) + (rclean$R+rclean$BO+rclean$NC+rclean$O) + (rclean$UH+rclean$OH))
+            r$REF1 <- (rclean$R + rclean$BO) / ((rclean$I+rclean$P+rclean$PL) + (rclean$R+rclean$BO+rclean$NC+rclean$O) + (rclean$UH+rclean$UO))
             r$PCT_com_qum_refusal <- 100 * r$REF1
           } else {
             util_warning(
@@ -243,6 +246,12 @@ com_qualified_segment_missingness <- function(study_data,
            function(cl) {
              paste0(round(cl, 2), "%")
            })
+## TODO: to discuss
+#  #check if SegmentTable is empty
+#  if(!prod(dim(SegmentTable))){
+#    util_error("Can not compute qualified segment missingness",
+#               applicability_problem = TRUE)
+#  }
 
   return(list( # return the results
     SegmentTable = SegmentTable,

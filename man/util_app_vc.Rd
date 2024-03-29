@@ -25,3 +25,7 @@ util_app_vc(x, dta)
 \description{
 Test for applicability of ICC
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

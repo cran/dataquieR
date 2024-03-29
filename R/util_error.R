@@ -13,4 +13,7 @@
 #'
 #' @return nothing, its purpose is to stop.
 #'
+#' @family condition_functions
+#' @concept process
+#' @keywords internal
 util_error <- util_condition_constructor_factory("error")

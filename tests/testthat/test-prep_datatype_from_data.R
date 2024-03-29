@@ -1,4 +1,5 @@
 test_that("prep_datatype_from_data works", {
+  skip_on_cran()
   expect_equal(prep_datatype_from_data(cars),
                c(speed = "integer", dist = "integer"))
   expect_equal(prep_datatype_from_data("speed", cars),
@@ -36,6 +37,7 @@ test_that("prep_datatype_from_data works", {
 })
 
 test_that("prep_datatype_from_data works with tibble", {
+  skip_on_cran()
   skip_if_not_installed("tibble")
 
   expect_equal(prep_datatype_from_data(tibble::as_tibble(cars)),

@@ -11,7 +11,10 @@ prep_prepare_dataframes(
   .replace_hard_limits,
   .replace_missings,
   .sm_code = NULL,
-  .allow_empty = FALSE
+  .allow_empty = FALSE,
+  .adjust_data_type = TRUE,
+  .amend_scale_level = TRUE,
+  .internal = rlang::env_inherits(rlang::caller_env(), parent.env(environment()))
 )
 }
 \arguments{
@@ -29,7 +32,17 @@ defaults to \code{FALSE}.}
 \item{.sm_code}{missing code for \code{NAs}, if they have been
 re-coded by \code{util_combine_missing_lists}}
 
-\item{.allow_empty}{allow \code{ds1} to be empty. i.e., 0 rows and/or 0 columns}
+\item{.allow_empty}{allow \code{ds1} to be empty, i.e., 0 rows and/or 0 columns}
+
+\item{.adjust_data_type}{ensure that the data type of variables in the study
+data corresponds to their data type specified in the metadata}
+
+\item{.amend_scale_level}{ensure that \code{SCALE_LEVEL} is available in the
+item-level \code{meta_data}. internally used to prevent
+recursion, if called from
+\code{\link[=prep_scalelevel_from_data_and_metadata]{prep_scalelevel_from_data_and_metadata()}}.}
+
+\item{.internal}{\link{logical} internally called, modify caller's environment.}
 }
 \value{
 \code{ds1} the study data with mapped column names
@@ -56,7 +69,7 @@ The function also detects \code{tibbles}, which are then converted to base-R
 Different from the other utility function that work
 in the caller's environment, so it modifies objects in the calling function.
 It defines a new object \code{ds1}, it modifies \code{study_data} and/or \code{meta_data}
-and \code{label_col}.
+and \code{label_col}, if \code{.internal} is \code{TRUE}.
 }
 \examples{
 \dontrun{

@@ -180,6 +180,8 @@ attr(A_levels_and_B_lt_value_lc, "description") <- "A \u2208 L \u2227 B < c"
 #'
 #'
 #' @export
+#'
+#' @keywords internal
 contradiction_functions <- objects(pattern = ".*")
 contradiction_functions <- mget(contradiction_functions)
 contradiction_functions <- contradiction_functions[

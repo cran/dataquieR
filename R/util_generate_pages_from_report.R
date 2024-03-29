@@ -7,6 +7,7 @@
 #' @param progress_msg [`function`] lambda for progress messages
 #' @param block_load_factor [numeric] multiply size of parallel compute blocks
 #'                                    by this factor.
+#' @param dir [character] output directory for potential `iframes`.
 #'
 #' @return named list, each entry becomes a file with the name of the entry.
 #'         the contents are `HTML` objects as used by `htmltools`.
@@ -19,11 +20,17 @@
 #' report <- dq_report2("study_data", label_col = "LABEL");
 #' save(report, file = "report_v2_short.RData")
 #' }
+#'
+#' @family html
+#' @concept process
+#' @keywords internal
+
 util_generate_pages_from_report <- function(report, template,
                                             disable_plotly,
                                             progress = progress,
                                             progress_msg = progress_msg,
-                                            block_load_factor) {
+                                            block_load_factor,
+                                            dir) {
   util_ensure_suggested(pkg = c("htmltools"),
                                 goal = "generate interactive HTML-reports.")
   have_plot_ly <- util_ensure_suggested(pkg = c("plotly"),
@@ -44,6 +51,7 @@ util_generate_pages_from_report <- function(report, template,
   warn_pred_meta <- attr(report, "warning_pred_meta")
   title <- attr(report, "title")
   subtitle <- attr(report, "subtitle")
+  label_meta_data_hints <- attr(report, "label_meta_data_hints")
 
   pages <- list()
   call_env <- environment()
@@ -63,8 +71,20 @@ util_generate_pages_from_report <- function(report, template,
       util_error("Cannot create report, single page with ID %s already exists",
                  dQuote(div_name))
     }
+
+    curr_url <- htmltools::tagGetAttribute(.menu_env$menu_entry(
+      sprintf("%s#%s", file_name, div_name)), "href")
+
+    # https://matthewjamestaylor.com/custom-tags?utm_content=cmp-true
+    # e.g. <r-1 curr_url=></r-1> // needs to have a hyphen, attributes in custom tags don't need the prefix data-
+    curr_url <- htmltools::tag("dataquier-data", varArgs = list(`curr-url` =
+                                                      gsub("\"", "\\\"",
+                                                           curr_url,
+                                                           fixed = TRUE)))
+
     sp <- util_attach_attr(htmltools::div(
       ...,
+      curr_url,
       class = "singlePage",
       id = div_name
     ), dropdown = drop_down_to_attach)
@@ -85,7 +105,11 @@ util_generate_pages_from_report <- function(report, template,
   }
 
   # Page 1 ####
-  # Technical information about the R session and the report
+  # Technical information about the R session and the report and first Overview
+  repsum <- summary(report)
+  summaryplots <- plot(repsum, dont_plot = TRUE)
+  comat <- print(repsum, dont_print = TRUE)
+
   properties <- attr(report, "properties")
   if (!is.list(properties)) {
     properties <- list(error = "No report properties found, report file corrupted?")
@@ -137,112 +161,25 @@ util_generate_pages_from_report <- function(report, template,
       ))))
   }
 
-  # number of indicators and descriptors per dimension
-  dqi <- util_get_concept_info("dqi")
-  dq_ind_or_desc <- data.frame(
-    "Abbreviation" =
-      unique(dqi$abbreviation[which(!is.na(dqi$`dataquieR function`))]))
-  dq_ind_or_desc$Dimension <- dims[substr(dq_ind_or_desc$Abbreviation, 1, 3)]
-  list_dqi_in_report <- lapply(
-    report,
-    function(result) {
-      res_out <- NULL
-      # check which data quality indicators are targeted by this function
-      # using the dq control table
-      dqi_abr <- dqi$abbreviation[
-        grepl(attr(result, "function_name"), dqi$`dataquieR function`)]
-      # check all result objects for abbreviated data quality indicators in
-      # their header
-      obj_to_scan <- names(result)[vapply(result, function(res_obj) {
-        is.data.frame(res_obj) && nrow(res_obj) > 0 &&
-          any(vapply(dq_ind_or_desc$Abbreviation,
-                     function(abr) {
-                       any(grepl(abr, colnames(res_obj)))
-                     }, FUN.VALUE = logical(1)))
-      }, FUN.VALUE = logical(1))]
-      # If there are some, report only those indicators that are included in the
-      # outputs (SummaryTable, DataframeTable, etc.).
-      if (length(obj_to_scan) > 0) {
-        res_out <- unlist(lapply(obj_to_scan, function(res) {
-          dqi_abr <- dq_ind_or_desc$Abbreviation[
-            vapply(dq_ind_or_desc$Abbreviation,
-                   function(abr) {
-                     any(grepl(abr, colnames(result[[res]])))
-                   },
-                   FUN.VALUE = logical(1))]
-          if (any(grepl("GRADING", colnames(result[[res]])))) {
-            grad_col <- grep("GRADING", colnames(result[[res]]))
-            if (all(is.na(result[[res]][, grad_col]))) {
-              dqi_res <- "descriptor"
-            } else {
-              dqi_res <- "indicator"
-            }
-          } else {
-            dqi_res <- "descriptor"
-          }
-          setNames(rep(dqi_res, length(dqi_abr)), dqi_abr)
-        }))
-      } else if (length(dqi_abr) > 0) {
-        # check all result objects for a GRADING column in
-        # their header
-        obj_w_grad <- names(result)[vapply(result, function(res_obj) {
-          is.data.frame(res_obj) && nrow(res_obj) > 0 &&
-            any(grepl("GRADING", colnames(res_obj)))
-        }, FUN.VALUE = logical(1))]
-        if (length(obj_w_grad) > 0) {
-          res_out <- unlist(lapply(obj_w_grad, function(res) {
-            if ("GRADING" %in% colnames(result[[res]])) {
-              if (all(is.na(result[[res]][, "GRADING"]))) {
-                dqi_res <- "descriptor"
-              } else {
-                dqi_res <- "indicator"
-              }
-            } else {
-              dqi_res <- "descriptor"
-            }
-            setNames(rep(dqi_res, length(dqi_abr)), dqi_abr)
-          }))
-        } else if ("ReportSummaryTable" %in% names(result) &&
-            nrow(result$ReportSummaryTable) > 0 |
-            "SummaryPlot" %in% names(result) && !inherits(result$SummaryPlot, "dataquieR_NULL") |
-            "SummaryPlotList" %in% names(result) && !inherits(result$SummaryPlotList, "dataquieR_NULL")
-        ) {
-          res_out <- c(res_out,
-                       setNames(rep("descriptor", length(dqi_abr)), dqi_abr))
-        }
-      }
-      return(res_out)
-    }
-  )
-  dqi_short <- unlist(unname(list_dqi_in_report))
-  dq_ind_or_desc$Indicator <- FALSE
-  dq_ind_or_desc$Indicator[
-    which(dq_ind_or_desc$Abbreviation %in%
-            unique(names(dqi_short)[dqi_short == "indicator"]))] <- TRUE
-  dq_ind_or_desc$Descriptor <- FALSE
-  dq_ind_or_desc$Descriptor[
-    which(dq_ind_or_desc$Abbreviation %in%
-            unique(names(dqi_short)[dqi_short == "descriptor"]))] <- TRUE
-  if (util_ensure_suggested("summarytools",
-                            goal =
-                            "descriptive summary statistics in the report",
-                            err = FALSE) &&
-      inherits(attr(report, "summary_stat"), "summarytools") &&
-      inherits(attr(report, "summary_descr"), "summarytools")) {
-    dq_ind_or_desc$Descriptor[match(c("acc_ud_shape", "acc_ud_scale"), dq_ind_or_desc$Abbreviation)] <- TRUE
-  }
+  ## create a table with the summary of indicators and descriptors
+  info_dim_dq <- util_generate_table_indicators_descriptors(summary(report))
+  # info_dim_dq <- rbind(info_dim_dq,
+  #                      data.frame(Dimension = "Descriptors",
+  #                                 `No. DQ indicators` = 0,
+  #                                 `No. DQ descriptors` = 2,
+  #                                 stringsAsFactors = FALSE,
+  #                                 check.names = FALSE
+  #                      ))
 
-  ind_per_dim <- tapply(dq_ind_or_desc$Indicator,
-                        dq_ind_or_desc$Dimension,
-                        sum)[dims]
-  desc_per_dim <- tapply(dq_ind_or_desc$Descriptor,
-                         dq_ind_or_desc$Dimension,
-                         sum)[dims]
+  # TODO: Discuss the indicator descriptor assignment problem with reference to dimensions
+  info_dim_dq[info_dim_dq$Dimension == "Accuracy", "No. DQ descriptors"] <-
+    info_dim_dq[info_dim_dq$Dimension == "Accuracy", "No. DQ descriptors"] + 5
+  # The 5 descriptors are Location Parameters, Spread, Skewness, Kurtosis, and the graph
+  info_dim_dq[info_dim_dq$Dimension == "Completeness", "No. DQ descriptors"] <-
+    info_dim_dq[info_dim_dq$Dimension == "Completeness", "No. DQ descriptors"] + 1
+  # The descriptor is the columns Missing/Valid
 
-  info_dim_dq <- data.frame("Dimension" = unname(dims),
-                            "Number of data quality indicators" = ind_per_dim,
-                            "Number of data quality descriptors" = desc_per_dim,
-                            check.names = FALSE)
+  info_dim_dq[["No. DQ descriptors"]] <- NULL
 
   append_single_page("General",
                      "Report information",
@@ -281,7 +218,12 @@ util_generate_pages_from_report <- function(report, template,
                            c("width: 6em;", "width: 12em;", "width: 12em;")
                          )
                        )),
-                       htmltools::h2("About this report"),
+                       htmltools::h2("Data Quality Summary"),
+                       summaryplots,
+                       htmltools::a(
+                         href = "#Item-level data quality summary",
+                         "Display Detailed View"),
+                       htmltools::h2("Technical information"),
                        htmltools::p("The table below summarizes technical information about this report, the R session and the operating system."),
                        util_html_table(p,
                                        dl_fn = "Report_Metadata"),
@@ -326,50 +268,7 @@ util_generate_pages_from_report <- function(report, template,
                      ))
 
   # Page 2 ####
-  apmat <-
-    util_html_table(summary(report, aspect = "applicability", FUN = util_get_html_cell_for_result),
-                    filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"),
-                    is_matrix_table = TRUE, rotate_headers = TRUE,
-                    meta_data = meta_data,
-                    label_col = label_col,
-                    dl_fn = "Applicability_Matrix",
-                    output_format = "HTML"
-  )
-
-  ismat <-
-    util_html_table(summary(report, aspect = "issue", FUN = util_get_html_cell_for_result),
-                    filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"),
-                    is_matrix_table = TRUE, rotate_headers = TRUE,
-                    meta_data = meta_data,
-                    label_col = label_col,
-                    dl_fn = "Issue_Matrix",
-                    output_format = "HTML"
-  )
-
-  # TODO ismat_indicator_based_and_with_metrics
   # TODO apmat_not_segments_and_other_non_item_levels
-
-  ermat <-
-    util_html_table(summary(report, aspect = "error", FUN = util_get_html_cell_for_result),
-                    filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"),
-                    is_matrix_table = TRUE, rotate_headers = TRUE,
-                    meta_data = meta_data,
-                    label_col = label_col,
-                    dl_fn = "Error_Matrix",
-                    output_format = "HTML"
-  )
-
-  anamat <-
-    util_html_table(summary(report, aspect = "anamat",
-                            FUN = util_get_html_cell_for_result),
-                    filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"),
-                    is_matrix_table = TRUE, rotate_headers = TRUE,
-                    meta_data = meta_data,
-                    label_col = label_col,
-                    dl_fn = "Error_Matrix",
-                    output_format = "HTML"
-    )
-
   # TODO: add some hints if there is an integrity issue
   append_single_page("General",
                      "Item-level data quality summary",
@@ -377,10 +276,12 @@ util_generate_pages_from_report <- function(report, template,
                      htmltools::htmlTemplate(
                        text_ = readLines(system.file("templates", template, "overview.html",
                                                      package = utils::packageName())),
-                       ismat = ismat,
-                       apmat = apmat,
-                       ermat = ermat,
-                       anamat = anamat,
+                       comat = comat,
+                       summaryplots = summaryplots,
+                       # ismat = ismat,
+                       # apmat = apmat,
+                       # ermat = ermat,
+                       # anamat = anamat,
                        notes_labels = notes_labels,
                        util_float_index_menu = util_float_index_menu,
                        util_map_labels = util_map_labels,
@@ -389,174 +290,44 @@ util_generate_pages_from_report <- function(report, template,
   )
 
 
-  meta_data_frames <-
-    grep("^meta_data", names(attributes(report)), value = TRUE)
 
-  meta_data_titles <- c(
-    meta_data_segment = "Segment-level metadata",
-    meta_data_dataframe = "Dataframe-level metadata",
-    meta_data_cross_item = "Cross-item-level metadata",
-    meta_data = "Item-level metadata"
-  )
-
-  for (mdn in meta_data_frames) {
-
-    xlmd <- attr(report, mdn) # x level metadata
-
-    if (mdn == "meta_data") {
-      # these two columns should have been replaced by the v1->v2 conversion of the metadata in
-      # prep_meta_data_v1_to_item_level_meta_data (.util_internal_normalize_meta_data)
-      xlmd[[MISSING_LIST]] <- NULL
-      xlmd[[JUMP_LIST]] <- NULL
-    }
-
-    for (cn in grep("_TABLE$", colnames(xlmd), value = TRUE)) {
-
-      xlmd[!util_empty(xlmd[[cn]]), cn] <- vapply(FUN.VALUE = character(1),
-        xlmd[!util_empty(xlmd[[cn]]), cn],
-        FUN = function(tn) {
-          paste(as.character(htmltools::a(href = paste0(tn, ".html"), tn)),
-                collapse = "")
-        }
-      )
-
-    }
-
-    meta_data_table <- util_html_table(
-      xlmd, # generate links in VAR_NAMES/Variables, only possible if meta_data and label_col are available
-      meta_data = meta_data,
-      label_col = label_col,
-      dl_fn = mdn,
-      output_format = "HTML" # needed for generating plain html, "RMD" would generate a mix between Rmd and html
-    )
-
-    tmpl <- system.file("templates", template, paste0(mdn, ".html"),
-                        package = utils::packageName())
-    if (!file.exists(tmpl)) {
-      tmpl <- system.file("templates", template,
-                          paste0("generic_meta_data.html"),
-                          package = utils::packageName())
-    }
-
-    meta_data_title <- meta_data_titles[[mdn]]
-    if (length(meta_data_title) != 1 ||
-        !is.character(meta_data_title) ||
-        util_empty(meta_data_title)) {
-      meta_data_title <- mdn
-    }
-
-    if (length(meta_data_table) == 0) {
-      meta_data_table <- htmltools::p(paste(meta_data_title,
-                                            "were not provided."))
-    }
-
-    append_single_page("General",
-                       meta_data_title,
-                       paste0(mdn, ".html"),
-                       htmltools::htmlTemplate(
-                         tmpl,
-                         meta_data_name = mdn,
-                         meta_data_title =
-                           # Use upper case for all words, not only the first one
-                           gsub("(^|[[:space:]]|[[:punct:]])([[:alpha:]])",
-                                "\\1\\U\\2",
-                                meta_data_title,
-                                perl = TRUE),
-                         meta_data_table = meta_data_table
-                         )
-    )
-  }
-
-  referred_tables <- attr(report, "referred_tables")
-  if (length(referred_tables)) { # show all tables referred to by the report
-    for (reftab in names(referred_tables)) {
-      append_single_page("General",
-                         paste("Table", sQuote(reftab)),
-                         paste0(reftab, ".html"),
-                         htmltools::h1(dQuote(reftab)),
-                         util_html_table(
-                           referred_tables[[reftab]], # generate links in VAR_NAMES/Variables, only possible if meta_data and label_col are available
-                           meta_data = meta_data,
-                           label_col = label_col,
-                           dl_fn = reftab,
-                           output_format = "HTML" # needed for generating plain html, "RMD" would generate a mix between Rmd and html
-                         )
-      )
-    }
-  }
-
-
-
-
+# Removed all Venn diagram section
   # generate Venn diagram
-  v_in_m <- meta_data[[VAR_NAMES]]
-  v_in_s <- attr(report, "study_data_dimnames")[[2]] # dimnames [[1]] is missing
-  if (util_ensure_suggested("ggvenn",
-                        goal =
-                "display Venn diagrams about the meta_data/study_data coverage",
-                err = FALSE)) {
+#  v_in_m <- meta_data[[VAR_NAMES]]
+#  v_in_s <- attr(report, "study_data_dimnames")[[2]] # dimnames [[1]] is missing
+#  if (util_ensure_suggested("ggvenn",
+#                        goal =
+#                "display Venn diagrams about the meta_data/study_data coverage",
+#                err = FALSE)) {
 
-    overlap <-
-      plot_figure(ggvenn::ggvenn(
-        list(`Item-level metadata` = v_in_m, `Study data` = v_in_s),
-        set_name_size = 4,
-        text_size = 3,
-        stroke_size = 0.5))
-  } else {
-    overlap <-
-      util_html_table(data.frame(
-        check.names = FALSE,
-        ` ` = c("Study Variables with metadata",
-                "Study Variables w/o metadata",
-                "Variables from DD w/o Study Data"),
-        `#` = c(length(intersect(v_in_m, v_in_s)),
-                length(setdiff(v_in_s, v_in_m)),
-                length(setdiff(v_in_m, v_in_s)))
-      ),
-      meta_data = meta_data,
-      label_col = label_col,
-      dl_fn = "StudyMetaDataOverlap",
-      output_format = "HTML")
-  }
+#    overlap <-
+#      plot_figure(ggvenn::ggvenn(
+#        list(`Item-level metadata` = v_in_m, `Study data` = v_in_s),
+#        set_name_size = 4,
+#        text_size = 3,
+#        stroke_size = 0.5))
+#  } else {
+#    overlap <-
+#      util_html_table(data.frame(
+#        check.names = FALSE,
+#        ` ` = c("Study Variables with metadata",
+#                "Study Variables w/o metadata",
+#                "Variables from DD w/o Study Data"),
+#        `#` = c(length(intersect(v_in_m, v_in_s)),
+#                length(setdiff(v_in_s, v_in_m)),
+#                length(setdiff(v_in_m, v_in_s)))
+#      ),
+#      meta_data = meta_data,
+#      label_col = label_col,
+#      dl_fn = "StudyMetaDataOverlap",
+#      output_format = "HTML")
+#  }
 
-  append_single_page("General",
-                     "Metadata and study data mapping",
-                     "report.html",
-                     htmltools::h1("Metadata and Study Data Mapping"),
-                     overlap)
-
-  if (util_ensure_suggested("summarytools",
-                            goal =
-                            "descriptive summary statistics in the report",
-                            err = FALSE) &&
-      inherits(attr(report, "summary_stat"), "summarytools") &&
-      inherits(attr(report, "summary_descr"), "summarytools")) {
-
-    summary_stat <- util_html_table(attr(report, "summary_stat"),
-                                    meta_data = meta_data,
-                                    label_col = label_col,
-                                    dl_fn = "summary_stat",
-                                    output_format = "HTML")
-    summary_descr <- util_html_table(attr(report, "summary_descr"),
-                                    meta_data = meta_data,
-                                    label_col = label_col,
-                                    dl_fn = "summary_descr",
-                                    output_format = "HTML")
-
-    append_single_page("General",
-                       "Descriptive statistics",
-                       "report.html",
-                       htmltools::htmlTemplate(
-                         text_ = readLines(system.file("templates", template, "descriptive.html",
-                                                       package = utils::packageName())),
-                         summary_stat = summary_stat,
-                         summary_descr = summary_descr,
-                         util_float_index_menu = util_float_index_menu,
-                         util_map_labels = util_map_labels,
-                         util_get_concept_info = util_get_concept_info,
-                         util_abbreviate = util_abbreviate)
-    )
-  }
+ # append_single_page("General",
+ #                   "Metadata and study data mapping",
+ #                   "report.html",
+ #                   htmltools::h1("Metadata and Study Data Mapping"),
+ #                   overlap)
 
   # rfile <- tempfile()
   # prep_save_report(report, file = rfile)
@@ -606,8 +377,12 @@ util_generate_pages_from_report <- function(report, template,
     report,
     use_plot_ly = have_plot_ly,
     template = template,
-    block_load_factor = block_load_factor
+    block_load_factor = block_load_factor,
+    repsum = repsum,
+    dir = dir
   )
+
+  rendered_repsum <- comat
 
   dim_pages <- dim_pages[vapply(dim_pages, length, FUN.VALUE = integer(1))
                          != 0]
@@ -638,6 +413,15 @@ util_generate_pages_from_report <- function(report, template,
                          min(cur_block * block_size + block_size,
                                               nrow(report)))
     vars_in_chunk <- rownames(report)[block_indices]
+    vars_in_chunk <- intersect(
+      vars_in_chunk,
+      util_map_labels(
+        ifnotfound = NA_character_,
+        attr(report, "study_data_dimnames")[[2]],
+        attr(report, "meta_data"),
+        to = attr(report, "label_col"))
+    )
+    vars_in_chunk <- vars_in_chunk[!is.na(vars_in_chunk)]
     progress(i/n * 100)
     progress_msg("Page generation", sprintf("Single Variables %s",
                                             paste(sQuote(vars_in_chunk),
@@ -650,7 +434,9 @@ util_generate_pages_from_report <- function(report, template,
           cur_var = cur_var,
           use_plot_ly = have_plot_ly,
           template = template,
-          note_meta = warn_pred_meta)
+          note_meta = warn_pred_meta,
+          rendered_repsum = rendered_repsum,
+          dir = dir)
       }
     )
     chunk_of_pages <- do.call(`c`, chunk_of_pages)
@@ -661,6 +447,164 @@ util_generate_pages_from_report <- function(report, template,
     progress(i/n * 100)
   }
 
-# browser()
+  meta_data_frames <-
+    grep("^meta_data", names(attributes(report)), value = TRUE)
+
+  meta_data_titles <- c(
+    meta_data_segment = "Segment-level metadata",
+    meta_data_dataframe = "Dataframe-level metadata",
+    meta_data_cross_item = "Cross-item-level metadata",
+    meta_data = "Item-level metadata"
+  )
+
+  for (mdn in meta_data_frames) {
+
+    xlmd <- attr(report, mdn) # x level metadata
+
+    if (mdn == "meta_data") {
+      # these two columns should have been replaced by the v1->v2 conversion of the metadata in
+      # prep_meta_data_v1_to_item_level_meta_data (.util_internal_normalize_meta_data)
+      xlmd[[MISSING_LIST]] <- NULL
+      xlmd[[JUMP_LIST]] <- NULL
+
+      # there can be specific notes for item-level metadata attributes
+      if (length(label_meta_data_hints)) {
+        meta_data_h <- force(htmltools::tagList(
+          htmltools::div( # TODO: warnings should be easy to understand if they appear in the report, and stand out while still matching the overall style of the report
+            # style = htmltools::css(
+            #   `background-color` = "#aaaaaa",
+            #   width = "80%",
+            #   left = "10%",
+            #   position = "relative"
+            # ),
+            htmltools::tags$em(htmltools::pre(
+              style = htmltools::css(
+                `white-space` = "pre-wrap"
+              ),
+              do.call(
+                paste,
+                c(list(collapse = "\n"),
+                  lapply(lapply(label_meta_data_hints, conditionMessage),
+                         paste, collapse = "\n")))
+            )))))
+        label_meta_data_hints <- meta_data_h
+      } else {
+        label_meta_data_hints <- NULL
+      }
+    } else {
+      label_meta_data_hints <- NULL
+      # TODO: include warnings from util_normalize_cross_item on the cross-item metadata level page
+    }
+
+    for (cn in grep("_TABLE$", colnames(xlmd), value = TRUE)) {
+
+      xlmd[!util_empty(xlmd[[cn]]), cn] <- vapply(FUN.VALUE = character(1),
+                                                  xlmd[!util_empty(xlmd[[cn]]), cn],
+                                                  FUN = function(tn) {
+                                                    paste(as.character(htmltools::a(href = paste0(tn, ".html"), tn)),
+                                                          collapse = "")
+                                                  }
+      )
+
+    }
+
+    meta_data_table <- util_html_table(
+      xlmd, # generate links in VAR_NAMES/Variables, only possible if meta_data and label_col are available
+      meta_data = meta_data,
+      label_col = label_col,
+      dl_fn = mdn,
+      output_format = "HTML" # needed for generating plain html, "RMD" would generate a mix between Rmd and html
+    )
+
+    tmpl <- system.file("templates", template, paste0(mdn, ".html"),
+                        package = utils::packageName())
+    if (!file.exists(tmpl)) {
+      tmpl <- system.file("templates", template,
+                          paste0("generic_meta_data.html"),
+                          package = utils::packageName())
+    }
+
+    meta_data_title <- meta_data_titles[[mdn]]
+    if (length(meta_data_title) != 1 ||
+        !is.character(meta_data_title) ||
+        util_empty(meta_data_title)) {
+      meta_data_title <- mdn
+    }
+
+    if (length(meta_data_table) == 0) {
+      meta_data_table <- htmltools::p(paste(meta_data_title,
+                                            "were not provided."))
+    }
+
+    append_single_page("Metadata",
+                       meta_data_title,
+                       paste0(mdn, ".html"),
+                       htmltools::htmlTemplate(
+                         tmpl,
+                         meta_data_name = mdn,
+                         meta_data_title =
+                           # Use upper case for all words, not only the first one
+                           gsub("(^|[[:space:]]|[[:punct:]])([[:alpha:]])",
+                                "\\1\\U\\2",
+                                meta_data_title,
+                                perl = TRUE),
+                         label_meta_data_hints = label_meta_data_hints,
+                         meta_data_table = meta_data_table
+                       )
+    )
+  }
+
+  referred_tables <- attr(report, "referred_tables")
+  if (length(referred_tables)) { # show all tables referred to by the report
+    for (reftab in names(referred_tables)) {
+      append_single_page("Metadata",
+                         paste("Table", sQuote(reftab)),
+                         paste0(reftab, ".html"),
+                         htmltools::h1(dQuote(reftab)),
+                         util_html_table(
+                           referred_tables[[reftab]], # generate links in VAR_NAMES/Variables, only possible if meta_data and label_col are available
+                           meta_data = meta_data,
+                           label_col = label_col,
+                           dl_fn = reftab,
+                           output_format = "HTML" # needed for generating plain html, "RMD" would generate a mix between Rmd and html
+                         )
+      )
+    }
+  }
+
+
+  rsts <- util_get_rule_sets()
+  for (rstsn in names(rsts)) {
+    append_single_page("Metadata",
+                       paste("Grading Ruleset", dQuote(rstsn)),
+                       paste0("rulesets.html"),
+                       htmltools::htmlTemplate(
+                         system.file("templates", template,
+                                     paste0("grading_ruleset_text.html"),
+                                     package = utils::packageName()),
+                         meta_data_name = "grading_rulesets",
+                         meta_data_title =
+                           "Grading Rulesets",
+                         meta_data_table = util_html_table(rsts[[rstsn]])
+                       )
+    )
+  }
+
+  append_single_page("Metadata",
+                     "Ruleset Formats",
+                     paste0("ruleset_formats.html"),
+                     htmltools::htmlTemplate(
+                       system.file("templates", template,
+                                   paste0("ruleset_formats_text.html"),
+                                   package = utils::packageName()),
+                       meta_data_name = "grading_rulesets",
+                       meta_data_title =
+                         "Ruleset Formats",
+                       meta_data_table =
+                         util_html_table(util_get_ruleset_formats())
+                     )
+  )
+
+
   pages
 }

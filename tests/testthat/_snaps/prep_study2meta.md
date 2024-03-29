@@ -3,29 +3,32 @@
     list(MetaData = structure(list(VAR_NAMES = c("Sepal.Length", 
     "Sepal.Width", "Petal.Length", "Petal.Width", "Species"), LABEL = c("Sepal.Length", 
     "Sepal.Width", "Petal.Length", "Petal.Width", "Species"), DATA_TYPE = c("float", 
-    "float", "float", "float", "string"), VALUE_LABELS = c(NA, NA, 
-    NA, NA, "1 = setosa | 2 = versicolor | 3 = virginica"), MISSING_LIST_TABLE = c(NA_character_, 
+    "float", "float", "float", "string"), SCALE_LEVEL = c("ratio", 
+    "ratio", "ratio", "ratio", "nominal"), UNIT = c(NA_character_, 
     NA_character_, NA_character_, NA_character_, NA_character_), 
-        HARD_LIMITS = c(NA_character_, NA_character_, NA_character_, 
-        NA_character_, NA_character_), CO_VARS = c(NA_character_, 
+        VALUE_LABELS = c(NA, NA, NA, NA, "1 = setosa | 2 = versicolor | 3 = virginica"
+        ), MISSING_LIST_TABLE = c(NA_character_, NA_character_, NA_character_, 
+        NA_character_, NA_character_), HARD_LIMITS = c(NA_character_, 
         NA_character_, NA_character_, NA_character_, NA_character_
-        ), GROUP_VAR_OBSERVER = c(NA_character_, NA_character_, NA_character_, 
-        NA_character_, NA_character_), GROUP_VAR_DEVICE = c(NA_character_, 
+        ), CO_VARS = c(NA_character_, NA_character_, NA_character_, 
+        NA_character_, NA_character_), GROUP_VAR_OBSERVER = c(NA_character_, 
         NA_character_, NA_character_, NA_character_, NA_character_
-        ), TIME_VAR = c(NA_character_, NA_character_, NA_character_, 
-        NA_character_, NA_character_), PART_VAR = c(NA_character_, 
+        ), GROUP_VAR_DEVICE = c(NA_character_, NA_character_, NA_character_, 
+        NA_character_, NA_character_), TIME_VAR = c(NA_character_, 
         NA_character_, NA_character_, NA_character_, NA_character_
-        ), STUDY_SEGMENT = c(NA_character_, NA_character_, NA_character_, 
-        NA_character_, NA_character_), LONG_LABEL = c("Sepal.Length", 
-        "Sepal.Width", "Petal.Length", "Petal.Width", "Species"), 
-        LOCATION_RANGE = c(NA_character_, NA_character_, NA_character_, 
-        NA_character_, NA_character_), LOCATION_METRIC = c(NA_character_, 
+        ), PART_VAR = c(NA_character_, NA_character_, NA_character_, 
+        NA_character_, NA_character_), STUDY_SEGMENT = c(NA_character_, 
         NA_character_, NA_character_, NA_character_, NA_character_
-        ), PROPORTION_RANGE = c(NA_character_, NA_character_, NA_character_, 
-        NA_character_, NA_character_), MISSING_LIST = c("|", "|", 
-        "|", "|", "|"), JUMP_LIST = c(NA_character_, NA_character_, 
-        NA_character_, NA_character_, NA_character_)), class = "data.frame", row.names = c("Sepal.Length", 
-    "Sepal.Width", "Petal.Length", "Petal.Width", "Species")), ModifiedStudyData = structure(list(
+        ), LONG_LABEL = c("Sepal.Length", "Sepal.Width", "Petal.Length", 
+        "Petal.Width", "Species"), LOCATION_RANGE = c(NA_character_, 
+        NA_character_, NA_character_, NA_character_, NA_character_
+        ), LOCATION_METRIC = c(NA_character_, NA_character_, NA_character_, 
+        NA_character_, NA_character_), PROPORTION_RANGE = c(NA_character_, 
+        NA_character_, NA_character_, NA_character_, NA_character_
+        ), MISSING_LIST = c("|", "|", "|", "|", "|"), JUMP_LIST = c(NA_character_, 
+        NA_character_, NA_character_, NA_character_, NA_character_
+        )), class = "data.frame", row.names = c("Sepal.Length", "Sepal.Width", 
+    "Petal.Length", "Petal.Width", "Species")), ModifiedStudyData = structure(list(
         Sepal.Length = c(5.1, 4.9, 4.7, 4.6, 5, 5.4, 4.6, 5, 4.4, 
         4.9, 5.4, 4.8, 4.8, 4.3, 5.8, 5.7, 5.4, 5.1, 5.7, 5.1, 5.4, 
         5.1, 4.6, 5.1, 4.8, 5, 5, 5.2, 5.2, 4.7, 4.8, 5.4, 5.2, 5.5, 

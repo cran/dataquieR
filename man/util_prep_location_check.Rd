@@ -26,3 +26,11 @@ range for the location check
 \description{
 Utility function to prepare the metadata for location checks
 }
+\seealso{
+Other lookup_functions: 
+\code{\link{util_prep_proportion_check}()},
+\code{\link{util_variable_references}()}
+}
+\concept{lookup_functions}
+\concept{metadata_management}
+\keyword{internal}

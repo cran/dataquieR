@@ -25,3 +25,7 @@ util_app_dl(x, dta)
 \description{
 Test for applicability of detection limits checks
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

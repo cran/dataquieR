@@ -10,7 +10,8 @@ util_get_code_list(
   split_char = SPLIT_CHAR,
   mdf,
   label_col = VAR_NAMES,
-  warning_if_no_list = TRUE
+  warning_if_no_list = TRUE,
+  warning_if_unsuitable_list = TRUE
 )
 }
 \arguments{
@@ -32,9 +33,14 @@ attributes of study data}
 with labels of variables}
 
 \item{warning_if_no_list}{\link{logical} len = 1. If \code{TRUE}, a warning is
-displayed, if not missing
+displayed, if no missing
 codes are available for a
 variable.}
+
+\item{warning_if_unsuitable_list}{\link{logical} len = 1. If \code{TRUE}, a warning is
+displayed, if missing
+codes do not match with a
+variable' data type.}
 }
 \value{
 \link{numeric} vector of missing codes.
@@ -42,3 +48,16 @@ variable.}
 \description{
 get missing codes from metadata (e.g. \link{MISSING_LIST} or \link{JUMP_LIST})
 }
+\seealso{
+Other missing_functions: 
+\code{\link{util_all_intro_vars_for_rv}()},
+\code{\link{util_count_expected_observations}()},
+\code{\link{util_filter_missing_list_table_for_rv}()},
+\code{\link{util_is_na_0_empty_or_false}()},
+\code{\link{util_observation_expected}()},
+\code{\link{util_remove_empty_rows}()},
+\code{\link{util_replace_codes_by_NA}()}
+}
+\concept{metadata_management}
+\concept{missing_functions}
+\keyword{internal}

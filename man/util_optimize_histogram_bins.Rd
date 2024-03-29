@@ -6,49 +6,43 @@
 \usage{
 util_optimize_histogram_bins(
   x,
-  iqr_bw,
-  n_bw,
-  min_within = NULL,
-  max_within = NULL,
-  min_plot = NULL,
-  max_plot = NULL,
-  nbins_max = NULL
+  interval_freedman_diaconis = NULL,
+  nbins_max = 100,
+  cuts = NULL
 )
 }
 \arguments{
 \item{x}{a vector of data values (numeric or datetime)}
 
-\item{iqr_bw}{the interquartile range of values which should be included to
+\item{interval_freedman_diaconis}{range of values which should be included to
 calculate the Freedman-Diaconis bandwidth (e.g., for
-\code{con_limit_deviations} only values within limits)}
-
-\item{n_bw}{the number of values which should be included to calculate the
-Freedman-Diaconis bandwidth (e.g., for \code{con_limit_deviations}
-the number of values within limits)}
-
-\item{min_within}{the minimum value which is still within limits
-(needed for \code{con_limit_deviations})}
-
-\item{max_within}{the maximum value which is still within limits
-(needed for \code{con_limit_deviations})}
-
-\item{min_plot}{the minimum value which should be included in the plot}
-
-\item{max_plot}{the maximum value which should be included in the plot}
+\code{con_limit_deviations} only values within limits) in interval
+notation (e.g., \verb{[0;100]})}
 
 \item{nbins_max}{the maximum number of bins for the histogram. Strong
 outliers can cause too many narrow bins, which might be
 even to narrow to be plotted. This also results in large
 files and rendering problems. So it is sensible to limit
-the number of bins. The function will produce a warning if
+the number of bins. The function will produce a message if
 it reduces the number of bins in such a case. Reasons
 could be unspecified missing value codes, or minimum or
-maximum values far away from most of the data values, or
-(for \code{con_limit_deviations}) no or few values within limits.}
+maximum values far away from most of the data values, a few
+number of unique values, or (for \code{con_limit_deviations})
+no or few values within limits.}
+
+\item{cuts}{a vector of values at which breaks between bins should occur}
 }
 \value{
-a list with bin breaks below, within and above limits
+a list with bin breaks, if needed separated for each segment
+of the plot
 }
 \description{
 Utility function to compute and optimize bin breaks for histograms
 }
+\seealso{
+Other figure_functions: 
+\code{\link{util_heatmap_1th}()}
+}
+\concept{figure}
+\concept{figure_functions}
+\keyword{internal}

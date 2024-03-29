@@ -9,6 +9,8 @@
 #'
 #' @seealso  [base::Extract]
 #' @export
+#'
+#' @keywords internal
 `[.dataquieR_result` <- function(x, ...) {
   r <- NextMethod()
   attr(r, "error") <- attr(x, "error")
@@ -29,6 +31,8 @@
 #'
 #' @seealso  [base::Extract]
 #' @export
+#'
+#' @keywords internal
 `[[.dataquieR_result` <- function(x, ...) {
   r <- NextMethod()
   if (!is.null(r) && !inherits(x, "ggplot")) {
@@ -51,6 +55,8 @@
 #'
 #' @seealso  [base::Extract]
 #' @export
+#'
+#' @keywords internal
 `$.dataquieR_result` <- function(x, ...) {
   r <- NextMethod()
   if (!is.null(r) && !inherits(x, "ggplot")) {

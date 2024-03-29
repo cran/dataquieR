@@ -71,7 +71,8 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
   }
   level_names <- attr(x, "level_names")
 
-  if (missing(relative)) relative <- continuous
+  if (missing(relative)) relative <- attr(x, "relative")
+  if (is.null(relative)) relative <- continuous
 
   hm <- x
   if (relative) {
@@ -93,8 +94,13 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
   my_cols <- c("#7f0000", "#b30000", "#d7301f", "#ef6548", "#fc8d59",
                "#fdbb84", "#fdd49e", "#fee8c8", "#2166AC")
 
+  colscale <- attr(x, "colscale")
+  if (is.null(colscale)) {
+    colscale <- my_cols
+  }
+
   if (higher_means != "worse")
-    my_cols <- rev(my_cols)
+    colscale <- rev(colscale)
 
   #p <- util_set_size(p,
   #                   width_em  = length(unique(ctab1$Var2)) + 20,
@@ -116,8 +122,39 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
     }
   }
 
-  tb <- reshape::melt(hm, id.vars = "Variables")
+  #tb <- reshape::melt(hm, id.vars = "Variables")
+  tb <- stats::reshape(data = hm, idvar = "Variables",
+                       varying = colnames(hm)[2:ncol(hm)],
+                       v.names = "value",
+                       times = colnames(hm)[2:ncol(hm)],
+                       direction = "long")
+  rownames(tb) <- NULL
+  names(tb) <- c("Variables", "variable", "value")
 
+
+  levs <- unique(tb$variable)
+
+  if(length(levs[grep("int_", levs)]) == 0  &&
+     length(levs[grep("com_", levs)]) == 0  &&
+     length(levs[grep("con_", levs)]) == 0  &&
+     length(levs[grep("acc_", levs)]) == 0 ) {
+
+    tb$variable <- factor(tb$variable,
+                          levels = levs)
+  }else {
+
+  #sort levels
+  #levs <- sort(levs)
+  levs_int <- levs[grep("int_", levs)]
+  levs_com <- levs[grep("com_", levs)]
+  levs_con <- levs[grep("con_", levs)]
+  levs_acc <- levs[grep("acc_", levs)]
+
+  #order the factor levels
+  tb$variable <- factor(tb$variable,
+                                 levels = c(levs_int,levs_com,
+                                            levs_con, levs_acc))
+  }
 
   if (dt) {
     # https://stackoverflow.com/a/50406895
@@ -135,7 +172,7 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
                     hm[, setdiff(colnames(hm), c("Variables", "N")),
                        drop = FALSE]
                   ), na.rm = TRUE)
-    colr <- colorRamp(colors = rev(my_cols))
+    colr <- colorRamp(colors = rev(colscale))
     colors_of_hm <- lapply(hm, function(values) {
       if (!all(is.numeric(values))) { return(values) }
       if (any(is.na(values))) { return(values) }
@@ -148,9 +185,9 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
       } else {
         if (length(level_names) > 0) {
           cc <- setNames(colcode, nm = level_names)
-          v <- t(col2rgb(cc[level_names[as.character(values)]]))
+          v <- t(col2rgb(cc[level_names[as.character(values)]], alpha = TRUE))
         } else {
-          v <- t(col2rgb(colcode[as.character(values)]))
+          v <- t(col2rgb(colcode[as.character(values)], alpha = TRUE))
         }
       }
       a <- apply(v, 1, function(cl) {
@@ -259,7 +296,13 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
         y <- "value"
         fill <- "value"
         if (relative) {
-          rel_ax <- scale_y_continuous(labels = scales::percent)
+          if (max(tb$value) > 0.1)
+            add_amount <- 0.04
+          else
+            add_amount <- 0.0004
+          rel_ax <- scale_y_continuous(labels = scales::percent,
+                                       expand = expansion(add = c(0,
+                                                                  add_amount)))
         } else {
           rel_ax <- NULL
         }
@@ -268,33 +311,52 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
         y <- "value"
         fill <- "value"
         if (relative) {
-          rel_ax <- scale_y_continuous(labels = scales::percent)
+          if (max(tb$value) > 0.1)
+            add_amount <- 0.04
+          else
+            add_amount <- 0.0004
+          rel_ax <- scale_y_continuous(labels = scales::percent,
+                                       expand = expansion(add = c(0,
+                                                                  add_amount)))
         } else {
           rel_ax <- NULL
         }
       }
 
-      fli <- util_coord_flip(w = length(unique(tb[[x]])),
-                             h = length(unique(tb[[y]])))
+      if (missing(flip_mode) && getOption("dataquieR.flip_mode",
+                                          dataquieR.flip_mode_default) ==
+          dataquieR.flip_mode_default) {
+        # for bar charts, flip mode defaults to default (noflip)
+        # fli <- coord_cartesian();
+        fli <- coord_flip()
+      } else {
+        fli <- util_coord_flip(w = length(unique(tb[[x]])),
+                               h = length(unique(tb[[y]])))
+      }
+
       is_flipped <- inherits(fli, "CoordFlip")
 
       if (is_flipped) {
+        hjust <- 0
         vjust <- 0
       } else {
-        vjust <- -0.5
+        hjust <- 0.5
+        vjust <- 0
       }
 
       if (relative) {
-        scale_fill <- scale_fill_gradientn(colors = rev(my_cols),
+        scale_fill <- scale_fill_gradientn(colors = rev(colscale),
                              labels = scales::percent)
+        gtlb <- paste0(" ", round(tb$value * 100, digits = 2), "%")
         texts <-
-          geom_text(label = paste0(" ", round(tb$value * 100, digits = 2), "%"),
-                    hjust = 0, vjust = vjust)
+          geom_text(label = gtlb,
+                    hjust = hjust, vjust = vjust)
       } else {
-        scale_fill <- scale_fill_gradientn(colors = rev(my_cols))
+        scale_fill <- scale_fill_gradientn(colors = rev(colscale))
+        gtlb <- paste0(" ", round(tb$value, digits = 2))
         texts <-
-          geom_text(label = paste0(" ", round(tb$value, digits = 2)),
-                    hjust = 0, vjust = vjust)
+          geom_text(label = gtlb,
+                    hjust = hjust, vjust = vjust)
       }
 
       p <- ggplot(tb, aes(
@@ -319,6 +381,66 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
           axis.text.y = element_text(size = 10)
         ) + xlab("") + ylab("")
 
+      if (suppressWarnings(util_ensure_suggested("plotly",
+                                      goal = "generate interactive plots",
+                                      err = FALSE))) {
+        attr(p, "py") <- local({
+          py <- plotly::plot_ly(tb,
+                  x = tb[[ifelse(is_flipped, y, x)]],
+                  y = tb[[ifelse(is_flipped, x, y)]],
+                  type = 'bar',
+                  marker = list(color = tb[[fill]],
+                                autocolorscale = FALSE,
+                                colorscale = colscale))
+          py <- plotly::style(py,
+                              text = gtlb,
+                              textposition = "auto")
+
+          if (relative) {
+            if (is_flipped) {
+              py <- plotly::layout(py, xaxis = list(tickformat = ".2%",
+                                                    rangemode="tozero"))
+            } else {
+              py <- plotly::layout(py, yaxis = list(tickformat = ".2%",
+                                                    rangemode="tozero"))
+            }
+          }
+
+          # %>%
+          #   layout(xaxis = list(title = 'Parameter Name (Unit)',
+          #                       range = c(0, 1), tickvals = seq(0, 1, 0.2)),
+          #          yaxis = list(title = 'Sample ID', categoryorder = "total ascending"))
+          #
+          #
+          # p <- ggplot(tb, aes(
+          #   x = .data[[x]], y = .data[[y]],
+          #   #fill = .data[[fill]]
+          # )) + geom_bar(stat = "identity", na.rm = TRUE,
+          #               colour = "white", linewidth = 0.8) + # https://github.com/tidyverse/ggplot2/issues/5051
+          #   theme_minimal() +
+          #   fli +
+          #   #scale_fill +
+          #   xlab("") +
+          #   guides(fill = guide_legend(
+          #     title = ""
+          #   )) +
+          #   rel_ax +
+          #   theme(
+          #     legend.position = "bottom",
+          #     axis.text.x = element_text(angle = 90, hjust = 0),
+          #     axis.text.y = element_text(size = 10)
+          #   ) + xlab("") + ylab("")
+          # py <- util_plot_figure_plotly(p)
+          # for (i in seq_along(gtlb)) {
+          #   py <- plotly::style(py,
+          #                       traces = i,
+          #                       text = gtlb[[i]],
+          #                       textposition = "auto")
+          # }
+          py
+        })
+      }
+
       if (view) print(p)
       attr(p, "from_ReportSummaryTable") <- TRUE
       return(p)
@@ -340,8 +462,8 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
                y = "") +
           scale_x_discrete(limits = xlim) +
           # (if (nrow(hm) < ncol(hm)) coord_flip()) + # 7x5 standard of rmarkdown, not din a4
-          util_coord_flip(h = nrow(hm), w = ncol(hm)) +
-          scale_color_gradientn(colors = rev(my_cols)) +
+          util_coord_flip(w = nrow(hm), h = ncol(hm)) +
+          scale_color_gradientn(colors = rev(colscale)) +
           theme_minimal() +
           theme(aspect.ratio=5*length(unique(tb$Variables))/7/length(unique(tb$Variables)),
                 axis.text.x = element_text(angle = 35, hjust = 1,
@@ -377,7 +499,7 @@ print.ReportSummaryTable <- function(x, relative, dt = FALSE,
           # (if (nrow(hm) > ncol(hm)) coord_flip()) +
           util_coord_flip(w = nrow(hm), h = ncol(hm)) +
           scale_fill_manual(values = cc, name = " ") +
-          #      scale_fill_gradientn(colors = rev(my_cols)) +
+          #      scale_fill_gradientn(colors = rev(colscale)) +
           #      scale_x_discrete(position = "top") +
           xlab("") +
           ylab("") +

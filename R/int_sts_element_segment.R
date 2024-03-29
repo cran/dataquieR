@@ -1,5 +1,11 @@
 #' Checks for element set
 #'
+#' Depends on `dataquieR.ELEMENT_MISSMATCH_CHECKTYPE` option,
+#' see there -- # TODO: Rind out, how to document and link
+#' it here using `Roxygen`.
+#'
+#' [Indicator]
+#'
 #' @param study_data [data.frame] the data frame that contains the measurements, mandatory.
 #' @param meta_data [data.frame] the data frame that contains metadata attributes of the study data, mandatory.
 #'
@@ -19,25 +25,25 @@
 #' meta_data <- dataquieR::prep_create_meta(VAR_NAMES = c("speedx", "distx"),
 #'   DATA_TYPE = c("integer", "integer"), MISSING_LIST = "|", JUMP_LIST = "|",
 #'   STUDY_SEGMENT = c("Intro", "Ex"))
-#' options(dataquieR.RECORD_MISSMATCH_CHECKTYPE = "none")
+#' options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "none")
 #' int_sts_element_segment(study_data, meta_data)
-#' options(dataquieR.RECORD_MISSMATCH_CHECKTYPE = "exact")
+#' options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "exact")
 #' int_sts_element_segment(study_data, meta_data)
 #' study_data <- cars
 #' meta_data <- dataquieR::prep_create_meta(VAR_NAMES = c("speedx", "distx"),
 #'   DATA_TYPE = c("integer", "integer"), MISSING_LIST = "|", JUMP_LIST = "|",
 #'   STUDY_SEGMENT = c("Intro", "Intro"))
-#' options(dataquieR.RECORD_MISSMATCH_CHECKTYPE = "none")
+#' options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "none")
 #' int_sts_element_segment(study_data, meta_data)
-#' options(dataquieR.RECORD_MISSMATCH_CHECKTYPE = "exact")
+#' options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "exact")
 #' int_sts_element_segment(study_data, meta_data)
 #' study_data <- cars
 #' meta_data <- dataquieR::prep_create_meta(VAR_NAMES = c("speed", "distx"),
 #'   DATA_TYPE = c("integer", "integer"), MISSING_LIST = "|", JUMP_LIST = "|",
 #'   STUDY_SEGMENT = c("Intro", "Intro"))
-#' options(dataquieR.RECORD_MISSMATCH_CHECKTYPE = "none")
+#' options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "none")
 #' int_sts_element_segment(study_data, meta_data)
-#' options(dataquieR.RECORD_MISSMATCH_CHECKTYPE = "exact")
+#' options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "exact")
 #' int_sts_element_segment(study_data, meta_data)
 #' }
 int_sts_element_segment <- function(study_data, meta_data = "item_level") {

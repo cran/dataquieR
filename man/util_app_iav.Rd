@@ -25,3 +25,7 @@ util_app_iav(x, dta)
 \description{
 Test for applicability of numeric admissibility
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

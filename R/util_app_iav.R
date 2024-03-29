@@ -12,6 +12,10 @@
 #' - 2 data type matches but not applicable
 #' - 3 data type matches and applicable
 #' - 4 not applicable because of not suitable data type
+#'
+#' @seealso [pro_applicability_matrix]
+#' @keywords internal
+
 util_app_iav <- function(x, dta) {
   c1 <- rep(0, times = dim(x)[1])
   if (HARD_LIMITS %in% names(x))

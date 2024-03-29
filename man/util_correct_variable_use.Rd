@@ -14,6 +14,7 @@ util_correct_variable_use(
   allow_any_obs_na,
   min_distinct_values,
   need_type,
+  need_scale,
   role = "",
   overwrite = TRUE,
   do_not_stop = FALSE,
@@ -29,6 +30,7 @@ util_correct_variable_use2(
   allow_any_obs_na,
   min_distinct_values,
   need_type,
+  need_scale,
   role = arg_name,
   overwrite = TRUE,
   do_not_stop = FALSE,
@@ -63,6 +65,14 @@ can be a pipe (\code{|}) separated list of
 allowed data types. Use \code{!} to exclude
 a type. See \link{DATA_TYPES} for the
 predefined variable types of the
+\code{dataquieR} concept.}
+
+\item{need_scale}{\link{character} if not \code{NA}, variables must be of scale level
+\code{need_scale} according to the metadata,
+can be a pipe (\code{|}) separated list of
+allowed scale levels. Use \code{!} to exclude
+a level. See \link{SCALE_LEVELS} for the
+predefined scale levels of the
 \code{dataquieR} concept.}
 
 \item{role}{\link{character} variable-argument role. Set different defaults for
@@ -100,14 +110,14 @@ This function operates in the environment of its caller
 (using \link{eval.parent}, similar to \href{https://www.programiz.com/c-programming/c-preprocessor-macros#example-define}{Function like C-Preprocessor-Macros}
 ).
 Different from the other utility function that work
-in the caller's environment (\link{util_prepare_dataframes}), It has no side
+in the caller's environment (\link{prep_prepare_dataframes}), It has no side
 effects except that the argument
 of the calling function specified in \code{arg_name} is normalized (set to its
 default or a general default if missing, variable names being all white
 space replaced by NAs).
 It expects two objects in the caller's environment: \code{ds1} and \code{meta_data}.
 \code{meta_data} is the metadata data frame and \code{ds1} is produced by a preceding
-call of \link{util_prepare_dataframes} using \code{meta_data} and \code{study_data}.
+call of \link{prep_prepare_dataframes} using \code{meta_data} and \code{study_data}.
 }
 \details{
 \link{util_correct_variable_use} and \link{util_correct_variable_use2} differ only in
@@ -126,4 +136,43 @@ This function accesses the caller's environment!
 }
 \seealso{
 \link{.variable_arg_roles}
+
+Other robustness_functions: 
+\code{\link{util_as_valid_missing_codes}()},
+\code{\link{util_check_one_unique_value}()},
+\code{\link{util_empty}()},
+\code{\link{util_ensure_character}()},
+\code{\link{util_ensure_in}()},
+\code{\link{util_ensure_suggested}()},
+\code{\link{util_expect_scalar}()},
+\code{\link{util_fix_rstudio_bugs}()},
+\code{\link{util_is_integer}()},
+\code{\link{util_is_numeric_in}()},
+\code{\link{util_is_valid_missing_codes}()},
+\code{\link{util_match_arg}()},
+\code{\link{util_observations_in_subgroups}()},
+\code{\link{util_only_NAs}()},
+\code{\link{util_stop_if_not}()},
+\code{\link{util_warn_unordered}()}
+
+Other robustness_functions: 
+\code{\link{util_as_valid_missing_codes}()},
+\code{\link{util_check_one_unique_value}()},
+\code{\link{util_empty}()},
+\code{\link{util_ensure_character}()},
+\code{\link{util_ensure_in}()},
+\code{\link{util_ensure_suggested}()},
+\code{\link{util_expect_scalar}()},
+\code{\link{util_fix_rstudio_bugs}()},
+\code{\link{util_is_integer}()},
+\code{\link{util_is_numeric_in}()},
+\code{\link{util_is_valid_missing_codes}()},
+\code{\link{util_match_arg}()},
+\code{\link{util_observations_in_subgroups}()},
+\code{\link{util_only_NAs}()},
+\code{\link{util_stop_if_not}()},
+\code{\link{util_warn_unordered}()}
 }
+\concept{robustness}
+\concept{robustness_functions}
+\keyword{internal}

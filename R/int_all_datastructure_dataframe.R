@@ -7,6 +7,8 @@
 #' It is possible to conduct the checks by study segments or to consider only selected
 #' segments.
 #'
+#' [Indicator]
+#'
 #' @param meta_data_dataframe [data.frame] the data frame that contains the metadata for the data frame level, mandatory
 #' @param meta_data [data.frame] the data frame that contains metadata attributes of the study data, mandatory. The metadata data frame is assumed to contain the  information from all the studies.
 #'                               this is needed to know the `VAR_NAMES`, i.e., the column names used in data frames and  known from the metadata.
@@ -34,7 +36,7 @@
 #'
 #' # This is the "normal" procedure for inside pipeline
 #' # but outside this function  checktype is exact by default
-#' options(dataquieR.RECORD_MISSMATCH_CHECKTYPE = "subset_u")
+#' options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "subset_u")
 #' lapply(setNames(nm = prep_get_data_frame("meta_data_dataframe")$DF_NAME),
 #'   int_sts_element_dataframe, meta_data = md0)
 #' md0$VAR_NAMES[[1]] <-
@@ -42,7 +44,7 @@
 #'        # if nothing is wrong with it
 #' lapply(setNames(nm = prep_get_data_frame("meta_data_dataframe")$DF_NAME),
 #'   int_sts_element_dataframe, meta_data = md0)
-#' options(dataquieR.RECORD_MISSMATCH_CHECKTYPE = "exact")
+#' options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "exact")
 #' }
 #'
 int_all_datastructure_dataframe <- function(meta_data_dataframe =
@@ -86,8 +88,8 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
   id_vars_list <- lapply(setNames(meta_data_dataframe$DF_ID_VARS,
                                   nm = meta_data_dataframe$DF_NAME),
                          util_parse_assignments,
-                         multi_variate_text = TRUE
-  )
+                         multi_variate_text = TRUE )
+
   id_vars_list_vector <- lapply(id_vars_list, unlist, recursive = TRUE)
 
 
@@ -113,7 +115,7 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
   unexp_element_set_out <- NULL # TODO: capture errors form the next all and put them to the matrices
   try(silent = TRUE, {
     # subset_m cases are not reported here, since they are not usually a problem, if variable-level metadata is a large file for many data frames with diverse variable sets in, each.
-    check_type_old <- options(dataquieR.RECORD_MISSMATCH_CHECKTYPE = "subset_u")
+    check_type_old <- options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "subset_u")
     on.exit(options(check_type_old))
 
     meta_data$STUDY_SEGMENT <- NULL
@@ -219,7 +221,7 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
     meta_data_dup_rows_1$DF_UNIQUE_ID == 1]
 
   meta_data_dup_rows_1 <-
-    meta_data_dup_rows_1[meta_data_dup_rows_1$DF_UNIQUE_ROWS, ]
+    meta_data_dup_rows_1[!util_is_na_0_empty_or_false(meta_data_dup_rows_1$DF_UNIQUE_ROWS), ]
 
   duplicates_rows_out <- NULL # TODO: capture errors form the next all and put them to the matrices
   try(silent = TRUE, {
@@ -304,7 +306,44 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
   }
   # DataframeData <- util_merge_data_frame_list(resultData, "Data frame")
 
-  DataframeData <- util_make_data_slot_from_table_slot(DataframeTable)
+
+  DataframeData_1 <- util_make_data_slot_from_table_slot(DataframeTable)
+
+  DataframeData<-data.frame(Dataframe = DataframeTable$DF_NAME)
+  #Replace separate columns with just one column containing N and %
+    #Only if content is present, merge columns
+  if(!is.null(DataframeData_1$`Unexpected data element count (Number)`)){
+    DataframeData$`Unexpected data element count N (%)` <- paste0(DataframeData_1$`Unexpected data element count (Number)`, " (",
+                                                   DataframeData_1$`Unexpected data element count (Percentage (0 to 100))`, ")")
+   DataframeData$`Unexpected data element count (Grading)`<- DataframeData_1$`Unexpected data element count (Grading)`
+  }
+
+  if(!is.null(DataframeData_1$`Unexpected data element set (Number)`)){
+    DataframeData$`Unexpected data element set N (%)` <- paste0(DataframeData_1$`Unexpected data element set (Number)`, " (",
+                                                   DataframeData_1$`Unexpected data element set (Percentage (0 to 100))`, ")")
+    DataframeData$`Unexpected data element set (Grading)`<- DataframeData_1$`Unexpected data element set (Grading)`
+  }
+
+
+  if(!is.null(DataframeData_1$`Unexpected data record count (Number)`)){
+    DataframeData$`Unexpected data record count N (%)` <- paste0(DataframeData_1$`Unexpected data record count (Number)`, " (",
+                                                   DataframeData_1$`Unexpected data record count (Percentage (0 to 100))`, ")")
+    DataframeData$`Unexpected data record count (Grading)`<- DataframeData_1$`Unexpected data record count (Grading)`
+  }
+  if(!is.null(DataframeData_1$`Unexpected data record set (Number)`)){
+    DataframeData$`Unexpected data record set N (%)` <- paste0(DataframeData_1$`Unexpected data record set (Number)`, " (",
+                                                 DataframeData_1$`Unexpected data record set (Percentage (0 to 100))`, ")")
+    DataframeData$`Unexpected data record set (Grading)`<- DataframeData_1$`Unexpected data record set (Grading)`
+  }
+
+  if(!is.null(DataframeData_1$`Duplicates (Number)`)){
+    DataframeData$`Duplicates N (%)`<- paste0(DataframeData_1$`Duplicates (Number)`," (",
+                                                    DataframeData_1$`Duplicates (Percentage (0 to 100))`, ")")
+    DataframeData$`Duplicates (Grading)`<- DataframeData_1$`Duplicates (Grading)`
+  }
+
+rm(DataframeData_1)
+
 
   return(list(
     DataframeTable = DataframeTable,

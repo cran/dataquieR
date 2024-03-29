@@ -25,3 +25,7 @@ util_app_mol(x, dta)
 \description{
 Test for applicability of multivariate outlier detection
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

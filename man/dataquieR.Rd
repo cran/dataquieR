@@ -10,3 +10,33 @@ Epidemiological Research}
 For a quick start please read \link{dq_report2} and maybe the vignettes
 or the package's \href{https://dataquality.qihs.uni-greifswald.de/}{website}.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://dataquality.qihs.uni-greifswald.de/}
+  \item Report bugs at \url{https://gitlab.com/libreumg/dataquier/-/issues}
+}
+
+}
+\author{
+\strong{Maintainer}: Stephan Struckmann \email{stephan.struckmann@uni-greifswald.de} (\href{https://orcid.org/0000-0002-8565-7962}{ORCID})
+
+Authors:
+\itemize{
+  \item Elisa Kasbohm \email{elisa.kasbohm@uni-greifswald.de} (\href{https://orcid.org/0000-0001-5261-538X}{ORCID})
+  \item Joany Marino \email{joany.marino@uni-greifswald.de} (\href{https://orcid.org/0000-0002-4657-3758}{ORCID})
+  \item Elena Salogni \email{elena.salogni@uni-greifswald.de} (\href{https://orcid.org/0009-0007-3767-7145}{ORCID})
+  \item Adrian Richter \email{richtera@uni-greifswald.de} (\href{https://orcid.org/0000-0002-3372-2021}{ORCID})
+  \item Carsten Oliver Schmidt \email{carsten.schmidt@uni-greifswald.de} (\href{https://orcid.org/0000-0001-5266-9396}{ORCID})
+}
+
+Other contributors:
+\itemize{
+  \item University Medicine Greifswald [copyright holder]
+  \item German Research Foundation (DFG SCHM 2744/3-1, SCHM 2744/9-1, SCHM 2744/3-4) [funder]
+  \item National Research Data Infrastructure for Personal Health Data: (NFDI 13/1) [funder]
+  \item European Union’s Horizon 2020 programme (euCanSHare, grant agreement No. 825903) [funder]
+}
+
+}
+\keyword{internal}

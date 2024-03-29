@@ -84,4 +84,15 @@ eval(util_parse_redcap_rule(rule =
   '[dist] > sum(1, +(2, [dist] + 5), [speed]) + 3 + [dist]'),
 cars, util_get_redcap_rule_env())
 }
+
 }
+\seealso{
+Other parser_functions: 
+\code{\link{util_interpret_limits}()},
+\code{\link{util_interpret_range}()},
+\code{\link{util_parse_assignments}()},
+\code{\link{util_parse_interval}()}
+}
+\concept{metadata_management}
+\concept{parser_functions}
+\keyword{internal}

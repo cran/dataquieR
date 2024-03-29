@@ -7,6 +7,8 @@
 #' It is possible to conduct the checks by study segments or to consider only selected
 #' segments.
 #'
+#' [Indicator]
+#'
 #' @param meta_data_segment [data.frame] the data frame that contains the metadata for the segment level, mandatory
 #' @param study_data [data.frame] the data frame that contains the measurements, mandatory.
 #' @param meta_data [data.frame] the data frame that contains metadata attributes of the study data, mandatory.
@@ -41,7 +43,7 @@ int_all_datastructure_segment <- function(meta_data_segment = "segment_level",
 
   # Preps and checks ----
   # map metadata to study data
-  util_prepare_dataframes(.allow_empty = TRUE)
+  prep_prepare_dataframes(.allow_empty = TRUE)
   if (!(STUDY_SEGMENT %in% colnames(meta_data))) {
     meta_data[[STUDY_SEGMENT]] <- "ALL" # TODO: Warn
   }
@@ -89,7 +91,7 @@ int_all_datastructure_segment <- function(meta_data_segment = "segment_level",
       id_vars_list =
         id_vars_list_vector[meta_data_record_set_1[[STUDY_SEGMENT]]],
       identifier_name_list = meta_data_record_set_1[[STUDY_SEGMENT]],
-      valid_id_table_list = meta_data_record_set_1[[SEGMENT_ID_TABLE]],
+      valid_id_table_list = meta_data_record_set_1[[SEGMENT_ID_REF_TABLE]],
       meta_data_record_check_list =
         meta_data_record_set_1[[SEGMENT_RECORD_CHECK]],
       study_data = study_data,
@@ -139,7 +141,7 @@ int_all_datastructure_segment <- function(meta_data_segment = "segment_level",
   # X. Unexpected data element set ----
 
   # less worse, but only subset_m possible
-  check_type_old <- options(dataquieR.RECORD_MISSMATCH_CHECKTYPE = "subset_m") # "subset_u") # subset_m, subset_u, exact ,none
+  check_type_old <- options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "subset_m") # "subset_u") # subset_m, subset_u, exact ,none
   on.exit(options(check_type_old))
 
   out_int_sts_element <- NULL # TODO: capture errors form the next all and put them to the matrices
@@ -227,7 +229,40 @@ int_all_datastructure_segment <- function(meta_data_segment = "segment_level",
 
   # SegmntData <- util_merge_data_frame_list(resultData, "Segment")
 
-  SegmentData <- util_make_data_slot_from_table_slot(SegmentTable)
+
+
+  SegmentData1 <- util_make_data_slot_from_table_slot(SegmentTable)
+  #Create the df
+  SegmentData<- data.frame(Segment = SegmentData1$Segment)
+  #Only if content is present, merge columns
+  if(!is.null(SegmentData1$`Unexpected data record count (Number)`)){
+    SegmentData$`Unexpected data record count N (%)` <- paste0(SegmentData1$`Unexpected data record count (Number)`, " (",
+                                                               SegmentData1$`Unexpected data record count (Percentage (0 to 100))`, ")")
+  }
+
+  SegmentData$`Unexpected data record count (Grading)`<- SegmentData1$`Unexpected data record count (Grading)`
+
+  if(!is.null(SegmentData1$`Unexpected data record set (Number)`)){
+    SegmentData$`Unexpected data record set N (%)` <- paste0(SegmentData1$`Unexpected data record set (Number)`, " (",
+                                                 SegmentData1$`Unexpected data record set (Percentage (0 to 100))`, ")")
+  }
+  SegmentData$`Unexpected data record set (Grading)`<- SegmentData1$`Unexpected data record set (Grading)`
+
+
+   if(!is.null(SegmentData1$`Duplicates (Number)`)){
+    SegmentData$`Duplicates N (%)` <- paste0(SegmentData1$`Duplicates (Number)`, " (",
+                                               SegmentData1$`Duplicates (Percentage (0 to 100))`, ")")
+  }
+  SegmentData$`Duplicates (Grading)`<- SegmentData1$`Duplicates (Grading)`
+
+
+   if(!is.null(SegmentData1$`Unexpected data element set (Number)`)){
+    SegmentData$`Unexpected data element set N (%)` <- paste0(SegmentData1$`Unexpected data element set (Number)`, " (",
+                                                  SegmentData1$`Unexpected data element set (Percentage (0 to 100))`, ")")
+  }
+  SegmentData$`Unexpected data element set (Grading)`<- SegmentData1$`Unexpected data element set (Grading)`
+
+  rm(SegmentData1)
 
   return(list(
     SegmentTable = SegmentTable,

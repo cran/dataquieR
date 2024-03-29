@@ -1,3 +1,24 @@
+# dataquieR 2.1.0
+  * renamed metadata column `SEGMENT_ID_TABLE` to `SEGMENT_ID_REF_TABLE` in
+    segment level metadata
+  * scale level metadata support and heuristics
+  * significantly improved data quality summaries
+  * consolidated some of the indicator functions (limits, work in progress)
+  * many minor optimizing changes
+  * figure sizing (work in progress), also resize handles
+  * improved report files structure
+  * improved `dq_report_by` files structure
+  * fixes, e.g., in rules, fixes in label shortening, computation speed and 
+    cache pre-filling-control
+  * improved Excel export from the `HTML` reports
+  * missing codes: column `CODE_INTERPRET` changed to be in line with the 
+    `AAPOR` definitions, so the following translation: 
+    `PP -> P; P -> I; OH -> UO`
+  * fixed tests
+  * updated concept excerpt
+  * excluded nominal and ordinal variables from marginal means analysis
+  * improved data type handling
+
 # dataquieR 2.0.1
 
 ## Reporting 
@@ -21,14 +42,14 @@
   * More robust `dq_report_by` for large reports (can write and optionally render results to disk rather than returning them)
   * Bug fix in `dq_report_by` causing `DATA_PROCESS` not to work
   * Fixed some errors and `TODO`'s in `dq_report_by` and add dependent variables on the fly but with `VARIABLE_ROLE` suppress:
-     - If no role is given, add "primary" by default for single reports as well as for `dq_report_by`
-     - Support meta_data_v2 in `dq_report_by`
-     - FIXED: referred variables did not correctly resolve co_vars and labels instead of variable names
+     * If no role is given, add "primary" by default for single reports as well as for `dq_report_by`
+     * Support meta_data_v2 in `dq_report_by`
+     * FIXED: referred variables did not correctly resolve co_vars and labels instead of variable names
   * Several bug fixes:
-     - Addressed most parts of https://gitlab.com/libreumg/dataquier/-/issues/242    
-     - Addressed https://gitlab.com/libreumg/dataquier/-/issues/244 and https://gitlab.com/libreumg/dataquier/-/issues/212
-     - Default for result-slot-filter was not set (`filter_result_slots` in `dq_report2`)
-     - Sometimes, long labels in the first columns of a `JS`-table prevented controlling the table
+     * Addressed most parts of https://gitlab.com/libreumg/dataquier/-/issues/242    
+     * Addressed https://gitlab.com/libreumg/dataquier/-/issues/244 and https://gitlab.com/libreumg/dataquier/-/issues/212
+     * Default for result-slot-filter was not set (`filter_result_slots` in `dq_report2`)
+     * Sometimes, long labels in the first columns of a `JS`-table prevented controlling the table
 
 ## (Indicator) Functions related 
   * Fixed missed check for missing cross-item level metadata and earlier check for valid item-level metadata

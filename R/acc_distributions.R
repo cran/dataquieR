@@ -5,6 +5,8 @@
 #' proportion" with histograms and, if a grouping variable is included, plots of
 #' empirical cumulative distributions for the subgroups.
 #'
+#' [Indicator]
+#'
 #' @details
 #' # Algorithm of this implementation:
 #'
@@ -78,7 +80,7 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
                               label_col,
                               check_param = c("any", "location", "proportion"),
                               plot_ranges = TRUE,
-                              flip_mode = "noflip") {
+                              flip_mode = "noflip") { # FIXME: EK: Please address the distribution issue of having too many different versions (after discussion with me)
 
   # preps ----------------------------------------------------------------------
   # map metadata to study data
@@ -88,7 +90,7 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
   if (length(resp_vars) == 0) {
     util_message(
       c("All variables defined to be integer or float in the metadata are used",
-        "by acc_distributions."),
+        "by acc_distributions."), # TODO: extend for nominal and ordinal variables
       applicability_problem = TRUE, intrinsic_applicability_problem = TRUE)
     resp_vars <- meta_data[[label_col]][meta_data$DATA_TYPE %in%
                                           c("integer", "float")]
@@ -108,7 +110,8 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
                               allow_more_than_one = FALSE,
                               allow_any_obs_na = TRUE,
                               allow_all_obs_na = FALSE,
-                              need_type = "!float"
+                              need_type = "!float",
+                              need_scale = "nominal | ordinal"
     )
     # TODO: Still needed? Utility function?
     if (length(group_vars) > 0) {
@@ -167,7 +170,7 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
                             min_distinct_values = 2,
                             do_not_stop = ifelse(length(resp_vars) > 1,
                                                  TRUE, FALSE),
-                            need_type = "integer | float"
+                            need_scale = "!na"
   )
 
   # Which parameter of the distribution should be checked?
@@ -192,62 +195,31 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
     if (dq_param == "any") {
       # split variables for location and proportion checks and call
       # acc_distributions recursively
-      rvs_meta_prop <- suppressMessages(
-        util_prep_proportion_check(
-          resp_vars = resp_vars,
-          meta_data = meta_data,
-          study_data = ds1,
-          report_problems = "message"
-        )
-      )
-      rvs_with_prop <- names(rvs_meta_prop$Range)[which(
-        !is.na(rvs_meta_prop$Range))]
-      rvs_meta_loc <- suppressMessages(
-        util_prep_location_check(
-          resp_vars = resp_vars,
-          meta_data = meta_data,
-          report_problems = "message"
-        )
-      )
-      rvs_with_loc <- names(rvs_meta_loc$Range)[which(
-        !is.na(rvs_meta_loc$Range))]
-      rvs_with_none <-
-        setdiff(resp_vars, c(rvs_with_prop, rvs_with_loc))
-
-      if (length(intersect(rvs_with_prop, rvs_with_loc)) > 0) {
-        # For some variables, we might have metadata for location AND for
-        # proportion checks, which does not make sense.
-        util_warning(
-          paste0("For ",
-                 paste(intersect(rvs_with_prop, rvs_with_loc), collapse = ", "),
-                 ", metadata for both, location and proportion checks, are ",
-                 "given. This is considered an error and only proportion ",
-                 "checks will be performed."),
-          applicability_problem = FALSE)
-        rvs_with_loc <- setdiff(rvs_with_loc, rvs_with_prop)
-      }
-
-      if (length(rvs_with_loc) > 0) {
-        res_loc <- acc_distributions(
-          resp_vars = rvs_with_loc,
+      scale_level <- meta_data[[SCALE_LEVEL]][match(resp_vars,
+                                                    meta_data[[label_col]])]
+      if (any(scale_level %in% c("interval", "ratio"))) {
+        rvs_loc <- resp_vars[scale_level %in%
+                                    c("interval", "ratio")]
+        res_loc <- suppressWarnings(acc_distributions(
+          resp_vars = rvs_loc,
           group_vars = group_vars, study_data = study_data,
           meta_data = meta_data, label_col = label_col,
           check_param = "location", plot_ranges = plot_ranges,
-          flip_mode = flip_mode)
-      } else {
-        res_loc <- NULL
+          flip_mode = flip_mode))
+
+        res_merged <- res_loc
       }
 
-      res_merged <- res_loc
-
-      if (length(rvs_with_prop) > 0) {
-        res_prop <- acc_distributions(
-          resp_vars = rvs_with_prop,
+      if (any(!(scale_level %in% c("interval", "ratio")))) {
+        rvs_prop <- resp_vars[!(scale_level %in%
+                                       c("interval", "ratio"))]
+        res_prop <- suppressWarnings(acc_distributions(
+          resp_vars = rvs_prop,
           group_vars = group_vars, study_data = study_data,
           meta_data = meta_data, label_col = label_col,
           check_param = "proportion", plot_ranges = plot_ranges,
-          flip_mode = flip_mode)
-        if (!is.null(res_merged)) {
+          flip_mode = flip_mode))
+        if (exists("res_merged")) {
           res_merged$SummaryTable <- merge(res_merged$SummaryTable,
                                            res_prop$SummaryTable,
                                            all = TRUE, sort = FALSE)
@@ -258,32 +230,6 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
                                           res_prop$SummaryPlotList)
         } else {
           res_merged <- res_prop
-        }
-      }
-
-      if (length(rvs_with_none) > 0) {
-        util_message(paste0("For ", paste(rvs_with_none, collapse = ", "),
-                            ", there is no metadata on expected location or",
-                            " expected proportions available."),
-                     applicability_problem = TRUE,
-                     intrinsic_applicability_problem = TRUE)
-        res_no_meta <- suppressWarnings(acc_distributions(
-          resp_vars = rvs_with_none,
-          group_vars = group_vars, study_data = study_data,
-          meta_data = meta_data, label_col = label_col,
-          check_param = "location", plot_ranges = plot_ranges,
-          flip_mode = flip_mode))
-        if (!is.null(res_merged)) {
-          res_merged$SummaryTable <- merge(res_merged$SummaryTable,
-                                           res_no_meta$SummaryTable,
-                                           all = TRUE, sort = FALSE)
-          res_merged$SummaryData <- merge(res_merged$SummaryData,
-                                          res_no_meta$SummaryData,
-                                          all = TRUE, sort = FALSE)
-          res_merged$SummaryPlotList <- c(res_merged$SummaryPlotList,
-                                          res_no_meta$SummaryPlotList)
-        } else {
-          res_merged <- res_no_meta
         }
       }
 
@@ -312,6 +258,12 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
 
   rvs_with_meta <- names(rvs_meta$Range)[which(!is.na(rvs_meta$Range))]
 
+  # Which variables are of type 'datetime'?
+  is_datetime_var <- vapply(resp_vars, function(rv) {
+    meta_data[["DATA_TYPE"]][meta_data[[label_col]] == rv] ==
+      DATA_TYPES$DATETIME
+  }, FUN.VALUE = logical(1))
+
   # data quality indicator checks ----------------------------------------------
   if (dq_param == "location") {
     dq_check_list <- lapply(setNames(nm = resp_vars), function(rv) {
@@ -326,7 +278,8 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
       }
 
       loc_res <- setNames(nm = c("Variables",
-                                 paste(c("FLG","VAL"), "acc_ud_loc", sep = "_"),
+ #                                paste(c("FLG","VAL"), "acc_ud_loc", sep = "_"),
+                                  "FLG_acc_ud_loc", "values_from_data",
                                  "loc_func",
                                  "loc_range"),
                           list(rv,
@@ -353,7 +306,8 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
                                nm = c(nonmiss_cat, miss_cat))
       }
       # order categories as in value labels list
-      prop_table <- prop_table[names(rvs_meta$Range[[rv]])]
+      prop_table <- prop_table[union(names(rvs_meta$Range[[rv]]),
+                                     names(prop_table))]
       # check for each category of the variable whether the proportion lies
       # within the expected range
       prop_in_range <- mapply(as.list(prop_table),
@@ -371,7 +325,8 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
 
       prop_res <-  setNames(nm = c(
         "Variables",
-        paste(c("FLG", "VAL"), "acc_ud_prop", sep = "_"),
+#        paste(c("FLG", "VAL"), "acc_ud_prop", sep = "_"),
+        "FLG_acc_ud_prop", "values_from_data",
         "prop_range",
         "flg_which"),
         list(rv,
@@ -399,23 +354,25 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
   rownames(res_dq_check) <- NULL
 
   # summary table --------------------------------------------------------------
-  res_out <- res_dq_check[, 1:3]
+  res_out <- res_dq_check[, 1:4]
   # GRADING for backwards compatibility
   res_out$GRADING <- as.numeric(res_out[, 2])
   res_out$GRADING[which(is.na(res_out$GRADING))] <- 0
+
 
   # summary data ---------------------------------------------------------------
   if (dq_param == "location") {
     res_view <- data.frame("Variables" = res_dq_check$Variables,
                            "Measure of location" = res_dq_check$loc_func,
-                           "Value" = res_dq_check$VAL_acc_ud_loc,
+                           "Value" = res_dq_check$values_from_data,
                            "Range of expected values" =
                              res_dq_check$loc_range,
                            "Flag" = res_dq_check$FLG_acc_ud_loc,
                            check.names = FALSE)
   } else if (dq_param == "proportion") {
     res_view <- data.frame("Variables" = res_dq_check$Variables,
-                           "Proportions" = res_dq_check$VAL_acc_ud_prop,
+
+                           "Proportions" = res_dq_check$values_from_data,
                            "Range of expected values" =
                              res_dq_check$prop_range,
                            "Flag" = res_dq_check$FLG_acc_ud_prop,
@@ -429,23 +386,10 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
     ds1 <- ds1[!(is.na(ds1[[rv]])), , drop = FALSE]
 
     # Should the plot be a histogram? If not, it will be a bar chart.
-    if ("VALUE_LABELS" %in% colnames(meta_data)) {
-      plot_histogram <-  !all(util_is_integer(ds1[[rv]])) ||
-        (length(unique(ds1[[rv]])) > 30 &&
-           !(dq_param == "proportion" && rv %in% rvs_with_meta) &&
-           util_empty(meta_data$VALUE_LABELS[which(meta_data[[label_col]] ==
-                                                     rv)]))
-    } else {
-      plot_histogram <- !all(util_is_integer(ds1[[rv]])) ||
-        (length(unique(ds1[[rv]])) > 30 &&
-           !(dq_param == "proportion" && rv %in% rvs_with_meta))
-    }
-    # A histogram will be plotted for continuous variables, including numeric
-    # non-integer variables and integer variables with more than 30 values.
-    # Discrete variables will be plotted in a bar chart.
-    # If value labels or expected proportion ranges are given in the metadata,
-    # then the plot should be a bar chart, even if the variable is an integer
-    # variable with more than 30 different values.
+    plot_histogram <-
+      meta_data[[SCALE_LEVEL]][which(meta_data[[label_col]] == rv)] %in%
+        c(SCALE_LEVELS$INTERVAL, SCALE_LEVELS$RATIO) #&&
+      #!(dq_param == "proportion" && rv %in% rvs_with_meta)
 
     txtspec <- element_text(
       colour = "black", hjust = .5,
@@ -454,57 +398,53 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
 
     col_bars <- "grey"
     blue_red <- hcl.colors(10, "Plasma")[c(1,6)]
+
     if (plot_histogram) {
       # histogram --------------------------------------------------------------
-      minimum <- min(ds1[[rv]])
-      maximum <- max(ds1[[rv]])
-      xlims <- c(minimum, maximum)
-
       # compute bin breaks
-      bin_breaks <- util_optimize_histogram_bins(
+      bin_breaks <- suppressMessages(util_optimize_histogram_bins(
         x = ds1[[rv]],
-        iqr_bw = IQR(ds1[[rv]]),
-        n_bw = length(ds1[[rv]]),
-        min_plot = minimum,
-        max_plot = maximum,
         nbins_max = 100
-      )
-      breaks_x <- bin_breaks$within
+      ))
+      breaks_x <- bin_breaks[[1]]
 
       # plot histogram
       p <- ggplot(data = ds1[, rv, drop = FALSE], aes(x = .data[[rv]])) +
         geom_histogram(breaks = breaks_x,
                        fill = col_bars,
-                       color = col_bars) +
-        scale_x_continuous(expand = expansion(mult = 0.1),
-                           name = paste0(rv))
+                       color = col_bars)
 
+      if (!is_datetime_var[[rv]]) {
+        p <- p + scale_x_continuous(expand = expansion(mult = 0.1),
+                                    name = paste0(rv))
+      } else {
+        p <- p + ggplot2::scale_x_datetime(expand = expansion(mult = 0.1),
+                                           name = paste0(rv))
+      }
     } else {
       # bar chart --------------------------------------------------------------
-       if (dq_param == "proportion" & rv %in% rvs_with_meta) {
-        col_bars_sep <- setNames(nm = names(rvs_meta$Range[[rv]]),
-                                 rep(col_bars,
-                                     length(names(rvs_meta$Range[[rv]]))))
-        if (plot_ranges) {
-          # if bars outside of expected ranges shall be highlighted
-          col_bars_sep[flg_cat_prop[[rv]]] <- blue_red[2]
-        }
-        col_bars <- col_bars_sep
-        rv_fact <- factor(ds1[[rv]], levels = names(col_bars))
-        count_tab <- table(rv_fact)
-        col_bars <- col_bars[names(count_tab)[which(count_tab > 0)]]
-        # bar for 0 counts has 0 height and needs no color
-        # (would cause a ggplot error)
-        exp_bars <- as.numeric(names(col_bars_sep)) # expected bars
-      } else {
-        exp_bars <- sort(unique(ds1[[rv]]))
+      col_bars_sep <- setNames(nm = union(names(rvs_meta$Range[[rv]]),
+                                          unique(ds1[[rv]])),
+                               rep(col_bars,
+                                   length(union(names(rvs_meta$Range[[rv]]),
+                                                unique(ds1[[rv]])))))
+      if (plot_ranges & any(!is.na(flg_cat_prop[[rv]]))) {
+        # if bars outside of expected ranges shall be highlighted
+        col_bars_sep[flg_cat_prop[[rv]]] <- blue_red[2]
       }
+      col_bars <- col_bars_sep
+      count_tab <- table(factor(ds1[[rv]]))
+      col_bars <- col_bars[names(count_tab)[which(count_tab > 0)]]
+      # bar for 0 counts has 0 height and needs no color
+      # (would cause a ggplot error)
+      exp_bars <- names(col_bars_sep) # expected bars
+      ds1[[rv]] <- factor(ds1[[rv]], levels = exp_bars)
 
       if ("VALUE_LABELS" %in% colnames(meta_data) &&
           !util_empty(meta_data$VALUE_LABELS[which(meta_data[[label_col]] ==
                                                    rv)])) {
-        ds1[[rv]] <- factor(ds1[[rv]], levels = exp_bars)
         val_lab <- util_parse_assignments(
+          split_on_any_split_char = TRUE, split_char = c(SPLIT_CHAR, '<'),
           meta_data[[VALUE_LABELS]][which(meta_data[[label_col]] == rv)])
         if (all(levels(ds1[[rv]]) %in% names(val_lab))) {
           # TODO: Should the other be discarded?
@@ -519,27 +459,13 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
 
       p <- ggplot(data = ds1[, rv, drop = FALSE],
                   aes(x = .data[[rv]])) +
-        geom_bar(fill = col_bars)
+        geom_bar(fill = col_bars, width = 0.8)
 
-      if (is.factor(ds1[[rv]])) {
-        p <- p +
-          scale_x_discrete(name = paste0(rv),
-                           breaks = as.character(exp_bars),
-                           drop = FALSE,
-                           expand = expansion(add = 0.5, mult = 0.1))
-      } else if (length(unique(ds1[[rv]])) <= 5) {
-        # If there are only few bars, print a label for each bar at the x-axis.
-        p <- p +
-          scale_x_continuous(breaks = exp_bars,
-                             expand = expansion(mult = 0.1),
-                             name = paste0(rv),
-                             limits = range(exp_bars) + c(-0.5, 0.5))
-      } else {
-        p <- p +
-          scale_x_continuous(expand = expansion(mult = 0.1),
-                             name = paste0(rv),
-                             limits = range(exp_bars) + c(-0.5, 0.5))
-      }
+      p <- p +
+        scale_x_discrete(name = paste0(rv),
+                         breaks = as.character(exp_bars),
+                         drop = FALSE,
+                         expand = expansion(add = 0.5, mult = 0.1))
     }
 
     # add ranges (if needed) ---------------------------------------------------
@@ -563,7 +489,7 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
                               col = blue_red[1])
         }
         # add mean or median as line
-        loc_val <- dq_check_list[[rv]][["VAL_acc_ud_loc"]]
+        loc_val <- dq_check_list[[rv]][["values_from_data"]]
         if (!is.na(loc_val)) {
           loc_flg <- dq_check_list[[rv]][["FLG_acc_ud_loc"]]
           if (!is.na(loc_flg) & !loc_flg) {
@@ -647,6 +573,8 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
         stat_ecdf(geom = "step") +
         labs(x = "", y = paste0("ECDF: ", rv, " (by ",
                                 paste0(group_vars, collapse = ", "), ")")) +
+        scale_x_continuous(expand = expansion(mult = 0.1),
+                           limits = range(breaks_x)) +
         theme_minimal() +
         theme(
           title = txtspec,
@@ -674,6 +602,8 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
 
     util_set_size(P)
   })
+
+
 
   return(util_attach_attr(list(SummaryTable = res_out,
               SummaryData = res_view,
@@ -781,6 +711,9 @@ util_has_no_group_vars <- function(resp_vars,
 }
 
 #' Plots and checks for distributions -- only
+#'
+#' [Descriptor]
+#'
 #' @inherit acc_distributions
 #' @export
 #' @seealso
@@ -832,6 +765,8 @@ acc_distributions_only <- function(resp_vars = NULL,
 }
 
 #' Plots and checks for distributions -- only, but with ecdf
+#'
+#' [Descriptor]
 #' @inherit acc_distributions
 #' @export
 #' @seealso
@@ -876,6 +811,10 @@ acc_distributions_only_ecdf <- function(resp_vars = NULL,
   )
 }
 
+
+#' @family plotly_shims
+#' @concept plotly_shims
+#' @keywords internal
 util_as_plotly_acc_distributions <- function(res, ...) {
   if (length(res$SummaryPlotList) != 1) {
     return(plotly::ggplotly(ggplot2::ggplot() +

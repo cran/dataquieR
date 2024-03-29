@@ -6,6 +6,10 @@
 #' @param varname [character] len=1. Variable name for warning messages
 #'
 #' @return invisible(NULL)
+#'
+#' @family robustness_functions
+#' @concept robustness
+#' @keywords internal
 util_warn_unordered <- function(x, varname) {
   if (missing(varname)) varname <- as.character(substitute(x))
   if (sum(dim(x) != 1) > 1) {

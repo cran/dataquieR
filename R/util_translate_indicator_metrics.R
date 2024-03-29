@@ -1,23 +1,39 @@
 #' Translate standard column names to readable ones
 #'
+#' TODO: Duplicate of util_make_data_slot_from_table_slot ??
+#'
 #' @param colnames [character] the names to translate
-#' @param short [logical] include unit in output
+#' @param short [logical] include unit letter in output
+#' @param long [logical] include unit description in output
 #'
 #' @return translated names
-util_translate_indicator_metrics <- function(colnames, short = FALSE) {
+#'
+#' @keywords internal
+util_translate_indicator_metrics <- function(colnames, short = FALSE,
+                                             long = TRUE) {
   util_expect_scalar(short, check_type = is.logical)
+  util_expect_scalar(long, check_type = is.logical)
+  util_stop_if_not(`Cannot create short labels that are long` =
+                     !(short && long))
   abbreviationMetrics <- util_get_concept_info("abbreviationMetrics")
   dqi <- util_get_concept_info("dqi")
   vapply(colnames, FUN.VALUE = character(1), FUN = function(x) {
-    if (x %in% c("Variables", VAR_NAMES)) {
+    if (x %in% c("Variables", VAR_NAMES, STUDY_SEGMENT)) {
       return(x)
     }
     util_stop_if_not(length(x) == 1)
     nm <- strsplit(x, "_", fixed = TRUE)[[1]]
     if (length(nm) >= 2) {
-      m <- head(subset(abbreviationMetrics, get("Abbreviation") == nm[[1]],
-                       "Metrics", drop = TRUE), 1)
+      if (long) {
+        m <- head(subset(abbreviationMetrics, get("Abbreviation") == nm[[1]],
+                         "Metrics", drop = TRUE), 1)
+      } else {
+        m <- head(subset(abbreviationMetrics, get("Abbreviation") == nm[[1]],
+                         "public_name", drop = TRUE), 1)
+      }
       if (short) {
+        # m <- head(subset(abbreviationMetrics, get("Abbreviation") == nm[[1]],
+        #                  "public_name", drop = TRUE), 1)
         d <- head(subset(dqi, get("abbreviation") == paste(tail(nm, -1),
                                                            collapse = "_"),
                          "public_name", drop = TRUE), 1)
@@ -37,9 +53,9 @@ util_translate_indicator_metrics <- function(colnames, short = FALSE) {
 
       if (length(m) == length(d) && length(d) == 1 &&
           !util_empty(m) && !util_empty(d)) {
-        if (short)
-          sprintf("%s", d)
-        else
+       #if (short)
+       #   sprintf("%s", d)
+       # else
           sprintf("%s (%s)", d, m)
       } else {
         NA_character_

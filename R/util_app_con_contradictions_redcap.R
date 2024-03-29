@@ -12,6 +12,9 @@
 #' - 2 data type matches but not applicable
 #' - 3 data type matches and applicable
 #'
+#' @seealso [pro_applicability_matrix]
+#' @keywords internal
+
 util_app_con_contradictions_redcap <- function(x, dta) { # TODO: would need meta_data_cross_item
   c1 <- rep(1, times = dim(x)[1])
 

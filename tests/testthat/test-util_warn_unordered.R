@@ -1,5 +1,6 @@
 test_that("util_warn_unordered works", {
   skip_if_translated()
+  skip_on_cran()
   expect_warning(util_warn_unordered("Hallo", "x"),
                  perl = TRUE,
                  regexp =

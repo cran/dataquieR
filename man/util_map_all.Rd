@@ -23,3 +23,12 @@ names
 Maps a certain label column from the metadata
 to the study data frame.
 }
+\seealso{
+Other mapping: 
+\code{\link{util_map_by_largest_prefix}()},
+\code{\link{util_map_labels}()},
+\code{\link{util_recode}()}
+}
+\concept{mapping}
+\concept{metadata_management}
+\keyword{internal}

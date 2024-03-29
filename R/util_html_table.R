@@ -29,17 +29,32 @@
 #'        be used in the output, for `HTML`, only `HTML` code is being generated
 #' @param fillContainer see `DT::datatable`
 #' @param dl_fn file name for downloaded table -- see
-#'      [https://datatables.net/reference/button/excel](https://datatables.net/reference/button/excel))
+#'      [https://datatables.net/reference/button/excel](https://datatables.net/reference/button/excel)
 #' @param cols_are_indicatormetrics [logical] cannot be `TRUE`,
 #'        `colnames_aliases2acronyms` is `TRUE`. `cols_are_indicatormetrics`
 #'        controls, if the columns are really function calls or, if
 #'        `cols_are_indicatormetrics` has been set to `TRUE`, the columns are
 #'        indicator metrics.
 #' @param rotate_for_one_row [logical] rotate one-row-tables
-#'
+#' @param descs [character] descriptions of the columns for the hover-box shown
+#'                          for the column names, if not missing, this overrides
+#'                          the existing description stuff from known column
+#'                          names. If you have an attribute "description" of the `tb`, then it
+#'                          overwrites everything and appears as hover text
+#' @param title [character] title for download formats, see
+#'        [https://datatables.net/extensions/buttons/examples/html5/titleMessage.html](https://datatables.net/extensions/buttons/examples/html5/titleMessage.html)
+#' @param messageTop  [character] subtitle for download formats, see
+#'        [https://datatables.net/extensions/buttons/examples/html5/titleMessage.html](https://datatables.net/extensions/buttons/examples/html5/titleMessage.html)
+#' @param messageBottom  [character] footer for download formats, see
+#'        [https://datatables.net/extensions/buttons/examples/html5/titleMessage.html](https://datatables.net/extensions/buttons/examples/html5/titleMessage.html)
 #' @return the table to be added to an `rmd`/´`html` file as
 #'         [htmlwidgets::htmlwidgets]
 #' @seealso [util_formattable()]
+#'
+#' @family summary_functions
+#' @concept html
+#' @keywords internal
+#'
 util_html_table <- function(tb,
                   filter = "top",
                   columnDefs = NULL,
@@ -56,7 +71,9 @@ util_html_table <- function(tb,
                   rotate_headers = FALSE,
                   fillContainer = TRUE,
                   ...,
-                  colnames, options = list(),
+                  colnames,
+                  descs,
+                  options = list(),
                   is_matrix_table = FALSE,
                   colnames_aliases2acronyms = is_matrix_table &&
                     !cols_are_indicatormetrics,
@@ -64,11 +81,18 @@ util_html_table <- function(tb,
                   label_col = LABEL,
                   output_format = c("RMD", "HTML"), # TODO: Order bny VAR_ORDER, if clicked Variables column not on metadata view (NOT named VAR_NAMES)
                   dl_fn = "*",
-                  rotate_for_one_row = FALSE) { # caveat: the fixed columns filter may not work.
+                  rotate_for_one_row = FALSE,
+                  title = dl_fn,
+                  messageTop = NULL,
+                  messageBottom = NULL
+                  ) { # caveat: the fixed columns filter may not work.
+# TODO: https://datatables.net/forums/discussion/75723/adding-custom-colors-for-cells-in-excel-export line #15 in "//custom button for cashflow excel generation" shows, how to add custom styles, https://datatables.net/extensions/buttons/examples/html5/excelCellShading.html shows, how to conditionally apply those. Use this to enable cell background suiting the HTML version of the table.
+# TODO: add comments (descs) to header cells in excel export
 
   force(copy_row_names_to_column)
 
   util_ensure_suggested("htmltools", "Generating nice tables")
+  util_ensure_suggested("DT", "Generating nice tables")
 
   if (is.null(tb) || nrow(tb) == 0 || ncol(tb) == 0) {
     return()
@@ -93,8 +117,11 @@ util_html_table <- function(tb,
     }
   }
 
+  description <- attr(tb, "description")
   tb <- as.data.frame.matrix(tb,
                              stringsAsFactors = FALSE)
+  attr(tb, "description") <- description
+
   log_cols <- vapply(tb, is.logical, FUN.VALUE = logical(1))
   tb[, log_cols] <-
     vapply(tb[, log_cols, drop = FALSE],
@@ -106,8 +133,10 @@ util_html_table <- function(tb,
            FUN.VALUE = character(nrow(tb)))
 
   if (copy_row_names_to_column) {
+    description <- attr(tb, "description")
     tb <- cbind.data.frame(data.frame(Variables = rownames(tb), # TODO: Check, if Variable still is used instead of plural somewhere
                                       stringsAsFactors = FALSE), tb)
+    attr(tb, "description") <- description
     rownames(tb) <- NULL
   }
 
@@ -172,10 +201,10 @@ util_html_table <- function(tb,
 
     if (Variables == VAR_NAMES) {
       data <- vn
-      title <- nice_lb
+      coltitle <- nice_lb
     } else {
       data <- nice_lb
-      title <- vn
+      coltitle <- vn
     }
 
     .filter <- data
@@ -183,30 +212,42 @@ util_html_table <- function(tb,
     if (output_format == "RMD") { # a proxy to detect the old rmd based output engine
       href <- paste0("#", prep_link_escape(href,
                                            html = FALSE))
-      title <- prep_title_escape(title,
+      coltitle <- prep_title_escape(coltitle,
                                  html = FALSE)
       data <- prep_title_escape(data,
                         html = FALSE)
-
+      links <- mapply(
+        href = href,
+        title = coltitle,
+        filter = .filter,
+        data,
+        SIMPLIFY = FALSE,
+        FUN = htmltools::a
+      )
     } else {
       href <- paste0("VAR_", prep_link_escape(href,
                                               html = TRUE),
                      ".html#",
                      htmltools::urlEncodePath(as.character(href)))
-      title <- prep_title_escape(title,
+      coltitle <- prep_title_escape(coltitle,
                                  html = TRUE)
       data <- prep_title_escape(data,
                                 html = TRUE)
+      onclick <- sprintf(
+        'if (window.hasOwnProperty("dq_report2") && window.dq_report2 && window.location != "%s") { if (all_ids.all_ids.includes("%s")) { window.location = "%s" } else { window.alert("No result avaialable"); } }',
+                                           href,
+                                           href,
+                                           href)
+      links <- mapply(
+        href = sprintf('javascript:console.log("%s")', href),
+        onclick = onclick,
+        title = coltitle,
+        filter = .filter,
+        data,
+        SIMPLIFY = FALSE,
+        FUN = htmltools::a
+      )
     }
-
-    links <- mapply(
-      href = href,
-      title = title,
-      filter = .filter,
-      data,
-      SIMPLIFY = FALSE,
-      FUN = htmltools::a
-    )
 
     tb[[Variables]] <- vapply(links,
                               FUN = as.character,
@@ -214,7 +255,7 @@ util_html_table <- function(tb,
   }
 
 
-  if (rotate_for_one_row && nrow(tb) == 1) {
+  if (rotate_for_one_row && nrow(tb) == 1) {   #TODO: maybe the description is lost here
     tb <- data.frame(Name = base::colnames(tb),
                      Value = unlist(tb[1, , TRUE], recursive = FALSE,
                                     use.names = FALSE),
@@ -321,11 +362,25 @@ util_html_table <- function(tb,
   }
 
   if (cols_are_indicatormetrics) {
-    descs <- rep("TODO", length(colnames))
     fdescs <- rep("TODO", length(colnames))
   } else {
-    descs <- vapply(colnames, FUN.VALUE = character(1), util_col_description)
     fdescs <- vapply(fnames, FUN.VALUE = character(1), util_function_description)
+  }
+
+  if (missing(descs)) {
+    if(!is.null(attr(tb, "description"))){
+      descs <- attr(tb, "description")
+    } else if (cols_are_indicatormetrics) {
+      descs <- rep("TODO", length(colnames))
+    } else {
+      descs <- vapply(colnames, FUN.VALUE = character(1), util_col_description)
+    }
+  } else {
+    util_expect_scalar(descs, allow_more_than_one = TRUE, check_type =
+                         is.character)
+    util_stop_if_not(
+      `Need one description per column` =
+        length(descs) == length(colnames))
   }
 
   acs <- acronyms[colnames]
@@ -351,7 +406,9 @@ util_html_table <- function(tb,
   if (rotate_headers) {
     cssClass <- c("vertDT")
     cn <-
-      paste0("<div class=\"colheader\" title=\"",
+      paste0("<div class=\"colheader\" colname=\"",
+             coltitles,
+             "\" title=\"",
              paste(coltitles, descs, sep = "<br />\n\n"),
              "\">",
              vapply(
@@ -368,40 +425,119 @@ util_html_table <- function(tb,
              "</div>")
   } else {
     cssClass <- "myDT"
-    cn <- paste0("<span title=\"",
+    cn <- paste0("<span colname=\"",
+                 coltitles,
+                 "\" title=\"",
                  paste(coltitles, descs, sep = "<br />\n\n"),
                  "\">",
                  acs,
                  "</span>")
   }
 
+  if (!is.null(title)) {
+    title <- dQuote(title) # these ugly quotes are needed to prevent cleverly Excel from guessing, a title like "2020-01-01" may be a date to be displayed as its integer representation
+  }
+  if (!is.null(messageTop)) {
+    messageTop <- dQuote(messageTop) # these ugly quotes are needed to prevent cleverly Excel from guessing, a title like "2020-01-01" may be a date to be displayed as its integer representation
+  }
+  if (!is.null(messageBottom)) {
+    messageBottom <- dQuote(messageBottom) # these ugly quotes are needed to prevent cleverly Excel from guessing, a title like "2020-01-01" may be a date to be displayed as its integer representation
+  }
+
+
   .options <- list(
     dom = "Bt",
     # dom = "Bltp",
-    buttons = list(
+     buttons = list(
+#       list( # TODO: https://stackoverflow.com/a/65830545 but Excel also cannot handle inline images
+#         extend = "collection",
+#         text = "xxx",
+#         action = DT::JS(
+#           "function (e, dt, node, config) {
+#             var tab = $(dt.table().container()).find('table')[1];
+#             debugger
+#             window.open('data:application/vnd.ms-excel,' + encodeURIComponent( tab.outerHTML));
+#           }
+#           "
+# #          window.open('data:application/vnd.ms-excel,' + encodeURIComponent( document.getElementById('tableComments').outerHTML));"
+#         )
+#       ),
       list(
         extend = 'copy',
-        exportOptions = list( orthogonal = 'filter' )
+        title = title,
+        messageTop = messageTop,
+        messageBottom = messageBottom,
+        exportOptions = list( orthogonal = 'filter',
+                              format = list(
+                                header = DT::JS("function ( data, columnIdx ) {
+                                  return $(data).attr(\"colname\");
+                                }")
+                              ))
       ),
       list(
         extend = 'excel',
+        title = title,
+        messageTop = messageTop,
+        messageBottom = messageBottom,
         filename = dl_fn,
-        exportOptions = list( orthogonal = 'filter' )
+        exportOptions = list( orthogonal = 'filter',
+                              format = list(
+                                header = DT::JS("function ( data, columnIdx ) {
+                                  return $(data).attr(\"colname\");
+                                }")
+                              )),
+        customize =   # https://datatables.net/forums/discussion/60535/freeze-lock-first-row-in-datatables-excel-export-file to freeze first column and first row
+          # https://datatables.net/reference/button/excelHtml5
+          DT::JS('function (xlsx) {
+            var sheet = xlsx.xl.worksheets["sheet1.xml"];
+
+            var freezePanes =
+              \'<sheetViews><sheetView tabSelected="1" workbookViewId="0"><pane xSplit="1" ySplit="3" topLeftCell="B4" activePane="bottomRight" state="frozen"/></sheetView></sheetViews>\';
+            var current = sheet.children[0].innerHTML;
+            current = freezePanes + current;
+            sheet.children[0].innerHTML = current;
+          }
+        '),
+        autoFilter = TRUE
       ),
       list(
         extend = 'csv',
+        title = title,
+        messageTop = messageTop,
+        messageBottom = messageBottom,
         filename = dl_fn,
-        exportOptions = list( orthogonal = 'filter' )
+        exportOptions = list( orthogonal = 'filter',
+                              format = list(
+                                header = DT::JS("function ( data, columnIdx ) {
+                                  return $(data).attr(\"colname\");
+                                }")
+                              ))
       ),
       list(
         extend = 'pdf',
+        title = title,
+        messageTop = messageTop,
+        messageBottom = messageBottom,
         filename = dl_fn,
-        exportOptions = list( orthogonal = 'filter' )
+        exportOptions = list( orthogonal = 'filter',
+                              format = list(
+                                header = DT::JS("function ( data, columnIdx ) {
+                                  return $(data).attr(\"colname\");
+                                }")
+                              ))
       ),
       list(
         extend = 'print',
+        title = title,
+        messageTop = messageTop,
+        messageBottom = messageBottom,
         message = dl_fn,
-        exportOptions = list( orthogonal = 'filter' )
+        exportOptions = list( orthogonal = 'filter',
+                              format = list(
+                                header = DT::JS("function ( data, columnIdx ) {
+                                  return $(data).attr(\"colname\");
+                                }")
+                              ))
       )
     ),
     columnDefs = columnDefs, # https://github.com/rstudio/DT/issues/29
@@ -435,11 +571,14 @@ util_html_table <- function(tb,
                           fillContainer = fillContainer,
                           ...)
 
+  jqui <- rmarkdown::html_dependency_jqueryui()
+  jqui$stylesheet <- "jquery-ui.min.css"
+
   dtable$dependencies <- c(
     dtable$dependencies,
     list(
       rmarkdown::html_dependency_jquery(),
-      rmarkdown::html_dependency_jqueryui(),
+      jqui,
       html_dependency_report_dt() # always, since sort_vert is indep. from vert heads
     )
   )

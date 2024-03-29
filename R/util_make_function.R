@@ -5,6 +5,10 @@
 #'                       `util_make_function`
 #'
 #' @return decorated [function]
+#'
+#' @family reporting_functions
+#' @concept system
+#' @keywords internal
 util_make_function <- function(fct, caller.) {
   if (missing(caller.)) {
     try(caller. <- sys.call(1), silent = TRUE)

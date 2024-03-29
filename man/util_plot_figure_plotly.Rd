@@ -15,3 +15,4 @@ util_plot_figure_plotly(x)
 \description{
 Plot a \code{ggplot2} figure using \code{plotly}
 }
+\keyword{internal}

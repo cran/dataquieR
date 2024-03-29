@@ -15,3 +15,12 @@ binary vector
 \description{
 This function calculates outliers according to the rule of Huber et al.
 }
+\seealso{
+Other outlier_functions: 
+\code{\link{util_3SD}()},
+\code{\link{util_hubert}()},
+\code{\link{util_tukey}()}
+}
+\concept{outlier}
+\concept{outlier_functions}
+\keyword{internal}

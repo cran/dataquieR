@@ -11,7 +11,8 @@ An object of class \code{character} of length 1.
 ASSOCIATION_DIRECTION
 }
 \description{
-TODO
+The allowable direction of an association. The input is a string that can be
+either "positive" or "negative".
 }
 \seealso{
 \link{meta_data_cross}

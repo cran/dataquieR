@@ -18,3 +18,20 @@ each of them must exist in all data frames.}
 \description{
 This is an extension of \code{merge} working for a list of data frames.
 }
+\seealso{
+\link{prep_merge_study_data}
+
+Other data_management: 
+\code{\link{util_assign_levlabs}()},
+\code{\link{util_check_data_type}()},
+\code{\link{util_check_group_levels}()},
+\code{\link{util_compare_meta_with_study}()},
+\code{\link{util_dichotomize}()},
+\code{\link{util_rbind}()},
+\code{\link{util_remove_na_records}()},
+\code{\link{util_replace_hard_limit_violations}()},
+\code{\link{util_study_var2factor}()},
+\code{\link{util_table_of_vct}()}
+}
+\concept{data_management}
+\keyword{internal}

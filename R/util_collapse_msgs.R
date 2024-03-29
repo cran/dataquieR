@@ -1,4 +1,7 @@
-# collect all errors, warnings, or messages so that they are combined for a combined result
+#' Collect all errors, warnings, or messages so that they are combined for a combined result
+#'
+#' @keywords internal
+
 util_collapse_msgs <- function(class, all_of_f) { # class is either error, warning or message
   # extract and create a list of all the messages by class
   allmsgsofclass <- lapply(all_of_f, attr, class)

@@ -44,6 +44,10 @@
 #'   meta_data = meta_data
 #' )
 #' }
+#'
+#' @family integrity_indicator_functions
+#' @concept integrity_indicator
+#' @keywords internal
 util_int_unexp_records_set_segment <- function(level = c("segment"),
                                   id_vars_list,
                                   identifier_name_list,
@@ -166,7 +170,7 @@ util_int_unexp_records_set_segment <- function(level = c("segment"),
 
     # TODO: fix
     if (length(id_vars) > 1) {
-      util_warning("Check for mutliple IDs is not currently supported",
+      util_warning("Check for multiple IDs is not currently supported",
                    applicability_problem = TRUE,
                    intrinsic_applicability_problem = TRUE)
       return(

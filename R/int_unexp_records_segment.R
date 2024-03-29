@@ -3,6 +3,8 @@
 #' This function contrasts the expected record number in each study segment in
 #' the metadata with the actual record number in each segment data frame.
 #'
+#' [Indicator]
+#'
 #' @param data_record_count [integer]  an integer vector with the number of expected data records, mandatory.
 #' @param study_segment [character] a character vector indicating the name of each study data frame, mandatory.
 #' @param study_data [data.frame] the data frame that contains the measurements, mandatory.

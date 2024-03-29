@@ -12,3 +12,10 @@ environment
 \description{
 an environment with functions available for \code{REDcap} rules
 }
+\seealso{
+Other redcap: 
+\code{\link{util_eval_rule}()}
+}
+\concept{metadata_management}
+\concept{redcap}
+\keyword{internal}

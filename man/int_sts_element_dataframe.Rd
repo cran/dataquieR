@@ -27,7 +27,10 @@ mismatches
 }
 }
 \description{
-Depends on \code{dataquieR.RECORD_MISSMATCH_CHECKTYPE} option,
-see there -- # TODO: Rename this option and find out, how to document and link
+Depends on \code{dataquieR.ELEMENT_MISSMATCH_CHECKTYPE} option,
+see there -- # TODO: Rind out, how to document and link
 it here using \code{Roxygen}.
+}
+\details{
+\link{Indicator}
 }

@@ -1,4 +1,5 @@
 test_that("util_map_labels works", {
+  skip_on_cran()
   meta_data <- prep_create_meta(
     VAR_NAMES = c("ID", "SEX", "AGE", "DOE"),
     LABEL = c("Pseudo-ID", "Gender", "Age", "Examination Date"),

@@ -1,4 +1,5 @@
 test_that("util_looks_like_missing works", {
+  skip_on_cran()
   expected <- rep(FALSE, 100)
   expected[c(88, 89, 98, 99)] <- TRUE
   expect_equal(

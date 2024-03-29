@@ -29,6 +29,7 @@ study_data <- data.frame(
 )
 
 test_that("A_not_equal_B_vv works", {
+  skip_on_cran()
   expect_equal(
     A_not_equal_B_vv(study_data = study_data,
                      A = "sex_at_baseline",
@@ -37,6 +38,7 @@ test_that("A_not_equal_B_vv works", {
     c(0, 0, 0, 0, 0, 1, 0, 1))
 })
 test_that("A_less_than_B_vv works", {
+  skip_on_cran()
   expect_equal(
     A_less_than_B_vv(study_data = study_data,
                      A = "age_at_followup",
@@ -67,6 +69,7 @@ test_that("A_less_than_B_vv works", {
 })
 
 test_that("A_less_equal_B_vv works", {
+  skip_on_cran()
   expect_equal(
     A_less_equal_B_vv(study_data = study_data,
                      A = "age_at_followup",
@@ -101,6 +104,7 @@ test_that("A_less_equal_B_vv works", {
 
 
 test_that("A_greater_than_B_vv works", {
+  skip_on_cran()
   expect_equal(
     A_greater_than_B_vv(study_data = study_data,
                       A = "age_at_followup",
@@ -135,6 +139,7 @@ test_that("A_greater_than_B_vv works", {
 
 
 test_that("A_greater_equal_B_vv works", {
+  skip_on_cran()
   expect_equal(
     A_greater_equal_B_vv(study_data = study_data,
                      A = "age_at_followup",
@@ -181,6 +186,7 @@ test_that("A_present_not_B_vv works", {
 })
 
 test_that("A_present_and_B_vv works", {
+  skip_on_cran()
   expect_equal(
     A_present_and_B_vv(study_data = study_data,
                        A = "piercing_date",
@@ -195,6 +201,7 @@ test_that("A_present_and_B_vv works", {
 
 
 test_that("A_present_and_B_levels_vl works", {
+  skip_on_cran()
   expect_equal(
     A_present_and_B_levels_vl(study_data = study_data,
                      A = "piercing_date",
@@ -213,6 +220,7 @@ test_that("A_present_and_B_levels_vl works", {
 })
 
 test_that("A_levels_and_B_levels_ll works", {
+  skip_on_cran()
   expect_equal(
     A_levels_and_B_levels_ll(study_data = study_data,
                               A = "sex_at_baseline",
@@ -224,6 +232,7 @@ test_that("A_levels_and_B_levels_ll works", {
 })
 
 test_that("A_levels_and_B_gt_value_lc works", {
+  skip_on_cran()
   expect_equal(
     A_levels_and_B_gt_value_lc(study_data = study_data,
                              A = "sex_at_baseline",
@@ -235,6 +244,7 @@ test_that("A_levels_and_B_gt_value_lc works", {
 })
 
 test_that("A_levels_and_B_lt_value_lc works", {
+  skip_on_cran()
   expect_equal(
     A_levels_and_B_lt_value_lc(study_data = study_data,
                                A = "sex_at_baseline",

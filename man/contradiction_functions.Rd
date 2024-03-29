@@ -30,4 +30,4 @@ Detect abnormalities help functions
 \verb{A \%in\% \{set of levels\} & B \%in\% \{set of levels\}}
 }
 }
-\keyword{datasets}
+\keyword{internal}

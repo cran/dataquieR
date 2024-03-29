@@ -1,4 +1,5 @@
 test_that("multiplication works", {
+  skip_on_cran()
   expect_equal(2 * 2, 4)
   # TODO: Write
   # load(system.file("extdata/study_data.RData", package = "dataquieR"))

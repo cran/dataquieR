@@ -17,3 +17,19 @@ util_attach_attr(x, ...)
 \description{
 Attach attributes to an object and return it
 }
+\seealso{
+Other process_functions: 
+\code{\link{util_abbreviate}()},
+\code{\link{util_all_is_integer}()},
+\code{\link{util_bQuote}()},
+\code{\link{util_backtickQuote}()},
+\code{\link{util_coord_flip}()},
+\code{\link{util_count_NA}()},
+\code{\link{util_extract_matches}()},
+\code{\link{util_par_pmap}()},
+\code{\link{util_setup_rstudio_job}()},
+\code{\link{util_suppress_output}()}
+}
+\concept{process}
+\concept{process_functions}
+\keyword{internal}

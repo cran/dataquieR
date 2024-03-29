@@ -1,6 +1,6 @@
-#' Print a [dataquieR] result returned by pipeline_vectorized
+#' Print a [dataquieR] result returned by [dq_report2]
 #' @aliases dataquieR_result
-#' @param x [list] a dataquieR result from [pipeline_vectorized] or
+#' @param x [list] a dataquieR result from [dq_report2] or
 #'                 [util_eval_to_dataquieR_result]
 #' @param ... passed to print. Additionally, the argument `slot` may be passed
 #'            to print only specific sub-results.

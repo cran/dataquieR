@@ -2,6 +2,14 @@ test_that("acc_shape_or_scale works with 3 args", {
   skip_on_cran() # slow
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
+
 
   expect_message(
     res1 <-
@@ -61,7 +69,7 @@ test_that("acc_shape_or_scale works with 3 args", {
 
   md1 <- meta_data
   md1[md1$VAR_NAMES == "v00014", DISTRIBUTION] <- NA
-  suppressWarnings(expect_error(
+  suppressMessages(suppressWarnings(expect_error(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data,
@@ -71,7 +79,7 @@ test_that("acc_shape_or_scale works with 3 args", {
                          par2 = 1,
                          guess = FALSE),
     regexp = "No distribution specified for v00014 in DISTRIBUTION"
-  ))
+  )))
 
   md1 <- meta_data
   md1[md1$VAR_NAMES == "v00014", DISTRIBUTION] <- "dirichlet"
@@ -89,16 +97,16 @@ test_that("acc_shape_or_scale works with 3 args", {
 
   expect_message(
     res1 <-
-      acc_shape_or_scale(resp_vars = "v00016", # uniform and integer
+      acc_shape_or_scale(resp_vars = "v00006", # uniform and integer
                          study_data = study_data,
                          meta_data = meta_data,
                          dist_col = DISTRIBUTION,
-                         par1 = -10,
-                         par2 = 50,
+                         par1 = 1,
+                         par2 = 9,
                          guess = FALSE),
-    regexp = "Due to missing values in v00016 308 observations were deleted."
+    regexp = "Due to missing values in v00006 382 observations were deleted."
   )
-  expect_equal(sum(1 == res1$SummaryData$GRADING), 4)
+  expect_equal(sum(1 == res1$SummaryData$GRADING), 8)
   expect_error(
     suppressWarnings(
       res1 <-
@@ -125,7 +133,8 @@ expect_error(
                        par1 = 0,
                        par2 = 1,
                        guess = FALSE),
-  regexp = "resp_vars == .+v00001.+ must be a non-empty numeric variable",
+  regexp = paste("Argument .resp_vars.+ Variable .v00001.+string. does",
+                 "not have an allowed type"),
   perl = TRUE
 )
 expect_message(
@@ -240,7 +249,15 @@ test_that("acc_shape_or_scale works with label_col", {
   skip_on_cran() # slow
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
-  expect_warning(
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
+
+    expect_warning(
     expect_error(
       res1 <-
         acc_shape_or_scale(study_data = study_data, meta_data = meta_data,
@@ -290,7 +307,7 @@ test_that("acc_shape_or_scale works with label_col", {
   )
   skip_on_cran()
   skip_if_not_installed("vdiffr")
-  skip_if_not(capabilities()["long.double"])
+  # TODO: skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("shape_or_scale plot for CRP_0 ok",
                               res1$SummaryPlot)
 })

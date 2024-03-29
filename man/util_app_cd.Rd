@@ -24,3 +24,7 @@ util_app_cd(x, dta)
 \description{
 Test for applicability of contradiction checks
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

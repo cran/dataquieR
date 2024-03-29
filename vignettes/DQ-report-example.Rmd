@@ -1,6 +1,6 @@
 ---
 title: "dataquieR example report"
-author: "Elisa Kasbohm, Joany Marino, Adrian Richter, Stephan Struckmann, Carsten Oliver Schmidt"
+author: "Elisa Kasbohm, Joany Marino, Elena Salogni, Adrian Richter, Stephan Struckmann, Carsten Oliver Schmidt"
 output:
   rmarkdown::html_vignette:
     css: dfg_qs_style.css
@@ -12,23 +12,10 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r include=FALSE}
-library(knitr)
-library(DT)
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, dpi = 10)
-if (rmarkdown::pandoc_available(version = "1.12.3")) {
-  knit_print.data.frame <- function(x, ...) {
-    knit_print(DT::datatable(head(x, 10)), ...)
-  }
-  registerS3method("knit_print", "data.frame", knit_print.data.frame)
-}
-library(dataquieR)
-```
-
 # Preface
 
-This is a brief example report using `dataquieR`'s functions. Also, all figure outputs
-are displayed as icons only to avoid big files on CRAN. For a longer and
+This is a brief example report using `dataquieR`'s functions. Also, all outputs
+are disabled to avoid big files and long runtimes on CRAN. For a longer and
 better elaborated example, please also consider our
 [online example with data from SHIP](https://dataquality.qihs.uni-greifswald.de/VIN_DQ-report-SHIP-example.html).
 
@@ -39,35 +26,35 @@ interactive reports, that can be viewed using a web browser.
 
 ## Study data
 
-```{r echo=TRUE, warning=FALSE, message=FALSE}
+```r
 load(system.file("extdata", "study_data.RData", package = "dataquieR"))
 sd1 <- study_data
 ```
 
 The imported study data consist of:
 
-* N = `r dim(sd1)[1]` observations and
-* P = `r dim(sd1)[2]` study variables
+* N = `dim(sd1)[1]` observations and
+* P = `dim(sd1)[2]` study variables
 
 
 ## Metadata 
 
 
-```{r echo=TRUE, warning=FALSE, message=FALSE}
+```r
 load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
 md1 <- meta_data
 ```
 
 The imported meta data provide information for:
 
-* P = `r dim(md1)[1]` study variables and
-* Q = `r dim(md1)[2]` attributes
+* P = `dim(md1)[1]` study variables and
+* Q = `dim(md1)[2]` attributes
 
 ## Applicability 
 
 The call of this R-function requires two inputs only:
 
-```{r message=FALSE, warning=FALSE}
+```r
 appmatrix <- pro_applicability_matrix(
   study_data = sd1,
   meta_data = md1,
@@ -77,7 +64,7 @@ appmatrix <- pro_applicability_matrix(
 
 Heatmap-like plot:
 
-```{r message=FALSE, warning=FALSE, fig.height = 10, fig.width = 6}
+```r
 appmatrix$ApplicabilityPlot
 ```
 
@@ -85,7 +72,7 @@ appmatrix$ApplicabilityPlot
 
 ## Unit missingness
 
-```{r message = FALSE, warning = FALSE}
+```r
 my_unit_missings2 <- com_unit_missingness(
   study_data = sd1,
   meta_data = md1,
@@ -96,13 +83,13 @@ my_unit_missings2 <- com_unit_missingness(
 ```
 
 
-```{r}
+```r
 my_unit_missings2$SummaryData
 ```
 
 ## Segment missingness
 
-```{r message=FALSE, warning=FALSE}
+```r
 MissSegs <- com_segment_missingness(
   study_data = sd1,
   meta_data = md1,
@@ -113,7 +100,7 @@ MissSegs <- com_segment_missingness(
 )
 ```
 
-```{r message=FALSE, echo=TRUE, warning=FALSE, results = 'hide', fig.keep = 'all',  fig.align="center", fig.height = 3, fig.width = 4}
+```r
 MissSegs$SummaryPlot
 ```
 
@@ -121,7 +108,7 @@ MissSegs$SummaryPlot
 
 For some analyses adding new and transformed variable to the study data is necessary.
 
-```{r message=FALSE, warning=FALSE}
+```r
 # use the month function of the lubridate package to extract month of exam date
 require(lubridate)
 # apply changes to copy of data
@@ -132,7 +119,7 @@ sd2$month <- month(sd2$v00013)
 
 Static metadata of the variable must be added to the respective metadata.
 
-```{r message=FALSE, warning=FALSE}
+```r
 MD_TMP <- prep_add_to_meta(
   VAR_NAMES = "month",
   DATA_TYPE = "integer",
@@ -147,7 +134,7 @@ MD_TMP <- prep_add_to_meta(
 
 Subsequent call of the R-function may include the new variable.
 
-```{r message=FALSE, warning=FALSE}
+```r
 MissSegs <- com_segment_missingness(
   study_data = sd2,
   meta_data = MD_TMP,
@@ -159,7 +146,7 @@ MissSegs <- com_segment_missingness(
 )
 ```
 
-```{r message=FALSE, echo=TRUE, warning=FALSE, results = 'hide', fig.keep = 'all',  fig.align="center", fig.height = 6, fig.width = 4}
+```r
 MissSegs$SummaryPlot
 ```
 
@@ -167,11 +154,11 @@ MissSegs$SummaryPlot
 
 The following implementation considers also labeled missing codes. The use of such a table is optional but recommended. Missing code labels used in the simulated study data are loaded as follows:
 
-```{r message=FALSE, warning=FALSE}
+```r
 code_labels <- prep_get_data_frame("meta_data_v2|missing_table")
 ```
 
-```{r message = FALSE, warning = FALSE}
+```r
 item_miss <- com_item_missingness(
   study_data = sd1,
   meta_data = meta_data,
@@ -185,13 +172,13 @@ item_miss <- com_item_missingness(
 
 The function call above sets the analyses of causes for missing values to TRUE, includes system missings with an own code, and sets the threshold to 80%.
 
-```{r message=FALSE, echo=TRUE, warning=FALSE}
+```r
 item_miss$SummaryTable
 ```
 
 #### Summary plot of item missingness
 
-```{r message=FALSE, echo=TRUE, warning=FALSE, fig.height=5, fig.width = 5}
+```r
 item_miss$SummaryPlot
 ```
 
@@ -200,7 +187,7 @@ item_miss$SummaryPlot
 
 ## Limit deviations
 
-```{r }
+```r
 MyValueLimits <- con_limit_deviations(
   resp_vars = NULL,
   label_col = "LABEL",
@@ -211,24 +198,26 @@ MyValueLimits <- con_limit_deviations(
 ```
 
 ### Summary table
-```{r message=FALSE, echo=TRUE, warning=FALSE}
+```r
 MyValueLimits$SummaryTable
 ```
 
 
 ### Summary plot
-```{r }
+```r
 # select variables with deviations
-whichdeviate <- as.character(MyValueLimits$SummaryTable$Variables)[MyValueLimits$SummaryTable$GRADING == 1]
+whichdeviate <- unique(as.character(MyValueLimits$SummaryData$Variables)[
+  MyValueLimits$SummaryData$Number > 0 & MyValueLimits$SummaryData$Section != 
+    "within"])
 ```
 
-```{r message=FALSE, echo=TRUE, warning=FALSE, results = 'hide', fig.keep = 'all', fig.align="center", fig.height = 5, fig.width = 7}
+```r
 patchwork::wrap_plots(plotlist = MyValueLimits$SummaryPlotList[whichdeviate], ncol = 2) 
 ```
 
 ## Inadmissible levels
 
-```{r message=FALSE, warning=FALSE}
+```r
 IAVCatAll <- con_inadmissible_categorical(
   study_data = sd1,
   meta_data = md1,
@@ -238,7 +227,7 @@ IAVCatAll <- con_inadmissible_categorical(
 
 ## Contradictions
 
-```{r message=FALSE, warning=FALSE}
+```r
 checks <- read.csv(system.file("extdata",
   "contradiction_checks.csv",
   package = "dataquieR"
@@ -247,7 +236,7 @@ header = TRUE, sep = "#"
 )
 ```
 
-```{r }
+```r
 AnyContradictions <- con_contradictions(
   study_data = sd1,
   meta_data = md1,
@@ -257,18 +246,18 @@ AnyContradictions <- con_contradictions(
 )
 ```
 
-```{r message=FALSE, echo=TRUE, warning=FALSE}
+```r
 AnyContradictions$SummaryTable
 ```
 
-```{r message=FALSE, echo=TRUE, warning=FALSE, fig.height = 4, fig.width = 6}
+```r
 AnyContradictions$SummaryPlot
 ```
 
 # ACCURACY
 
-```{r echo = TRUE}
-ruol <- dataquieR:::acc_robust_univariate_outlier(study_data = sd1, meta_data = md1, label_col = LABEL)
+```r
+robust_univariate_outlier(study_data = sd1, meta_data = md1, label_col = LABEL)
 
 c(
 #  head(ruol$SummaryPlotList, 2),
@@ -277,7 +266,7 @@ c(
 ```
 
 
-```{r, fig.height = 3, fig.width = 4}
+```r
 myloess <- dataquieR::acc_loess(
   resp_vars = "SBP_0",
   group_vars = "USR_BP_0",

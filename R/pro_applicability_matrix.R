@@ -87,7 +87,7 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
     ), applicability_problem = TRUE)
   }
 
-  util_prepare_dataframes(.replace_missings = FALSE)
+  prep_prepare_dataframes(.replace_missings = FALSE)
 
   Variables <- names(ds1)
   # this matrix will be shown to users
@@ -128,7 +128,11 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
   # datatypes in metadata and creates a binary vector indicating whether data
   # type fits or not
   dt_appl <- as.numeric(util_compare_meta_with_study(sdf = ds1, mdf = meta_data,
-                                                     label_col = label_col))
+                                                     label_col = label_col,
+                                                     check_conversion_stable =
+                                                       TRUE))
+  # combine convertible w/ and convertible w/o issues
+  dt_appl[!is.na(dt_appl) & dt_appl == 3] <- 2
 
 
   # HINT: For each added function that returns MoifiedStudyData,
@@ -194,7 +198,7 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
     meta_data$STUDY_SEGMENT <- paste0("Block #", ceiling(1:nvars /
                                                              max_vars_per_plot))
   } else if (strata_defined && split_segments) {
-    if (any(is.na(meta_data$STUDY_SEGMENT))) {
+    if (any(is.na(meta_data$STUDY_SEGMENT))) { # HINT: This is now dead code
       util_message(c(
         "Some STUDY_SEGMENT are NA. Will assign those to an artificial",
         "segment %s"), dQuote("Other"),
@@ -256,11 +260,60 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
 
 
   # reshape wide to long
-  app_matrix_long <- melt(app_matrix, id.vars = c("Variables",
-                                                  STUDY_SEGMENT))
+#  app_matrix_long <- melt(app_matrix, id.vars = c("Variables",
+#                                                  STUDY_SEGMENT))
+  app_matrix_long <-
+    stats::reshape(data = app_matrix,
+                   idvar = c("Variables", STUDY_SEGMENT),
+                   varying = colnames(app_matrix)[2:(ncol(app_matrix)-1)],
+                   v.names = "value",
+                   times = colnames(app_matrix)[2:(ncol(app_matrix)-1)],
+                   direction = "long")
+
+  levs <- unique(app_matrix_long$time)
+  #sort levels
+  #levs <- sort(levs)
+  levs_int <- levs[grep("int_", levs)]
+  levs_com <- levs[grep("com_", levs)]
+  levs_con <- levs[grep("con_", levs)]
+  levs_acc <- levs[grep("acc_", levs)]
+
+  #order the factor levels
+  app_matrix_long$time <- factor(app_matrix_long$time,
+                                  levels = c(levs_int,levs_com,
+                                             levs_con, levs_acc))
+  rownames(app_matrix_long) <- NULL
   colnames(app_matrix_long) <- c("VARIABLES", "STUDY_SEGMENT", "IMPLEMENTATION",
                                  "APP_SCORE")
 
+  #Order rows by int, com, con, and acc
+  app_matrix_long_int <- app_matrix_long[grep("int_",
+                                             app_matrix_long$IMPLEMENTATION), ,
+                                        drop = FALSE]
+  app_matrix_long_int <-
+    app_matrix_long_int[order(app_matrix_long_int$IMPLEMENTATION), , drop = FALSE]
+
+
+  app_matrix_long_com <- app_matrix_long[grep("com_",
+                                             app_matrix_long$IMPLEMENTATION), ,
+                                        drop = FALSE]
+  app_matrix_long_com <-
+    app_matrix_long_com[order(app_matrix_long_com$IMPLEMENTATION), , drop = FALSE]
+
+  app_matrix_long_con<- app_matrix_long[grep("con_",
+                                             app_matrix_long$IMPLEMENTATION), ,
+                                        drop = FALSE]
+  app_matrix_long_con <-
+    app_matrix_long_con[order(app_matrix_long_con$IMPLEMENTATION), , drop = FALSE]
+
+  app_matrix_long_acc <- app_matrix_long[grep("acc_",
+                                             app_matrix_long$IMPLEMENTATION), ,
+                                        drop = FALSE]
+  app_matrix_long_acc <-
+    app_matrix_long_acc[order(app_matrix_long_acc$IMPLEMENTATION), , drop = FALSE]
+
+  app_matrix_long<- rbind(app_matrix_long_int, app_matrix_long_com,
+                          app_matrix_long_con, app_matrix_long_acc)
 
   lbs <- c(
     "Non-matching datatype + Incomplete metadata",

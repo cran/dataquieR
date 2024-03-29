@@ -17,6 +17,6 @@ test_that("util_ensure_suggested works", {
   }
   expect_silent(util_ensure_suggested(existing, "test the function"))
   expect_error(util_ensure_suggested(unexist, "test the function"),
-               regexp = "Missing the package\\(s\\) .+ to test the function",
+              regexp = "The package.+is required to\\s+test\\s+the\\s+function",
                perl = TRUE)
 })

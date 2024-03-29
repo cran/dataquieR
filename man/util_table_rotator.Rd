@@ -15,3 +15,4 @@ util_table_rotator(tb)
 \description{
 if \code{nrow(tb) > 1}, \code{util_table_rotator} just returns \code{tb}.
 }
+\keyword{internal}

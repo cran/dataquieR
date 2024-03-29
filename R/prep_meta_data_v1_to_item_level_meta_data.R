@@ -77,7 +77,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
   }
 
   if (!END_DIGIT_CHECK %in% colnames(meta_data)) { # defaults to FALSE
-    meta_data[[END_DIGIT_CHECK]] <- FALSE
+    meta_data[[END_DIGIT_CHECK]] <- rep(FALSE, nrow(meta_data))
   }
 
   # KEY_STUDY_SEGMENT -> STUDY_SEGMENT and PART_VAR ----
@@ -88,7 +88,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
                                                     meta_data[[label_col]]))) {
         util_message(
           c("All entries in %s are %s. Could convert them to",
-            "standard, i.e., %s."),
+            "%s."),
           dQuote(KEY_STUDY_SEGMENT),
           dQuote(label_col),
           dQuote(VAR_NAMES),
@@ -105,7 +105,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
                                                            ))) {
         util_message(
           c("All entries in %s are %s. Could convert them to",
-            "standard, i.e., %s."),
+            "%s."),
           dQuote(KEY_STUDY_SEGMENT),
           dQuote(LABEL),
           dQuote(VAR_NAMES),
@@ -137,7 +137,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
                            c(NA_character_, meta_data[[VAR_NAMES]]))
         util_message(
           c("Not all entries in %s are found in %s. Could convert %d of",
-            "these %d to match %s (standard). This may be caused by providing",
+            "these %d to match %s. This may be caused by providing",
             "subsets of %s."),
           dQuote(KEY_STUDY_SEGMENT),
           dQuote(VAR_NAMES),
@@ -194,15 +194,15 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
                                           meta_data[[VAR_NAMES]]))) {
       if (all(meta_data[[PART_VAR]] %in% c(NA_character_,
                                            meta_data[[label_col]]))) {
-        util_message(
-          c("All entries in %s (old: %s) are %s. Could convert them to",
-            "standard, i.e., %s."),
-          dQuote(PART_VAR),
-          dQuote(KEY_STUDY_SEGMENT),
-          dQuote(label_col),
-          dQuote(VAR_NAMES),
-          applicability_problem = TRUE
-        )
+        # util_message(
+        #   c("All entries in %s (old: %s) are %s. Could convert them to",
+        #     "standard, i.e., %s."),
+        #   dQuote(PART_VAR),
+        #   dQuote(KEY_STUDY_SEGMENT),
+        #   dQuote(label_col),
+        #   dQuote(VAR_NAMES),
+        #   applicability_problem = TRUE
+        # )
         meta_data[[PART_VAR]] <-
           util_map_labels(meta_data[[PART_VAR]],
                           meta_data,
@@ -211,15 +211,16 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
                           ifnotfound = meta_data[[PART_VAR]])
       } else if (all(meta_data[[PART_VAR]] %in% c(NA_character_,
                                                   meta_data[[LABEL]]))) {
-        util_message(
-          c("All entries in %s (old: %s) are %s. Could convert them to",
-            "standard, i.e., %s."),
-          dQuote(PART_VAR),
-          dQuote(KEY_STUDY_SEGMENT),
-          dQuote(LABEL),
-          dQuote(VAR_NAMES),
-          applicability_problem = TRUE
-        )
+        # TODO: Be robust, if LABEL, LONG_LABEL, VAR_NAMES and label_col are mixed
+        # util_message(
+        #   c("All entries in %s (old: %s) are %s. Could convert them to",
+        #     "standard, i.e., %s."),
+        #   dQuote(PART_VAR),
+        #   dQuote(KEY_STUDY_SEGMENT),
+        #   dQuote(LABEL),
+        #   dQuote(VAR_NAMES),
+        #   applicability_problem = TRUE
+        # )
         meta_data[[PART_VAR]] <-
           util_map_labels(meta_data[[PART_VAR]],
                           meta_data,
@@ -246,7 +247,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
         util_message(
           c("Not all entries in %s (old: %s) are found in %s.",
             "Could convert %d of",
-            "these %d to match %s (standard). This may be caused by providing",
+            "these %d to match %s. This may be caused by providing",
             "subsets of %s."),
           dQuote(PART_VAR),
           dQuote(KEY_STUDY_SEGMENT),
@@ -294,6 +295,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
 #' `prep_get_data_frame`.
 #'
 #' @inheritParams prep_meta_data_v1_to_item_level_meta_data
+#' @keywords internal
 .util_internal_normalize_meta_data <- function(meta_data = "item_level",
                                                label_col = LABEL,
                                                verbose = TRUE) {
@@ -305,7 +307,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
 
   if (!identical(attr(meta_data, "normalized"), TRUE)) {
     if (is.null(meta_data[[MISSING_LIST_TABLE]])) {
-      meta_data[[MISSING_LIST_TABLE]] <- NA_character_
+      meta_data[[MISSING_LIST_TABLE]] <- rep(NA_character_, nrow(meta_data))
     }
     no_mlt <- util_empty(meta_data[[MISSING_LIST_TABLE]])
     has_both_mlt_and_ml_jl <- !no_mlt &
@@ -314,7 +316,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
     if (any(has_both_mlt_and_ml_jl)) { # have to combine lists
       util_warning(c("Should not have %s and %s / %s for the same variable.",
                      "I'll try to combine them. This will take some time, so",
-                     "you should fix this in your %s to avaoid waiting."),
+                     "you should fix this in your %s to avoid waiting."),
                    dQuote(MISSING_LIST_TABLE),
                    dQuote(MISSING_LIST),
                    dQuote(JUMP_LIST),
@@ -471,6 +473,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
           return(NULL)
         }
         r <- prep_get_data_frame(cld)
+        if (!prod(dim(r))) return(data.frame())
         if (!("resp_vars" %in% colnames(r))) {
           r$resp_vars <- vn
         } else {
@@ -515,6 +518,12 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
         r[util_empty(r$resp_vars) | r$resp_vars == vn, , FALSE]
       }
     )
+
+    mlts <- lapply(mlts, function(mlt) { # avoid coerction of missing code values
+      if ("CODE_VALUE" %in% colnames(mlt))
+        mlt[["CODE_VALUE"]] <- as.character(mlt[["CODE_VALUE"]])
+      mlt
+    })
 
     mlts <- do.call(rbind.data.frame, c(mlts, list(stringsAsFactors = FALSE)))
 

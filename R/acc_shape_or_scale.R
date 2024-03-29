@@ -6,6 +6,8 @@
 #' idea of rootograms (Tukey 1977) which is also applicable for count data
 #' (Kleiber and Zeileis 2016).
 #'
+#' [Indicator]
+#'
 #' @details
 #' # ALGORITHM OF THIS IMPLEMENTATION:
 #'   - This implementation is restricted to data of type float or integer.
@@ -35,7 +37,7 @@
 #' @return a list with:
 #'   - `SummaryData`: [data.frame] underlying the plot
 #'   - `SummaryPlot`: [ggplot2] probability distribution plot
-#'   - `SummaryTable`: [data.frame] with the columns `Variables` and `GRADING`
+#'   - `SummaryTable`: [data.frame] with the columns `Variables` and `FLG_acc_ud_shape`
 #'
 #' @export
 #' @importFrom MASS fitdistr
@@ -43,7 +45,7 @@
 #' @importFrom ggplot2 ggplot theme_minimal geom_bar aes scale_fill_manual
 #'                     geom_line geom_hline xlab scale_color_manual
 #'                     geom_errorbar
-#' @importFrom stats dunif dgamma dnorm punif  pgamma pnorm median
+#' @importFrom stats dunif dgamma dnorm punif pgamma pnorm median
 #' @seealso
 #' [Online Documentation](
 #' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_shape_or_scale.html
@@ -54,10 +56,13 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
   # TODO: remove dist_col, expect column "DISTRIBUTIONS"
   # preps ----------------------------------------------------------------------
   # map metadata to study data
-  prep_prepare_dataframes(.replace_hard_limits = TRUE)
+  prep_prepare_dataframes(.replace_hard_limits = TRUE,
+                          .replace_missings = TRUE)
 
   # correct variable use?
-  util_correct_variable_use("resp_vars")
+  util_correct_variable_use("resp_vars",
+                            need_type = "integer | float",
+                            need_scale = "interval | ratio")
 
   if (missing(dist_col)) {
     dist_col <- DISTRIBUTION
@@ -337,7 +342,7 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
     SummaryData = df1, SummaryPlot = p1,
     SummaryTable = data.frame(
       Variables = resp_vars,
-      GRADING = 1 - prod(1 - util_as_numeric(df1$GRADING))
+      FLG_acc_ud_shape = 1 - prod(1 - util_as_numeric(df1$GRADING))
     )
   ))
 }

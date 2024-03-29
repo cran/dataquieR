@@ -18,3 +18,4 @@ util_startsWith_prefix._or_equals_prefix(x, prefix)
 detect, if \code{x} starts with \verb{<prefix>.} or equals \verb{<prefix>},
 if results have been combined
 }
+\keyword{internal}

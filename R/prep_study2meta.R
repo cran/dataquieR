@@ -12,19 +12,25 @@
 #' @param study_data [data.frame] the data frame that contains the measurements
 #' @param level [enum] levels to provide (see also [VARATT_REQUIRE_LEVELS])
 #' @param cumulative [logical] include attributes of all levels up to level
-#' @param convert_factors [logical] convert the
+#' @param convert_factors [logical] convert factor columns to coded integers.
+#'                                  if selected, then also the study data will
+#'                                  be updated and returned.
 #'
-#' @return a meta_data data frame
+#' @return a meta_data data frame or a list with study data and metadata, if
+#'         `convert_factors == TRUE`.
 #' @export
 #' @importFrom stats setNames
-#'
+#' @examples
+#' \dontrun{
+#' dataquieR::prep_study2meta(Orange, convert_factors = FALSE)
+#' }
 prep_study2meta <- function(study_data, level = c(
                               VARATT_REQUIRE_LEVELS$REQUIRED,
                               VARATT_REQUIRE_LEVELS$RECOMMENDED
                             ),
                             cumulative = TRUE,
                             convert_factors = FALSE) {
-  util_expect_data_frame(study_data)
+  util_expect_data_frame(study_data, keep_types = TRUE)
   if (missing(study_data) || !is.data.frame(study_data)) {
     util_error("Need study data as a data frame")
   }
@@ -66,32 +72,54 @@ prep_study2meta <- function(study_data, level = c(
                                               study_data = study_data)
   } else {
     valuelabels <- list()
-    valuelabels[[VALUE_LABELS]] <- NA_character_
+    valuelabels[[VALUE_LABELS]] <- vapply(
+      var_names,
+      FUN.VALUE = character(1),
+      function(v) {
+        if (is.factor(study_data[[v]])) {
+          lvs <- levels(study_data[[v]])
+          if (is.ordered(study_data[[v]])) {
+            split_char <- "<"
+          } else {
+            split_char <- SPLIT_CHAR
+          }
+          paste(lvs, collapse = sprintf(" %s ", split_char))
+          # lvs[as.integer(study_data[[v]])]
+        } else {
+          NA_character_
+        }
+      }
+    )
   }
 
-  if (convert_factors) {
-    res <- prep_create_meta(
-      VAR_NAMES = var_names,
-      LABEL = var_labels,
-      LONG_LABEL = var_labels,
-      DATA_TYPE = datatypes,
-      VALUE_LABELS = valuelabels[[VALUE_LABELS]],
-      MISSING_LIST = missing_list,
-      JUMP_LIST = NA_character_
-    )
-  } else {
-    res <- prep_create_meta(
-      VAR_NAMES = var_names,
-      LABEL = var_labels,
-      LONG_LABEL = var_labels,
-      DATA_TYPE = datatypes,
-      MISSING_LIST = missing_list,
-      JUMP_LIST = NA_character_
-    )
-  }
+  res <- prep_create_meta(
+    VAR_NAMES = var_names,
+    LABEL = var_labels,
+    LONG_LABEL = var_labels,
+    DATA_TYPE = datatypes,
+    VALUE_LABELS = valuelabels[[VALUE_LABELS]],
+    MISSING_LIST = missing_list,
+    HARD_LIMITS = NA_character_,
+    JUMP_LIST = NA_character_
+  )
 
   generated_atts <- util_get_var_att_names_of_level(level,
                                                     cumulative = cumulative)
+
+  if (SCALE_LEVEL %in% generated_atts) {
+    .md <- res
+    .md[[JUMP_LIST]] <- SPLIT_CHAR
+    with_scale_level <-
+      prep_scalelevel_from_data_and_metadata(resp_vars = var_names,
+                                             study_data = study_data,
+                                             meta_data = .md,
+                                             label_col = VAR_NAMES)
+
+      res[[SCALE_LEVEL]] <- setNames(
+        with_scale_level[[SCALE_LEVEL]], nm = with_scale_level[[VAR_NAMES]])[
+          res[[VAR_NAMES]]]
+  }
+
   missing_atts <- setdiff(generated_atts, colnames(res))
   if (length(missing_atts) > 0) {
     empty_cols <-

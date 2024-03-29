@@ -1,15 +1,10 @@
-test_that("dq_report2 works", {
+test_that("dq_report2 works", { # TO FIX
   skip_on_cran() # slow, parallel, ...
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
                        dataquieR.WARNINGS_WITH_CALLER = TRUE,
                        dataquieR.MESSAGES_WITH_CALLER = TRUE)
-
-  Sys.setenv("DISPLAY" = "")
-  if (suppressWarnings(requireNamespace("summarytools", quietly = TRUE))) {
-    suppressMessages(suppressWarnings(summarytools::st_options(use.x11 = FALSE)))
-  }
 
   prep_load_workbook_like_file("meta_data_v2")
 
@@ -55,7 +50,7 @@ test_that("dq_report2 works", {
 
   expect_equal(sum(sts), 1)
 
-  expect_silent(summary(report))
+  expect_silent(invisible(summary(report)))
 
   r <- report
   r$acc_varcomp_observer.SBP_0$SummaryTable <- NULL
@@ -68,9 +63,9 @@ test_that("dq_report2 works", {
 
   expect_error(
     report <-
-      suppressWarnings(dq_report2(sd0, md0,
+      suppressWarnings(suppressMessages(dq_report2(sd0, md0,
                                  cores = 1,
-                                 dimensions = 42)
+                                 dimensions = 42))
       ),
     regexp =
       ".+dimensions.+must match the predicate.+is.character",
@@ -185,8 +180,38 @@ test_that("dq_report2 works", {
                  "CENTER_0 DUPLICATE", # will become a duplicated label
                  "CENTER_0", # direct duplication of the first label
                  "Have you been physically vigorously active in the past 12 hours ('physically vigorously active' means at least 30 minutes of jogging or fast cycling, digging up your garden, carrying heavy objects weighing more than 10 kg for a long time, or similar physical activities)?", # very long label
-                 "Hybpvaitp1h(vamal3mojofcduygchowmt1kfaltospa") # matches the very long label after abbreviation
+                 "Hybpvaitp1hpvamal3mojofcduygchowmt1kfaltospa") # matches the very long label after abbreviation
   md1$VAR_NAMES[2] <- "yOvCzPY60JRjmrYb16Tsd6qMymal4B5Skw9rZ5PHSCtaBqOVglAKcguPkQhakampFJcC8xqLbZJs7kZUdKH804pbOmM5ORPVabrkEkVkiWbakWiixZ99NRYF6BP8SRxzNYY2tED7DjmhMUwk0t674RjH828jq9zoTJgDxYP6nEdHBxhmXJh0ClCPjGsi1q" # very long variable name that should get caught and not be used as label as it is
+  colnames(sd0)[2] <- md1$VAR_NAMES[2]
+
+  expect_warning(
+    report <- dq_report2(sd0, md1,
+                         label_col = LABEL,
+                         cores = 1,
+                         dimensions =
+                           c("Integrity",
+                             "Consistency"),
+                         MAX_LABEL_LEN = 45), # TODO: Specifying MAX_LABEL_LEN does not work?
+    regexp = sprintf("(%s|%s|%s)",
+                     "Labels are required to create a report, that's why missing labels will be replaced provisionally. Please add missing labels in your metadata.",
+                     "Unique labels are required to create a report, that's why duplicated labels will be replaced provisionally. Please modify the labels in your metadata or select a suitable column",
+                     "This will cause suboptimal outputs and possibly also failures when rendering the report, due to issues with the maximum length of file names in your operating system or file system. This will be fixed provisionally. Please shorten your labels or choose another label column."
+    ),
+    all = TRUE
+  )
+
+  expect_warning(
+    report <- dq_report2(sd0, md1,
+                         label_col = VAR_NAMES,
+                         cores = 1,
+                         dimensions =
+                           c("Integrity",
+                             "Consistency")),
+    regexp = "This will cause suboptimal outputs and possibly also failures when rendering the report, due to issues with the maximum length of file names in your operating system or file system. This will be fixed provisionally. Please shorten your labels or choose another label column."
+    )
+
+  md1$VAR_NAMES[2] <- ""
+  colnames(sd0)[2] <- ""
 
   expect_warning(
     report <- dq_report2(sd0, md1,
@@ -195,13 +220,37 @@ test_that("dq_report2 works", {
                          dimensions =
                            c("Integrity",
                              "Consistency")),
-    regexp = sprintf("(%s|%s|%s|%s|%s)",
+    regexp = sprintf(".*(%s|%s|%s|%s|%s|%s).*",
                      "Labels are required to create a report, that's why missing labels will be replaced provisionally. Please add missing labels in your metadata.",
+                     "Lost .* of the study data because of missing.not assignable metadata",
+                     "Lost .* of the metadata because of missing.not assignable study data",
+                     "Some variables have no label in",
                      "Unique labels are required to create a report, that's why duplicated labels will be replaced provisionally. Please modify the labels in your metadata or select a suitable column",
-                     "This will cause suboptimal outputs and possibly also failures when rendering the report, due to issues with the maximum length of file names in your operating system or file system. This will be fixed provisionally. Please shorten your labels or choose another label column.",
-                     "Lost 16.7. of the study data because of missing/not assignable metadata",
-                     "Lost 16.7. of the metadata because of missing/not assignable study data"
+                     "This will cause suboptimal outputs and possibly also failures when rendering the report, due to issues with the maximum length of file names in your operating system or file system. This will be fixed provisionally. Please shorten your labels or choose another label column."
     ),
+    perl = TRUE,
     all = TRUE
   )
+
+  expect_warning(
+    report <- dq_report2(sd0, md1,
+                         label_col = VAR_NAMES,
+                         cores = 1,
+                         dimensions =
+                           c("Integrity",
+                             "Consistency")),
+    regexp = "Labels are required to create a report, that's why missing labels will be replaced provisionally. Please add missing labels in your metadata."
+  )
+
+  # sd0 <- study_data
+  # md0 <- meta_data
+  # md0 <- md0[which(md0[[LABEL]] %in%
+  #                    c("CENTER_0", "CRP_0", "BSG_0", "PSEUD0_ID", "DEV_NO_0", "PART_STUDY", "PART_LAB")), ]
+  # md0[[LABEL]] <- ""
+  # # create a grouping variable with large integer numbers and without specifying value labels
+  # sd0$v11111 <- sd0$v00000 * 1000
+  # md0[["KEY_DEVICE"]][md0[["VAR_NAMES"]] == "v00015"] <- "v11111"
+  # md0 <- rbind(md0, c("v11111", "", "integer", rep(NA_character_, ncol(md0) - 3)))
+  # sd0 <- sd0[which(colnames(sd0) %in% md0[[VAR_NAMES]])]
+  # test_rep <- dq_report2(study_data = sd0, meta_data = md0, dimensions = NULL)
 })

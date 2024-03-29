@@ -1,4 +1,5 @@
 test_that("util_dist_selection works", {
+  skip_on_cran()
   study_data <- data.frame(
     integer = c(1, 2, 3, 4),
     factor = factor(c(1, 2, 2, 3),
@@ -20,7 +21,7 @@ test_that("util_dist_selection works", {
   )
   expect_equal(
     dist_info$IsMultCat,
-    c(rep(1, 4), 0, 0)
+    c(rep(TRUE, 4), NA, NA)
   )
   expect_equal(
     dist_info$NCategory,

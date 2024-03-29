@@ -17,3 +17,16 @@ util_remove_empty_rows(x, id_vars = character(0))
 \description{
 removes empty rows from \code{x}
 }
+\seealso{
+Other missing_functions: 
+\code{\link{util_all_intro_vars_for_rv}()},
+\code{\link{util_count_expected_observations}()},
+\code{\link{util_filter_missing_list_table_for_rv}()},
+\code{\link{util_get_code_list}()},
+\code{\link{util_is_na_0_empty_or_false}()},
+\code{\link{util_observation_expected}()},
+\code{\link{util_replace_codes_by_NA}()}
+}
+\concept{data_management}
+\concept{missing_functions}
+\keyword{internal}

@@ -33,5 +33,5 @@ explanation.}
 \link{list} list with entries:
 }
 \description{
-Compute Indicators for Qualified Segment Missingness
+\link{Indicator}
 }

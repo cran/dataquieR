@@ -5,14 +5,14 @@
 #' https://www.programiz.com/c-programming/c-preprocessor-macros#example-define)
 #' ).
 #' Different from the other utility function that work
-#' in the caller's environment ([util_prepare_dataframes]), It has no side
+#' in the caller's environment ([prep_prepare_dataframes]), It has no side
 #' effects except that the argument
 #' of the calling function specified in `arg_name` is normalized (set to its
 #' default or a general default if missing, variable names being all white
 #' space replaced by NAs).
 #' It expects two objects in the caller's environment: `ds1` and `meta_data`.
 #' `meta_data` is the metadata data frame and `ds1` is produced by a preceding
-#' call of [util_prepare_dataframes] using `meta_data` and `study_data`.
+#' call of [prep_prepare_dataframes] using `meta_data` and `study_data`.
 #'
 #' [util_correct_variable_use] and [util_correct_variable_use2] differ only in
 #' the default of the argument `role`.
@@ -49,6 +49,13 @@
 #'                                       a type. See [DATA_TYPES] for the
 #'                                       predefined variable types of the
 #'                                       `dataquieR` concept.
+#' @param need_scale [character] if not `NA`, variables must be of scale level
+#'                                       `need_scale` according to the metadata,
+#'                                       can be a pipe (`|`) separated list of
+#'                                     allowed scale levels. Use `!` to exclude
+#'                                       a level. See [SCALE_LEVELS] for the
+#'                                       predefined scale levels of the
+#'                                       `dataquieR` concept.
 #' @param role [character] variable-argument role. Set different defaults for
 #'                         all `allow`-arguments and `need_type` of
 #'                         this `util_correct_variable_use.`. If given, it
@@ -79,6 +86,9 @@
 #' @seealso [.variable_arg_roles]
 #' @importFrom stats na.omit
 #'
+#' @family robustness_functions
+#' @concept robustness
+#' @keywords internal
 util_correct_variable_use <- function(arg_name,
                                       allow_na,
                                       allow_more_than_one,
@@ -87,6 +97,7 @@ util_correct_variable_use <- function(arg_name,
                                       allow_any_obs_na,
                                       min_distinct_values,
                                       need_type,
+                                      need_scale,
                                       role = "",
                                       overwrite = TRUE,
                                       do_not_stop = FALSE,
@@ -146,6 +157,10 @@ util_correct_variable_use <- function(arg_name,
       need_type <- subset(.variable_arg_roles, get("name") == role,
                           "need_type", drop = TRUE)
     } # fetch it from the role's defaults
+    if (missing(need_scale)) { # if missing the need_scale argument
+      need_scale <- subset(.variable_arg_roles, get("name") == role,
+                           "need_scale", drop = TRUE)
+    } # fetch it from the role's defaults
   } else { # no known variable-argument in argument `role`
     if (role != "") { # if role is not empty
       util_error(
@@ -181,6 +196,10 @@ util_correct_variable_use <- function(arg_name,
     if (missing(need_type)) {
       # set the default for need_type if it has not been given
       need_type <- NA
+    }
+    if (missing(need_scale)) {
+      # set the default for need_scale if it has not been given
+      need_scale <- NA
     }
   }
 
@@ -309,7 +328,7 @@ util_correct_variable_use <- function(arg_name,
   }
 
   # Check whether variables can be found in the data (using all possible label columns).
-  possible_vars <- unique(c(meta_data[[VAR_NAMES]],
+  possible_vars <- unique(c(meta_data[[VAR_NAMES]], # TODO this corresponds with TODO POSSIBLE_VARS in prep_prepare_dataframes
                             meta_data[[LABEL]],
                             meta_data[[LONG_LABEL]],
                             meta_data[[label_col]]))
@@ -408,22 +427,28 @@ util_correct_variable_use <- function(arg_name,
   }
 
   record_problem <- ifelse(do_not_stop, util_message, util_error)
-  empty_container <- new.env(parent = emptyenv())
+  applicability_problem <- ifelse(do_not_stop, FALSE, TRUE)
+  intrinsic_applicability_problem <- ifelse(do_not_stop, FALSE, TRUE)
+  data_problem_container <- new.env(parent = emptyenv())
   for (v in variable) { # now, check all variable values from the data
     if (!allow_all_obs_na && all(is.na(ds1[[v]]))) {
       # if all observations are NA and this is prohibited
       record_problem("Variable '%s' (%s) has only NA observations",
                      na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
-                     applicability_problem = FALSE)
-      empty_container[[v]] <- TRUE
+                     applicability_problem = applicability_problem,
+                     intrinsic_applicability_problem =
+                       intrinsic_applicability_problem)
+      data_problem_container[[v]] <- TRUE
     }
 # names(empty_containter) gibt die geflaggten Variablen
     if (!allow_any_obs_na && any(is.na(ds1[[v]]))) {
       # if no NAs are allowed at all, but we have some
       record_problem("Variable '%s' (%s) has NA observations, which is not allowed",
                      na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
-                     applicability_problem = FALSE)
-      empty_container[[v]] <- TRUE
+                     applicability_problem = applicability_problem,
+                     intrinsic_applicability_problem =
+                       intrinsic_applicability_problem)
+      data_problem_container[[v]] <- TRUE
     }
 
     uniq_rv <- unique(ds1[[v]])
@@ -431,15 +456,20 @@ util_correct_variable_use <- function(arg_name,
     n_distinct_values <- length(uniq_rv)
     if (n_distinct_values < min_distinct_values) {
       # if we have fewer distinct values than required
-      record_problem("Variable '%s' (%s) has fewer distinct values than required",
+      record_problem(c("Variable '%s' (%s) has fewer distinct values than required",
+                       "for the argument %s of %s"),
                      na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
-                     applicability_problem = FALSE)
-      empty_container[[v]] <- TRUE
+                     sQuote(arg_name),
+                     sQuote(rlang::caller_call()[[1]]),
+                     applicability_problem = applicability_problem,
+                     intrinsic_applicability_problem =
+                       intrinsic_applicability_problem)
+      data_problem_container[[v]] <- TRUE
     }
   }
 
-  if (length(names(empty_container)) > 0) {
-    variable <- setdiff(variable, names(empty_container))
+  if (length(names(data_problem_container)) > 0) {
+    variable <- setdiff(variable, names(data_problem_container))
     if (length(variable) == 0) {
       util_error(
         "In %s, none of the specified variables matches the requirements.",
@@ -451,13 +481,15 @@ util_correct_variable_use <- function(arg_name,
       util_warning(
         c("In %s, variables %s were excluded."),
         dQuote(arg_name),
-        paste(dQuote(names(empty_container)), collapse = ", "),
+        paste(dQuote(names(data_problem_container)), collapse = ", "),
         applicability_problem = TRUE,
         intrinsic_applicability_problem = TRUE
       )
       assign(arg_name, variable, envir = p)
     }
   }
+
+  data_type_problem_container <- new.env(parent = emptyenv())
 
   # data type given in metadata? (similar to util_get_meta_from_var ...)
   if (DATA_TYPE %in% colnames(meta_data)) {
@@ -468,6 +500,19 @@ util_correct_variable_use <- function(arg_name,
   } else {
     types <- NULL
     names(types) <- NULL
+  }
+
+  data_scale_problem_container <- new.env(parent = emptyenv())
+
+  # data type given in metadata? (similar to util_get_meta_from_var ...)
+  if (SCALE_LEVEL %in% colnames(meta_data)) {
+    scales <- meta_data[meta_data[[label_col]] %in% variable, SCALE_LEVEL]
+    # try to fetch the scales from the metadata.
+    names(scales) <- meta_data[meta_data[[label_col]] %in% variable, label_col]
+    scales <- scales[!is.na(scales) & !is.na(names(scales))]
+  } else {
+    scales <- NULL
+    names(scales) <- NULL
   }
 
   if (!all(is.na(need_type)) && length(types) <
@@ -517,7 +562,7 @@ util_correct_variable_use <- function(arg_name,
              tolower(trimws(names(DATA_TYPES))))]
          ), collapse = ", "),
          paste(dQuote(tolower(trimws(names(DATA_TYPES)))), collapse = ", "),
-         sQuote(sys.call()[[1]])
+         sQuote(rlang::caller_call()[[1]])
          )
       }
 
@@ -536,25 +581,28 @@ util_correct_variable_use <- function(arg_name,
                         tolower(trimws(names(DATA_TYPES))))]
         ), collapse = ", "),
         paste(dQuote(tolower(trimws(names(DATA_TYPES)))), collapse = ", "),
-        sQuote(sys.call()[[1]])
+        sQuote(rlang::caller_call()[[1]])
         )
       }
 
       if ((length(well_type) > 0) && (!tolower(trimws(type)) %in% well_type)) {
           # now check for the allowed types
-        util_error(
+        record_problem(
           "Argument %s: Variable '%s' (%s) does not have an allowed type (%s)",
           dQuote(arg_name), ..vname, tolower(trimws(type)), need_type,
           applicability_problem = TRUE,
           intrinsic_applicability_problem = TRUE)
+        data_type_problem_container[[..vname]] <- TRUE
       }
       if ((length(not_type) > 0) && (tolower(trimws(type)) %in% not_type)) {
         # and for the disallowed types
-        util_error(
-          "Argument %s: Variable '%s' (%s) does not have an allowed type (%s)",
-          dQuote(arg_name), ..vname, tolower(trimws(type)), need_type,
+        record_problem(
+          "Argument %s: Variable '%s' (%s) has a disallowed type (%s)",
+          dQuote(arg_name), ..vname, tolower(trimws(type)),
+          util_pretty_vector_string(not_type),
           applicability_problem = TRUE,
           intrinsic_applicability_problem = TRUE)
+        data_type_problem_container[[..vname]] <- TRUE
       }
       # Check, if variable is really of declared data type.
       sd_type <- prep_datatype_from_data(..vname, ds1)
@@ -580,6 +628,164 @@ util_correct_variable_use <- function(arg_name,
       }
     } # nocov end
   }
+  if (length(names(data_type_problem_container)) > 0) {
+    variable <- setdiff(variable, names(data_type_problem_container))
+    if (length(variable) == 0) {
+      util_error(
+        "In %s, none of the specified variables matches the requirements.",
+        dQuote(arg_name),
+        applicability_problem = TRUE,
+        intrinsic_applicability_problem = TRUE
+      )
+    } else {
+      util_warning(
+        c("In %s, variables %s were excluded."),
+        dQuote(arg_name),
+        paste(dQuote(names(data_type_problem_container)), collapse = ", "),
+        applicability_problem = TRUE,
+        intrinsic_applicability_problem = TRUE
+      )
+      assign(arg_name, variable, envir = p)
+    }
+  }
+# TODO EK: Should we support hierarchy of sclae levels here, i.e.,
+# util_correct_variable_use(resp_vars, need_scale = SCALE_LEVELS$ORDINAL)
+# would pass, if SBP_0 is ratio so even "better" than ordinal? But maybe,
+# we want to explicitly break the hierarchy for certain descriptors, e.g., run
+# a function only for ordinal variables but not for ratio ones.
+  if (!all(is.na(need_scale)) && length(scales) <
+      length(unique(variable[!is.na(variable)]))) {
+    util_warning(
+c("In %s, variables with scale levels matching %s should be specified, but not",
+        "all variables have a scale level assigned in the metadata.",
+        "I have %d variables but only %d scale levels"),
+      dQuote(arg_name),
+      dQuote(need_scale),
+      length(unique(variable[!is.na(variable)])),
+      length(scales),
+      applicability_problem = TRUE
+    )
+  }
+
+  for (..vname in names(scales)) {
+    # for all variables that have a scale level assigned in the metadata
+    scale <- scales[[..vname]]
+    # fetch the scale level of the currently checked variable
+    if (!is.null(scale) && !is.na(scale) && !is.na(need_scale)) {
+      # if we have a needed scale level and a variable scale leve for the
+      # currently checked variable,
+      need_scale. <- tolower(trimws(unlist(strsplit(need_scale, "|",
+                                                   fixed = TRUE),
+                                          recursive = TRUE)))
+      # parse the scale level (split at pipes |)
+      not_scale <-
+        tolower(trimws(substring(need_scale.[startsWith(need_scale., "!")], 2)))
+      # and parse the scale level for negation (e.g. *not* NOMINAL)
+      well_scale <-
+        tolower(trimws(need_scale.[!startsWith(need_scale., "!")]))
+      # and parse the scale level for no negation resp. (e.g. NOMINAL)
+
+      if ((length(well_scale) > 0) &&
+          (!all(well_scale %in%
+                tolower(trimws(names(SCALE_LEVELS)))))) {
+        util_error(c( # TODO EK This should not happen outside pipelines, then it should be a warning only.
+          "Internal error:",
+          "%s's %s contains invalid scale-level names %s (allowed are %s).",
+          "As a dataquieR developer, you should fix your call of %s."
+        ),
+        sQuote(arg_name),
+        sQuote("need_scale"),
+        paste(dQuote(
+          well_scale[!(well_scale %in%
+                        tolower(trimws(names(SCALE_LEVELS))))]
+        ), collapse = ", "),
+        paste(dQuote(tolower(trimws(names(SCALE_LEVELS)))), collapse = ", "),
+        sQuote(rlang::caller_call()[[1]])
+        )
+      }
+
+      if ((length(not_scale) > 0) &&
+          (!all(not_scale %in%
+                tolower(trimws(names(SCALE_LEVELS)))))) {
+        util_error(c(
+          "Internal error:",
+          "%s's %s contains invalid !scale-level names %s (allowed are %s).",
+          "As a dataquieR developer, you should fix your call of %s."
+        ),
+        sQuote(arg_name),
+        sQuote("need_scale"),
+        paste(dQuote(
+          not_scale[!(not_scale %in%
+                       tolower(trimws(names(SCALE_LEVELS))))]
+        ), collapse = ", "),
+        paste(dQuote(tolower(trimws(names(SCALE_LEVELS)))), collapse = ", "),
+        sQuote(rlang::caller_call()[[1]])
+        )
+      }
+
+    if ((length(well_scale) > 0) && (!tolower(trimws(scale)) %in% well_scale)) {
+        # now check for the allowed scale levels
+        record_problem(
+    "Argument %s: Variable '%s' (%s) does not have an allowed scale level (%s)",
+          dQuote(arg_name), ..vname, tolower(trimws(scale)), need_scale,
+          applicability_problem = TRUE,
+          intrinsic_applicability_problem = TRUE)
+        data_scale_problem_container[[..vname]] <- TRUE
+      }
+      if ((length(not_scale) > 0) && (tolower(trimws(scale)) %in% not_scale)) {
+        # and for the disallowed scale levels
+        record_problem(
+          "Argument %s: Variable '%s' (%s) has a disallowed scale level (%s)",
+          dQuote(arg_name), ..vname, tolower(trimws(scale)),
+          util_pretty_vector_string(not_scale),
+          applicability_problem = TRUE,
+          intrinsic_applicability_problem = TRUE)
+        data_scale_problem_container[[..vname]] <- TRUE
+      }
+      # TODO: Implement this check also for scale levels
+      # # Check, if variable is really of declared scale level.
+      # sd_scale <- prep_scale_level_from_data(..vname, ds1)
+      # if (!is.na(sd_scale) && sd_scale != scale) {
+      #   util_message(
+      #     c("Argument %s: Variable '%s' (%s) does not have matching",
+      #       "scale level in the study data (%s)"),
+      #     dQuote(arg_name), ..vname, tolower(trimws(scale)),
+      #     prep_scale_level_from_data(ds1[, ..vname, TRUE]),
+      #     applicability_problem = TRUE)
+      # }
+    } else { # nocov start
+      # if the scale is NA, it is not part of the scales vector
+      # so this is dead code, likely (see
+      # "types <- types[!is.na(types) & !is.na(names(types))]" above).
+      if (!is.na(need_scale)) {
+        util_warning(
+          c("Argument %s: No scale level found for '%s' in the",
+            "metadata, cannot check scale level"), dQuote(arg_name), variable,
+          applicability_problem = TRUE)
+      }
+    } # nocov end
+  }
+  if (length(names(data_scale_problem_container)) > 0) {
+    variable <- setdiff(variable, names(data_scale_problem_container))
+    if (length(variable) == 0) {
+      util_error(
+        "In %s, none of the specified variables matches the requirements.",
+        dQuote(arg_name),
+        applicability_problem = TRUE,
+        intrinsic_applicability_problem = TRUE
+      )
+    } else {
+      util_warning(
+        c("In %s, variables %s were excluded."),
+        dQuote(arg_name),
+        paste(dQuote(names(data_scale_problem_container)), collapse = ", "),
+        applicability_problem = TRUE,
+        intrinsic_applicability_problem = TRUE
+      )
+      assign(arg_name, variable, envir = p)
+    }
+  }
+
 }
 
 #' Variable-argument roles
@@ -598,29 +804,33 @@ util_correct_variable_use <- function(arg_name,
 #' @seealso [util_correct_variable_use()]
 #' @seealso [util_correct_variable_use2()]
 #'
+#' @keywords internal
 .variable_arg_roles <-
   dplyr::tribble(
     ~name, ~allow_na, ~allow_more_than_one, ~allow_null, ~allow_all_obs_na,
-    ~allow_any_obs_na, ~min_distinct_values, ~need_type,
-    "resp_var", FALSE, FALSE, FALSE, FALSE, TRUE, 0, NA,
-    "response_var", FALSE, FALSE, FALSE, FALSE, TRUE, 0, NA,
-    "resp_vars", FALSE, TRUE, FALSE, FALSE, TRUE, 0, NA,
-    "response_vars", FALSE, TRUE, FALSE, FALSE, TRUE, 0, NA,
-    "control_vars", TRUE, TRUE, TRUE, FALSE, TRUE, 0, NA,
-    "co_vars", TRUE, TRUE, TRUE, FALSE, TRUE, 0, NA,
-    "cluster_vars", FALSE, TRUE, FALSE, FALSE, FALSE, 0, NA,
-    "group_vars", FALSE, TRUE, FALSE, FALSE, FALSE, 0, NA,
-    "level_vars", FALSE, TRUE, FALSE, FALSE, FALSE, 0, NA,
-    "cluster_var", FALSE, FALSE, TRUE, FALSE, TRUE, 0, NA,
-    "level_var", FALSE, FALSE, TRUE, FALSE, TRUE, 0, NA,
-    "strata_vars", FALSE, FALSE, TRUE, FALSE, TRUE, 0, NA,
-    "time_vars", FALSE, FALSE, FALSE, FALSE, FALSE, 0, NA,
-    "id_vars", FALSE, FALSE, FALSE, FALSE, FALSE, 0, NA
+    ~allow_any_obs_na, ~min_distinct_values, ~need_type, ~need_scale,
+    "resp_var", FALSE, FALSE, FALSE, FALSE, TRUE, 0, NA, NA,
+    "response_var", FALSE, FALSE, FALSE, FALSE, TRUE, 0, NA, NA,
+    "resp_vars", FALSE, TRUE, FALSE, FALSE, TRUE, 0, NA, NA,
+    "response_vars", FALSE, TRUE, FALSE, FALSE, TRUE, 0, NA, NA,
+    "control_vars", TRUE, TRUE, TRUE, FALSE, TRUE, 0, NA, NA,
+    "co_vars", TRUE, TRUE, TRUE, FALSE, TRUE, 0, NA, NA,
+    "cluster_vars", FALSE, TRUE, FALSE, FALSE, FALSE, 0, NA, NA,
+    "group_vars", FALSE, TRUE, FALSE, FALSE, FALSE, 0, NA, NA,
+    "level_vars", FALSE, TRUE, FALSE, FALSE, FALSE, 0, NA, NA,
+    "cluster_var", FALSE, FALSE, TRUE, FALSE, TRUE, 0, NA, NA,
+    "level_var", FALSE, FALSE, TRUE, FALSE, TRUE, 0, NA, NA,
+    "strata_vars", FALSE, FALSE, TRUE, FALSE, TRUE, 0, NA, NA,
+    "time_vars", FALSE, FALSE, FALSE, FALSE, FALSE, 0, NA, NA,
+    "id_vars", FALSE, FALSE, FALSE, FALSE, FALSE, 0, NA, NA
   )
 # "process_vars",
 # "key_segment_vars"
 
 #' @importFrom stats na.omit
 #' @rdname util_correct_variable_use
+#' @family robustness_functions
+#' @concept robustness
+#' @keywords internal
 util_correct_variable_use2 <- util_correct_variable_use
 formals(util_correct_variable_use2)[["role"]] <- quote(arg_name)

@@ -14,6 +14,10 @@
 #' util_rbind(head(cars), tail(cars))
 #' util_rbind(head(cars)[, "dist", FALSE], tail(cars)[, "speed", FALSE])
 #' }
+#'
+#' @family data_management
+#' @concept process
+#' @keywords internal
 util_rbind <- function(..., data_frames_list = list()) {
   data_frames_list <- c(list(...), data_frames_list)
   data_frames_list <- data_frames_list[!vapply(data_frames_list, is.null,

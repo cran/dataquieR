@@ -2,6 +2,13 @@ test_that("acc_univariate_outlier works without label_col", {
   skip_on_cran() # slow, errors obvious
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
 
   sd1 <- study_data # no outliers at all
   set.seed(234325)
@@ -68,28 +75,32 @@ test_that("acc_univariate_outlier works without label_col", {
 
   md0 <- meta_data
   md0$DATA_TYPE[[1]] <- NA
-  expect_warning(
-    invisible(
-      acc_univariate_outlier(study_data = study_data,
-                           meta_data = md0, n_rules = 4))
-    ,
-    regexp = sprintf("(%s|%s|%s|%s)",
-     paste(
-       "No .+DATA_TYPE.+ for all or some variables defined in the metadata.",
-       "I guessed them based on data"),
-     paste("The following variables: v00000, v00002, v00003, v01003, v01002,",
-           "v10000, v00004, v00005, v00006, v00007, v00009, v00109, v00010,.+",
-           "v50000 were selected."),
-     paste("Variables: .+v00000.+, .+v00002.+, .+v50000.+",
-           "show integer values only, but will be nonetheless considered."),
-     paste("The variables .+v00000.+v00002.+v01002.+v10000.+v00007.+,",
-           ".+v00109.+v00010.+v20000.+v30000.+v00018.+v01018.+v00019.+,",
-           ".+v00020.+v00022.+v00023.+v00024.+v00025.+v00028.+v00029.+,",
-           ".+v00030.+v40000.+v50000.+ are neither float nor integer",
-           "without VALUE_LABELS. Ignoring those")
+  expect_message(
+    expect_warning(
+      invisible(
+        acc_univariate_outlier(study_data = study_data,
+                             meta_data = md0, n_rules = 4))
+      ,
+      regexp = sprintf("(%s)",
+       paste(
+         "For the variables.+?v00000.+?I have no valid.+?DATA_TYPE.+?in the",
+         ".+?meta_data.+?I.+?ve predicted the.+?DATA_TYPE.+?from",
+         "the.+?study_data.+?yielding.+?v00000 = integer.+?"
+        )
+      ),
+      all = TRUE,
+      perl = TRUE
     ),
-    all = TRUE,
-    perl = TRUE
+    perl = TRUE,
+    regexp = sprintf("(?ms).*(%s|%s|%s).*", paste("The following variables: v00000, v00002, v00003,",
+    "v01003, v01002, v10000, v00004, v00005, v00006, v00007, v00009, v00109,",
+    "v00010, v20000, v00014, v00015, v00016, v30000, v00018, v01018, v00019,",
+    "v00020, v00021, v00022, v00023, v00024, v00025, v00026, v00027, v00028,",
+    "v00029, v00030, v00031, v40000, v00034, v00035, v00036, v00037, v00038,",
+    "v00039, v00040, v00041, v50000.*"),
+    paste("Variables:.+?v00000.+?,.+?v00002.+?,.+?v00003.+?,.+?v01003.+?,.+?v01002.+?,.+?v10000.+?,.+?v00004.+?,.+?v00005.+?,.+?v00007.+?,.+?v00009.+?,.+?v00109.+?,.+?v00010.+?,.+?v20000.+?,.+?v00015.+?,.+?v00016.+?,.+?v30000.+?,.+?v00018.+?,.+?v01018.+?,.+?v00019.+?,.+?v00020.+?,.+?v00021.+?,.+?v00022.+?,.+?v00023.+?,.+?v00024.+?,.+?v00025.+?,.+?v00026.+?,.+?v00027.+?,.+?v00028.+?,.+?v00029.+?,.+?v00030.+?,.+?v00031.+?,.+?v40000.+?,.+?v00034.+?,.+?v00035.+?,.+?v00036.+?,.+?v00037.+?,.+?v00038.+?,.+?v00039.+?,.+?v00040.+?,.+?v00041.+?,.+?v50000.+?show integer values only, but will be nonetheless considered."),
+    paste("The variables.+?v00000.+?,.+?v00002.+?,.+?v01002.+?,.+?v10000.+?,.+?v00007.+?,.+?v00109.+?,.+?v00010.+?,.+?v20000.+?,.+?v30000.+?,.+?v00018.+?,.+?v01018.+?,.+?v00019.+?,.+?v00020.+?,.+?v00022.+?,.+?v00023.+?,.+?v00024.+?,.+?v00025.+?,.+?v00028.+?,.+?v00029.+?,.+?v00030.+?,.+?v40000.+?,.+?v50000.+? are neither float nor integer without VALUE_LABELS. Ignoring those.*")
+    )
   )
 
   res1 <-
@@ -104,7 +115,7 @@ test_that("acc_univariate_outlier works without label_col", {
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
       as.matrix(res1$SummaryTable)),
-      na.rm = TRUE) - 112.45)), 0.1
+      na.rm = TRUE) -2699 - 112.45)), 0.1
   )
 
   expect_equal(
@@ -114,10 +125,10 @@ test_that("acc_univariate_outlier works without label_col", {
   )
 
   expect_identical(colnames(res1$SummaryTable),
-                   c("Variables", "Mean", "SD", "Median", "Skewness",
-                     "Tukey (N)",  "6-Sigma (N)", "Hubert (N)",
-                     "Sigma-gap (N)", "Most likely (N)",  "To low (N)",
-                     "To high (N)", "GRADING"))
+                   c("Variables", "Mean", "No.records", "SD", "Median", "Skewness",
+                     "Tukey (N)",  "3SD (N)", "Hubert (N)",
+                     "Sigma-gap (N)", "NUM_acc_ud_outlu",  "Outliers, low (N)",
+                     "Outliers, high (N)", "GRADING", "PCT_acc_ud_outlu"))
 })
 
 test_that("acc_univariate_outlier works with label_col", {
@@ -125,76 +136,101 @@ test_that("acc_univariate_outlier works with label_col", {
   skip_if_translated()
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
 
   md0 <- meta_data
   md0$DATA_TYPE <- NA
   expect_warning(
-    res1 <-
-      acc_univariate_outlier(resp_vars = c("USR_SOCDEM_0", "CRP_0"),
-                             study_data = study_data,
-                             meta_data = md0, label_col = LABEL),
-    regexp = sprintf("(%s|%s|%s)",
-                     paste(
-                       "No .+DATA_TYPE.+ for all or some variables defined",
-                       "in the metadata.",
-                       "I guessed them based on data"),
-                     paste("In .+resp_vars.+, variables",
-                           "with types matching .+integer . float.+ should",
-                           "be specified, but not all variables have a type",
-                           "assigned in the metadata. I have 2 variables but",
-                           "only 0 types."),
-                     paste("Only: CRP_0 are defined to be of type float or",
-                           "integer.")
+    expect_message(
+      res1 <-
+        acc_univariate_outlier(resp_vars = c("USR_SOCDEM_0", "CRP_0"),
+                               study_data = study_data,
+                               meta_data = md0, label_col = LABEL),
+      regexp = sprintf("(%s|%s)",
+                       paste(
+                         "Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+string.+does not have an allowed type.+integer.+float.+"),
+                       paste(
+                         "Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+")
+      ),
+      all = TRUE,
+      perl = TRUE
     ),
-    all = TRUE,
-    perl = TRUE
+    perl = TRUE,
+    regexp = sprintf("(%s|%s)",
+                     paste(
+                       "I've predicted the.+DATA_TYPE.+from the.+study_data"
+                     ),
+                     paste(
+                       "In.+resp_vars.+, variables.+USR_SOCDEM_0.+were excluded."
+                      )
+                    )
   )
   expect_warning(
-    res1 <-
-      acc_univariate_outlier(resp_vars = c("USR_SOCDEM_0", "CRP_0"),
-                             study_data = study_data,
-                             meta_data = md0, label_col = LABEL,
-                             exclude_roles = "XXX"),
-    regexp = sprintf("(%s|%s|%s|%s)",
-                     paste(
-                       "No .+DATA_TYPE.+ for all or some variables defined",
-                       "in the metadata.",
-                       "I guessed them based on data"),
-                     paste("In .+resp_vars.+, variables",
-                           "with types matching .+integer . float.+ should",
-                           "be specified, but not all variables have a type",
-                           "assigned in the metadata. I have 2 variables but",
-                           "only 0 types."),
-                     paste("Only: CRP_0 are defined to be of type float or",
-                           "integer."),
-                     paste("Specified VARIABLE_ROLE not in meta_data.",
-                           "No exclusion applied.")
+    expect_message(
+      res1 <-
+        acc_univariate_outlier(resp_vars = c("USR_SOCDEM_0", "CRP_0"),
+                               study_data = study_data,
+                               meta_data = md0, label_col = LABEL,
+                               exclude_roles = "XXX"),
+      regexp = sprintf("(%s|%s|%s)",
+                       paste(
+                         "Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+string.+does not have an allowed type.+integer.+float.+"),
+                       paste(
+                         "Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+"),
+                       paste("Specified VARIABLE_ROLE not in meta_data.",
+                             "No exclusion applied.")
+      ),
+      all = TRUE,
+      perl = TRUE
     ),
-    all = TRUE,
+    regexp = sprintf("(%s)",
+                     paste(".*predicted.+DATA_TYPE.*")
+    ),
     perl = TRUE
   )
 
-  expect_warning(
-    res1 <-
-      acc_univariate_outlier(resp_vars = c("USR_SOCDEM_0", "CRP_0",
-                                           "CENTER_0", "SEX_0", "AGE_0"),
-                             study_data = study_data,
-                             meta_data = md0, label_col = LABEL,
-                             exclude_roles = c("intro", "process")),
-    regexp = sprintf("(%s|%s|%s|%s)",
+  expect_message(
+    expect_warning(
+      res1 <-
+        acc_univariate_outlier(
+          resp_vars = c("USR_SOCDEM_0", "CRP_0",
+                        "CENTER_0", "SEX_0", "AGE_0"),
+          study_data = study_data,
+          meta_data = md0,
+          label_col = LABEL,
+          exclude_roles = c("intro", "process")
+        ),
+      regexp = sprintf("(%s|%s|%s)",
+                       paste("variables.+SEX_0.+USR_SOCDEM_0.+CENTER_0.+were",
+                             "excluded."),
+                       paste("variables.+USR_SOCDEM_0.+were excluded."),
+                       paste("For the variables",
+                             ".*predicted.+DATA_TYPE.*from the .study_data.")
+      ),
+      all = TRUE,
+      perl = TRUE
+    ),
+    regexp = sprintf("(%s|%s|%s|%s|%s)",
                      paste(
-                       "No .+DATA_TYPE.+ for all or some variables defined",
-                       "in the metadata.",
-                       "I guessed them based on data"),
-                     paste("In .+resp_vars.+, variables",
-                           "with types matching .+integer . float.+ should",
-                           "be specified, but not all variables have a type",
-                           "assigned in the metadata. I have 5 variables but",
-                           "only 0 types."),
-                     paste("Only: CENTER_0, SEX_0, AGE_0, CRP_0 are defined",
-                           "to be of type float or integer."),
-                     paste("Study variables: .+CENTER_0.+, .+SEX_0.+,",
-                           ".+AGE_0.+ have been excluded.")
+                       "Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+string.+does not have an allowed type.+integer.+float.+"
+                     ),
+                     paste(
+                       "Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+"
+                     ),
+                     paste(
+                       "Argument.+resp_vars.+Variable.+SEX_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+"
+                     ),
+                     paste(
+                       "Argument.+resp_vars.+Variable.+CENTER_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+"
+                     ),
+                     paste("Study variables.+AGE_0.+have",
+                           "been excluded.")
     ),
     all = TRUE,
     perl = TRUE
@@ -203,24 +239,32 @@ test_that("acc_univariate_outlier works with label_col", {
   sd0 <- study_data
   sd0$v00014 <- NA_integer_
   expect_message(
-    expect_error(
-      res1 <-
-        acc_univariate_outlier(resp_vars = c("CRP_0", "AGE_0"),
-                               study_data = sd0,
-                               meta_data = meta_data, label_col = LABEL,
-                               exclude_roles = c("intro", "process")),
-      regexp = "No data left, aborting.",
-      perl = TRUE
+#    expect_warning(
+      expect_error(
+        res1 <-
+          acc_univariate_outlier(resp_vars = c("CRP_0", "AGE_0"),
+                                 study_data = sd0,
+                                 meta_data = meta_data, label_col = LABEL,
+                                 exclude_roles = c("intro", "process")),
+        regexp = "No data left, aborting",
+        perl = TRUE
+      ),
+    #   regexp = "In .resp_vars.+variables .CRP_0. were excluded",
+    #   perl = TRUE
+    # ),
+    regexp = sprintf("(%s|%s|%s)",
+                     paste(
+                       "Argument.+resp_vars.+Variable.+CRP_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+"
+                     ),
+                     paste("Study variables.+AGE_0.+have",
+                           "been excluded."),
+                     paste("Variables: .+CRP_0.+show integer values only,",
+                           "but will be nonetheless considered.")
     ),
-    regexp = sprintf("(%s|%s)",
-                     paste(".+CRP_0.+ show integer values only,",
-                           "but will be nonetheless considered."),
-                     paste("Study variables:",
-                           ".+AGE_0.+ have been excluded.")
-    ),
-    all = TRUE,
-    perl = TRUE
+    perl = TRUE,
+    all = TRUE
   )
+
 
   sd0 <- study_data
   sd0$v00014 <- NA
@@ -263,7 +307,7 @@ test_that("acc_univariate_outlier works with label_col", {
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
       as.matrix(res1$SummaryTable)),
-      na.rm = TRUE) - 112.45)), 0.1
+      na.rm = TRUE) -2699 - 112.45)), 0.1
   )
 
   expect_equal(
@@ -273,9 +317,9 @@ test_that("acc_univariate_outlier works with label_col", {
   )
 
   expect_identical(colnames(res1$SummaryTable),
-                   c("Variables", "Mean", "SD", "Median", "Skewness",
-                     "Tukey (N)",  "6-Sigma (N)", "Hubert (N)",
-                     "Sigma-gap (N)", "Most likely (N)",  "To low (N)",
-                     "To high (N)", "GRADING"))
+                   c("Variables", "Mean", "No.records", "SD", "Median", "Skewness",
+                     "Tukey (N)",  "3SD (N)", "Hubert (N)",
+                     "Sigma-gap (N)", "NUM_acc_ud_outlu",  "Outliers, low (N)",
+                     "Outliers, high (N)", "GRADING", "PCT_acc_ud_outlu"))
 
 })

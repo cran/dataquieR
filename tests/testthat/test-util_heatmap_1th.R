@@ -3,7 +3,7 @@ test_that("util_heatmap_1th works", {
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
   label_col <- LABEL
-  prep_prepare_dataframes()
+  prep_prepare_dataframes(.internal = TRUE)
   hm1 <- util_heatmap_1th(
     df = ds1,
     cat_vars = c("CENTER_0", "USR_BP_0"),
@@ -19,7 +19,7 @@ test_that("util_heatmap_1th works", {
   )
   skip_on_cran()
   skip_if_not_installed("vdiffr")
-  skip_if_not(capabilities()["long.double"])
+  # TODO: skip_if_not(capabilities()["long.double"])
   hm2 <- util_heatmap_1th(
     df = ds1,
     cat_vars = c("USR_BP_0"),

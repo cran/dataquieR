@@ -7,17 +7,13 @@
 \method{as.data.frame}{dataquieR_resultset}(x, ...)
 }
 \arguments{
-\item{x}{\link[=dq_report]{dataquieR report}}
+\item{x}{Deprecated}
 
-\item{...}{not used}
+\item{...}{Deprecated}
 }
 \value{
-a \link{data.frame} with one row per indicator call, one column
-\code{implementationform} naming the called indicator function, one column per
-function argument and one additional column containing the results of each
-call as a list.
+Deprecated
 }
 \description{
-converts a \link[=dq_report]{dataquieR report} to a \link{data.frame}. Intended for
-use in pipelines.
+Deprecated
 }

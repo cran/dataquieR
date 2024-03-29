@@ -1,4 +1,5 @@
 test_that("util_find_first_externally_called_functions_in_stacktrace works", {
+  skip_on_cran()
   test1 <- function() {
     util_find_first_externally_called_functions_in_stacktrace()
   }

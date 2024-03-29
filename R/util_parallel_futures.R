@@ -1,3 +1,5 @@
+#' @keywords internal
+
 util_parallel_futures <- function(all_calls,
                                   worker,
                                   n_nodes,
@@ -16,7 +18,7 @@ util_parallel_futures <- function(all_calls,
   rp <- lapply(setNames(seq_along(all_calls), nm = names(all_calls)),
            function(i) {
              progress(100 * i/length(all_calls))
-             future::future( # FIXME: Use future_promise: https://rstudio.github.io/promises/articles/future_promise.html
+             future::future( # IDEA: Use future_promise: https://rstudio.github.io/promises/articles/future_promise.html
                {
                  worker(all_calls[[i]], env = environment())
                }

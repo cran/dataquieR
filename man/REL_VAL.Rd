@@ -11,7 +11,9 @@ An object of class \code{character} of length 1.
 REL_VAL
 }
 \description{
-TODO JM
+Specifies the type of reliability or validity analysis. The string specifies
+the analysis algorithm to be used, and can be either "inter-class" or
+"intra-class".
 }
 \seealso{
 \link{meta_data_cross}

@@ -26,3 +26,16 @@ typically used in name construction, as \code{util_deparse1(substitute(.))}.
 
 This avoids a dependency on \code{backports} and on R >= 4.0.0.
 }
+\seealso{
+Other condition_functions: 
+\code{\link{util_condition_constructor_factory}()},
+\code{\link{util_error}()},
+\code{\link{util_find_external_functions_in_stacktrace}()},
+\code{\link{util_find_first_externally_called_functions_in_stacktrace}()},
+\code{\link{util_find_indicator_function_in_callers}()},
+\code{\link{util_message}()},
+\code{\link{util_warning}()}
+}
+\concept{condition_functions}
+\concept{process}
+\keyword{internal}

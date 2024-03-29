@@ -1,4 +1,5 @@
 test_that("com_segment_missingness works", {
+  skip_on_cran()
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = FALSE,
                    dataquieR.ERRORS_WITH_CALLER = FALSE,
@@ -6,6 +7,13 @@ test_that("com_segment_missingness works", {
                    dataquieR.MESSAGES_WITH_CALLER = FALSE)
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
   expect_message(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
                                threshold_value = NA, color_gradient_direction = "above",
@@ -85,12 +93,12 @@ test_that("com_segment_missingness works", {
   meta_data2 <- meta_data
   meta_data2$KEY_STUDY_SEGMENT <- NULL
   meta_data2$STUDY_SEGMENT <- NULL
-  expect_error(suppressWarnings(
+  expect_error(suppressWarnings(suppressMessages(
     r <- com_segment_missingness(study_data, meta_data2,
                                  threshold_value = 10, color_gradient_direction = "above",
                                  exclude_roles = c(VARIABLE_ROLES$PROCESS,
                                                    "invalid"))
-    ),
+    )),
     regexp = paste(".*Metadata do not contain",
                    "the column STUDY_SEGMENT"),
     perl = TRUE
@@ -210,7 +218,7 @@ test_that("com_segment_missingness works", {
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
-  skip_if_not(capabilities()["long.double"])
+  # TODO: skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("segment missingness plot ok",
                               r$SummaryPlot)
 })
@@ -224,6 +232,13 @@ test_that("com_segment_missingness works w/g (group|strata)_vars", {
                    dataquieR.MESSAGES_WITH_CALLER = FALSE)
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
   expect_message({
     r1 <- com_segment_missingness(study_data, meta_data, strata_vars = "CENTER_0",
                                   threshold_value = 5,
@@ -251,7 +266,7 @@ test_that("com_segment_missingness works w/g (group|strata)_vars", {
                         r3$SummaryData)
   skip_on_cran()
   skip_if_not_installed("vdiffr")
-  skip_if_not(capabilities()["long.double"])
+  # TODO: skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("segment missingness plot r1 ok",
                               r1$SummaryPlot)
   vdiffr::expect_doppelganger("segment missingness plot r2 ok",

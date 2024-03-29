@@ -24,3 +24,7 @@ util_app_con_contradictions_redcap(x, dta)
 \description{
 Test for applicability of contradiction checks
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

@@ -10,7 +10,7 @@ acc_margins(
   co_vars = NULL,
   threshold_type = NULL,
   threshold_value,
-  min_obs_in_subgroup,
+  min_obs_in_subgroup = 5,
   study_data,
   meta_data,
   label_col
@@ -76,6 +76,8 @@ Marginal means rests on model based results, i.e. a significantly different
 marginal mean depends on sample size. Particularly in large studies, small
 and irrelevant differences may become significant. The contrary holds if
 sample size is low.
+
+\link{Indicator}
 }
 \details{
 Limitations

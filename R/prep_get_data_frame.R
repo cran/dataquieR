@@ -15,6 +15,9 @@
 #' @param data_frame_name [character] name of the data frame to read, see
 #'   details
 #' @param .data_frame_list [environment] cache for loaded data frames
+#' @param keep_types [logical] keep types as possibly defined in a file, if the
+#'                             data frame is loaded from one. set `TRUE` for
+#'                             study data.
 #'
 #' @return [data.frame] a data frame
 #' @export
@@ -55,9 +58,17 @@
 #'   "extdata", "meta_data.RData|meta_data"))
 #' }
 prep_get_data_frame <- function(data_frame_name,
-                                .data_frame_list = .dataframe_environment) {
+                                .data_frame_list = .dataframe_environment,
+                                keep_types = FALSE) {
   # IDEA: also allow to address rows or cells from dataframes using the syntax in data_frame_name
-  # TODO: Search all funcitons for data frame arguments and ensure, that util_expect_dataframe is called.
+
+  if (!missing(keep_types)) {
+    util_expect_scalar(keep_types,
+                       check_type = is.logical,
+                       error_message =
+                         sprintf("%s needs to be to be a logical value.",
+                                 sQuote("keep_types")))
+  }
 
   data_frame_name <- gsub("\\s*\\|\\s*", "|", data_frame_name)
 
@@ -98,9 +109,10 @@ prep_get_data_frame <- function(data_frame_name,
   }
 
   if (is.null(which)) {
-    r <- try(rio::import(fn), silent = TRUE)
+    r <- util_rio_import(fn, keep_types = keep_types)
   } else {
-    r <- try(rio::import(fn, which = which), silent = TRUE)
+    r <- util_rio_import(fn, keep_types = keep_types,
+                         which = which)
   }
 
   if (inherits(r, "try-error") || !is.data.frame(r)) {
@@ -112,22 +124,37 @@ prep_get_data_frame <- function(data_frame_name,
       if (file.exists(fn0)) {
         fn <- fn0
       } else {
-        fn0 <- system.file("extdata", paste0(fn, ".xlsx"), package = "dataquieR")
+        fn0 <- system.file("extdata", paste0(fn, ".xlsx"),
+                           package = "dataquieR")
         if (file.exists(fn0)) {
           fn <- fn0
         }
       }
     }
+
     if (is.null(which)) {
-      r <- try(rio::import(fn), silent = TRUE)
+      r <- util_rio_import(fn, keep_types = keep_types)
     } else {
-      r <- try(rio::import(fn, which = which), silent = TRUE)
+      r <- util_rio_import(fn, keep_types = keep_types,
+                           which = which)
     }
+
     if (inherits(r, "try-error")) {
-      util_error("Cannot read file %s using %s: %s",
+      if (conditionMessage(attr(r, "condition")) ==
+          "No such file" && length(prep_list_dataframes()) == 0) {
+        hint <- sprintf("\nDid you forget to call %s, %s or %s?",
+                        sQuote("prep_load_workbook_like_file"),
+                        sQuote("prep_add_data_frames"),
+                        sQuote("prep_load_folder_with_metadata")
+        )
+      } else {
+        hint <- ""
+      }
+      util_error("Cannot read file %s using %s: %s%s",
                  dQuote(fn),
                  sQuote("rio"),
-                 conditionMessage(attr(r, "condition")))
+                 conditionMessage(attr(r, "condition")),
+                 hint)
     }
 
     if (!is.data.frame(r)) {

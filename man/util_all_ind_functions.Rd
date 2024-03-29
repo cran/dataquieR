@@ -12,3 +12,4 @@ util_all_ind_functions()
 \description{
 All indicator functions of \code{dataquieR}
 }
+\keyword{internal}

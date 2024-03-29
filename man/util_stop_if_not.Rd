@@ -22,4 +22,25 @@ Verify assumptions made by the code, that must be TRUE
 }
 \seealso{
 \code{\link{stopifnot}}
+
+Other robustness_functions: 
+\code{\link{util_as_valid_missing_codes}()},
+\code{\link{util_check_one_unique_value}()},
+\code{\link{util_correct_variable_use}()},
+\code{\link{util_empty}()},
+\code{\link{util_ensure_character}()},
+\code{\link{util_ensure_in}()},
+\code{\link{util_ensure_suggested}()},
+\code{\link{util_expect_scalar}()},
+\code{\link{util_fix_rstudio_bugs}()},
+\code{\link{util_is_integer}()},
+\code{\link{util_is_numeric_in}()},
+\code{\link{util_is_valid_missing_codes}()},
+\code{\link{util_match_arg}()},
+\code{\link{util_observations_in_subgroups}()},
+\code{\link{util_only_NAs}()},
+\code{\link{util_warn_unordered}()}
 }
+\concept{condition}
+\concept{robustness_functions}
+\keyword{internal}

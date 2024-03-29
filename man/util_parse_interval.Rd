@@ -17,3 +17,13 @@ limit included?), \code{upp} (the value of the upper limit)
 \description{
 Utility function to parse intervals
 }
+\seealso{
+Other parser_functions: 
+\code{\link{util_interpret_limits}()},
+\code{\link{util_interpret_range}()},
+\code{\link{util_parse_assignments}()},
+\code{\link{util_parse_redcap_rule}()}
+}
+\concept{metadata_management}
+\concept{parser_functions}
+\keyword{internal}

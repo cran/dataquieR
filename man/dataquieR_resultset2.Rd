@@ -22,6 +22,7 @@ The class features the following methods:
 \item [\verb{[.dataquieR_resultset2}]
 \item \code{\link{dim.dataquieR_resultset2}}
 \item \code{\link{dimnames.dataquieR_resultset2}}
+\item \code{\link{prep_extract_summary.dataquieR_resultset2}}
 \item \code{\link{print.dataquieR_resultset2}}
 \item \code{\link{resnames.dataquieR_resultset2}}
 \item \code{\link{summary.dataquieR_resultset2}}
@@ -30,3 +31,4 @@ The class features the following methods:
 \seealso{
 \link{dq_report2}
 }
+\keyword{internal}

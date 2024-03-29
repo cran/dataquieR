@@ -53,7 +53,9 @@ tb[, 1] <- paste("case", 1:nrow(tb))
 htmltools::browsable(util_formattable(tb))
 htmltools::browsable(util_formattable(tb[, -1]))
 }
+
 }
 \seealso{
 \code{\link[=util_html_table]{util_html_table()}}
 }
+\keyword{internal}

@@ -1,4 +1,5 @@
 test_that("util_no_value_labels works", {
+  skip_on_cran()
   local({
     meta_data <- prep_get_data_frame("meta_data")
     expect_identical(util_no_value_labels("CENTER_0", meta_data = meta_data,

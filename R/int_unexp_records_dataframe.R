@@ -4,6 +4,8 @@
 #' This function contrasts the expected record number in each study in
 #' the metadata with the actual record number in each study data frame.
 #'
+#' [Indicator]
+#'
 #' @param data_record_count [integer]  an integer vector with the number of expected data records per study data frame, mandatory.
 #' @param identifier_name_list [character] a character vector indicating the name of each study data frame, mandatory.
 #'

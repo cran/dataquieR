@@ -10,18 +10,23 @@
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
 #' @param use_plot_ly [logical] use `plotly`
+#' @param dir [character] output directory for potential `iframes`.
 #'
 #' @return `htmltools` compatible object with rendered `dqr`
+#'
+#' @keywords internal
 util_pretty_print <- function(dqr, nm, is_single_var,
                               meta_data,
                               label_col,
-                              use_plot_ly
+                              use_plot_ly,
+                              dir
                               ) { # TODO: ensure that in square2 alias names do not have points
   if (use_plot_ly) {
     plot_figure <- util_plot_figure_plotly
   } else {
     plot_figure <- util_plot_figure_no_plotly
   }
+
   fkt <- util_map_by_largest_prefix(
     nm,
     haystack = util_all_ind_functions())
@@ -129,30 +134,43 @@ util_pretty_print <- function(dqr, nm, is_single_var,
           if (!!length(level_names)) {
             val <- level_names[as.character(val)]
           }
-          x <- htmltools::p(sprintf("%s -- %s: %s.",
-                            cats,
-                            dQuote(vars),
-                            val
-                            ))
+          x <- htmltools::p(sprintf("%s for  %s is",
+                            sQuote(cats),
+                            dQuote(vars)),
+                            htmltools::strong(htmltools::em(val))
+                            )
         } else {
           x <- print.ReportSummaryTable(x, view = FALSE) # convert to ggplot
         }
       }
-      if (inherits(x, "ggplot")) {
+      if (inherits(x, "ggplot") || inherits(x, "ggmatrix")) {
         x_is_plot <- TRUE
         as_plotly <- attr(dqr, "as_plotly")
         if (!is.null(as_plotly) && exists(as_plotly, mode = "function"))
           as_plotly <- get(as_plotly, mode = "function")
         if (use_plot_ly && is.function(as_plotly)) {
           withCallingHandlers({
-            x <- as_plotly(dqr, height = 480, width = 1040)
+            x <- as_plotly(dqr)#, height = 480, width = 1040)
             x <- util_adjust_geom_text_for_plotly(x)
             x <- plotly::layout(x,
-                                autosize = FALSE,
-                                margin = list(autoexpand = FALSE,
+                                autosize = !FALSE,
+                                margin = list(autoexpand = !FALSE,
                                               r = 200,
                                               b = 100)
             )
+            x <- plotly::config(x,
+                                responsive = TRUE,
+                                autosizable = TRUE,
+                                fillFrame = TRUE,
+                                modeBarButtonsToAdd =
+                                  list(
+                                    list(
+                                      name = "Limit by Window Size",
+                                      icon =
+                                        htmlwidgets::JS("Plotly.Icons.drawrect"),
+                                      click =
+                                        htmlwidgets::JS("togglePlotlyWindowZoom"))))
+
           },
           warning = function(cond) { # suppress a waning caused by ggplotly for barplots
             if (startsWith(conditionMessage(cond),
@@ -176,6 +194,10 @@ util_pretty_print <- function(dqr, nm, is_single_var,
           x <- plot_figure(x)
         }
         # convert to plotly or base 64 plot image
+
+        # to iframe?
+        x <- util_iframe_it_if_needed(x, dir = dir, nm = nm, fkt = fkt)
+        # NOTE: If we have two figures in the same result, nm is not unique, because the two figures may be displayed, both., but we have currently only on figure per result, the other one can olny be a table or stuff (see this function, abobve)
       } else {
         x_is_plot <- FALSE
       }
@@ -212,6 +234,7 @@ util_pretty_print <- function(dqr, nm, is_single_var,
           class = "dataquieR_result",
           `data-call` = paste0(cll, collapse = "\n"),
           `data-stderr` = paste(errors, warnings, messages, collapse = "\n"),
+          `data-nm` = nm,
           x
         )
       } else {
@@ -247,9 +270,31 @@ util_pretty_print <- function(dqr, nm, is_single_var,
 
     # add variable name to pages that are not single_vars and display multiple variable in same page
     if (!is_single_var && all(grepl(".", nm, fixed = TRUE))) {
-      caption <- sub("^[^\\.]*\\.", "", nm)
+      href <- htmltools::tagGetAttribute(util_generate_anchor_link(name = nm,
+                                order_context =
+                                  ifelse(
+                                    is_single_var,
+                                    "indicator", # link to the other world
+                                    "variable")), attr = "href")
+      var_label <- sub("^[^\\.]*\\.", "", nm)
+      caption <- var_label
       if (caption != "[ALL]") {
-        caption <- htmltools::h5(caption)
+        caption <- htmltools::h5(htmltools::tags$a(href = href, var_label))
+        if (label_col != VAR_NAMES) {
+          title <- util_map_labels(
+            var_label,
+            meta_data,
+            VAR_NAMES,
+            label_col,
+            ifnotfound = NA_character_)
+          if (length(title) == 1 &&
+              is.character(title) &&
+              !is.na(title)) {
+            caption <- htmltools::h5(
+              title = title,
+              htmltools::tags$a(href = href, var_label))
+          }
+        }
       } else {
         caption <- NULL
       }
@@ -287,6 +332,7 @@ util_pretty_print <- function(dqr, nm, is_single_var,
       }
       if (length(y) > 0) {
         if (!inherits(y, "htmlwidget") && # check if output is compatible with htmltools
+            !inherits(y, "html") &&
             !inherits(y, "shiny.tag") &&
             !inherits(y, "shiny.tag.list")) {
           y <- htmltools::p(
@@ -305,6 +351,7 @@ util_pretty_print <- function(dqr, nm, is_single_var,
           class = "dataquieR_result",
           `data-call` = paste0(cll, collapse = "\n"),
           `data-stderr` = paste(errors, warnings, messages, collapse = "\n"),
+          `data-nm` = nm,
           y
         )
       } else {
@@ -325,6 +372,7 @@ preferred_slots <- c("ReportSummaryTable",
                      "SummaryTable",
                      "DataframeData", "DataframeTable", "SegmentData",
                      "SegmentTable",
+                     "VariableGroupPlot", "VariableGroupPlotList",
                      "VariableGroupData", "VariableGroupTable")
 
 

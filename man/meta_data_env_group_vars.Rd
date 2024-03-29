@@ -17,3 +17,4 @@ Extract group variables for a given item
 \seealso{
 \link{meta_data_env}
 }
+\keyword{internal}

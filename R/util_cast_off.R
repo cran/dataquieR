@@ -8,6 +8,8 @@
 #' @param .dont_cast_off_cols [logical] internal use, only.
 #'
 #' @return [data.frame] having all known special things removed
+#'
+#' @keywords internal
 util_cast_off <- function(df, symb, .dont_cast_off_cols = FALSE) {
   if (missing(symb)) {
     symb <- as.character(substitute(df))
@@ -66,13 +68,7 @@ util_cast_off <- function(df, symb, .dont_cast_off_cols = FALSE) {
         mostattributes(cl) <- NULL
         return(cl)
       } else {
-        return(
-          switch(dt,
-                 integer = as.numeric(cl), # as.integer may fail for too large integer numbers
-                 string = as.character(cl),
-                 float = as.double(cl),
-                 datetime = lubridate::as_datetime(as.character(cl))
-          ))
+        return(util_data_type_conversion(cl, type = dt))
       }
     }, SIMPLIFY = FALSE)
 

@@ -12,7 +12,7 @@ acc_robust_univariate_outlier(
   exclude_roles,
   n_rules = length(unique(criteria)),
   max_non_outliers_plot = 10000,
-  criteria = c("tukey", "sixsigma", "hubert", "sigmagap")
+  criteria = c("tukey", "3sd", "hubert", "sigmagap")
 )
 }
 \arguments{
@@ -30,7 +30,7 @@ attributes of study data}
 \item{exclude_roles}{\link{variable roles} a character (vector) of variable roles
 not included}
 
-\item{n_rules}{\link{integer} from=1 to=4. the no. of rules that must be violated
+\item{n_rules}{\link{integer} from=1 to=4. the no. rules that must be violated
 to flag a variable as containing outliers. The default is 4, i.e. all.}
 
 \item{max_non_outliers_plot}{\link{integer} from=0. Maximum number of non-outlier
@@ -39,7 +39,7 @@ points exist, a subsample will
 be plotted only. Note, that
 sampling is not deterministic.}
 
-\item{criteria}{\link{set} tukey | sixsigma | hubert | sigmagap. a vector with
+\item{criteria}{\link{set} tukey | 3SD | hubert | sigmagap. a vector with
 methods to be used for detecting outliers.}
 }
 \value{
@@ -47,9 +47,15 @@ a list with:
 \itemize{
 \item \code{SummaryTable}: \code{\link{data.frame}} with the columns
 \code{Variables}, \code{Mean}, \code{SD}, \code{Median}, \code{Skewness}, \code{Tukey (N)},
-\code{6-Sigma (N)}, \code{Hubert (N)}, \code{Sigma-gap (N)}, \verb{Most likely (N)},
-\verb{To low (N)}, \verb{To high (N)} \code{Grading}
+\verb{3SD (N)}, \code{Hubert (N)}, \code{Sigma-gap (N)}, \code{NUM_acc_ud_outlu},
+\verb{Outliers, low (N)}, \verb{Outliers, high (N)} \code{Grading}
+\itemize{
+\item \code{SummaryData}: \code{\link{data.frame}} with the columns
+\code{Variables}, \code{Mean}, \code{SD}, \code{Median}, \code{Skewness}, \code{Tukey (N)},
+\verb{3SD (N)}, \code{Hubert (N)}, \code{Sigma-gap (N)}, \code{Outliers (N)},
+\verb{Outliers, low (N)}, \verb{Outliers, high (N)} \code{Grading}
 \item \code{SummaryPlotList}: \code{\link{ggplot}} univariate outlier plots
+}
 }
 }
 \description{
@@ -64,7 +70,7 @@ Marsh and Seo, 2006. Nevertheless, this method tends to identify frequent
 measurements which are falsely interpreted as true outliers.
 
 A somewhat more conservative approach in terms of symmetric and/or normal
-distributions is the \eqn{6 * \sigma} approach, i.e. any measurement not in
+distributions is the 3SD approach, i.e. any measurement not in
 the interval of \eqn{mean(x) +/- 3 * \sigma} is considered an outlier.
 
 Both methods mentioned above are not ideally suited to skewed distributions.
@@ -89,6 +95,8 @@ large distance \eqn{1 * \sigma} has been been chosen.
 
 Note, that the plots are not deterministic, because they use
 \link[ggplot2:geom_jitter]{ggplot2::geom_jitter}.
+
+\link{Indicator}
 }
 \details{
 \emph{\strong{Hint}}: \emph{The function is designed for unimodal data only.}
@@ -98,14 +106,14 @@ Note, that the plots are not deterministic, because they use
 \item Select all variables of type float in the study data
 \item Remove missing codes from the study data (if defined in the metadata)
 \item Remove measurements deviating from limits defined in the metadata
-\item Identify outlier according to the approaches of Tukey (Tukey 1977),
-SixSigma (-Bakar et al. 2006), Hubert (Hubert and Vandervieren 2008),
+\item Identify outliers according to the approaches of Tukey (Tukey 1977),
+3SD (Saleem et al. 2021), Hubert (Hubert and Vandervieren 2008),
 and SigmaGap (heuristic)
-\item A output data frame is generated which indicates the no. of possible
-outlier, the direction of deviations (to low, to high) for all methods
+\item An output data frame is generated which indicates the no. possible
+outliers, the direction of deviations (Outliers, low; Outliers, high) for all methods
 and a summary score which sums up the deviations of the different rules
 \item A scatter plot is generated for all examined variables, flagging
-observations according to the no. of violated rules (step 5).
+observations according to the no. violated rules (step 5).
 }
 }
 

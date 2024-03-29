@@ -7,6 +7,11 @@
 #' @return binary vector
 #'
 #' @importFrom stats quantile IQR
+#'
+#' @family outlier_functions
+#' @concept outlier
+#' @keywords internal
+
 util_tukey <- function(x) {
   xq1 <- as.numeric(quantile(x, na.rm = TRUE)[2])
   xiqr <- IQR(x, na.rm = TRUE)

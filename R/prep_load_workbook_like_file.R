@@ -7,8 +7,10 @@
 #' support selecting specific sheets/columns from a file.
 #'
 #' @param file the file name to load.
+#' @param keep_types [logical] keep types as possibly defined in the file.
+#'                             set `TRUE` for study data.
 #'
-#' @return [data.frame] `invisible(the cache environment)`
+#' @return `invisible(the cache environment)`
 #' @export
 #' @seealso [prep_add_data_frames]
 #' @seealso [prep_get_data_frame]
@@ -21,8 +23,16 @@
 #' prep_get_data_frame(
 #'   "dataframe_level") # dataframe_level is a sheet in the file
 #' }
-prep_load_workbook_like_file <- function(file) {
-  # util_ensure_suggested(c("rio"), "Load data from files")
+prep_load_workbook_like_file <- function(file,
+                                         keep_types = FALSE) {
+
+  if (!missing(keep_types)) {
+    util_expect_scalar(keep_types,
+                       check_type = is.logical,
+                       error_message =
+                         sprintf("%s needs to be to be a logical value.",
+                                 sQuote("keep_types")))
+  }
 
   util_expect_scalar(file, check_type = is.character)
 
@@ -31,9 +41,44 @@ prep_load_workbook_like_file <- function(file) {
     fp <- tempfile()
     util_stop_if_not(!file.exists(fp))
     dir.create(fp)
-    on.exit(try(unlink(fp, force = TRUE, recursive = TRUE, expand = FALSE), silent = TRUE))
-    file_new <- file.path(fp, gsub("^.*\\/", "", file, perl = TRUE))
-    try(utils::download.file(file, destfile = file_new, quiet = TRUE), silent = TRUE)
+    on.exit(try(unlink(fp, force = TRUE, recursive = TRUE, expand = FALSE),
+                silent = TRUE))
+    file_dec <- utils::URLdecode(file)
+    fn <- gsub("^.*\\/", "", file_dec, perl = TRUE)
+    fn <- gsub("\\?.*$", "", fn)
+    fn <- gsub("#.*$", "", fn)
+
+    ext <- ""
+    ext <- try(util_fetch_ext(file), silent = TRUE)
+    # do not ignore content-disposition headers sent by the server (if they propose a file name)
+    if (length(ext) != 1 ||
+        !is.character(ext)) {
+      msg <- "unknown reason"
+      if (inherits(ext, "try-error")) {
+        msg <- conditionMessage(attr(ext, "condition"))
+      } else if (inherits(ext, "condition")) {
+        msg <- conditionMessage(ext)
+      }
+      util_warning("Could not determine the file type of %s: %s",
+                   dQuote(file),
+                   sQuote(msg))
+      ext <- ""
+    } else {
+      if (!is.null(attr(ext, "file-name"))) {
+        if (length(attr(ext, "file-name")) == 1 &&
+            !is.na(attr(ext, "file-name")))
+          fn <- attr(ext, "file-name")
+      }
+      ext <- paste0(".", ext)
+    }
+
+    if (!endsWith(fn, ext)) {
+      fn <- paste0(fn, ext)
+    }
+
+    file_new <- file.path(fp, fn)
+
+    try(utils::download.file(file, destfile = file_new, quiet = TRUE, mode = "wb"), silent = TRUE)
     if (file.exists(file_new)) {
       file <- file_new
     }
@@ -41,8 +86,7 @@ prep_load_workbook_like_file <- function(file) {
 
   fn <- file
 
-  r <-
-    suppressMessages(suppressWarnings(try(rio::import_list(fn), silent = TRUE)))
+  r <- util_rio_import_list(fn, keep_types = keep_types)
 
   if (inherits(r, "try-error") || !is.list(r) ||
       any(vapply(r, is.data.frame, FUN.VALUE = logical(1)))) {
@@ -63,8 +107,7 @@ prep_load_workbook_like_file <- function(file) {
         }
       }
     }
-    r <- suppressMessages(suppressWarnings(
-      try(rio::import_list(fn), silent = TRUE)))
+    r <- util_rio_import_list(fn, keep_types = keep_types)
   }
 
   if (inherits(r, "try-error") || !is.list(r) ||
@@ -94,6 +137,12 @@ prep_load_workbook_like_file <- function(file) {
                error)
   }
   data_frame_list <- r
+# addition to load a csv file
+  if(is.null(names(data_frame_list)) && length(data_frame_list)==1){
+    names(data_frame_list)<- paste0(basename(fn))
+  }
+
+
   prep_add_data_frames(data_frame_list = data_frame_list)
   data_frame_list2 <- data_frame_list
   names(data_frame_list2) <- paste0(basename(fn),

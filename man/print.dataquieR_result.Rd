@@ -3,12 +3,12 @@
 \name{print.dataquieR_result}
 \alias{print.dataquieR_result}
 \alias{dataquieR_result}
-\title{Print a \link{dataquieR} result returned by pipeline_vectorized}
+\title{Print a \link{dataquieR} result returned by \link{dq_report2}}
 \usage{
 \method{print}{dataquieR_result}(x, ...)
 }
 \arguments{
-\item{x}{\link{list} a dataquieR result from \link{pipeline_vectorized} or
+\item{x}{\link{list} a dataquieR result from \link{dq_report2} or
 \link{util_eval_to_dataquieR_result}}
 
 \item{...}{passed to print. Additionally, the argument \code{slot} may be passed
@@ -18,7 +18,7 @@ to print only specific sub-results.}
 see print
 }
 \description{
-Print a \link{dataquieR} result returned by pipeline_vectorized
+Print a \link{dataquieR} result returned by \link{dq_report2}
 }
 \seealso{
 \code{\link[=util_pretty_print]{util_pretty_print()}}

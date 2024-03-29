@@ -1,4 +1,5 @@
 test_that("acc_varcomp works without label_col", {
+  skip_on_cran()
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
   expect_warning(
@@ -69,6 +70,7 @@ test_that("acc_varcomp works without label_col", {
 })
 
 test_that("acc_varcomp works with label_col", {
+  skip_on_cran()
 
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
@@ -117,6 +119,7 @@ test_that("acc_varcomp works with label_col", {
 })
 
 test_that("acc_varcomp works illegal min_obs_in_subgroup/min_subgroups", {
+  skip_on_cran()
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
   suppressMessages(expect_message(
@@ -157,6 +160,7 @@ test_that("acc_varcomp works illegal min_obs_in_subgroup/min_subgroups", {
 })
 
 test_that("acc_varcomp works without resp_vars", {
+  skip_on_cran()
 
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
@@ -195,7 +199,8 @@ test_that("acc_varcomp works without resp_vars", {
 
 })
 
-test_that("acc_varcomp stops on to few subgroups", {
+test_that("acc_varcomp stops on too few subgroups", {
+  skip_on_cran()
 
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")

@@ -27,4 +27,12 @@ Map a vector of values based on an assignment table
 }
 \seealso{
 \link[dplyr:recode]{dplyr::recode}
+
+Other mapping: 
+\code{\link{util_map_all}()},
+\code{\link{util_map_by_largest_prefix}()},
+\code{\link{util_map_labels}()}
 }
+\concept{mapping}
+\concept{process}
+\keyword{internal}

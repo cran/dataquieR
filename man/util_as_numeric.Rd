@@ -18,3 +18,6 @@ the converted vector
 \description{
 Converts a vector factor aware of numeric values not being scrambled.
 }
+\concept{conversion_functions}
+\concept{data_management}
+\keyword{internal}

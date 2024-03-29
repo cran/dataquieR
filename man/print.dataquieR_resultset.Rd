@@ -4,35 +4,13 @@
 \alias{print.dataquieR_resultset}
 \title{Generate a RMarkdown-based report from a \link{dataquieR} report}
 \usage{
-\method{print}{dataquieR_resultset}(x, dir, view = TRUE, self_contained = FALSE, ...)
+\method{print}{dataquieR_resultset}(...)
 }
 \arguments{
-\item{x}{\link[=dq_report]{dataquieR report}.}
-
-\item{dir}{\link{character} directory to store the rendered report's files,
-a temporary one,
-if omitted. Directory will be created, if missing, files may be
-overwritten inside that directory}
-
-\item{view}{\link{logical} display the report}
-
-\item{self_contained}{\link{logical} create a single page application HTML file.
-This may be quite big and hard to render for your web-browser.}
-
-\item{...}{additional arguments:
-\itemize{
-\item template: Report template to use, not yet supported.
-\item chunk_error: display error messages in report
-\item chunk_warning: display warnings in report
-\item output_format: output format to use, see \link[rmarkdown:render]{rmarkdown::render} -- currently,
-html based formats are supported by the default template.
-If set, the argument self_contained will be ignored.
-\item chunk_echo: display R code in report
-\item chunk_message: display \link{message} outputs in report
-}}
+\item{...}{deprecated}
 }
 \value{
-file name of the generated report
+deprecated
 }
 \description{
 Generate a RMarkdown-based report from a \link{dataquieR} report

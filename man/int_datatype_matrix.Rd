@@ -54,6 +54,8 @@ categories:
 \description{
 Checks data types of the study data and for the data type
 declared in the metadata
+
+\link{Indicator}
 }
 \details{
 This is a preparatory support function that compares study data with
@@ -72,8 +74,16 @@ load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
   environment())
 load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
   environment())
+study_data$v00000 <- as.character(study_data$v00000)
+study_data$v00002 <- as.character(study_data$v00002)
+study_data$v00002[3] <- ""
 appmatrix <- int_datatype_matrix(study_data = study_data,
                                  meta_data = meta_data,
                                  label_col = LABEL)
+study_data$v00002[5] <- "X"
+appmatrix <- int_datatype_matrix(study_data = study_data,
+                                 meta_data = meta_data,
+                                 label_col = LABEL)
+appmatrix$ReportSummaryTable
 }
 }

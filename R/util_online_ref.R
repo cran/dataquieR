@@ -5,6 +5,8 @@
 #' @param fkt_name [character] function name to generate a link for
 #'
 #' @return [character] the link
+#'
+#' @keywords internal
 util_online_ref <- function(fkt_name) {
 
   # convert function names to website names

@@ -15,15 +15,23 @@
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
 #' @param warning_if_no_list [logical] len = 1. If `TRUE`, a warning is
-#'                                              displayed, if not missing
+#'                                              displayed, if no missing
 #'                                              codes are available for a
 #'                                              variable.
+#' @param warning_if_unsuitable_list [logical] len = 1. If `TRUE`, a warning is
+#'                                              displayed, if missing
+#'                                              codes do not match with a
+#'                                              variable' data type.
 #'
 #' @return [numeric] vector of missing codes.
 #'
+#' @family missing_functions
+#' @concept metadata_management
+#' @keywords internal
 util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
                                label_col = VAR_NAMES,
-                               warning_if_no_list = TRUE) {
+                               warning_if_no_list = TRUE,
+                               warning_if_unsuitable_list = TRUE) {
   if (!(label_col %in% names(mdf))) {
     if (warning_if_no_list) {
       util_warning(
@@ -66,7 +74,13 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
   }  # nocov end
 
   # res <- unlist(strsplit(cl, split_char, fixed = TRUE))
-  r <- util_parse_assignments(cl, split_char = SPLIT_CHAR)
+  if (code_name != VALUE_LABELS) {
+    r <- util_parse_assignments(cl, split_char = SPLIT_CHAR)
+  } else {
+    r <- util_parse_assignments(cl,
+                                split_on_any_split_char = TRUE,
+                                split_char = c(SPLIT_CHAR, '<'),)
+  }
   if (length(r) == 0) {
     r <- setNames(character(0), character(0))
   } else {
@@ -81,7 +95,7 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
       DATA_TYPES$DATETIME)) {
     dt_res <- suppressWarnings(lubridate::as_datetime(res))
     if (sum(is.na(res)) < sum(is.na(dt_res))) {
-      util_warning(
+      if (warning_if_unsuitable_list) util_warning(
 "Some codes (%s) were not datetime/assignment for %s: %s, these will be ignored",
         dQuote(code_name),
         dQuote(x),
@@ -94,7 +108,7 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
   } else {
     numeric_res <- suppressWarnings(as.numeric(res))
     if (sum(is.na(res)) < sum(is.na(numeric_res))) {
-      util_warning(
+      if (warning_if_unsuitable_list) util_warning(
 "Some codes (%s) were not numeric/assignment for %s: %s, these will be ignored",
         dQuote(code_name),
         dQuote(x),

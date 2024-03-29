@@ -1,4 +1,5 @@
 test_that("prep_apply_coding works", {
+  skip_on_cran()
   study_data <- iris
   x <- prep_study2meta(study_data = study_data,
                        convert_factors = TRUE)

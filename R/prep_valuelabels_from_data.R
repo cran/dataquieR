@@ -27,7 +27,7 @@ prep_valuelabels_from_data <-
                dQuote("study_data"))
   }
 
-  util_expect_data_frame(study_data)
+  util_expect_data_frame(study_data, keep_types = TRUE)
 
   study_data <- util_cast_off(study_data, "study_data")
 
@@ -60,9 +60,13 @@ prep_valuelabels_from_data <-
       if (variable %in% factor_resp_vars) {
         fctr <- factor(levels = levels(study_data[[variable]]),
                        x = levels(study_data[[variable]]))
-
+        if (is.ordered(study_data[[variable]])) {
+          sc <- "<"
+        } else {
+          sc <- SPLIT_CHAR
+        }
         paste(as.integer(fctr), "=", levels(fctr)[as.integer(fctr)],
-              collapse = sprintf(" %s ", SPLIT_CHAR))
+              collapse = sprintf(" %s ", sc))
       } else {
         NA_character_
       }

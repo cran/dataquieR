@@ -9,8 +9,9 @@ con_limit_deviations(
   label_col,
   study_data,
   meta_data,
-  limits = c("HARD_LIMITS", "SOFT_LIMITS", "DETECTION_LIMITS"),
-  flip_mode = "flip"
+  limits = NULL,
+  flip_mode = "noflip",
+  return_flagged_study_data = FALSE
 )
 }
 \arguments{
@@ -35,6 +36,9 @@ setting the \code{roptions(dataquieR.flip_mode = ...)}. If
 called from \code{dq_report}, you can also pass
 \code{flip_mode} to all function calls or set them
 specifically using \code{specific_args}.}
+
+\item{return_flagged_study_data}{\link{logical} return \code{FlaggedStudyData} in the
+result}
 }
 \value{
 a list with:
@@ -42,15 +46,13 @@ a list with:
 \item \code{FlaggedStudyData} \link{data.frame} related to the study data by a 1:1
 relationship, i.e. for each observation is
 checked whether the value is below or above
-the limits.
+the limits. Optional, see
+\code{return_flagged_study_data}.
 \item \code{SummaryTable} \link{data.frame} summarizes limit deviations for each
 variable.
 \item \code{SummaryPlotList} \link{list} of \link{ggplot}s The plots for each variable are
 either a histogram (continuous) or a
 barplot (discrete).
-\item \code{ModifiedStudyData} \link{data.frame}  If the function identifies limit
-deviations, the respective values are
-removed in \code{ModifiedStudyData.}
 \item \code{ReportSummaryTable}: heatmap-like data frame about limit violations
 }
 }
@@ -61,6 +63,8 @@ examine the admissibility of numerical study data.
 
 This helps identify inadmissible measurements according to
 hard limits (for multiple variables).
+
+\link{Indicator}
 }
 \details{
 \subsection{Algorithm of this implementation:}{
@@ -78,14 +82,10 @@ deviations. The histogram-like plots indicate respective limits as well
 as deviations.
 \item Values exceeding limits are removed in a data frame of modified study data
 }
-
-For \link{con_detection_limits}, The default for the limits argument differs and
-is here "DETECTION_LIMITS"
 }
 }
 \seealso{
 \itemize{
-\item \link{con_detection_limits}
 \item \href{https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_limit_deviations.html}{Online Documentation}
 }
 }

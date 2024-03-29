@@ -2,7 +2,7 @@
 % Please edit documentation in R/util_hubert.R
 \name{util_hubert}
 \alias{util_hubert}
-\title{utility function for the outliers rule of Huber et al.}
+\title{utility function for the outliers rule of Hubert and Vandervieren 2008}
 \usage{
 util_hubert(x)
 }
@@ -16,3 +16,12 @@ binary vector
 function to calculate outliers according to the rule of Huber et al. This
 function requires the package \code{robustbase}
 }
+\seealso{
+Other outlier_functions: 
+\code{\link{util_3SD}()},
+\code{\link{util_sigmagap}()},
+\code{\link{util_tukey}()}
+}
+\concept{outlier}
+\concept{outlier_functions}
+\keyword{internal}

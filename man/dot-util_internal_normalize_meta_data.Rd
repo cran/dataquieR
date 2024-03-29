@@ -23,3 +23,4 @@ except if called in a \link{dq_report2} pipeline.}
 Requires referred missing-tables being available by
 \code{prep_get_data_frame}.
 }
+\keyword{internal}

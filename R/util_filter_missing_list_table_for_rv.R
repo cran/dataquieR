@@ -18,6 +18,10 @@
 #'                       specified by a `VAR_NAMES`-name.
 #'
 #' @return [data.frame] the row-wise bound data frames as one data frame
+#'
+#' @family missing_functions
+#' @concept metadata_management
+#' @keywords internal
 util_filter_missing_list_table_for_rv <- function(table, rv, rv2 = rv) {
   util_expect_scalar(rv, check_type = is.character)
   util_expect_scalar(rv2, check_type = is.character)

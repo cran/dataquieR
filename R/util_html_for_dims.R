@@ -5,11 +5,15 @@
 #' @param template [character] template to use for the `dq_report2` report.
 #' @param block_load_factor [numeric] multiply size of parallel compute blocks
 #'                                    by this factor.
+#' @param repsum the `dataquieR` summary, see [summary()] and [dq_report2()]
+#' @param dir [character] output directory for potential `iframes`.
 #'
 #' @return list of arguments for `append_single_page()` defined locally in
 #'   [util_generate_pages_from_report()].
+#'
+#' @keywords internal
 util_html_for_dims <- function(report, use_plot_ly, template,
-                               block_load_factor) {
+                               block_load_factor, repsum, dir) {
 
   util_setup_rstudio_job("Page generation: Indicator View")
 
@@ -58,6 +62,7 @@ util_html_for_dims <- function(report, use_plot_ly, template,
     clls_in_chunk <- colnames(report)[block_indices]
     clls_in_chunk <- clls_in_chunk[!is.na(clls_in_chunk)]
     progress(i/n * 100)
+    call_names <- NULL
     progress_msg("Page generation", sprintf("Single Indicators %s",
                                             paste(sQuote(clls_in_chunk),
                                                   collapse = ", ")))
@@ -67,6 +72,9 @@ util_html_for_dims <- function(report, use_plot_ly, template,
         cur_dm <- sub("_.*$", "", cll)
         drop_down <- dims[[cur_dm]] # fetches the name of the content for the first-level drop-down menu
         fkt <- util_cll_nm2fkt_nm(cll, report)
+        sumplot <- plot(repsum, filter = call_names == cll, dont_plot = TRUE,
+                        stratify_by = "indicator_metric")
+
         is_single_var <- FALSE
         # indicator overview page
         # take all results for the current function
@@ -99,7 +107,8 @@ util_html_for_dims <- function(report, use_plot_ly, template,
                                                               use_plot_ly =
                                                                 use_plot_ly,
                                                               is_single_var =
-                                                                FALSE),
+                                                                FALSE,
+                                                              dir = dir),
                                                           SIMPLIFY = FALSE
         )))
         # check that the length of the page is positive and that it does not only contain null
@@ -120,10 +129,12 @@ util_html_for_dims <- function(report, use_plot_ly, template,
             })
             # generates pages with navigation menu
             # load concept to get current indicator links in reports
+            # TODO: the implementation view needs to be updated so that the columns
+            # "PublicID" and "Name" are included
             concept <- util_get_concept_info("dqi")
-            concept <- concept[c("PublicID", "Indicator", "dataquieR function")]
+            concept <- concept[c("PublicID", "Name", "function_R")]
             fkt2concept <- subset(concept,
-                                  get("dataquieR function") ==
+                                  get("function_R") ==
                                     fkt)
             # create link tags
             get_links <- function(indicator_id, indicator_name) {
@@ -133,7 +144,7 @@ util_html_for_dims <- function(report, use_plot_ly, template,
             }
             # create un-ordered item list for each indicator
             links <- mapply(get_links, indicator_id = fkt2concept$PublicID,
-                            indicator_name = fkt2concept$Indicator, SIMPLIFY = FALSE)
+                            indicator_name = fkt2concept$Name, SIMPLIFY = FALSE)
             names(links) <- NULL
             items <- lapply(links, htmltools::tags$li)
             items_indicators <- htmltools::tags$ul(items)
@@ -148,7 +159,8 @@ util_html_for_dims <- function(report, use_plot_ly, template,
               description = htmltools::HTML(util_function_description(fkt)),
               page = page,
               online_ref = util_online_ref(fkt),
-              items_indicators = items_indicators
+              items_indicators = items_indicators,
+              sumplot = sumplot
             )
             if (cur_dm %in% c("acc")) {  # acc is in separate files
               fname <- paste0("dim_", cur_dm, "_", cll, ".html") # add the function name for accuracy
@@ -165,7 +177,8 @@ util_html_for_dims <- function(report, use_plot_ly, template,
               title = util_alias2caption(fkt, long = TRUE),
               description = util_function_description(fkt),
               page = page,
-              online_ref = util_online_ref(fkt)
+              online_ref = util_online_ref(fkt),
+              sumplot = sumplot
             )
             fname <- paste0("dim_", cur_dm, ".html") # define the file name, one file per dimension if not in accuracy
           }

@@ -12,6 +12,10 @@
 #'
 #' @return a [list] with the expected range for the proportion check
 #'
+#' @family lookup_functions
+#' @concept metadata_management
+#' @keywords internal
+
 util_prep_proportion_check <- function(resp_vars,
                                        meta_data,
                                        study_data,
@@ -29,11 +33,13 @@ util_prep_proportion_check <- function(resp_vars,
 
   prop_range_int <-
     lapply(setNames(nm = resp_vars), function(rv) {
-      if (is.na(prop_range[[rv]])) {
-        return(NA)
-      }
+      # if (is.na(prop_range[[rv]])) {
+      #   return(NA)
+      # }
       if (!is.na(val_labels[[rv]])) { # value labels available
-        vv_codes <- names(util_parse_assignments(val_labels[[rv]]))
+        vv_codes <- names(util_parse_assignments(val_labels[[rv]],
+                                                 split_on_any_split_char = TRUE,
+                                               split_char = c(SPLIT_CHAR, '<')))
       } else { # no value labels available, get unique entries in the study data
         vv_codes <- unique(study_data[[rv]])
         vv_codes <- vv_codes[which(!is.na(vv_codes))]
@@ -58,9 +64,9 @@ util_prep_proportion_check <- function(resp_vars,
       if (all(is.na(range_per_cat))) {
         util_warning(paste0(
           "For ", rv, ", the given PROPORTION_RANGE could not be ",
-          "interpreted as interval."),
+          "interpreted as an interval."),
           applicability_problem = TRUE)
-        range_per_cat <- NA
+       # range_per_cat <- NA
       }
       range_per_cat
     })

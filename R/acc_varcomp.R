@@ -15,6 +15,8 @@
 #' of variance explained by respective group levels indicate an influence of (at
 #' least one) level of the respective group_vars. An ICC close to 0 is desired.
 #'
+#' [Indicator]
+#'
 #' @details
 #' # ALGORITHM OF THIS IMPLEMENTATION:
 #'
@@ -58,6 +60,7 @@
 #'
 #' @return a list with:
 #'   - `SummaryTable`: data frame with ICCs per `rvs`
+#'   - `SummaryData`: data frame with ICCs per `rvs`
 #'   - `ScalarValue_max_icc`: maximum variance contribution value by group_vars
 #'   - `ScalarValue_argmax_icc`: variable with maximum variance contribution by
 #'                               group_vars
@@ -129,14 +132,16 @@ acc_varcomp <-
   util_correct_variable_use("resp_vars",
     allow_more_than_one = TRUE,
     allow_null = TRUE,
-    need_type = "integer|float"
+    need_type = "integer|float",
+    need_scale = "interval|ratio"
   )
 
   util_correct_variable_use("group_vars",
     allow_null = TRUE,
     allow_any_obs_na = TRUE,
-    allow_more_than_one = !TRUE, # TODO: Remove the whole functionallity.
-    need_type = "!float"
+    allow_more_than_one = !TRUE, # TODO: Remove the whole functionality.
+    need_type = "!float",
+    need_scale = "nominal|ordinal"
   )
 
   util_correct_variable_use("co_vars",
@@ -349,10 +354,14 @@ acc_varcomp <-
 
   icc_output[["GRADING"]] <- as.numeric(threshold_value <= icc_output$ICC)
 
-  ## Format
+   ## Format
 
   rownames(icc_output) <- NULL
 
-  return(list(SummaryTable = icc_output, ScalarValue_max_icc = max_icc,
+  SummaryTable<- icc_output
+  names(SummaryTable)[names(SummaryTable) == "ICC"] <- "ICC_acc_ud_loc"
+
+
+  return(list(SummaryTable = SummaryTable, SummaryData = icc_output,  ScalarValue_max_icc = max_icc,
               ScalarValue_argmax_icc = argmax_icc))
 }

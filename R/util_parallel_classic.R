@@ -1,3 +1,5 @@
+
+#' @keywords internal
 util_parallel_classic <- function(all_calls,
                                   worker,
                                   n_nodes,

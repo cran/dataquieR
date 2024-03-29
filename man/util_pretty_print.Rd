@@ -4,7 +4,15 @@
 \alias{util_pretty_print}
 \title{Convert single \code{dataquieR} result to an \code{htmltools} compatible object}
 \usage{
-util_pretty_print(dqr, nm, is_single_var, meta_data, label_col, use_plot_ly)
+util_pretty_print(
+  dqr,
+  nm,
+  is_single_var,
+  meta_data,
+  label_col,
+  use_plot_ly,
+  dir
+)
 }
 \arguments{
 \item{dqr}{\link{dataquieR_result} an output (indicator) from \code{dataquieR}}
@@ -22,6 +30,8 @@ attributes of study data}
 with labels of variables}
 
 \item{use_plot_ly}{\link{logical} use \code{plotly}}
+
+\item{dir}{\link{character} output directory for potential \code{iframes}.}
 }
 \value{
 \code{htmltools} compatible object with rendered \code{dqr}
@@ -29,3 +39,4 @@ with labels of variables}
 \description{
 Convert single \code{dataquieR} result to an \code{htmltools} compatible object
 }
+\keyword{internal}

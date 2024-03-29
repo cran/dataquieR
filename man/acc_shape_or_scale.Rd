@@ -54,7 +54,7 @@ a list with:
 \itemize{
 \item \code{SummaryData}: \link{data.frame} underlying the plot
 \item \code{SummaryPlot}: \link{ggplot2} probability distribution plot
-\item \code{SummaryTable}: \link{data.frame} with the columns \code{Variables} and \code{GRADING}
+\item \code{SummaryTable}: \link{data.frame} with the columns \code{Variables} and \code{FLG_acc_ud_shape}
 }
 }
 \description{
@@ -62,6 +62,8 @@ This implementation contrasts the empirical distribution of a measurement
 variables against assumed distributions. The approach is adapted from the
 idea of rootograms (Tukey 1977) which is also applicable for count data
 (Kleiber and Zeileis 2016).
+
+\link{Indicator}
 }
 \section{ALGORITHM OF THIS IMPLEMENTATION:}{
 \itemize{

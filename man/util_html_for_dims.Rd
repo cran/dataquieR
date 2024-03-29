@@ -4,7 +4,14 @@
 \alias{util_html_for_dims}
 \title{Create a dynamic dimension related page for the report}
 \usage{
-util_html_for_dims(report, use_plot_ly, template, block_load_factor)
+util_html_for_dims(
+  report,
+  use_plot_ly,
+  template,
+  block_load_factor,
+  repsum,
+  dir
+)
 }
 \arguments{
 \item{report}{\link{dataquieR_resultset2} a \code{dq_report2} report}
@@ -15,6 +22,10 @@ util_html_for_dims(report, use_plot_ly, template, block_load_factor)
 
 \item{block_load_factor}{\link{numeric} multiply size of parallel compute blocks
 by this factor.}
+
+\item{repsum}{the \code{dataquieR} summary, see \code{\link[=summary]{summary()}} and \code{\link[=dq_report2]{dq_report2()}}}
+
+\item{dir}{\link{character} output directory for potential \code{iframes}.}
 }
 \value{
 list of arguments for \code{append_single_page()} defined locally in
@@ -23,3 +34,4 @@ list of arguments for \code{append_single_page()} defined locally in
 \description{
 Create a dynamic dimension related page for the report
 }
+\keyword{internal}

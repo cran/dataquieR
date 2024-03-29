@@ -6,6 +6,12 @@
 #'                              variables
 #'
 #' @return vector of variable names
+#'
+#' @family metadata_management
+#' @concept metadata_management
+#' @keywords internal
+
+
 util_get_vars_in_segment <- function(segment, meta_data = "item_level",
                                      label_col = LABEL) {
   util_expect_scalar(segment, check_type = is.character)

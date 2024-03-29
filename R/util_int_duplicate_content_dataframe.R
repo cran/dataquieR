@@ -13,6 +13,9 @@
 #'   - `SegmentTable`: data frame with selected duplicated entries check results, used for the data quality report.
 #'   - `Duplicates`: vector with row indices of duplicated entries, if any, otherwise NULL.
 #'
+#' @family integrity_indicator_functions
+#' @concept integrity_indicator
+#' @keywords internal
 util_int_duplicate_content_dataframe <- function(level = c("dataframe"),
                                                  identifier_name_list) {
 

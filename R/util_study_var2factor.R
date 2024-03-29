@@ -17,8 +17,12 @@
 #'
 #' @return `study_data` converted to factors using the coding provided in
 #'         `code_name`
+#'
+#' @family data_management
+#' @concept metadata_management
+#' @keywords internal
 util_study_var2factor <- function(resp_vars = NULL, study_data,
-                                  meta_data = "item_level", # TODO: make a prep, see util_assign_levlabs
+                                  meta_data = "item_level", # TODO: make a prep, see util_assign_levlabs, make it work also for VALUE_LABELS, not only for missing codes, optionally. Default should be FALSE or all existing calls need to be edited to turn off this feature. Maybe, the prep is just a copy of the util with modified defaults, as in  progress <- other_function; formals(progress)$is_rstudio <- force(is_rstudio)
                                   label_col = LABEL,
                                   assume_consistent_codes = TRUE,
                                   have_cause_label_df = FALSE,

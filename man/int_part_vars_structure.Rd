@@ -43,3 +43,6 @@ empty list, so far -- the function only warns.
 For each participant, check, if an observation was expected, given the
 \code{PART_VARS} from item-level metadata
 }
+\details{
+\link{Descriptor}
+}

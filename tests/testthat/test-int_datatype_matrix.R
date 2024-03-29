@@ -2,6 +2,13 @@ test_that("int_datatype_matrix works", {
   skip_on_cran() # slow and not so complicated. also, errors will be obvious.
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
 
   expect_error({
     appmatrix <- int_datatype_matrix(study_data = study_data,
@@ -26,20 +33,19 @@ test_that("int_datatype_matrix works", {
   md0 <- meta_data
   md0$DATA_TYPE[2] <- NA
 
-  expect_error(
+  expect_warning(
     int_datatype_matrix(resp_vars = "SEX_0",
                         study_data = study_data,
                         meta_data = md0,
                         label_col = LABEL),
     regexp =
-      paste("The DATA_TYPE for variable.s.+PSEUDO_ID.+is not",
-            "defined in the metadata.")
+      paste("I've predicted the.+DATA_TYPE.+")
   )
 
   md0 <- meta_data
   md0$DATA_TYPE[2] <- "MY_TYPE"
 
-  expect_error(
+  expect_silent(
     expect_warning(
       int_datatype_matrix(resp_vars = "SEX_0",
                           study_data = study_data,
@@ -47,12 +53,8 @@ test_that("int_datatype_matrix works", {
                           label_col = LABEL),
       all = TRUE,
       regexp =
-        "The data type.s.+MY_TYPE.+is not eligible in the metadata concept."
-    ),
-    regexp =
-      paste("Please map data types to: .+integer.+,",
-            ".+string.+,",
-            ".+float.+datetime.+")
+        "yielding.+v00001 = string"
+    )
   )
 
   expect_warning(
@@ -82,20 +84,27 @@ test_that("int_datatype_matrix works", {
 
   expect_true(all(appmatrix$ReportSummaryTable$MATCH == 0))
   expect_equal(nrow(appmatrix$ReportSummaryTable), 1)
-  expect_equal(ncol(appmatrix$ReportSummaryTable), 3)
-  expect_identical(colnames(appmatrix$ReportSummaryTable),
-                   c("Variables", "MATCH", "N"))
+  expect_gte(ncol(appmatrix$ReportSummaryTable), 4)
+  expect_identical(sort(gsub("[^a-zA-Z0-9]", "",
+                             tolower(colnames(appmatrix$ReportSummaryTable)))),
+                   sort(c("convertiblemismatchstable",
+                          "convertiblemismatchunstable", "nonconvertiblemismatch",
+                          "n", "variables" )))
 
   appmatrix <- int_datatype_matrix(study_data = study_data,
                                    meta_data = meta_data,
                                    label_col = LABEL)
 
   expect_equal(nrow(appmatrix$ReportSummaryTable), 53)
-  expect_equal(ncol(appmatrix$ReportSummaryTable), 3)
-  expect_true(all(appmatrix$ReportSummaryTable$MATCH == 0))
+  expect_gte(ncol(appmatrix$ReportSummaryTable), 4)
+  expect_true(
+    all(appmatrix$ReportSummaryTable$`convertible mismatch, unstable` == 0))
+  expect_true(
+    all(appmatrix$ReportSummaryTable$`convertible mismatch, stable` == 0))
+  expect_true(all(appmatrix$ReportSummaryTable$`nonconvertible mismatch` == 0))
 
   skip_on_cran()
-  skip_if_not(capabilities()["long.double"])
+  # TODO: skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
 
   vdiffr::expect_doppelganger("integrity datatype",

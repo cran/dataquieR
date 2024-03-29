@@ -42,3 +42,16 @@ a vector with \code{TRUE} or \code{FALSE} for each row of \code{study_data}, if 
 For each participant, check, if an observation was expected, given the
 \code{PART_VARS} from item-level metadata
 }
+\seealso{
+Other missing_functions: 
+\code{\link{util_all_intro_vars_for_rv}()},
+\code{\link{util_count_expected_observations}()},
+\code{\link{util_filter_missing_list_table_for_rv}()},
+\code{\link{util_get_code_list}()},
+\code{\link{util_is_na_0_empty_or_false}()},
+\code{\link{util_remove_empty_rows}()},
+\code{\link{util_replace_codes_by_NA}()}
+}
+\concept{missing}
+\concept{missing_functions}
+\keyword{internal}

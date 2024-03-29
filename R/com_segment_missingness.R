@@ -23,6 +23,8 @@
 #' item missingness obtains correct denominators for the calculation of
 #' missingness rates.
 #'
+#' [Descriptor]
+#'
 #' @details
 #' ### Implementation and use of thresholds
 #' This implementation uses one threshold to discriminate critical from
@@ -104,14 +106,23 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
   #########
   # STOPS #
   #########
+
   if (!missing(meta_data_segment)) {
     meta_data_segment <- util_expect_data_frame(meta_data_segment)
   } else {
     meta_data_segment <- data.frame()
   }
+
+  expected_observations_missing <- missing(expected_observations)
   util_expect_scalar(expected_observations, allow_more_than_one = TRUE)
   expected_observations <- match.arg(expected_observations)
   util_expect_scalar(expected_observations)
+
+  int_part_vars_structure(study_data = study_data,
+                          meta_data = meta_data,
+                          label_col = label_col,
+                          expected_observations = expected_observations,
+                          disclose_problem_paprt_var_data = FALSE)
 
   if (missing(threshold_value) ||
       length(threshold_value) != 1 ||
@@ -175,9 +186,9 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
   # map meta to study
   prep_prepare_dataframes()
 
-  if (expected_observations != "ALL" && !(PART_VAR %in%
-                                          colnames(meta_data))) {
-    util_warning(c("For %s = %s, a column %s is needed in %s. Falling",
+  if (!expected_observations_missing && expected_observations != "ALL" &&
+      !(PART_VAR %in% colnames(meta_data))) {
+    util_message(c("For %s = %s, a column %s is needed in %s. Falling",
                    "back to %s = %s."),
                  sQuote("expected_observations"),
                  dQuote(expected_observations),
@@ -296,12 +307,20 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
                applicability_problem = TRUE)
   }
 
-  seg_names <- meta_data[
-    util_empty(meta_data[[VARIABLE_ROLE]]) |
-    meta_data[[VARIABLE_ROLE]] !=
-      VARIABLE_ROLES$SUPPRESS, # omit segments added on-the-fly as dependencies
-    STUDY_SEGMENT,
-    drop = TRUE] # meta_data[[LONG_LABEL]][meta_data$VAR_NAMES %in% part_vars]
+  meta_data[[STUDY_SEGMENT]][is.na(meta_data[[STUDY_SEGMENT]])] <- ""
+
+  if (VARIABLE_ROLE %in% colnames(meta_data)) {
+    seg_names <- meta_data[
+      util_empty(meta_data[[VARIABLE_ROLE]]) |
+        meta_data[[VARIABLE_ROLE]] !=
+        VARIABLE_ROLES$SUPPRESS, # omit segments added on-the-fly as dependencies
+      STUDY_SEGMENT,
+      drop = TRUE] # meta_data[[LONG_LABEL]][meta_data$VAR_NAMES %in% part_vars]
+  } else {
+    seg_names <- meta_data[
+      , STUDY_SEGMENT,
+      drop = TRUE] # meta_data[[LONG_LABEL]][meta_data$VAR_NAMES %in% part_vars]
+  }
 
   if (!(PART_VAR %in% names(meta_data))) {
     util_warning("Metadata do not contain the column PART_VAR",
@@ -394,6 +413,8 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
                         label_col = label_col)
   }
 
+  var_sets <- var_sets[vapply(var_sets, length, FUN.VALUE = integer(1)) > 0]
+
   # Which groups?
   if (length(group_vars) > 0) {
     is_grouped <- TRUE
@@ -437,6 +458,7 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
       assignchar = "="
     )
     strata <- unique(ds1[[strata_vars]])[!is.na(unique(ds1[[strata_vars]]))]
+    strata <- strata[order(strata)]
     # covariables for plot
     cvs <- c(strata_vars, group_vars, "Examinations")
   }
@@ -519,10 +541,10 @@ com_segment_missingness <- function(study_data, meta_data, group_vars = NULL,
 
   if (color_gradient_direction == "above") {
     res_df$GRADING <- ifelse(res_df$"(%) of missing segments" >
-                               threshold_value, 1, 0)
+                               threshold_value, 1, 0) # FIXME: Update GRADING -> Standard Name
   } else {
     res_df$GRADING <- ifelse(res_df$"(%) of missing segments" <
-                               threshold_value, 1, 0)
+                               threshold_value, 1, 0) # FIXME: Update GRADING -> Standard Name
   }
 
   # plot

@@ -13,7 +13,9 @@ util_expect_scalar(
   max_length = Inf,
   check_type,
   convert_if_possible,
-  dont_assign = FALSE
+  conversion_may_replace_NA = FALSE,
+  dont_assign = FALSE,
+  error_message
 )
 }
 \arguments{
@@ -39,7 +41,16 @@ a conversion fails (returns \code{NA}, where the
 input was not `util_empty'), an error
 is still thrown, the data is converted, otherwise}
 
+\item{conversion_may_replace_NA}{if set to \code{TRUE}, we can define a function
+in \code{convert_if_possible} that replaces \code{NA} values without
+causing a warning, but this option is set to \code{FALSE} by
+default to catch possible conversion problems (use it with
+caution).}
+
 \item{dont_assign}{set \code{TRUE} to keep \code{x} in the caller environment untouched}
+
+\item{error_message}{if \code{check_type()} returned \code{FALSE}, show this instead of
+a default error message.}
 }
 \value{
 the value of arg_name -- but this is updated in the calling
@@ -62,4 +73,27 @@ g <- function(x) {
 g(42L)
 g(42)
 }
+
 }
+\seealso{
+Other robustness_functions: 
+\code{\link{util_as_valid_missing_codes}()},
+\code{\link{util_check_one_unique_value}()},
+\code{\link{util_correct_variable_use}()},
+\code{\link{util_empty}()},
+\code{\link{util_ensure_character}()},
+\code{\link{util_ensure_in}()},
+\code{\link{util_ensure_suggested}()},
+\code{\link{util_fix_rstudio_bugs}()},
+\code{\link{util_is_integer}()},
+\code{\link{util_is_numeric_in}()},
+\code{\link{util_is_valid_missing_codes}()},
+\code{\link{util_match_arg}()},
+\code{\link{util_observations_in_subgroups}()},
+\code{\link{util_only_NAs}()},
+\code{\link{util_stop_if_not}()},
+\code{\link{util_warn_unordered}()}
+}
+\concept{robustness}
+\concept{robustness_functions}
+\keyword{internal}

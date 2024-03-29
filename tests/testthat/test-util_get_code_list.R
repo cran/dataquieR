@@ -1,4 +1,5 @@
 test_that("util_get_code_list works", {
+  skip_on_cran()
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -86,6 +87,7 @@ test_that("util_get_code_list works", {
 })
 
 test_that("util_get_code_list warns about non-numeric codes", {
+  skip_on_cran()
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -114,6 +116,7 @@ test_that("util_get_code_list warns about non-numeric codes", {
 })
 
 test_that("util_get_code_list recognizes no code on purpose", {
+  skip_on_cran()
   mdf <- prep_create_meta(
     VAR_NAMES = c("age", "sex"),
     DATA_TYPE = c(DATA_TYPES$INTEGER, DATA_TYPES$INTEGER),

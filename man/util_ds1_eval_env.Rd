@@ -22,3 +22,6 @@ called, this will work too}
 generates an environment similar to \code{as.environment(ds1)}, but makes
 variables available by their \code{VAR_NAME}, \code{LABEL}, and \code{label_col} - names.
 }
+\concept{process}
+\concept{rule_functions}
+\keyword{internal}

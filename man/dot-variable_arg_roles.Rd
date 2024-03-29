@@ -5,7 +5,7 @@
 \alias{.variable_arg_roles}
 \title{Variable-argument roles}
 \format{
-An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 14 rows and 8 columns.
+An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 14 rows and 9 columns.
 }
 \usage{
 .variable_arg_roles
@@ -27,4 +27,4 @@ from the output and not disallow them by setting \code{allow_na} to \code{FALSE}
 
 \code{\link[=util_correct_variable_use2]{util_correct_variable_use2()}}
 }
-\keyword{datasets}
+\keyword{internal}

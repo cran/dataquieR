@@ -1,24 +1,15 @@
 #' Convert a full `dataquieR` report to a `list`
 #'
 #' @description
-#' converts a [dataquieR report][dq_report] to a [list]. Intended for use
-#' in pipelines.
 #'
-#' @param x [dataquieR report][dq_report]
-#' @param ... arguments passed to [pipeline_recursive_result]
+#' Deprecated
 #'
-#' @return a [list] with one element per indicator call. Each element is an
-#'                  encapsulated sub-list as described
-#'                  in [pipeline_recursive_result]
+#' @param x Deprecated
+#' @param ... Deprecated
+#'
+#' @return Deprecated
 #'
 #' @export
 as.list.dataquieR_resultset <- function(x, ...) {
-  .tolist <- function(x, ...) {
-    if (is.data.frame(x)) {
-      pipeline_recursive_result(x, ...)
-    } else {
-      x
-    }
-  }
-  lapply(x$long_format, .tolist, ...)
+  lifecycle::deprecate_stop("2.1.0", what = "dq_report()", with = "dq_report2()")
 }

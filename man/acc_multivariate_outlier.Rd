@@ -10,7 +10,7 @@ acc_multivariate_outlier(
   label_col,
   n_rules = 4,
   max_non_outliers_plot = 10000,
-  criteria = c("tukey", "sixsigma", "hubert", "sigmagap"),
+  criteria = c("tukey", "3sd", "hubert", "sigmagap"),
   study_data,
   meta_data
 )
@@ -36,7 +36,7 @@ points exist, a subsample will
 be plotted only. Note, that
 sampling is not deterministic.}
 
-\item{criteria}{\link{set} tukey | sixsigma | hubert | sigmagap. a vector with
+\item{criteria}{\link{set} tukey | 3SD | hubert | sigmagap. a vector with
 methods to be used for detecting outliers.}
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
@@ -51,7 +51,7 @@ a list with:
 \item \code{SummaryPlot}: \link{ggplot2} outlier plot
 \item \code{FlaggedStudyData} \link{data.frame} contains the original data frame with
 the additional columns \code{tukey},
-\code{sixsigma},
+\verb{3SD},
 \code{hubert}, and \code{sigmagap}. Every
 observation
 is coded 0 if no outlier was detected in
@@ -70,7 +70,7 @@ univariate outliers:
 \itemize{
 \item the classical approach from Tukey: \eqn{1.5 * IQR} from the
 1st (\eqn{Q_{25}}) or 3rd (\eqn{Q_{75}}) quartile.
-\item the \eqn{6* \sigma} approach, i.e. any measurement of the Mahalanobis
+\item the 3SD approach, i.e. any measurement of the Mahalanobis
 distance not in the interval of \eqn{\bar{x} \pm 3*\sigma} is considered an
 outlier.
 \item the approach from Hubert for skewed distributions which is embedded in the
@@ -79,6 +79,8 @@ R package \pkg{robustbase}
 }
 
 For further details, please see the vignette for univariate outlier.
+
+\link{Indicator}
 }
 \section{ALGORITHM OF THIS IMPLEMENTATION:}{
 \itemize{

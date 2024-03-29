@@ -4,7 +4,15 @@
 \alias{util_html_for_var}
 \title{Create a dynamic single variable page for the report}
 \usage{
-util_html_for_var(report, cur_var, use_plot_ly, template, note_meta = c())
+util_html_for_var(
+  report,
+  cur_var,
+  use_plot_ly,
+  template,
+  note_meta = c(),
+  rendered_repsum,
+  dir
+)
 }
 \arguments{
 \item{report}{\link{dataquieR_resultset2} a \code{dq_report2} report}
@@ -17,6 +25,11 @@ util_html_for_var(report, cur_var, use_plot_ly, template, note_meta = c())
 
 \item{note_meta}{\link{character} notes on the metadata for a single variable
 (if needed)}
+
+\item{rendered_repsum}{the \code{dataquieR} summary, see \code{\link[=summary]{summary()}},
+\code{\link[=dq_report2]{dq_report2()}} and \code{\link[=print.dataquieR_summary]{print.dataquieR_summary()}}}
+
+\item{dir}{\link{character} output directory for potential \code{iframes}.}
 }
 \value{
 list of arguments for \code{append_single_page()} defined locally in
@@ -25,3 +38,4 @@ list of arguments for \code{append_single_page()} defined locally in
 \description{
 Create a dynamic single variable page for the report
 }
+\keyword{internal}

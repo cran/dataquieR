@@ -27,7 +27,7 @@ with labels of variables}
 ranging from 0-100}
 
 \item{meta_data_cross_item}{\link{data.frame} contradiction rules table.  Table
-defining contractions. See details for
+defining contradictions. See details for
 its required structure.}
 
 \item{use_value_labels}{\link{logical} Deprecated in favor of \link{DATA_PREPARATION}.
@@ -84,6 +84,8 @@ Important to note, each value that is used for comparison may represent a
 possible characteristic but the combination of these two values is considered
 to be impossible. The approach does not consider implausible or inadmissible
 values.
+
+\link{Indicator}
 }
 \details{
 \subsection{Algorithm of this implementation:}{

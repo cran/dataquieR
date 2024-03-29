@@ -29,3 +29,16 @@ In \code{MISSING_LIST_TABLE}, a column \code{resp_vars} may be specified. If so,
 and if, for a row, this column is not empty, then that row only affects the
 one variable specified in that cell
 }
+\seealso{
+Other missing_functions: 
+\code{\link{util_all_intro_vars_for_rv}()},
+\code{\link{util_count_expected_observations}()},
+\code{\link{util_get_code_list}()},
+\code{\link{util_is_na_0_empty_or_false}()},
+\code{\link{util_observation_expected}()},
+\code{\link{util_remove_empty_rows}()},
+\code{\link{util_replace_codes_by_NA}()}
+}
+\concept{metadata_management}
+\concept{missing_functions}
+\keyword{internal}

@@ -1,0 +1,21 @@
+<h1>
+    {{ meta_data_title }}
+</h1>
+
+<h3>
+    {{ meta_data_name }}
+</h3>
+
+<p>
+  A data frame containing the information on the RGB color codes ("color")
+  and text ("label") used to identify the five data quality categories
+  inside the report.
+  The user can modify colors and text providing a new data frame
+  "grading_formats" using <i>prep_add_dataframes()</i> before
+  rendering the report, for example:
+ <pre>
+prep_add_dataframes(grading_formats = "~/Documents/my_grading_formats.xlsx")
+  </pre>
+</p>
+
+{{ meta_data_table }}

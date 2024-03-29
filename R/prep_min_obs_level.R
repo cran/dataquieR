@@ -26,7 +26,7 @@
 #'   - a subsample of original data
 #' @export
 prep_min_obs_level <- function(study_data, group_vars, min_obs_in_subgroup) {
-  util_expect_data_frame(study_data)
+  util_expect_data_frame(study_data, keep_types = TRUE)
   if (missing(group_vars) || !is.character(group_vars)) {
     util_error("%s is required to be a character(1) argument.",
                dQuote("group_vars"), applicability_problem = TRUE)

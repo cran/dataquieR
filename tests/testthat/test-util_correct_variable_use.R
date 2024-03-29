@@ -3,7 +3,7 @@ test_that("util_correct_variable_use works", {
   acc_test <- function(resp_variable, aux_variable, time_variable,
                        co_variables, group_vars, study_data, meta_data,
                        label_col) {
-    util_prepare_dataframes()
+    prep_prepare_dataframes()
     util_correct_variable_use(resp_variable)
     util_correct_variable_use("resp_variable")
     util_correct_variable_use("aux_variable")
@@ -21,7 +21,7 @@ test_that("util_correct_variable_use works", {
   acc_test2 <- function(resp_variable, aux_variable, time_variable,
                        co_variables, group_vars, study_data, meta_data,
                        label_col) {
-    util_prepare_dataframes()
+    prep_prepare_dataframes()
     expect_error(util_correct_variable_use(c(a, b)), regexp =
                    paste("argument arg_name must be of length 1, wrong use",
                          "of util_correct_variable_use."))
@@ -54,7 +54,7 @@ test_that("util_correct_variable_use works", {
   environment(acc_test2) <- asNamespace("dataquieR")
   acc_test3 <- function(resp_variable, aux_variable, time_variable,
                         co_variables, group_vars, study_data, meta_data) {
-    util_prepare_dataframes()
+    prep_prepare_dataframes()
     expect_error(util_correct_variable_use(c(a, b)), regexp =
                    paste("argument arg_name must be of length 1, wrong use",
                          "of util_correct_variable_use."))
@@ -81,13 +81,20 @@ test_that("util_correct_variable_use works", {
     function(resp_variable, aux_variable, time_variable, co_variables,
                             group_vars, study_data, meta_data, need_type,
              label_col) {
-    util_prepare_dataframes()
+    prep_prepare_dataframes()
     util_correct_variable_use(resp_variable, need_type = need_type,
       allow_more_than_one = TRUE)
   }
   environment(acc_test_type) <- asNamespace("dataquieR")
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
   expect_warning(
     expect_error(
       acc_test(study_data = study_data, meta_data = meta_data),
@@ -229,7 +236,7 @@ test_that("util_correct_variable_use works", {
       "names .+xxx.+allowed are .+integer.+,",
       ".+string.+, .+float.+, .+datetime.+.",
       "As a dataquieR developer, you should fix your call of",
-      ".+util_correct_variable_use.+."
+      ".+acc_test_type+."
     ),
     perl = TRUE
   )
@@ -252,8 +259,8 @@ test_that("util_correct_variable_use works", {
       meta_data = meta_data, need_type = "!integer"
     ),
     regexp = paste(
-      "Argument .+resp_variable.+: Variable .+v00000.+ \\(integer\\) does",
-      "not have an allowed type \\(!integer\\)"
+      "Argument .+resp_variable.+: Variable .+v00000.+ \\(integer\\)",
+      "has a disallowed type \\(.+integer.+\\)"
     ),
     perl = TRUE
   )
@@ -277,7 +284,7 @@ test_that("util_correct_variable_use works", {
   acc_test4 <- function(resp_variable, aux_variable, time_variable,
                         co_variables, group_vars, study_data, meta_data,
                         label_col) {
-    util_prepare_dataframes()
+    prep_prepare_dataframes()
     util_correct_variable_use(resp_variable)
   }
   environment(acc_test4) <- asNamespace("dataquieR")
@@ -316,7 +323,7 @@ test_that("util_correct_variable_use works", {
   acc_test6 <- function(resp_variable, aux_variable, time_variable,
                         co_variables, group_vars, study_data, meta_data,
                         label_col, cmd, ...) {
-    util_prepare_dataframes()
+    prep_prepare_dataframes()
     cmd()
     util_correct_variable_use(resp_variable, ...)
   }
@@ -366,10 +373,7 @@ test_that("util_correct_variable_use works", {
     acc_test6(resp_variable = "v00001", study_data = study_data,
               meta_data = md0,
               cmd = function() { }, need_type = "string"),
-    regexp = paste("In .+resp_variable.+, variables with types matching",
-                   ".+string.+ should be specified, but not all variables",
-                   "have a type assigned in the metadata. I have 1 variables",
-                   "but only 0 types"),
+    regexp = paste("predicted the.+DATA_TYPE"),
     perl = TRUE,
     all = TRUE
   )

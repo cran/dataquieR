@@ -53,6 +53,8 @@ flagged
 For each categorical variable, value lists should be defined in the metadata.
 This implementation will examine, if all observed levels in the study data
 are valid.
+
+\link{Indicator}
 }
 \details{
 \subsection{Algorithm of this implementation:}{

@@ -10,6 +10,10 @@
 #'            been passed
 #'
 #' @return as.character(x)
+#'
+#' @family robustness_functions
+#' @concept robustness
+#' @keywords internal
 util_ensure_character <- function(x, error = FALSE, error_msg, ...) {
   if (missing(error_msg)) {
     error_msg <-

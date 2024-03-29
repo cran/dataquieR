@@ -32,7 +32,7 @@ test_that("com_item_missingness works", {
     com_item_missingness(study_data, meta_data,
                          suppressWarnings = TRUE,
                          include_sysmiss = 1:10)
-  ), regexp = "Need excactly one element in argument include_sysmiss")
+  ), regexp = "Need exactly one element in argument include_sysmiss")
 
   w <- capture_warnings(invisible(
     com_item_missingness(study_data, meta_data,
@@ -69,7 +69,7 @@ test_that("com_item_missingness works", {
 
   expect_error(invisible(
     com_item_missingness(study_data, meta_data, suppressWarnings = 1:2)
-  ), regexp = "Need excactly one element in argument suppressWarnings, got 2")
+  ), regexp = "Need exactly one element in argument suppressWarnings, got 2")
 
   w <- capture_warnings(invisible(
     com_item_missingness(study_data, meta_data, suppressWarnings = TRUE)
@@ -81,7 +81,7 @@ test_that("com_item_missingness works", {
   expect_error(invisible(
     com_item_missingness(study_data, meta_data, suppressWarnings = c(TRUE,
                                                                    FALSE))
-  ), regexp = "Need excactly one element in argument suppressWarnings, got 2")
+  ), regexp = "Need exactly one element in argument suppressWarnings, got 2")
 
 
   w <- capture_warnings(invisible(
@@ -142,7 +142,7 @@ test_that("com_item_missingness works", {
   expect_lt(suppressWarnings(
     abs(
       sum(as.numeric(as.matrix(i1$SummaryTable)), na.rm = TRUE) -
-        154939)), 50)
+        479149.9)), 50)
 
   code_labels <- prep_get_data_frame("meta_data_v2|missing_table")
   i2 <- expect_warning(com_item_missingness(study_data, meta_data,
@@ -184,11 +184,11 @@ test_that("com_item_missingness works", {
   expect_lt(suppressWarnings(
     abs(
       sum(as.numeric(as.matrix(i2$SummaryTable)), na.rm = TRUE) -
-        154939)), 50)
+        479149.9)), 50)
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
-  skip_if_not(capabilities()["long.double"])
+  # TODO: skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger("item missingness plot without labels ok",
                               i1$SummaryPlot)
   vdiffr::expect_doppelganger("item missingness plot with labels ok",

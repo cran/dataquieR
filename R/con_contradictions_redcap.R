@@ -11,6 +11,8 @@
 #' to be impossible. The approach does not consider implausible or inadmissible
 #' values.
 #'
+#' [Indicator]
+#'
 #' @details
 #' ### Algorithm of this implementation:
 #'
@@ -36,7 +38,7 @@
 #' @param threshold_value [numeric] from=0 to=100. a numerical value
 #'                                                 ranging from 0-100
 #' @param meta_data_cross_item [data.frame] contradiction rules table.  Table
-#'                                 defining contractions. See details for
+#'                                 defining contradictions. See details for
 #'                                 its required structure.
 #' @param summarize_categories [logical] Needs a column 'CONTRADICTION_TYPE' in
 #'                             the `meta_data_cross_item`.
@@ -120,7 +122,7 @@ con_contradictions_redcap <- function(study_data, meta_data,
                           .replace_missings = FALSE) # replacements are performed later
 
   if (!missing(use_value_labels)) {
-    util_deprecate_soft(when = "2.0.1",
+    lifecycle::deprecate_stop(when = "2.1.0",
                         what = "con_contradictions_redcap(use_value_labels)",
                         details =
                   "Please use DATA_PREPARATION in meta_data_cross_item now."
@@ -144,58 +146,60 @@ con_contradictions_redcap <- function(study_data, meta_data,
     meta_data_cross_item <- meta_data_cross_item[-which(is.na(meta_data_cross_item[[CONTRADICTION_TERM]])), ]
   }
 
-  if ("VARIABLE_LIST" %in% colnames(meta_data_cross_item)) {
-    old_vl <- meta_data_cross_item$VARIABLE_LIST
-    meta_data_cross_item$VARIABLE_LIST <- NULL
-  } else {
-    old_vl <- NULL
-  }
-
-  # generate VARIABLE_LIST entries
-  # TODO: Support "[" and "]" in variable labels
-  # TODO: handle also VAR_NAMES here. The VARIABLE_LIST below should then likely be mapped back to one soft of identifiers.
-  needles_var_names <- unique(c(meta_data[[VAR_NAMES]],
-                                meta_data[[label_col]],
-                                meta_data[[LABEL]],
-                                meta_data[[LONG_LABEL]]))
-  needles <- paste0("[",
-                    needles_var_names,
-                    "]")
-  x <- vapply(setNames(needles, nm = needles_var_names),
-        grepl,
-        setNames(nm = meta_data_cross_item[[CONTRADICTION_TERM]]),
-        fixed = TRUE,
-        FUN.VALUE = logical(length = nrow(meta_data_cross_item))
-  )
-  if (is.vector(x)) {
-    x <- as.matrix(t(x))
-  }
-  # variablelist <- lapply(lapply(lapply(apply(x, 1, which, simplify = FALSE), # apply supports simplify from R 4.1.0
-  #                                      names), sort), unique)                # so use the following, less intuitive code line
-  variablelist <- unname(lapply(as.data.frame(t(x)), function(xx) unique(sort(colnames(x)[xx]))))
-  variablelist <-
-    lapply(variablelist, paste0, collapse = sprintf(" %s ", SPLIT_CHAR))
-
-  if (!is.null(old_vl)) { # FIXME: Remove!!
-    old_vars <- util_parse_assignments(old_vl)
-    new_vars <- util_parse_assignments(variablelist)
-    if (length(setdiff(variablelist, old_vl)) > 0) {
-      meta_data_cross_item$VARIABLE_LIST <- variablelist # TODO: To 000_globs.R
-      util_message("%s is incomplete for contradictions. %s will be used for finding all related variables.",
-                   dQuote(VARIABLE_LIST),
-                   dQuote(CONTRADICTION_TERM),
-                   applicability_problem = TRUE)
-    } else if (length(setdiff(old_vl, variablelist)) > 0) {
-      meta_data_cross_item$VARIABLE_LIST <- variablelist # TODO: To 000_globs.R
-      util_message("%s features more variables than the corresponding %s. %s will be used for finding all related variables.",
-                   dQuote(VARIABLE_LIST),
-                   dQuote(CONTRADICTION_TERM),
-                   dQuote(CONTRADICTION_TERM),
-                   applicability_problem = TRUE)
-    } else {
-      meta_data_cross_item$VARIABLE_LIST <- old_vl # TODO: To 000_globs.R
-    }
-  }
+  # if ("VARIABLE_LIST" %in% colnames(meta_data_cross_item)) {
+  #   old_vl <- meta_data_cross_item$VARIABLE_LIST
+  #   meta_data_cross_item$VARIABLE_LIST <- NULL
+  # } else {
+  #   old_vl <- NULL
+  # }
+  #
+  # # generate VARIABLE_LIST entries
+  # # TODO: Support "[" and "]" in variable labels
+  # # TODO: handle also VAR_NAMES here. The VARIABLE_LIST below should then likely be mapped back to one soft of identifiers.
+  # needles_var_names <- unique(c(meta_data[[VAR_NAMES]],
+  #                               meta_data[[label_col]],
+  #                               meta_data[[LABEL]],
+  #                               meta_data[[LONG_LABEL]]))
+  # needles <- paste0("[",
+  #                   needles_var_names,
+  #                   "]")
+  # x <- vapply(setNames(needles, nm = needles_var_names),
+  #       grepl,
+  #       setNames(nm = meta_data_cross_item[[CONTRADICTION_TERM]]),
+  #       fixed = TRUE,
+  #       FUN.VALUE = logical(length = nrow(meta_data_cross_item))
+  # )
+  # if (is.vector(x)) {
+  #   x <- as.matrix(t(x))
+  # }
+  # # variablelist <- lapply(lapply(lapply(apply(x, 1, which, simplify = FALSE), # apply supports simplify from R 4.1.0
+  # #                                      names), sort), unique)                # so use the following, less intuitive code line
+  # variablelist <- unname(lapply(as.data.frame(t(x)), function(xx) unique(sort(colnames(x)[xx]))))
+  # variablelist <-
+  #   lapply(variablelist, paste0, collapse = sprintf(" %s ", SPLIT_CHAR))
+  #
+  # if (!is.null(old_vl)) { # done: Remove!!
+  #   old_vars <- util_parse_assignments(old_vl)
+  #   new_vars <- util_parse_assignments(variablelist)
+  #   if (length(setdiff(variablelist, old_vl)) > 0) {
+  #     browser()
+  #     meta_data_cross_item$VARIABLE_LIST <- variablelist # TODO: To 000_globs.R
+  #     util_message("%s is incomplete for contradictions. %s will be used for finding all related variables.",
+  #                  dQuote(VARIABLE_LIST),
+  #                  dQuote(CONTRADICTION_TERM),
+  #                  applicability_problem = TRUE)
+  #   } else if (length(setdiff(old_vl, variablelist)) > 0) {
+  #     browser()
+  #     meta_data_cross_item$VARIABLE_LIST <- variablelist # TODO: To 000_globs.R
+  #     util_message("%s features more variables than the corresponding %s. %s will be used for finding all related variables.",
+  #                  dQuote(VARIABLE_LIST),
+  #                  dQuote(CONTRADICTION_TERM),
+  #                  dQuote(CONTRADICTION_TERM),
+  #                  applicability_problem = TRUE)
+  #   } else {
+  #     meta_data_cross_item$VARIABLE_LIST <- old_vl # TODO: To 000_globs.R
+  #   }
+  # }
 
   if (missing(threshold_value)) {
     threshold_value <- 0
@@ -376,19 +380,21 @@ con_contradictions_redcap <- function(study_data, meta_data,
           util_warning("Could not evaluate rule %s: %s",
                        dQuote(rule_src),
                        conditionMessage(attr(r, "condition")))
-          r <- TRUE
+          r <- "error"
         }
         r
     })
 
+    rule_errors <- vapply(rule_match, identical, "error",
+                          FUN.VALUE = logical(1))
     rule_match <- lapply(rule_match, as.logical) # TODO: if a rule returned "", this is NA, if it did not return TRUE, FALSE or "", this would be a warning
 
-    list_element_length <- vapply(rule_match, length, FUN.VALUE = integer(1))
-    if (any(list_element_length == 0) && !all(list_element_length == 0)) {
-    # not all columns of same length, fix this for as.data.frame
-      rule_match[list_element_length == 0] <-
-        list(rep(TRUE, nrow(ds1)))
-    }
+    # list_element_length <- vapply(rule_match, length, FUN.VALUE = integer(1))
+    # if (any(list_element_length == 0) && !all(list_element_length == 0)) {
+    # # not all columns of same length, fix this for as.data.frame
+    #   rule_match[list_element_length == 0] <-
+    #     list(rep(TRUE, nrow(ds1)))
+    # }
 
     list_element_length <- vapply(rule_match, length, FUN.VALUE = integer(1))
     if (any(list_element_length == 1)) {
@@ -421,6 +427,8 @@ con_contradictions_redcap <- function(study_data, meta_data,
     summary_df2 <- meta_data_cross_item
 
     summary_df2$NUM_con_con <- as.numeric(lapply(rule_match, sum, na.rm = TRUE))
+    summary_df2$NUM_con_con[rule_errors] <- NA_integer_
+
     summary_df2$PCT_con_con <- round(summary_df2$NUM_con_con / nrow(ds1) * 100,
                                      digits = 2)
     summary_df2$GRADING <- ifelse(summary_df2$PCT_con_con > threshold_value,

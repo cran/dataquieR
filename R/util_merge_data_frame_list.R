@@ -7,6 +7,13 @@
 #'                            each of them must exist in all data frames.
 #'
 #' @return [data.frame] combination of data frames
+#'
+#'
+#' @seealso [prep_merge_study_data]
+#'
+#' @family data_management
+#' @concept data_management
+#' @keywords internal
 util_merge_data_frame_list <- function(data_frames, id_vars) {
   util_expect_scalar(id_vars, allow_more_than_one = TRUE)
   util_stop_if_not(is.list(data_frames))

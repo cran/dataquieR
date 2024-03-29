@@ -8,6 +8,8 @@
 #' @param report [dataquieR_resultset2] the report
 #'
 #' @return [character] the function name
+#'
+#' @keywords internal
 util_cll_nm2fkt_nm <- function(cll_name, report) {
   f <- cll_name
   f <- try(subset(attributes(

@@ -3,7 +3,7 @@
 \docType{data}
 \name{SEGMENT_ID_TABLE}
 \alias{SEGMENT_ID_TABLE}
-\title{Segment level metadata attribute name}
+\title{Deprecated segment level metadata attribute name}
 \format{
 An object of class \code{character} of length 1.
 }
@@ -14,7 +14,7 @@ SEGMENT_ID_TABLE
 The name of the data frame containing the reference IDs to be compared
 with the IDs in the targeted segment.
 }
-\seealso{
-\link{meta_data_segment}
+\details{
+Please use \link{SEGMENT_ID_REF_TABLE}
 }
 \keyword{datasets}

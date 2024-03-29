@@ -11,7 +11,8 @@ An object of class \code{character} of length 1.
 GOLDSTANDARD
 }
 \description{
-TODO JM
+Defines the measurement variable to be used as a known gold standard. Only
+one variable can be defined as the gold standard.
 }
 \seealso{
 \link{meta_data_cross}

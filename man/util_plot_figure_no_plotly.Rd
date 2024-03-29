@@ -15,3 +15,4 @@ util_plot_figure_no_plotly(x)
 \description{
 Plot a \code{ggplot2} figure without \code{plotly}
 }
+\keyword{internal}

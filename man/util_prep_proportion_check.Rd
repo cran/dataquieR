@@ -31,3 +31,11 @@ a \link{list} with the expected range for the proportion check
 \description{
 Utility function to prepare the metadata for proportion checks
 }
+\seealso{
+Other lookup_functions: 
+\code{\link{util_prep_location_check}()},
+\code{\link{util_variable_references}()}
+}
+\concept{lookup_functions}
+\concept{metadata_management}
+\keyword{internal}

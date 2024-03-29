@@ -9,6 +9,7 @@
 #'
 #' @seealso [HERE](https://github.com/tidyverse/ggplot2/issues/3619#issuecomment-628021555)
 #'
+#' @keywords internal
 util_compress_ggplots_in_res <- function(r) {
   if (isTRUE(attr(r, "from_ReportSummaryTable"))) {
     return(NULL) # never store plots of reportsummarytables, because the original objects are already in the report

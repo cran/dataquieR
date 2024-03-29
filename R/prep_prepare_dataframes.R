@@ -23,7 +23,7 @@
 #' Different from the other utility function that work
 #' in the caller's environment, so it modifies objects in the calling function.
 #' It defines a new object `ds1`, it modifies `study_data` and/or `meta_data`
-#' and `label_col`.
+#' and `label_col`, if `.internal` is `TRUE`.
 #'
 #' @param .study_data if provided, use this data set as study_data
 #' @param .meta_data if provided, use this data set as meta_data
@@ -33,7 +33,14 @@
 #' @param .replace_missings replace missing codes, defaults to `TRUE`
 #' @param .sm_code missing code for `NAs`, if they have been
 #'                 re-coded by `util_combine_missing_lists`
-#' @param .allow_empty allow `ds1` to be empty. i.e., 0 rows and/or 0 columns
+#' @param .allow_empty allow `ds1` to be empty, i.e., 0 rows and/or 0 columns
+#' @param .adjust_data_type ensure that the data type of variables in the study
+#'                data corresponds to their data type specified in the metadata
+#' @param .amend_scale_level ensure that `SCALE_LEVEL` is available in the
+#'                           item-level `meta_data`. internally used to prevent
+#'                           recursion, if called from
+#'                           [prep_scalelevel_from_data_and_metadata()].
+#' @param .internal [logical] internally called, modify caller's environment.
 #'
 #' @seealso acc_margins
 #'
@@ -100,11 +107,17 @@
 #' @export
 #'
 #' @importFrom rlang caller_fn
-#'
+#' @importFrom utils object.size
 prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
-                                    .replace_hard_limits,
+                                    .replace_hard_limits, # TODO: .replace_inadmissible_categorical_values
                                     .replace_missings, .sm_code = NULL,
-                                    .allow_empty = FALSE) {
+                                    .allow_empty = FALSE,
+                                    .adjust_data_type = TRUE,
+                                    .amend_scale_level = TRUE,
+                                    .internal =
+                                      rlang::env_inherits(
+                                        rlang::caller_env(),
+                                        parent.env(environment()))) {
 
 #  dimension <- substr(rlang::call_name(rlang::caller_call()), 1, 3)
   # TODO: Add missing tables from meta_data$MISSING_LIST_TABLE
@@ -124,6 +137,7 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
       "Called prepare_dataframes with .replace_missings not being logical(1)",
       applicability_problem = TRUE)
   }
+  if (missing(.replace_missings)) .replace_missings <- TRUE
 # TODO: include check for (hard) limits similar to replace_missings
   callfn <- caller_fn(1)
 
@@ -205,7 +219,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
   e$study_data <- .study_data
   .study_data <-
     eval(
-      quote(try(util_expect_data_frame(study_data), silent = TRUE)),
+      quote(try(util_expect_data_frame(study_data, keep_types = TRUE),
+                silent = TRUE)),
       e
     )
   if (inherits(.study_data, "try-error")) {
@@ -296,13 +311,12 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
   meta_data <- .meta_data
   label_col <- .label_col
 
-  if (!exists("var_names")) {
-    var_names <- "meta_data"
+  if (any(is.na(colnames(study_data)))) {
+    util_error("%s must not feature columns with columns names being %s",
+               sQuote("study_data"),
+               sQuote("NA"), applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
   }
-
-  try(if (missing(var_names)) {
-    var_names <- "meta_data"
-  }, silent = TRUE)
 
   # Exchanged to "label_col"
   if (!exists("label_col")) {
@@ -313,21 +327,59 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     label_col <- VAR_NAMES
   }, silent = TRUE)
 
-  tryCatch({
-      var_names <- match.arg(var_names, c("meta_data", "study_data"),
-                             several.ok = FALSE)
-    },
-    error = function(e) {
-      util_error("var_names should be 'meta_data' or 'study_data'")
+  # TODO: include a check that VAR_NAMES/label_col exists, and that they are unique and not too long
+  # intermediate solution - fill empty labels, since we will map to metadata label columns, and otherwise empty fields will cause errors
+  for (lcol in unique(c(label_col, LABEL, LONG_LABEL))) {
+    if (is.data.frame(meta_data) && lcol %in% colnames(meta_data)) {
+      meta_data[[lcol]][which(util_empty(meta_data[[lcol]]))] <-
+        meta_data[[VAR_NAMES]][which(util_empty(meta_data[[lcol]]))]
     }
-  )
+  }
 
   meta_data <- prep_meta_data_v1_to_item_level_meta_data(meta_data =
                                                            meta_data,
                                                          verbose = FALSE,
                                                          label_col = label_col)
 
-  if (missing(.replace_missings) || .replace_missings) {
+  if (!(DATA_TYPE %in% colnames(meta_data)) ||
+      any(util_empty(meta_data[[DATA_TYPE]])) ||
+      !all(meta_data[[DATA_TYPE]] %in% DATA_TYPES)) {
+    if (!(DATA_TYPE %in% colnames(meta_data))) {
+      meta_data[[DATA_TYPE]] <- NA_character_
+    }
+
+    which_wrong <-
+      util_empty(meta_data[[DATA_TYPE]]) |
+      !(meta_data[[DATA_TYPE]] %in% DATA_TYPES)
+
+    wrong_names <- meta_data[which_wrong, VAR_NAMES, drop = TRUE]
+
+    wrong_names <- intersect(colnames(study_data), wrong_names)
+
+    datatypes <- prep_datatype_from_data(resp_vars = wrong_names,
+                                         study_data = study_data)
+
+    util_warning(
+      c("For the variables %s, I have no valid %s in the %s. I've predicted",
+        "the %s from the %s yielding %s."),
+      util_pretty_vector_string(wrong_names),
+      sQuote(DATA_TYPE),
+      sQuote("meta_data"),
+      sQuote(DATA_TYPE),
+      sQuote("study_data"),
+      dQuote(prep_deparse_assignments(names(datatypes), datatypes,
+                                      mode = "string_codes")),
+      applicability_problem = TRUE,
+      intrinsic_applicability_problem = FALSE
+    )
+
+    meta_data[which_wrong, DATA_TYPE] <-
+      datatypes[meta_data[which_wrong, VAR_NAMES]]
+  }
+
+  if (!.called_in_pipeline) util_validate_known_meta(meta_data)
+
+  if (.replace_missings) {
     # Are missing codes replaced?
     if (!("Codes_to_NA" %in% names(attributes(study_data)))) {
       study_data <-
@@ -337,6 +389,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     }
   }
 
+  # The call below is not executed here, but stored for later use
+  # when ds1 is actually available.
   repl_lim_viol <- quote({
     if (.replace_hard_limits) {
       # Are hard limit violations replaced?
@@ -348,43 +402,188 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     }
   })
 
-  # if study_data exist and metadata were already mapped then return ds1
-  # directly
+  study_data_hash <- rlang::hash(.study_data)
+  meta_data_hash <- rlang::hash(.meta_data)
+  a <- formals(prep_prepare_dataframes)[.to_combine]
+  a2 <- rlang::call_args(sys.call())
+  a2 <- a2[intersect(names(a2), .to_combine)]
+  a[names(a2)] <- a2
+  missing_from_a <- vapply(a, rlang::is_missing, FUN.VALUE = logical(1))
+  a[missing_from_a] <- mget(names(which(missing_from_a)))
+  a <- rlang::hash(a)
+  key <-
+    paste0(a, "@", study_data_hash,
+           "@", meta_data_hash, "@", label_col)
+
+  if (key %in% names(.study_data_cache)) {
+    if (getOption("dataquieR.study_data_cache_metrics", FALSE)) {
+      e <- getOption("dataquieR.study_data_cache_metrics_env")
+      if (is.null(e$usage)) e$usage <- list()
+      if (is.null(e$usage[[key]])) e$usage[[key]] <- 0
+      e$usage[[key]] <- e$usage[[key]] + 1
+    }
+    study_data <- .study_data_cache[[key]]
+  }
+
+  # If study_data exist and metadata were already mapped, then we can return ds1
+  # directly, but only if all requested modifications are already considered
+  # (if possible).
   if (isTRUE(attr(study_data, "MAPPED", exact = TRUE))) {
-    ds1 <- study_data
-    eval(repl_lim_viol)
-    assign("study_data", study_data, parent.frame())
-    assign("meta_data", meta_data, parent.frame())
-    assign("ds1", ds1, parent.frame())
-    assign("label_col", label_col, parent.frame())
-    return(invisible(study_data))
+    # labels can be modified easily
+    if (attr(study_data, "label_col") != label_col) {
+      colnames(study_data) <-
+        util_map_labels(colnames(study_data),
+                        meta_data = meta_data,
+                        from = attr(study_data, "label_col"),
+                        to = label_col)
+      attr(study_data, "label_col") <- label_col
+    }
+    # replacement of missing value codes can not be undone
+    if ("Codes_to_NA" %in% names(attributes(study_data)) &&
+        !.replace_missings) {
+      browser()
+      util_error("Substitution of missing value codes cannot be undone.",
+                 applicability_problem = TRUE)
+    }
+    # replacement of hard limits can not be undone
+    if ("HL_viol_to_NA" %in% names(attributes(study_data)) &&
+        !.replace_hard_limits) {
+      util_error("Discarding values outside the limits cannot be undone.",
+                 applicability_problem = TRUE)
+    }
+    # data type correction can not be undone
+    if ("Data_type_matches" %in% names(attributes(study_data)) &&
+        !.adjust_data_type) {
+      util_error("Correction of data type mismatches cannot be undone.",
+                 applicability_problem = TRUE)
+    }
+    # missing value codes replaced, if required (and vice versa)?
+    check_miss <-
+      (.replace_missings &&
+         "Codes_to_NA" %in% names(attributes(study_data))) ||
+      (!.replace_missings &&
+         !("Codes_to_NA" %in% names(attributes(study_data))))
+    # hard limit violations replaced, if required (and vice versa)?
+    check_hl <-
+      (.replace_hard_limits &&
+         "HL_viol_to_NA" %in% names(attributes(study_data))) ||
+      (!.replace_hard_limits &&
+         !("HL_viol_to_NA" %in% names(attributes(study_data))))
+    # data type adjusted, if required (and vice versa)?
+    check_dt <-
+      (.adjust_data_type &&
+         "Data_type_matches" %in% names(attributes(study_data))) ||
+      (!.adjust_data_type &&
+         !("Data_type_matches" %in% names(attributes(study_data))))
+    # if SCALE_LEVEL is required, then there should be no empty entries
+    check_sl <-
+      (.amend_scale_level && SCALE_LEVEL %in% colnames(meta_data) &&
+         !any(util_empty(meta_data[[SCALE_LEVEL]][meta_data$VAR_NAMES %in%
+                                                    colnames(study_data)]))) ||
+      !.amend_scale_level
+    if (check_miss && check_hl && check_dt && check_sl) {
+      ds1 <- study_data
+      eval(repl_lim_viol) # TODO: Is this line needed here??
+      if (.internal) {
+        assign("study_data", study_data, parent.frame())
+        assign("meta_data", meta_data, parent.frame())
+        assign("ds1", ds1, parent.frame())
+        assign("label_col", label_col, parent.frame())
+      }
+      return(invisible(study_data))
+    } else {
+      # map column names to VAR_NAMES and let the rest of this function
+      # do its work
+      colnames(study_data) <-
+        util_map_labels(colnames(study_data),
+                        meta_data = meta_data,
+                        from = label_col,
+                        to = VAR_NAMES)
+      attr(study_data, "label_col") <- VAR_NAMES
+      attr(study_data, "MAPPED") <- FALSE
+    }
   }
 
   Codes_to_NA <- attr(study_data, "Codes_to_NA")
 
-  if (var_names == "meta_data") {
-    if (!"VAR_NAMES" %in% colnames(meta_data)) {
-      util_error("'VAR_NAMES' not found in metadata [%s]",
-                 paste0(colnames(meta_data), collapse = ", "),
-                 applicability_problem = TRUE)
-    }
+  if (!"VAR_NAMES" %in% colnames(meta_data)) {
+    # Should get caught before by 'util_validate_known_meta'.
+    util_error("'VAR_NAMES' not found in metadata [%s]",
+               paste0(colnames(meta_data), collapse = ", "),
+               applicability_problem = TRUE)
+  }
 
+  if (!isTRUE(attr(study_data, "MAPPED", exact = TRUE))) {
     study_data <- study_data[, order(colnames(study_data)), FALSE]
     meta_data <- meta_data[order(meta_data[[VAR_NAMES]]), , FALSE]
+  }
 
+  # adjust data types, if enabled
+  util_stop_if_not(
+    `Pipeline should never request study data w/ unchanged datatypes, sorry, internal error, please report` =
+                     !(!.adjust_data_type && .called_in_pipeline))
+  if (.adjust_data_type && !.called_in_pipeline) {
+
+    relevant_vars_for_warnings <- lapply(
+        setNames(nm = names(.meta_data_env)[endsWith(names(.meta_data_env), "_vars")]), # all arguments populated by the pipeline with some variable references
+        util_find_indicator_function_in_callers
+      )
+    if (is.null(relevant_vars_for_warnings$resp_vars)) { # original call was not for item level, so no filtering of problems by related items
+      relevant_vars_for_warnings <- NULL
+    }
+    relevant_vars_for_warnings <- unlist(relevant_vars_for_warnings,
+                                         recursive = TRUE)
+    relevant_vars_for_warnings <-
+      relevant_vars_for_warnings[!util_empty(relevant_vars_for_warnings)]
+
+    try(relevant_vars_for_warnings <- # TODO: sometimes, relevant... does not have variables from label_col, if correct variable use used find var by names and mapped them to varnames already # this corresponds with TODO POSSIBLE_VARS in util_correct_variable_use
+      util_find_var_by_meta(relevant_vars_for_warnings,
+                    meta_data = meta_data,
+                    label_col = label_col,
+                    target = VAR_NAMES,
+                    allowed_sources =
+                      c(VAR_NAMES, LABEL, LONG_LABEL, label_col),
+                    ifnotfound = relevant_vars_for_warnings),
+      silent = TRUE)
+
+    study_data <- util_adjust_data_type(
+      study_data = study_data,
+      meta_data = meta_data,
+      relevant_vars_for_warnings = relevant_vars_for_warnings)
+  }
+
+  if (.amend_scale_level && (!(SCALE_LEVEL %in% colnames(meta_data)) ||
+                             any(util_empty(
+                               meta_data[[SCALE_LEVEL]][meta_data$VAR_NAMES %in%
+                                                        colnames(study_data)])))) {
+    util_message(c("Did not find any %s column in item-level %s. Predicting",
+                   "it from the data -- please verify these predictions, they",
+                   "may be wrong and lead to functions claiming not to be",
+                   "reasonably applicable to a variable."),
+                   sQuote(SCALE_LEVEL), "meta_data",
+                 applicability_problem = TRUE,
+                 intrinsic_applicability_problem = FALSE)
+    meta_data <- prep_scalelevel_from_data_and_metadata(
+      study_data = study_data,
+      meta_data = meta_data,
+      label_col = label_col
+    )
+  }
+
+  # create ds1 -----------------------------------------------------------------
+  if (isTRUE(attr(study_data, "MAPPED", exact = TRUE))) {
+    ds1 <- study_data
+  } else {
     ds1 <- util_map_all(label_col = label_col, study_data = study_data,
                         meta_data = meta_data)$df
-    if (!(.allow_empty) && ncol(ds1) * nrow(ds1) == 0) {
-      util_error(
-        "No data left. Aborting, since mapping of %s on %s was not possible",
-        sQuote("meta_data"),
-        sQuote("study_data"),
-        applicability_problem = FALSE)
-    }
-  } else { # nocov start
-    # unsupported now
-    ds1 <- study_data
-  } # nocov end
+  }
+  if (!(.allow_empty) && ncol(ds1) * nrow(ds1) == 0) {
+    util_error(
+      "No data left. Aborting, since mapping of %s on %s was not possible",
+      sQuote("meta_data"),
+      sQuote("study_data"),
+      applicability_problem = FALSE)
+  }
 
   ds1 <- as.data.frame(ds1)
   meta_data <- as.data.frame(meta_data)
@@ -393,17 +592,33 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
   ds1 <- ds1[, colnames(ds1) %in% meta_data[[label_col]], FALSE]
   .mapped <- ncol(ds1)
   if (.all > .mapped) { # nocov start
-    # This could only happen, if var_names would be "study_data",
-    # which is not used any more.
-    # for var_names == "meta_data", util_map_all is called above, which
+    # Should be dead code, because util_map_all is called above, which
     # performs an analogous check and clears out the unannotated variables
     # from the study data.
     util_warning("Lost %d variables, that I could not map using %s",
                  .all - .mapped, dQuote(label_col),
                  applicability_problem = TRUE)
   } # nocov end
-  if (!.allow_empty) { # this would delete the metadata, if the mapping has failed totally
+  if (!.allow_empty) {
+    # this would delete the metadata, if the mapping has failed totally
     meta_data <- meta_data[meta_data[[label_col]] %in% colnames(ds1), , FALSE]
+  }
+
+  if (STUDY_SEGMENT %in% colnames(meta_data) &&
+      any(util_empty(meta_data[[STUDY_SEGMENT]]))) {
+    dummy_name <- "SEGMENT"
+    i <- 1
+    while (dummy_name %in% meta_data[[STUDY_SEGMENT]]) {
+      dummy_name <- sprintf("SEGMENT %d", i)
+      i <- i + 1
+    }
+    util_message(c(
+      "Some %s are NA. Will assign those to an artificial",
+      "segment %s"), sQuote(STUDY_SEGMENT), dQuote(dummy_name),
+      applicability_problem = TRUE
+    )
+    meta_data[[STUDY_SEGMENT]][util_empty(meta_data[[STUDY_SEGMENT]])] <-
+      dummy_name
   }
 
   if (VARIABLE_ORDER %in% colnames(meta_data)) {
@@ -423,9 +638,9 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
       if (is.character(vals)) vals <- vals[trimws(vals) != ""]
       vals <- suppressWarnings(as.numeric(vals))
       if (!all(vals %in% c(0:1, NA), na.rm = TRUE)) {
-        util_warning(c(
+        util_warning(c( # TODO: Maybe too frequently shown? see relevant_vars_for_warnings above
           "Found entries different from TRUE/FALSE/1/0 and <empty>, segment",
-          "participation is exptected, if values different from 0 are found.",
+          "participation is expected, if values different from 0 are found.",
           "For the segment indicator variable %s, a table of inadmissible",
           "values: %s"),
           dQuote(rv),
@@ -440,15 +655,47 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
 
   attr(ds1, "MAPPED") <- TRUE
   attr(ds1, "label_col") <- label_col
+  attr(ds1, "Data_type_matches") <- attr(study_data, "Data_type_matches")
 
   eval(repl_lim_viol)
 
-  assign("study_data", study_data, parent.frame())
-  assign("meta_data", meta_data, parent.frame())
-  assign("ds1", ds1, parent.frame())
-  assign("label_col", label_col, parent.frame())
+  study_data <- util_cast_off(study_data, "study_data", TRUE)
+  meta_data <- util_cast_off(meta_data, "meta_data", TRUE)
+  ds1 <- util_cast_off(ds1, "ds1", TRUE)
+
+  if (.internal) {
+    assign("study_data", study_data, parent.frame())
+    assign("meta_data", meta_data, parent.frame())
+    assign("ds1", ds1, parent.frame())
+    assign("label_col", label_col, parent.frame())
+  }
+
+  dataquieR.study_data_cache_max <-
+    getOption("dataquieR.study_data_cache_max", Inf)
+
+  if (is.data.frame(ds1) &&
+      !(key %in% names(.study_data_cache))) {
+      if (sum(object.size(ds1),
+              vapply(.study_data_cache, object.size, FUN.VALUE = numeric(1)),
+              na.rm = TRUE) <= dataquieR.study_data_cache_max) {
+        .study_data_cache[[key]] <- util_attach_attr(ds1, call = sys.call())
+      } else if (getOption("dataquieR.study_data_cache_metrics", FALSE)) {
+        class(dataquieR.study_data_cache_max) <- "object_size"
+        rlang::inform(
+          sprintf(
+            paste(
+              "Maximum size for study_data cache (%s) reached, not caching.",
+              "Adjust the %s to control"),
+            format(dataquieR.study_data_cache_max, units = "auto"),
+            sQuote("option(dataquieR.study_data_cache_max = )")
+          ),
+          .frequency = "once", .frequency_id = paste(key)
+        )
+      }
+  }
 
   invisible(ds1)
 }
 
-.ds1_attribute_names <- c("Codes_to_NA", "MAPPED", "label_col", "HL_viol_to_NA")
+.ds1_attribute_names <- c("Codes_to_NA", "MAPPED", "label_col", "HL_viol_to_NA",
+                          "Data_type_matches")

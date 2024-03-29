@@ -17,3 +17,15 @@ augments metadata by interpretable limit columns
 \description{
 Utility function to split range definitions into interpretable elements
 }
+\seealso{
+\link{util_parse_interval}
+
+Other parser_functions: 
+\code{\link{util_interpret_limits}()},
+\code{\link{util_parse_assignments}()},
+\code{\link{util_parse_interval}()},
+\code{\link{util_parse_redcap_rule}()}
+}
+\concept{parser_functions}
+\concept{robustness}
+\keyword{internal}

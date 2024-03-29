@@ -15,6 +15,13 @@
 #'                            input was not `util_empty'), an error
 #'                            is still thrown, the data is converted, otherwise
 #' @param dont_assign set `TRUE` to keep `x` in the caller environment untouched
+#' @param conversion_may_replace_NA if set to `TRUE`, we can define a function
+#'                    in `convert_if_possible` that replaces `NA` values without
+#'                    causing a warning, but this option is set to `FALSE` by
+#'                    default to catch possible conversion problems (use it with
+#'                    caution).
+#' @param error_message if `check_type()` returned `FALSE`, show this instead of
+#'                      a default error message.
 #'
 #' @return the value of arg_name -- but this is updated in the calling
 #'         frame anyway.
@@ -33,15 +40,28 @@
 #' g(42L)
 #' g(42)
 #' }
+#'
+#' @family robustness_functions
+#' @concept robustness
+#' @keywords internal
 util_expect_scalar <- function(arg_name,
                                allow_more_than_one = FALSE,
                                allow_null = FALSE,
                                allow_na = FALSE,
                                min_length = -Inf,
                                max_length = Inf,
-                               check_type,
+                               check_type,# IDEA: attr(check_type, "error_message") as default for error_message and some prepared predicates with reasonable standard messages for standard case like is.character or is.numeric (or maybe, for the most simple ones, list them here)
                                convert_if_possible,
-                               dont_assign = FALSE) { # TODO: custom error message
+                               conversion_may_replace_NA = FALSE,
+                               dont_assign = FALSE,
+                               error_message) {
+  if (!missing(error_message)) {
+    util_expect_scalar(arg_name = error_message,
+                       # error_message = Do not use error_message here to
+                       #                 prevent infinite recursion!!
+                       check_type = is.character)
+  }
+
   if (missing(convert_if_possible)) {
     convert_if_possible <- NULL
   } else if (!is.function(convert_if_possible)) {
@@ -135,7 +155,7 @@ util_expect_scalar <- function(arg_name,
         (allow_null && length(arg_value) > 1)) {
       # but the user gave more than one or none although
       # allow_null prohibits this
-      util_error("Need excactly one element in argument %s, got %d: [%s]",
+      util_error("Need exactly one element in argument %s, got %d: [%s]",
                  arg_name, length(arg_value), paste0(arg_value, collapse = ", "),
                  applicability_problem = TRUE)
       # this is an error
@@ -201,20 +221,36 @@ util_expect_scalar <- function(arg_name,
     type_match <- my_check_type(arg_value)
     if (!type_match && !is.null(convert_if_possible)) {
       x_arg <- convert_if_possible(arg_value)
-      if (!all(is.na(x_arg) == is.na(arg_value))) {
-        util_warning(
-          "In %s, could not convert the whole vector to match data type",
-          dQuote(arg_name))
+      if (!conversion_may_replace_NA) {
+        if (!all(is.na(x_arg) == is.na(arg_value))) {
+          util_warning(
+            "In %s, could not convert the whole vector to match data type",
+            dQuote(arg_name))
+        } else {
+          arg_value <- x_arg
+        }
+        type_match <- my_check_type(arg_value)
       } else {
-        arg_value <- x_arg
+        if (!all(which(is.na(x_arg)) %in% which(is.na(arg_value)))) {
+          util_warning(
+            "In %s, conversion introduced NAs",
+            dQuote(arg_name))
+        } else {
+          arg_value <- x_arg
+        }
+        type_match <- my_check_type(arg_value)
       }
-      type_match <- my_check_type(arg_value)
     }
     if (!type_match) {
-      util_error("Argument %s must match the predicate %s",
-                 arg_name,
-                 dQuote(paste(head(deparse(check_type)), collapse = " ")),
-                 applicability_problem = TRUE)
+      if (!missing(error_message)) {
+        util_error(error_message,
+                   applicability_problem = TRUE)
+      } else {
+        util_error("Argument %s must match the predicate %s",
+                   arg_name,
+                   dQuote(paste(head(deparse(check_type)), collapse = " ")),
+                   applicability_problem = TRUE)
+      }
     }
   }
 

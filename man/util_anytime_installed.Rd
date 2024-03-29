@@ -15,5 +15,8 @@ Test, if package \code{anytime} is installed
 \seealso{
 \link{requireNamespace}
 
-\url{https://community.rstudio.com/t/how-can-i-make-testthat-think-i-dont-have-a-package-installed/33441/2}
+\url{https://forum.posit.co/t/how-can-i-make-testthat-think-i-dont-have-a-package-installed/33441/2}
+
+\link{util_ensure_suggested}
 }
+\keyword{internal}

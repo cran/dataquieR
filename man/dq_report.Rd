@@ -4,144 +4,14 @@
 \alias{dq_report}
 \title{Generate a full DQ report}
 \usage{
-dq_report(
-  study_data,
-  meta_data,
-  label_col = NULL,
-  meta_data_segment = "segment_level",
-  meta_data_dataframe = "dataframe_level",
-  ...,
-  dimensions = c("Completeness", "Consistency"),
-  dont_modify_study_data_by = c("con_soft_limits", "con_detection_limits"),
-  strata_attribute,
-  strata_vars,
-  cores = list(mode = "socket", logging = FALSE, cpus = util_detect_cores(),
-    load.balancing = TRUE),
-  specific_args = list(),
-  author = prep_get_user_name(),
-  debug_parallel = FALSE
-)
+dq_report(...)
 }
 \arguments{
-\item{study_data}{\link{data.frame} the data frame that contains the measurements}
-
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
-
-\item{label_col}{\link{variable attribute} the name of the column in the metadata
-with labels of variables}
-
-\item{meta_data_segment}{\link{data.frame} -- optional: Segment level metadata}
-
-\item{meta_data_dataframe}{\link{data.frame} -- optional: Data frame level
-metadata}
-
-\item{...}{arguments to be passed to all called indicator functions if
-applicable.}
-
-\item{dimensions}{\link{dimensions} Vector of dimensions to address in the report.
-Allowed values in the vector are Completeness, Consistency,
-and Accuracy. The generated report will only cover the
-listed data quality dimensions. Accuracy is computational
-expensive, so this dimension is not enabled by default.
-Completeness should be included, if Consistency is
-included, and Consistency should be included, if Accuracy
-is included to avoid misleading detections of e.g. missing
-codes as outliers, please refer to the data quality concept
-for more details. Integrity is always included.}
-
-\item{dont_modify_study_data_by}{\link{character} list of functions, which are
-not allowed to modify study data downstream
-the pipeline, e.g., to avoid, that even soft
-limit violations are removed.}
-
-\item{strata_attribute}{\link{character} variable of a variable attribute coding
-study segments.
-Values other than leaving this empty or passing
-STUDY_SEGMENT are not yet supported.
-Stratification is not yet fully supported, please
-use \link{dq_report_by}.}
-
-\item{strata_vars}{\link{character} name of variables to stratify the report on,
-such as "study_center". Not yet supported,
-please use \link{dq_report_by}.}
-
-\item{cores}{\link{integer} number of cpu cores to use or a named list with
-arguments for \link[parallelMap:parallelStart]{parallelMap::parallelStart} or NULL,
-if parallel has already been started by the caller.}
-
-\item{specific_args}{\link{list} named list of arguments specifically for one of
-the called functions, the of the list elements
-correspond to the indicator functions whose calls
-should be modified. The elements are lists of
-arguments.}
-
-\item{author}{\link{character} author for the report documents.}
-
-\item{debug_parallel}{\link{logical} print blocks currently evaluated in parallel}
+\item{...}{Deprecated}
 }
 \value{
-a \link{dataquieR_resultset}. Can be printed creating a RMarkdown-report.
+Deprecated
 }
 \description{
-Generate a full DQ report
-}
-\details{
-See \link{dq_report_by} for a way to generate stratified or splitted reports
-easily.
-}
-\examples{
-\dontrun{ # really long-running example.
-load(system.file("extdata", "study_data.RData", package = "dataquieR"))
-load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
-report <- dq_report(study_data, meta_data, label_col = LABEL) # most easy use
-report <- dq_report(study_data, meta_data,
-  label_col = LABEL, dimensions =
-    c("Completeness", "Consistency", "Accuracy"),
-  check_table = read.csv(system.file("extdata",
-    "contradiction_checks.csv",
-    package = "dataquieR"
-  ), header = TRUE, sep = "#"),
-  show_causes = TRUE,
-  cause_label_df = prep_get_data_frame("meta_data_v2|missing_table")
-)
-save(report, file = "report.RData") # careful, this contains the study_data
-report <- dq_report(study_data, meta_data,
-  label_col = LABEL,
-  check_table = read.csv(system.file("extdata",
-    "contradiction_checks.csv",
-    package = "dataquieR"
-  ), header = TRUE, sep = "#"),
-  specific_args = list(acc_univariate_outlier = list(resp_vars = "K")),
-    resp_vars = "SBP_0"
-)
-report <- dq_report(study_data, meta_data,
-  label_col = LABEL,
-  check_table = read.csv(system.file("extdata",
-    "contradiction_checks.csv",
-    package = "dataquieR"
-  ), header = TRUE, sep = "#"),
-  specific_args = list(acc_univariate_outlier = list(resp_vars = "DBP_0")),
-    resp_vars = "SBP_0"
-)
-report <- dq_report(study_data, meta_data,
-  label_col = LABEL,
-  check_table = read.csv(system.file("extdata",
-    "contradiction_checks.csv",
-    package = "dataquieR"
-  ), header = TRUE, sep = "#"),
-  specific_args = list(acc_univariate_outlier = list(resp_vars = "DBP_0")),
-  resp_vars = "SBP_0", cores = NULL
-)
-rp1 <- dq_report("ship", "ship_meta",
-  meta_data_segment = "meta_data_segment",
-  meta_data_dataframe = "meta_data_dataframe",
-  label_col = LABEL)
-}
-}
-\seealso{
-\itemize{
-\item \link{as.data.frame.dataquieR_resultset},  * \link{as.list.dataquieR_resultset},  * \link{print.dataquieR_resultset},  * \link{summary.dataquieR_resultset}
-\item \link{dq_report_by}
-}
+Deprecated
 }

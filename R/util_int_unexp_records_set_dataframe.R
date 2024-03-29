@@ -16,6 +16,9 @@
 #'   - `SegmentTable`: data frame with selected unexpected data elements check results, used for the data quality report.
 #'   - `UnexpectedRecords`: vector with row indices of duplicated records, if any, otherwise NULL.
 #'
+#' @family integrity_indicator_functions
+#' @concept integrity_indicator
+#' @keywords internal
 util_int_unexp_records_set_dataframe <- function(level = c("dataframe"),
                                   id_vars_list, # TODO: Don't pass all columns separately
                                   identifier_name_list,

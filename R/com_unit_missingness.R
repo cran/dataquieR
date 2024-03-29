@@ -9,6 +9,8 @@
 #' The function can be applied on stratified data. In this case strata_vars must
 #' be specified.
 #'
+#' [Descriptor]
+#'
 #' @details
 #'
 #' This implementations calculates a crude rate of unit-missingness. This type
@@ -53,10 +55,10 @@
 #' https://dataquality.qihs.uni-greifswald.de/VIN_com_impl_unit_missingness.html
 #' )
 com_unit_missingness <- function(study_data, meta_data, id_vars = NULL,
-                                 strata_vars = NULL, label_col) {
+                                 strata_vars = NULL, label_col) { # TODO: Discuss, if this function can be fully removed?
 
   # map study and metadata
-  util_prepare_dataframes()
+  prep_prepare_dataframes()
 
   # correct variable usage
   util_correct_variable_use("id_vars",

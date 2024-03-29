@@ -41,6 +41,10 @@
 #'   meta_data = meta_data
 #' )
 #' }
+#'
+#' @family integrity_indicator_functions
+#' @concept integrity_indicator
+#' @keywords internal
 util_int_duplicate_content_segment <- function(level = c("segment"),
                                                study_segment,
                                                study_data,
@@ -52,7 +56,7 @@ util_int_duplicate_content_segment <- function(level = c("segment"),
   level <- util_match_arg(level)
 
   # map metadata to study data
-  util_prepare_dataframes(.allow_empty = TRUE)
+  prep_prepare_dataframes(.allow_empty = TRUE)
 
   # check that specified segments are included in the metadata
   old_study_segment <- study_segment

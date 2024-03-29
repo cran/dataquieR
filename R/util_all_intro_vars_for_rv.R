@@ -21,6 +21,10 @@
 #'    For `expected_observations = HIERARCHY`, the more general `PART_VARS`
 #'    (i.e., up, in the hierarchy) are more left in the vector, e.g.:
 #'    `PART_STUDY, PART_PHYSICAL_EXAMINATIONS, PART_BLOODPRESSURE`
+#'
+#' @family missing_functions
+#' @concept missing
+#' @keywords internal
 util_all_intro_vars_for_rv <- function(rv, study_data, meta_data,
                                        label_col = LABEL,
                                        expected_observations =

@@ -15,3 +15,11 @@ util_view_file(file)
 \description{
 View a file in most suitable viewer
 }
+\seealso{
+Other system_functions: 
+\code{\link{util_detect_cores}()},
+\code{\link{util_user_hint}()}
+}
+\concept{reporting}
+\concept{system_functions}
+\keyword{internal}

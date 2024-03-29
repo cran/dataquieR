@@ -6,7 +6,7 @@
 \usage{
 util_get_message_for_result(
   result,
-  aspect = c("applicability", "error", "issue", "anamat", "indicator_or_descriptor"),
+  aspect = c("applicability", "error", "anamat", "indicator_or_descriptor"),
   collapse = "\\n<br />\\n",
   ...
 )
@@ -28,3 +28,29 @@ run-time errors, warnings or notes (aka messages)
 \description{
 Return messages/warnings/notes/error messages for a result
 }
+\seealso{
+Other summary_functions: 
+\code{\link{prep_combine_report_summaries}()},
+\code{\link{prep_extract_classes_by_functions}()},
+\code{\link{prep_extract_summary}()},
+\code{\link{prep_extract_summary.dataquieR_result}()},
+\code{\link{prep_extract_summary.dataquieR_resultset2}()},
+\code{\link{prep_render_pie_chart_from_summaryclasses_ggplot2}()},
+\code{\link{prep_render_pie_chart_from_summaryclasses_plotly}()},
+\code{\link{prep_summary_to_classes}()},
+\code{\link{util_as_cat}()},
+\code{\link{util_extract_indicator_metrics}()},
+\code{\link{util_get_category_for_result}()},
+\code{\link{util_get_colors}()},
+\code{\link{util_get_html_cell_for_result}()},
+\code{\link{util_get_labels_grading_class}()},
+\code{\link{util_get_rule_sets}()},
+\code{\link{util_get_ruleset_formats}()},
+\code{\link{util_get_thresholds}()},
+\code{\link{util_html_table}()},
+\code{\link{util_melt_summary}()},
+\code{\link{util_sort_by_order}()}
+}
+\concept{reporting}
+\concept{summary_functions}
+\keyword{internal}

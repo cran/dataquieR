@@ -1,9 +1,9 @@
 #' return all matches of an expression
 #'
-#' @param data TODO
-#' @param pattern TODO
+#' @param data a character vector
+#' @param pattern a character string containing a regular expression
 #'
-#' @return TODO
+#' @return A list with matching elements or NULL (in case on non-matching elements)
 #' @author Josh O'Brien
 #' @seealso [Stack Overflow](https://stackoverflow.com/a/10215257)
 #' @examples
@@ -13,6 +13,10 @@
 #' pat <- "Ref. (\\d+)"
 #' util_extract_matches(dat0, pat)
 #' }
+#'
+#' @family process_functions
+#' @concept string
+#' @keywords internal
 util_extract_matches <- function(data, pattern) {
   util_expect_scalar(pattern)
   util_expect_scalar(data,

@@ -1,4 +1,4 @@
-#' utility function for the outliers rule of Huber et al.
+#' utility function for the outliers rule of Hubert and Vandervieren 2008
 #'
 #' function to calculate outliers according to the rule of Huber et al. This
 #' function requires the package `robustbase`
@@ -7,6 +7,10 @@
 #'
 #' @return binary vector
 #'
+#' @family outlier_functions
+#' @concept outlier
+#' @keywords internal
+
 util_hubert <- function(x) {
   lth <- robustbase::adjboxStats(x, doScale = FALSE)$stats[1]
   uth <- robustbase::adjboxStats(x, doScale = FALSE)$stats[5]

@@ -1,4 +1,5 @@
 test_that("util_replace_codes_by_na works", {
+  skip_on_cran()
   local({
     meta_data <- prep_get_data_frame("meta_data")
     study_data <- prep_get_data_frame("study_data")

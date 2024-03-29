@@ -13,13 +13,21 @@
 #'                          found: it will be coerced to a list if necessary.
 #'
 #' @return vector of mapped target names of resp_vars
+#'
+#' @family metadata_management
+#' @concept metadata_management
+#' @keywords internal
+
+
 util_find_var_by_meta <- function(resp_vars,
                                   meta_data = "item_level",
                                   label_col = LABEL,
                                   allowed_sources = c(VAR_NAMES,
                                                       label_col,
                                                       LABEL,
-                                                      LONG_LABEL),
+                                                      LONG_LABEL,
+                                                      "ORIGINAL_VAR_NAMES",
+                                                      "ORIGINAL_LABEL"),
                                   target = VAR_NAMES,
                                   ifnotfound = NA_character_) {
   util_expect_scalar(resp_vars, allow_more_than_one = TRUE,
@@ -38,12 +46,14 @@ util_find_var_by_meta <- function(resp_vars,
     return(ifnotfound)
   }
   util_expect_data_frame(meta_data)
-  meta_data <- prep_meta_data_v1_to_item_level_meta_data(meta_data = meta_data,
-                                                         verbose = FALSE,
-                                                         label_col = label_col)
-  allowed_sources <- util_ensure_in(allowed_sources, colnames(meta_data))
-  target <- util_ensure_in(target, colnames(meta_data))
+
+  # This is not needed, since labels have not significantly changed
+  # meta_data <- prep_meta_data_v1_to_item_level_meta_data(meta_data = meta_data,
+  #                                                        verbose = FALSE,
+  #                                                        label_col = label_col)
   allowed_sources <- unique(allowed_sources)
+  allowed_sources <- intersect(allowed_sources, colnames(meta_data))
+  target <- util_ensure_in(target, colnames(meta_data))
   if ((length(target) != 1) || (length(allowed_sources) < 1)) {
     map_res <- lapply(setNames(nm = allowed_sources), function(oc) {
       rep(NA_character_, length(resp_vars))

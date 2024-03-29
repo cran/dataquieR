@@ -8,10 +8,23 @@
 #'                                will not be displayed, if `FALSE`
 #'
 #' @return `invisible(FALSE)`, if not stopped.
-util_stop_if_not <- function(..., label, label_only) {
-  ok <- try(eval.parent(
-    call("stopifnot", substitute(...))
-  ), silent = TRUE)
+#'
+#'
+#' @family robustness_functions
+#' @concept condition
+#' @keywords internal
+util_stop_if_not <- function(..., label, label_only) { # FIXME: Strange ... problems in some cases
+  cc <- rlang::current_call()
+  # rlang::call_name(cl)
+  # setdiff(rlang::call_args_names(rlang::caller_call(n = 0)), setdiff(names(formals(rlang::call_name(rlang::current_call()))), "..."))
+  my_own <-
+    setdiff(names(formals(rlang::call_name(cc))), "...")
+  zappings <- rep(list(rlang::zap()), length(my_own))
+  names(zappings) <- my_own
+  mod_args <- c(list(.call = cc), zappings)
+  cl <- do.call(rlang::call_modify, mod_args, quote = TRUE)
+  cl[[1]] <- rlang::sym("stopifnot") # overwrites also <ns> in <ns>::
+  ok <- try(eval.parent(cl), silent = TRUE)
   if (missing(label)) {
     label <- ""
   }
@@ -26,7 +39,7 @@ util_stop_if_not <- function(..., label, label_only) {
     if (!label_only && nzchar(label) && nzchar(cm))
       cm <- paste0(label, ": ", cm)
     util_error(
-      paste("Internal error:", cm),
+      paste("Internal error:", gsub("%", "%%", fixed = TRUE, cm)),
       applicability_problem = FALSE)
   }
   invisible(ok)

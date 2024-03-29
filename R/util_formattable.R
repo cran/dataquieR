@@ -27,6 +27,8 @@
 #' htmltools::browsable(util_formattable(tb))
 #' htmltools::browsable(util_formattable(tb[, -1]))
 #' }
+#'
+#' @keywords internal
 util_formattable <- function(tb,
                              min_val = min(tb, na.rm = TRUE),
                              max_val = max(tb, na.rm = TRUE),

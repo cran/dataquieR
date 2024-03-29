@@ -1,6 +1,10 @@
 #' an environment with functions available for `REDcap` rules
 #'
 #' @return environment
+#'
+#' @family redcap
+#' @concept metadata_management
+#' @keywords internal
 util_get_redcap_rule_env <- function() {
   redcap_env
 }

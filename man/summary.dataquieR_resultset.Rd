@@ -4,48 +4,14 @@
 \alias{summary.dataquieR_resultset}
 \title{Summarize a \link{dataquieR} report}
 \usage{
-\method{summary}{dataquieR_resultset}(
-  object,
-  aspect = c("issue", "applicability", "error"),
-  return_the_value = TRUE,
-  ...
-)
+\method{summary}{dataquieR_resultset}(...)
 }
 \arguments{
-\item{object}{\link[=dq_report]{dataquieR report}.}
-
-\item{aspect}{what sort of issues to summarize}
-
-\item{return_the_value}{\link{logical} return the \code{GRADING} or error message,
-a color otherwise.}
-
-\item{...}{not used yet.}
+\item{...}{Deprecated}
 }
 \value{
-a \link{data.frame} with one row per variable and one column per \code{GRADING}
-result. Each function providing a \code{GRADING} conforming to the
-standards is represented by a column. \code{GRADING} expresses the
-presence of a problem with \code{0 = no | 1 = yes}
+Deprecated
 }
 \description{
-Summarizes a \link[=dq_report]{dataquieR report} extracting all GRADING
-results.
-}
-\examples{
-\dontrun{
-# runs spuriously slow on rhub
-load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-  environment())
-load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-  environment())
-report <- suppressWarnings(dq_report(
-  variables = head(meta_data[[LABEL]], 5),
-  study_data, meta_data,
-  cores = 1,
-  label_col = LABEL, dimensions =
-  c( # for sake of speed, omit Accuracy here
-       "Consistency")
-))
-x <- summary(report)
-}
+Deprecated
 }

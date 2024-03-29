@@ -6,6 +6,9 @@
 #'
 #' @return number of `NA`s
 #'
+#' @family process_functions
+#' @concept process
+#' @keywords internal
 util_count_NA <- function(x) {
   sum(is.na(x))
 }

@@ -9,7 +9,9 @@ util_check_data_type(
   type,
   check_convertible = FALSE,
   threshold_value = 0,
-  return_counts = FALSE
+  return_percentages = FALSE,
+  check_conversion_stable = FALSE,
+  robust_na = FALSE
 )
 }
 \arguments{
@@ -20,21 +22,51 @@ util_check_data_type(
 \item{check_convertible}{\link{logical} also try, if a conversion to the
 declared data type would work.}
 
-\item{threshold_value}{\link{numeric} from=0 to=100. percentage failing
-conversions allowed if \code{check_convertible}
-is \code{TRUE}.}
+\item{threshold_value}{\link{numeric} from=0 to=100. percentage of failing
+conversions allowed.}
 
-\item{return_counts}{\link{logical} return the counts instead of logical values
-about threshold violations.}
+\item{return_percentages}{\link{logical} return the percentage of
+mismatches.}
+
+\item{check_conversion_stable}{\link{logical} do not distinguish convertible
+from convertible, but with issues}
+
+\item{robust_na}{\link{logical} treat white-space-only-values as \code{NA}}
 }
 \value{
-if \code{check_convertible} is \code{FALSE},
-\link{logical} whether x is of the expected type
+if \code{return_percentages}: if not \code{check_convertible}, the percentage
+of mismatches instead of logical value,
+if \code{check_convertible}, return a named
+vector with the percentages of all cases
+(names of the vector are
+\code{match}, \code{convertible_mismatch_stable},
+\code{convertible_mismatch_unstable},
+\code{nonconvertible_mismatch})
+if not \code{return_percentages}: if \code{check_convertible} is \code{FALSE},
+\link{logical} whether \code{x} is of the expected type
 if \code{check_convertible} is \code{TRUE}
-\link{integer} with the states \verb{0, 1, 2}: 0 = Mismatch, not convertible
+\link{integer} with the states \verb{0, 1, 2, 3}: 0 = Mismatch, not convertible
 1 = Match
 2 = Mismatch, but convertible
+3 = Mismatch, convertible,
+but with issues (e.g.,
+loss of decimal places)
 }
 \description{
 Function to verify the data type of a value.
 }
+\seealso{
+Other data_management: 
+\code{\link{util_assign_levlabs}()},
+\code{\link{util_check_group_levels}()},
+\code{\link{util_compare_meta_with_study}()},
+\code{\link{util_dichotomize}()},
+\code{\link{util_merge_data_frame_list}()},
+\code{\link{util_rbind}()},
+\code{\link{util_remove_na_records}()},
+\code{\link{util_replace_hard_limit_violations}()},
+\code{\link{util_study_var2factor}()},
+\code{\link{util_table_of_vct}()}
+}
+\concept{data_management}
+\keyword{internal}

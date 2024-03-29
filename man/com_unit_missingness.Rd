@@ -46,6 +46,8 @@ missingness.
 
 The function can be applied on stratified data. In this case strata_vars must
 be specified.
+
+\link{Descriptor}
 }
 \details{
 This implementations calculates a crude rate of unit-missingness. This type

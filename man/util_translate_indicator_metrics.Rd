@@ -4,16 +4,19 @@
 \alias{util_translate_indicator_metrics}
 \title{Translate standard column names to readable ones}
 \usage{
-util_translate_indicator_metrics(colnames, short = FALSE)
+util_translate_indicator_metrics(colnames, short = FALSE, long = TRUE)
 }
 \arguments{
 \item{colnames}{\link{character} the names to translate}
 
-\item{short}{\link{logical} include unit in output}
+\item{short}{\link{logical} include unit letter in output}
+
+\item{long}{\link{logical} include unit description in output}
 }
 \value{
 translated names
 }
 \description{
-Translate standard column names to readable ones
+TODO: Duplicate of util_make_data_slot_from_table_slot ??
 }
+\keyword{internal}

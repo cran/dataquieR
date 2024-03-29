@@ -36,3 +36,14 @@ This function tests that the identifiers match a provided record set. It is poss
 check for unexpected data record sets by study segments or to consider only selected
 segments.
 }
+\seealso{
+Other integrity_indicator_functions: 
+\code{\link{util_int_duplicate_content_dataframe}()},
+\code{\link{util_int_duplicate_content_segment}()},
+\code{\link{util_int_duplicate_ids_dataframe}()},
+\code{\link{util_int_duplicate_ids_segment}()},
+\code{\link{util_int_unexp_records_set_segment}()}
+}
+\concept{integrity_indicator}
+\concept{integrity_indicator_functions}
+\keyword{internal}

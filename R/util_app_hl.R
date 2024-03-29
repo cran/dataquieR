@@ -12,6 +12,10 @@
 #' - 2 data type matches but not applicable
 #' - 3 data type matches and applicable
 #' - 4 not applicable because of not suitable data type
+#'
+#' @seealso [pro_applicability_matrix]
+#' @keywords internal
+
 util_app_hl <- function(x, dta) {
   if (HARD_LIMITS %in% names(x)) {
     c1 <- ifelse(is.na(x[HARD_LIMITS]), 0, 1)

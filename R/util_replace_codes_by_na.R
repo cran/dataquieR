@@ -13,6 +13,10 @@
 #'
 #' @importFrom stats setNames
 #' @return a list with a modified data frame and some counts
+#'
+#' @family missing_functions
+#' @concept metadata_management
+#' @keywords internal
 util_replace_codes_by_NA <- function(study_data, meta_data = "item_level",
                                      split_char = SPLIT_CHAR,
                                      sm_code = NULL) {
@@ -45,11 +49,13 @@ util_replace_codes_by_NA <- function(study_data, meta_data = "item_level",
   # apply functions on studydata and create list
   miss <- lapply(setNames(nm = names(sdf)), util_get_code_list,
                  MISSING_LIST, split_char,
-    mdf = mdf, label_col = label_col, warning_if_no_list = FALSE
+    mdf = mdf, label_col = label_col, warning_if_no_list = FALSE,
+    warning_if_unsuitable_list = FALSE
   )
   jump <- lapply(setNames(nm = names(sdf)), util_get_code_list,
                  JUMP_LIST, split_char,
-    mdf = mdf, label_col = label_col, warning_if_no_list = FALSE
+    mdf = mdf, label_col = label_col, warning_if_no_list = FALSE,
+    warning_if_unsuitable_list = FALSE
   )
 
   # miss_n <- list()
@@ -80,7 +86,7 @@ util_replace_codes_by_NA <- function(study_data, meta_data = "item_level",
     if (!is.null(sm_code)) {
       l <- unique(c(l, sm_code))
     }
-    x[x %in% l] <- NA
+    x[x %in% l] <- NA # TODO: do this a bit more stable wrt numeric issues
     x
   }
   environment(replace) <- parent.env(environment())

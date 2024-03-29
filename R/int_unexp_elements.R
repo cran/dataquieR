@@ -4,6 +4,8 @@
 #' This function contrasts the expected element number in each study in
 #' the metadata with the actual element number in each study data frame.
 #'
+#' [Indicator]
+#'
 #' @param data_element_count [integer]  an integer vector with the number of expected data elements, mandatory.
 #' @param identifier_name_list [character] a character vector indicating the name of each study data frame, mandatory.
 #'

@@ -3,7 +3,7 @@ test_that("prep_min_obs_level works", {
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
   label_col <- LABEL
-  util_prepare_dataframes()
+  prep_prepare_dataframes(.internal = TRUE)
   expect_message(
     x <- prep_min_obs_level(ds1,
                             group_vars = "USR_BP_0",

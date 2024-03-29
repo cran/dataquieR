@@ -61,6 +61,8 @@ for a report
 Data quality indicator checks "Unexpected location" and "Unexpected
 proportion" with histograms and, if a grouping variable is included, plots of
 empirical cumulative distributions for the subgroups.
+
+\link{Indicator}
 }
 \section{Algorithm of this implementation:}{
 \itemize{

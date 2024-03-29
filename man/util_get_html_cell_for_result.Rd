@@ -2,30 +2,48 @@
 % Please edit documentation in R/util_get_html_cell_for_result.R
 \name{util_get_html_cell_for_result}
 \alias{util_get_html_cell_for_result}
-\title{Return the html summary table cell for a result}
+\title{Return a html summary table cell for a result}
 \usage{
-util_get_html_cell_for_result(
-  result,
-  aspect = c("applicability", "error", "issue", "anamat", "indicator_or_descriptor"),
-  rn,
-  cn,
-  ...
-)
+util_get_html_cell_for_result(vn, cn, result, ...)
 }
 \arguments{
-\item{result}{a \code{dataquieR_resultset2} result}
-
-\item{aspect}{an aspect/problem category of results}
-
-\item{rn}{row name for links inside a \code{dq_report2} report}
+\item{vn}{row name for links inside a \code{dq_report2} report}
 
 \item{cn}{column name for links inside a \code{dq_report2} report}
 
-\item{...}{not used}
+\item{result}{\link{data.frame} long format table with report results}
+
+\item{...}{formatting objects prepared outside.}
 }
 \value{
-\link{character}\code{(1)} \code{html} result for a \code{DT} cell
+\link{character}\code{(1)} \code{html} result for a \code{DT} cell#'
 }
 \description{
-Return the html summary table cell for a result
+Return a html summary table cell for a result
 }
+\seealso{
+Other summary_functions: 
+\code{\link{prep_combine_report_summaries}()},
+\code{\link{prep_extract_classes_by_functions}()},
+\code{\link{prep_extract_summary}()},
+\code{\link{prep_extract_summary.dataquieR_result}()},
+\code{\link{prep_extract_summary.dataquieR_resultset2}()},
+\code{\link{prep_render_pie_chart_from_summaryclasses_ggplot2}()},
+\code{\link{prep_render_pie_chart_from_summaryclasses_plotly}()},
+\code{\link{prep_summary_to_classes}()},
+\code{\link{util_as_cat}()},
+\code{\link{util_extract_indicator_metrics}()},
+\code{\link{util_get_category_for_result}()},
+\code{\link{util_get_colors}()},
+\code{\link{util_get_labels_grading_class}()},
+\code{\link{util_get_message_for_result}()},
+\code{\link{util_get_rule_sets}()},
+\code{\link{util_get_ruleset_formats}()},
+\code{\link{util_get_thresholds}()},
+\code{\link{util_html_table}()},
+\code{\link{util_melt_summary}()},
+\code{\link{util_sort_by_order}()}
+}
+\concept{reporting}
+\concept{summary_functions}
+\keyword{internal}

@@ -16,6 +16,10 @@
 #'                                               is performed.
 #'
 #' @return a `dataquieR_result` object
+#'
+#' @family reporting_functions
+#' @concept process
+#' @keywords internal
 util_eval_to_dataquieR_result <- function(expression, env = parent.frame(),
                                           filter_result_slots) {
   .dq2_globs$.called_in_pipeline <- TRUE
@@ -62,6 +66,7 @@ util_eval_to_dataquieR_result <- function(expression, env = parent.frame(),
   attr(r, "warning") <- warnings
   attr(r, "message") <- messages
   class(r) <- union("dataquieR_result", class(r))
+  invisible(gc(verbose = FALSE, full = FALSE))
   r
 }
 

@@ -6,6 +6,10 @@
 #' @param Var1 vector to ta tabulate
 #'
 #' @return a data frame with columns `Var1` and `Freq`
+#'
+#' @family data_management
+#' @concept robustness
+#' @keywords internal
 util_table_of_vct <- function(Var1) {
   util_expect_scalar(Var1,
                      allow_more_than_one = TRUE,

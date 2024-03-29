@@ -18,7 +18,7 @@ com_item_missingness(
   expand_codes = assume_consistent_codes,
   drop_levels = TRUE,
   expected_observations = c("HIERARCHY", "ALL", "SEGMENT"),
-  pretty_print = TRUE
+  pretty_print = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -80,15 +80,16 @@ initial variable is only
 expected, if both segment variables are
 1.}
 
-\item{pretty_print}{\link{logical} If FALSE, produce a table that can easily
-be processed further, because some cells
-feature two numbers (absolute and percentage)
-otherwise.}
+\item{pretty_print}{\link{logical} deprecated. If you want to have a human
+readable output, use \code{SummaryData} instead
+of \code{SummaryTable}}
 }
 \value{
 a list with:
 \itemize{
 \item \code{SummaryTable}: data frame about item missingness per response variable
+\item \code{SummaryData}: data frame about item missingness per response variable
+formatted for user
 \item \code{SummaryPlot}: ggplot2 heatmap plot, if show_causes was TRUE
 \item \code{ReportSummaryTable}: data frame underlying \code{SummaryPlot}
 }
@@ -100,6 +101,8 @@ cells in a data set. Item-Missingness occurs for example in case a respondent
 does not provide information for a certain question, a question is overlooked
 by accident, a programming failure occurs or a provided answer were missed
 while entering the data.
+
+\link{Indicator}
 }
 \section{ALGORITHM OF THIS IMPLEMENTATION:}{
 \itemize{

@@ -43,3 +43,16 @@ a vector with the number of expected observations for each
 Count participants, if an observation was expected, given the
 \code{PART_VARS} from item-level metadata
 }
+\seealso{
+Other missing_functions: 
+\code{\link{util_all_intro_vars_for_rv}()},
+\code{\link{util_filter_missing_list_table_for_rv}()},
+\code{\link{util_get_code_list}()},
+\code{\link{util_is_na_0_empty_or_false}()},
+\code{\link{util_observation_expected}()},
+\code{\link{util_remove_empty_rows}()},
+\code{\link{util_replace_codes_by_NA}()}
+}
+\concept{missing_functions}
+\concept{process}
+\keyword{internal}

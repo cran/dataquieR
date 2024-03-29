@@ -27,22 +27,39 @@ prep_check_meta_data_segment <- function(meta_data_segment = "segment_level") {
   util_expect_data_frame(meta_data_segment)
 
   if (!(SEGMENT_RECORD_COUNT %in% colnames(meta_data_segment))) {
-    meta_data_segment$SEGMENT_RECORD_COUNT <- NA_integer_
+    meta_data_segment$SEGMENT_RECORD_COUNT <- rep(NA_integer_,
+                                                  nrow(meta_data_segment))
   }
-  if (!(SEGMENT_ID_TABLE %in% colnames(meta_data_segment))) {
-    meta_data_segment$SEGMENT_ID_TABLE <- NA_character_
+  if (!(SEGMENT_ID_REF_TABLE %in% colnames(meta_data_segment))) {
+    if ("SEGMENT_ID_TABLE" %in% colnames(meta_data_segment)) {
+      util_message("Did not find %s in metadata, but %s, renaming it...",
+                   SEGMENT_ID_REF_TABLE,
+                   SEGMENT_ID_TABLE,
+                   applicability_problem = TRUE,
+                   intrinsic_applicability_problem = FALSE)
+      colnames(meta_data_segment)[colnames(meta_data_segment) ==
+                                    "SEGMENT_ID_TABLE"] <-
+        SEGMENT_ID_REF_TABLE
+    } else {
+      meta_data_segment$SEGMENT_ID_REF_TABLE <- rep(NA_character_,
+                                                    nrow(meta_data_segment))
+    }
   }
   if (!(SEGMENT_RECORD_CHECK %in% colnames(meta_data_segment))) {
-    meta_data_segment$SEGMENT_RECORD_CHECK <- NA_character_
+    meta_data_segment$SEGMENT_RECORD_CHECK <- rep(NA_character_,
+                                                  nrow(meta_data_segment))
   }
   if (!(SEGMENT_ID_VARS %in% colnames(meta_data_segment))) {
-    meta_data_segment$SEGMENT_ID_VARS <- NA_character_
+    meta_data_segment$SEGMENT_ID_VARS <- rep(NA_character_,
+                                             nrow(meta_data_segment))
   }
   if (!(SEGMENT_PART_VARS %in% colnames(meta_data_segment))) {
-    meta_data_segment$SEGMENT_PART_VARS <- NA_character_
+    meta_data_segment$SEGMENT_PART_VARS <- rep(NA_character_,
+                                               nrow(meta_data_segment))
   }
   if (!(SEGMENT_UNIQUE_ROWS %in% colnames(meta_data_segment))) {
-    meta_data_segment$SEGMENT_RECORD_CHECK <- NA
+    meta_data_segment$SEGMENT_RECORD_CHECK <- rep(NA,
+                                                  nrow(meta_data_segment))
   }
 
   r <- util_expect_data_frame(
@@ -52,7 +69,7 @@ prep_check_meta_data_segment <- function(meta_data_segment = "segment_level") {
       SEGMENT_PART_VARS = is.character,
       STUDY_SEGMENT = is.character,
       SEGMENT_RECORD_COUNT = util_all_is_integer,
-      SEGMENT_ID_TABLE = is.character,
+      SEGMENT_ID_REF_TABLE = is.character,
       SEGMENT_RECORD_CHECK = function(x) {
         all(util_empty(x) | x %in% c("subset", "exact"))
       },
@@ -63,7 +80,7 @@ prep_check_meta_data_segment <- function(meta_data_segment = "segment_level") {
       SEGMENT_PART_VARS = as.character,
       STUDY_SEGMENT = as.character,
       SEGMENT_RECORD_COUNT = as.integer,
-      SEGMENT_ID_TABLE = as.character,
+      SEGMENT_ID_REF_TABLE = as.character,
       SEGMENT_RECORD_CHECK = function(x) {
         r <-
           factor(tolower(trimws(as.character(x))),

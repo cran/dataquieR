@@ -6,6 +6,7 @@
 #'
 #' used by the dq_report2-pipeline
 #' @name menu_env
+#' @keywords internal
 .menu_env <- new.env(parent = environment())
 
 #' Create a single menu entry
@@ -16,6 +17,7 @@
 #' @param ... additional arguments for the menu link
 #' @return html-a-tag object
 #' @name menu_env_menu_entry
+#' @keywords internal
 .menu_env$menu_entry <- function(title,
                                  id = title,
                        ...) {
@@ -58,6 +60,7 @@
 #'
 #' @return html div object
 #' @name menu_env_drop_down
+#' @keywords internal
 .menu_env$drop_down <- function(title,
                                 menu_description,
                       ..., id = prep_link_escape(title)) {
@@ -86,6 +89,7 @@
 #'
 #' @return the html-`taglist` for the menu
 #' @name menu_env-menu
+#' @keywords internal
 .menu_env$menu <- function(pages) { # TODO: implement
   # htmltools::tagList(
   #   menu_entry("Home"),

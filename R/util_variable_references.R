@@ -4,6 +4,11 @@
 #'
 #' @return [character] all column names referring to variables from item-level
 #'                     metadata
+#'
+#' @family lookup_functions
+#' @concept metadata_management
+#' @keywords internal
+
 util_variable_references <- function(meta_data = "item_level") {
   util_expect_data_frame(meta_data)
   colnames(meta_data)[startsWith(colnames(meta_data), "KEY_") |

@@ -27,6 +27,8 @@ The unexpected element record check can be conducted by providing the number of 
 an additional table with the expected records.
 It is possible to conduct the checks by study segments or to consider only selected
 segments.
+
+\link{Indicator}
 }
 \examples{
 \dontrun{
@@ -46,7 +48,7 @@ out_dataframe <- int_all_datastructure_dataframe(
 
 # This is the "normal" procedure for inside pipeline
 # but outside this function  checktype is exact by default
-options(dataquieR.RECORD_MISSMATCH_CHECKTYPE = "subset_u")
+options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "subset_u")
 lapply(setNames(nm = prep_get_data_frame("meta_data_dataframe")$DF_NAME),
   int_sts_element_dataframe, meta_data = md0)
 md0$VAR_NAMES[[1]] <-
@@ -54,7 +56,7 @@ md0$VAR_NAMES[[1]] <-
        # if nothing is wrong with it
 lapply(setNames(nm = prep_get_data_frame("meta_data_dataframe")$DF_NAME),
   int_sts_element_dataframe, meta_data = md0)
-options(dataquieR.RECORD_MISSMATCH_CHECKTYPE = "exact")
+options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "exact")
 }
 
 }

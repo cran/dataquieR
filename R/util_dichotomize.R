@@ -10,6 +10,10 @@
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
 #'
+#'
+#' @family data_management
+#' @concept data_management
+#' @keywords internal
 util_dichotomize <- function(study_data,
                              meta_data,
                              label_col = VAR_NAMES) {

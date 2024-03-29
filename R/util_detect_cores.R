@@ -3,6 +3,10 @@
 #' See `parallel::detectCores` for further details.
 #'
 #' @return number of available CPU cores.
+#'
+#' @family system_functions
+#' @concept process
+#' @keywords internal
 util_detect_cores <- function() {
   if (requireNamespace("parallelly", quietly = TRUE)) {
     return(parallelly::availableCores())

@@ -1,4 +1,5 @@
 test_that("prep_prepare_dataframes works", {
+  skip_on_cran()
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -34,6 +35,13 @@ test_that("prep_prepare_dataframes works", {
   environment(acc_test4) <- asNamespace("dataquieR")
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
 
   expect_error(
     acc_test1(),
@@ -508,6 +516,13 @@ test_that("prep_prepare_dataframes works", {
 
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
   err_test1 <- function(resp_variable, aux_variable,
                         time_variable, co_variables,
                         group_vars, study_data, meta_data, label_col) {
@@ -607,11 +622,10 @@ test_that("prep_prepare_dataframes works", {
 
   x <- acc_test5(study_data = study_data,
                  meta_data = meta_data, label_col = LABEL)
-  md99 <- meta_data
-  md99$LABEL <- meta_data$VAR_NAMES
   y <- acc_test5(study_data = tibble::as_tibble(x),
-                 meta_data = md99, label_col = LABEL)
+                 meta_data = meta_data, label_col = LABEL)
   expect_identical(x, y) # because this has already been mapped.
+  md99 <- meta_data
   md99$VAR_NAMES <- NULL
   expect_error(
     y <- acc_test5(study_data = study_data,
@@ -622,7 +636,7 @@ test_that("prep_prepare_dataframes works", {
   )
   sd99 <- study_data
   md99 <- meta_data
-  colnames(sd99) <- letters[1:ncol(sd99)]
+  colnames(sd99) <- sprintf("VAR_%06d", seq_len(ncol(sd99)))
   expect_message(
     expect_warning(
       expect_error(
@@ -638,7 +652,7 @@ test_that("prep_prepare_dataframes works", {
       all = TRUE),
     regexp = sprintf("(%s|%s)",
                      paste("Did not find any metadata for the following",
-                           "variables from the study data. .+a.+, .+b.+"),
+                           "variables from the study data. .+VAR_"),
                      paste("Found metadata for the following variables not",
                            "found in the study data: .+v00000.+, .+v00001.+,",
                            ".+v00002.+, .+v00003.+, .+v00004.+")),

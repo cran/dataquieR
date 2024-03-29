@@ -8,6 +8,8 @@
 #' @return reverse [sys.frames] index of first non-dataquieR function in
 #'         this stack
 #'
+#' @family condition_functions
+#' @keywords internal
 util_find_first_externally_called_functions_in_stacktrace <-
   function(sfs = rev(sys.frames()), cls = rev(sys.calls())) {
   first <- util_find_external_functions_in_stacktrace(sfs, cls)

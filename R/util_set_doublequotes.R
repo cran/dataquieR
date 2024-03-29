@@ -6,6 +6,10 @@
 #' @param string Character vector
 #'
 #' @return quoted string
+#'
+#' @family string_functions
+#' @concept process
+#' @keywords internal
 util_set_dQuoteString <- function(string) {
   old <- options(useFancyQuotes = FALSE)
   on.exit(options(old))

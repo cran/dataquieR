@@ -4,6 +4,11 @@
 #' @param ... passed to [subset]
 #'
 #' @return a data frame
+#'
+#' @family concept_functions
+#' @concept reporting
+#' @keywords internal
+
 util_get_concept_info <- function(filename, ...) {
   if (exists(filename, .concept_chache, mode = "list")) {
     dfr <- get(filename, .concept_chache, mode = "list")

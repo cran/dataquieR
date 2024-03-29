@@ -4,13 +4,21 @@
 \alias{prep_get_data_frame}
 \title{Read data from files/URLs}
 \usage{
-prep_get_data_frame(data_frame_name, .data_frame_list = .dataframe_environment)
+prep_get_data_frame(
+  data_frame_name,
+  .data_frame_list = .dataframe_environment,
+  keep_types = FALSE
+)
 }
 \arguments{
 \item{data_frame_name}{\link{character} name of the data frame to read, see
 details}
 
 \item{.data_frame_list}{\link{environment} cache for loaded data frames}
+
+\item{keep_types}{\link{logical} keep types as possibly defined in a file, if the
+data frame is loaded from one. set \code{TRUE} for
+study data.}
 }
 \value{
 \link{data.frame} a data frame
@@ -70,6 +78,7 @@ prep_get_data_frame(file.path(system.file(package = "dataquieR"),
 Other data-frame-cache: 
 \code{\link{prep_add_data_frames}()},
 \code{\link{prep_list_dataframes}()},
+\code{\link{prep_load_folder_with_metadata}()},
 \code{\link{prep_load_workbook_like_file}()},
 \code{\link{prep_purge_data_frame_cache}()}
 }

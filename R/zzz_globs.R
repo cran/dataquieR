@@ -1,0 +1,5 @@
+cat1 <- as.character(util_as_cat(1))
+cat2 <- as.character(util_as_cat(2))
+cat3 <- as.character(util_as_cat(3))
+cat4 <- as.character(util_as_cat(4))
+cat5 <- as.character(util_as_cat(5))

@@ -1,4 +1,5 @@
 test_that("util_parse_redcap_rule works", {
+  skip_on_cran()
   skip_if_not_installed(c("withr"))
   skip_if_not_installed(c("qmrparser"))
   skip_if_not_installed(c("callr"))

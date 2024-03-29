@@ -16,7 +16,9 @@
 #'   - `DataframeTable`: data frame with selected duplicated identifiers check results, used for the data quality report.
 #'   - `Duplicates`: vector with row indices of duplicated identifiers, if any, otherwise NULL.
 #'
-#'
+#' @family integrity_indicator_functions
+#' @concept integrity_indicator
+#' @keywords internal
 util_int_duplicate_ids_dataframe <- function(level = c("dataframe"),
                                         id_vars_list,
                                         identifier_name_list,

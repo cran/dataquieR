@@ -7,16 +7,13 @@
 \method{as.list}{dataquieR_resultset}(x, ...)
 }
 \arguments{
-\item{x}{\link[=dq_report]{dataquieR report}}
+\item{x}{Deprecated}
 
-\item{...}{arguments passed to \link{pipeline_recursive_result}}
+\item{...}{Deprecated}
 }
 \value{
-a \link{list} with one element per indicator call. Each element is an
-encapsulated sub-list as described
-in \link{pipeline_recursive_result}
+Deprecated
 }
 \description{
-converts a \link[=dq_report]{dataquieR report} to a \link{list}. Intended for use
-in pipelines.
+Deprecated
 }

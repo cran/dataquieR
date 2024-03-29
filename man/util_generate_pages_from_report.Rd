@@ -10,7 +10,8 @@ util_generate_pages_from_report(
   disable_plotly,
   progress = progress,
   progress_msg = progress_msg,
-  block_load_factor
+  block_load_factor,
+  dir
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ util_generate_pages_from_report(
 
 \item{block_load_factor}{\link{numeric} multiply size of parallel compute blocks
 by this factor.}
+
+\item{dir}{\link{character} output directory for potential \code{iframes}.}
 }
 \value{
 named list, each entry becomes a file with the name of the entry.
@@ -43,4 +46,12 @@ save(report, file = "report_v2.RData")
 report <- dq_report2("study_data", label_col = "LABEL");
 save(report, file = "report_v2_short.RData")
 }
+
 }
+\seealso{
+Other html: 
+\code{\link{util_extract_all_ids}()}
+}
+\concept{html}
+\concept{process}
+\keyword{internal}

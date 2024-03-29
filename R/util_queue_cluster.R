@@ -1,8 +1,9 @@
+#' @keywords internal
 util_queue_cluster_setup <- function(
                                 n_nodes,
                                 progress,
                                 debug_parallel) {
-  util_ensure_suggested(c("R6", "processx"))
+  util_ensure_suggested(c("R6", "processx", "callr"))
   self <- NULL # https://github.com/r-lib/R6/issues/230#issuecomment-862462217
   private <- NULL # https://github.com/r-lib/R6/issues/230#issuecomment-862462217
   task_q <- R6::R6Class( # from the callr package by Csárdi and Chang

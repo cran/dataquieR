@@ -21,6 +21,10 @@
 #' @author S Struckmann
 #'
 #' @return [list] of results of the function calls
+#'
+#' @family process_functions
+#' @concept reporting
+#' @keywords internal
 util_par_pmap <- function(.l, .f, ...,
                           cores = list(mode = "socket",
                                        cpus = util_detect_cores(),

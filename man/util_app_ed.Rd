@@ -25,3 +25,7 @@ util_app_ed(x, dta)
 \description{
 Test for applicability of end digits preferences checks
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

@@ -1,4 +1,8 @@
 #' @inherit prep_map_labels
+#'
+#' @family mapping
+#' @concept metadata_management
+#' @keywords internal
 util_map_labels <- function(x, meta_data = "item_level",
                             to = LABEL, from = VAR_NAMES, ifnotfound,
                             warn_ambiguous = FALSE) {
@@ -20,10 +24,23 @@ util_map_labels <- function(x, meta_data = "item_level",
     }
   }
 
+  nm <- meta_data[[from]]
+  isempty <- util_empty(nm)
+  nempty <- sum(isempty)
+
+  i <- 0
+  replnm <- paste0("..", i + seq_len(nempty))
+  while (length(intersect(replnm, union(nm, x))) > 0) {
+    i <- i + 1
+    replnm <- paste0("..", i + seq_len(nempty))
+  }
+
+  nm[isempty] <- replnm
+
   unlist(mget(as.character(x),
               as.environment(as.list(
                 setNames(as.character(meta_data[[to]]),
-                         nm = meta_data[[from]])
+                         nm = nm)
               )),
               ifnotfound = ifnotfound))
 }

@@ -4,15 +4,24 @@
 \alias{prep_deparse_assignments}
 \title{Convert two vectors from a code-value-table to a key-value list}
 \usage{
-prep_deparse_assignments(codes, labels, split_char = SPLIT_CHAR)
+prep_deparse_assignments(
+  codes,
+  labels,
+  split_char = SPLIT_CHAR,
+  mode = c("numeric_codes", "string_codes")
+)
 }
 \arguments{
-\item{codes}{\link{integer} codes}
+\item{codes}{codes, numeric or dates (as default, but string codes can be
+enabled using the option 'mode', see below)}
 
 \item{labels}{\link{character} labels, same length as codes}
 
 \item{split_char}{\link{character} split character character to split
 code assignments}
+
+\item{mode}{\link{character} one of two options to insist on numeric or datetime
+codes (default) or to allow for string codes}
 }
 \value{
 a vector with assignment strings for each row of

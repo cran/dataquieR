@@ -30,3 +30,16 @@ a list with a modified data frame and some counts
 \description{
 Substitute all missing codes in a \link{data.frame} by \code{NA}.
 }
+\seealso{
+Other missing_functions: 
+\code{\link{util_all_intro_vars_for_rv}()},
+\code{\link{util_count_expected_observations}()},
+\code{\link{util_filter_missing_list_table_for_rv}()},
+\code{\link{util_get_code_list}()},
+\code{\link{util_is_na_0_empty_or_false}()},
+\code{\link{util_observation_expected}()},
+\code{\link{util_remove_empty_rows}()}
+}
+\concept{metadata_management}
+\concept{missing_functions}
+\keyword{internal}

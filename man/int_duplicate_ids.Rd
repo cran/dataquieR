@@ -22,4 +22,6 @@ a \link{list}. Depending on \code{level}, see
 This function tests for duplicates entries in identifiers. It is possible to
 check duplicated identifiers by study segments or to consider only selected
 segments.
+
+\link{Indicator}
 }

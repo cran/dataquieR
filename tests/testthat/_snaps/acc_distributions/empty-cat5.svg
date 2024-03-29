@@ -40,10 +40,10 @@
 <polyline points='378.55,545.11 378.55,22.78 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
 <polyline points='494.40,545.11 494.40,22.78 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
 <polyline points='610.25,545.11 610.25,22.78 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
-<rect x='94.72' y='268.97' width='104.27' height='252.40' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #BEBEBE;' />
-<rect x='210.57' y='46.53' width='104.27' height='474.84' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #DB6063;' />
-<rect x='326.42' y='280.95' width='104.27' height='240.42' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #BEBEBE;' />
-<rect x='442.27' y='290.94' width='104.27' height='230.43' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #BEBEBE;' />
+<rect x='100.51' y='268.97' width='92.68' height='252.40' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #BEBEBE;' />
+<rect x='216.36' y='46.53' width='92.68' height='474.84' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #DB6063;' />
+<rect x='332.21' y='280.95' width='92.68' height='240.42' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #BEBEBE;' />
+<rect x='448.06' y='290.94' width='92.68' height='230.43' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #BEBEBE;' />
 <line x1='88.92' y1='341.66' x2='204.77' y2='341.66' style='stroke-width: 1.07; stroke: #001889; stroke-dasharray: 5.69,5.69; stroke-linecap: butt;' />
 <line x1='88.92' y1='161.94' x2='204.77' y2='161.94' style='stroke-width: 1.07; stroke: #001889; stroke-dasharray: 5.69,5.69; stroke-linecap: butt;' />
 <line x1='204.77' y1='341.66' x2='320.63' y2='341.66' style='stroke-width: 1.07; stroke: #001889; stroke-dasharray: 5.69,5.69; stroke-linecap: butt;' />

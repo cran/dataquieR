@@ -25,3 +25,7 @@ util_app_sl(x, dta)
 \description{
 Test for applicability of soft limits checks
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

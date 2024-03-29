@@ -7,6 +7,9 @@
 #'
 #' @return modified `study_data`
 #'
+#' @family data_management
+#' @concept metadata_management
+#' @keywords internal
  util_replace_hard_limit_violations <- function(study_data,
                                                 meta_data,
                                                 label_col) {
@@ -49,10 +52,12 @@
                   dQuote("meta_data"),
                   sQuote(HARD_LIMITS),
                   applicability_problem = TRUE)
+     attr(study_data, "HL_viol_to_NA") <- TRUE
+     return(study_data)
+   } else {
+     hl <- setNames(meta_data[[HARD_LIMITS]], nm = meta_data[[label_col]])
+     hl[util_empty(hl)] <- NA
    }
-
-   hl <- setNames(meta_data[[HARD_LIMITS]], nm = meta_data[[label_col]])
-   hl[util_empty(hl)] <- NA
 
    i <- lapply(hl, util_parse_interval)
 

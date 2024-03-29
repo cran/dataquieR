@@ -3,18 +3,24 @@
 #' @param x a vector of indicator function names
 #'
 #' @return abbreviations
+#'
+#' @seealso [base::abbreviate]
+#' @family process_functions
+#' @concept reporting
+#' @keywords internal
 util_abbreviate <- function(x) {
   util_expect_scalar(x, allow_more_than_one = TRUE, allow_null = TRUE,
                      allow_na = TRUE, check_type = is.character)
   r <- vapply(strsplit(x, "_", fixed = TRUE), function(xx) {
     prefix <- head(xx, 1)
-    known_prefix <- c("acc", "com", "con", "int")
+    known_prefix <- c("acc", "com", "con", "int", "des")
     if (any(prefix %in% known_prefix)) {
       prefix[prefix %in% known_prefix] <- c(
         "acc" = "a",
         "com" = "m",
         "con" = "c",
-        "int" = "i"
+        "int" = "i",
+        "des" = "d"
       )[[prefix[prefix %in% known_prefix]]]
     }
     suffix <- gsub("^(.)(..).*$", "\\U\\1\\E\\2", tail(xx, -1), perl = TRUE)

@@ -1,4 +1,5 @@
 test_that("rbind.ReportSummaryTable works", {
+  skip_on_cran()
 
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")

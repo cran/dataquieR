@@ -1,6 +1,6 @@
 Package: dataquieR
 Title: Data Quality in Epidemiological Research
-Version: 2.0.1
+Version: 2.1.0
 Authors@R: 
     c(person(given = "University Medicine Greifswald",
              role = "cph"),
@@ -14,6 +14,11 @@ Authors@R:
              role = "aut",
              comment = c(ORCID = "0000-0002-4657-3758"),
              email = "joany.marino@uni-greifswald.de"),
+      person(given = "Elena",
+             family = "Salogni",
+             role = "aut",
+             comment = c(ORCID = "0009-0007-3767-7145"),
+             email = "elena.salogni@uni-greifswald.de"),       
       person(given = "Adrian",
              family = "Richter",
              role = "aut",
@@ -50,26 +55,27 @@ License: BSD_2_clause + file LICENSE
 URL: https://dataquality.qihs.uni-greifswald.de/
 BugReports: https://gitlab.com/libreumg/dataquier/-/issues
 Depends: R (>= 3.6.0)
-Imports: dplyr (>= 1.0.2), emmeans, ggplot2 (>= 3.4.0), lme4,
+Imports: dplyr (>= 1.0.2), emmeans, ggplot2 (>= 3.5.0), lme4,
         lubridate, MASS, MultinomialCI, parallelMap, patchwork,
-        R.devices, reshape, rlang, robustbase, qmrparser, utils, rio,
-        scales
-Suggests: lifecycle, cli, whoami, anytime, cowplot (>= 0.9.4), digest,
-        DT (>= 0.23), flexdashboard, flexsiteboard, htmltools, knitr,
-        markdown, parallel, parallelly, rJava, rmarkdown, rstudioapi,
-        testthat (>= 3.1.9), tibble, vdiffr, pkgload, Rdpack, callr,
-        colorspace, withr, plotly, ggvenn, htmlwidgets, future,
-        processx, R6, shiny, summarytools
+        R.devices, rlang, robustbase, qmrparser, utils, rio, readr,
+        scales, withr, lifecycle, units
+Suggests: GGally, grDevices, cli, whoami, anytime, cowplot (>= 0.9.4),
+        digest, DT (>= 0.23), flexdashboard, flexsiteboard, htmltools,
+        knitr, markdown, parallel, parallelly, rJava, rmarkdown,
+        rstudioapi, testthat (>= 3.1.9), tibble, vdiffr, pkgload,
+        Rdpack, callr, colorspace, plotly, ggvenn, htmlwidgets, future,
+        processx, R6, shiny, xml2, mgcv, rvest, textutils
 VignetteBuilder: knitr
 Encoding: UTF-8
 KeepSource: TRUE
 Language: en-US
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 NeedsCompilation: no
-Packaged: 2023-07-19 15:58:59 UTC; struckmanns
+Packaged: 2024-03-29 10:07:58 UTC; struckmanns
 Author: University Medicine Greifswald [cph],
   Elisa Kasbohm [aut] (<https://orcid.org/0000-0001-5261-538X>),
   Joany Marino [aut] (<https://orcid.org/0000-0002-4657-3758>),
+  Elena Salogni [aut] (<https://orcid.org/0009-0007-3767-7145>),
   Adrian Richter [aut] (<https://orcid.org/0000-0002-3372-2021>),
   Carsten Oliver Schmidt [aut] (<https://orcid.org/0000-0001-5266-9396>),
   Stephan Struckmann [aut, cre] (<https://orcid.org/0000-0002-8565-7962>),
@@ -81,4 +87,4 @@ Author: University Medicine Greifswald [cph],
     No. 825903) [fnd]
 Maintainer: Stephan Struckmann <stephan.struckmann@uni-greifswald.de>
 Repository: CRAN
-Date/Publication: 2023-07-19 16:20:10 UTC
+Date/Publication: 2024-03-29 10:30:02 UTC

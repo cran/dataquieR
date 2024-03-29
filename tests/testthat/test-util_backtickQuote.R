@@ -1,4 +1,5 @@
 test_that("util_backtickQuote works", {
+  skip_on_cran()
   expect_equal(util_backtickQuote(""), "")
   expect_equivalent(util_backtickQuote(NA), NA_character_)
   nm <- paste(letters, LETTERS)

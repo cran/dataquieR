@@ -10,6 +10,10 @@
 #'              (warns and cleans `arg`, otherwise)
 #'
 #' @return "cleaned" `arg`
+#'
+#' @family robustness_functions
+#' @concept string
+#' @keywords internal
 util_match_arg <- function(arg, choices, several_ok = FALSE, error = TRUE) {
 
   if (missing(arg)) {

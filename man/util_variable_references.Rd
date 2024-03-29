@@ -16,3 +16,11 @@ metadata
 \description{
 Find all columns in item-level-metadata, that refer to some other variable
 }
+\seealso{
+Other lookup_functions: 
+\code{\link{util_prep_location_check}()},
+\code{\link{util_prep_proportion_check}()}
+}
+\concept{lookup_functions}
+\concept{metadata_management}
+\keyword{internal}

@@ -2,6 +2,13 @@ test_that("con_inadmissible_categorical works", {
   skip_on_cran() # slow
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data2 <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  meta_data[[SCALE_LEVEL]] <-
+    setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
+      meta_data[[VAR_NAMES]]
+    ]
   expect_message(
     IAVCatAll <- con_inadmissible_categorical(study_data = study_data,
                                               meta_data  = meta_data,

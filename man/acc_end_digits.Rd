@@ -22,7 +22,7 @@ with labels of variables}
 \value{
 a \link{list} with:
 \itemize{
-\item \code{SummaryData}: data frame underlying the plot
+\item \code{SummaryTable}: data frame underlying the plot
 \item \code{SummaryPlot}: ggplot2 distribution plot comparing expected
 with observed distribution
 }
@@ -32,6 +32,8 @@ This implementation contrasts the empirical distribution of a measurement
 variables against assumed distributions. The approach is adapted from the
 idea of rootograms (Tukey (1977)) which is also applicable for count data
 (Kleiber and Zeileis (2016)).
+
+\link{Indicator}
 }
 \section{ALGORITHM OF THIS IMPLEMENTATION:}{
 \itemize{

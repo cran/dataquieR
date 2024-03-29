@@ -17,13 +17,34 @@
 #'                            input was not `util_empty'), an error
 #'                            is still thrown, the data is converted, otherwise
 #' @param dont_assign set `TRUE` to keep `x` in the caller environment untouched
+#' @param keep_types [logical] keep types as possibly defined in a file, if the
+#'                             data frame is loaded from one. set `TRUE` for
+#'                             study data.
+#' @param custom_errors [list] with error messages, specifically per column.
+#'                      names of the list are column names, values are messages
+#'                      ([character]).
 #'
 #' @return `invisible` data frame
 #'
+#' @family io
+#' @concept data_frame
+#' @keywords internal
+
 util_expect_data_frame <- function(x, col_names, convert_if_possible,
-                                   dont_assign) { # TODO: Custom error message
+                                   custom_errors,
+                                   dont_assign, keep_types = FALSE) {
+  # TODO: Custom error message
   if (missing(dont_assign)) dont_assign <- FALSE
-  util_expect_scalar(dont_assign, check_type = is.logical)
+  if (!missing(keep_types)) {
+    util_expect_scalar(keep_types,
+                       check_type = is.logical,
+                       error_message =
+                         sprintf("%s needs to be to be a logical value.",
+                                 sQuote("keep_types")))
+  }
+  util_expect_scalar(dont_assign, check_type = is.logical, error_message =
+                       sprintf("%s needs to be to be a logical value.",
+                               sQuote("dont_assign")))
   symb <- substitute(x)
   mis_it <- try(eval.parent(call("missing", symb)), silent = TRUE)
   default <- try(get(symb, parent.frame()), silent = TRUE)
@@ -64,9 +85,9 @@ util_expect_data_frame <- function(x, col_names, convert_if_possible,
     util_error("%s needs to be a named list or NULL",
                sQuote("convert_if_possible"))
   }
-  if (is.character(x) && length(x) == 1) {
+  if (all(is.character(x)) && length(x) == 1) {
     # Handle data frame as char
-    x <- prep_get_data_frame(x)
+    x <- prep_get_data_frame(x, keep_types = keep_types)
   }
 
   x <- util_cast_off(x, as.character(symb), .dont_cast_off_cols = TRUE)
@@ -128,6 +149,16 @@ util_expect_data_frame <- function(x, col_names, convert_if_possible,
     mismatch <- detect_mismatch()
   }
   if (any(mismatch)) {
+    if (!missing(custom_errors)) {
+      util_stop_if_not("argument custom_errors needs to be a named list" =
+                         is.list(custom_errors))
+      cols_with_trouble <- names(which(mismatch))
+      if (all(cols_with_trouble %in% names(custom_errors))) { # TODO: default should fill gaps in custom_errors
+        util_error(
+          applicability_problem = TRUE,
+          paste0(custom_errors[cols_with_trouble], collapse = "\n"))
+        }
+    }
     util_error(
       applicability_problem = TRUE,
       "Data in columns in %s do not match: %s.\n%s",

@@ -1,4 +1,5 @@
 test_that("util_find_external_functions_in_stacktrace works", {
+  skip_on_cran()
   test1 <- function() {
     util_find_external_functions_in_stacktrace()
   }
@@ -22,6 +23,7 @@ test_that("util_find_external_functions_in_stacktrace works", {
 })
 
 test_that("util_find_external_functions_in_stacktrace works from emptyenv", {
+  skip_on_cran()
   test1 <- function() {
     util_find_external_functions_in_stacktrace()
   }

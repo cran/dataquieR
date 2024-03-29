@@ -15,3 +15,5 @@ util_html_attr_quote_escape(s)
 \description{
 escape \verb{"}
 }
+\concept{reporting}
+\keyword{internal}

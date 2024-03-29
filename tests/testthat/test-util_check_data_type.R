@@ -1,4 +1,5 @@
 test_that("util_check_data_type works", {
+  skip_on_cran()
   expect_true(util_check_data_type(42, DATA_TYPES$INTEGER))
   expect_true(util_check_data_type(1:42, DATA_TYPES$INTEGER))
   expect_true(util_check_data_type(NA, DATA_TYPES$INTEGER))
@@ -19,10 +20,39 @@ test_that("util_check_data_type works", {
                                    "xyz"),
                regexp = ".+xyz.+ is not a known data type.")
 
+  # 0 = Mismatch, not convertible
+  # 1 = Match
+  # 2 = Mismatch, but convertible
+
   expect_true(all(2 == util_check_data_type("2020-11-11 17:10:07 CET",
                                     DATA_TYPES$DATETIME,
                                     check_convertible = TRUE)))
   expect_true(all(0 == util_check_data_type("not a date",
                                             DATA_TYPES$DATETIME,
                                             check_convertible = TRUE)))
+
+  expect_equal(util_check_data_type(42, DATA_TYPES$INTEGER,
+                                   return_percentages = TRUE), 0)
+  expect_equal(util_check_data_type(42.5, DATA_TYPES$INTEGER,
+                                   return_percentages = TRUE), 100)
+  expect_equal(util_check_data_type(c("42", "x"), DATA_TYPES$INTEGER,
+                                    return_percentages = TRUE), 100)
+  expect_equal(util_check_data_type(c("42", "x"), DATA_TYPES$INTEGER,
+                                    check_convertible = TRUE,
+                                    return_percentages = FALSE), 0)
+  expect_equal(util_check_data_type(c(42, 2), DATA_TYPES$INTEGER,
+                                    check_convertible = TRUE,
+                                    return_percentages = FALSE), 1)
+  expect_equal(util_check_data_type(c("42", "2"), DATA_TYPES$INTEGER,
+                                    check_convertible = TRUE,
+                                    return_percentages = FALSE), 2)
+  expect_equal(util_check_data_type(c(42, 42.6, 42L), DATA_TYPES$INTEGER,
+                                    check_convertible = TRUE,
+                                    check_conversion_stable = TRUE,
+                                    return_percentages = TRUE),
+                   c(match = 200/3,
+                     convertible_mismatch_stable = 0,
+                     convertible_mismatch_unstable = 100/3,
+                     nonconvertible_mismatch = 0))
+
 })

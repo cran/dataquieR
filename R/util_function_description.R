@@ -3,6 +3,8 @@
 #' @param fname the function name
 #'
 #' @return the description
+#'
+#' @keywords internal
 util_function_description <- function(fname) {
   # def <-
   #   util_map_labels(fname,

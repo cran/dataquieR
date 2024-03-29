@@ -25,3 +25,7 @@ util_app_iac(x, dta)
 \description{
 Test for applicability of categorical admissibility
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

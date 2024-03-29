@@ -25,3 +25,7 @@ util_app_ol(x, dta)
 \description{
 Test for applicability of univariate outlier detection
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

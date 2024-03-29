@@ -13,3 +13,4 @@ the html-\code{taglist} for the menu
 \description{
 Generate the menu for a report
 }
+\keyword{internal}

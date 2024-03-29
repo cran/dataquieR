@@ -21,7 +21,12 @@
 #' @param ... further arguments passed to `deparse()`.
 #'
 #' @return the deparsed expression
-NULL
+#'
+#' @family condition_functions
+#' @concept process
+#' @keywords internal
+
+NULL # Documentation is assigned to null (@name in line 1)
 
 if (exists("deparse1", envir = baseenv())) {
   util_deparse1 <- base::deparse1

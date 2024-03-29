@@ -26,6 +26,10 @@
 #'   }
 #'   test()
 #' }
+#'
+#' @family process_functions
+#' @concept reporting
+#' @keywords internal
 util_setup_rstudio_job <- function(job_name = "Job") {
 
   # Find context ----
@@ -43,6 +47,8 @@ util_setup_rstudio_job <- function(job_name = "Job") {
     !is_shiny &&
     suppressWarnings(util_ensure_suggested("rstudioapi", err = FALSE)) &&
     rstudioapi::isAvailable()
+
+  is_rstudio <- is_rstudio && util_really_rstudio()
 
   is_cli <-
     !is_shiny &&

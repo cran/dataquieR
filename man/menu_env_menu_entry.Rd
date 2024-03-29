@@ -17,3 +17,4 @@ html-a-tag object
 \description{
 Create a single menu entry
 }
+\keyword{internal}

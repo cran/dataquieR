@@ -10,6 +10,10 @@
 #'
 #' @return `coord_flip` or `coord_cartesian`
 #' @importFrom ggplot2 coord_flip coord_cartesian
+#'
+#' @family process_functions
+#' @concept process
+#' @keywords internal
 util_coord_flip <- function(w, h, p, ref_env, ...) {
   n <- 1
   if (!missing(ref_env)) {

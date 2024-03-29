@@ -15,9 +15,9 @@ dq_report_by(
   meta_data_split = STUDY_SEGMENT,
   study_data_split,
   ...,
-  v1.0 = FALSE,
   output_dir = NULL,
-  also_print = FALSE
+  also_print = FALSE,
+  disable_plotly = FALSE
 )
 }
 \arguments{
@@ -55,15 +55,14 @@ report by, e.g. the study centers.}
 
 \item{...}{arguments to be passed through to \link{dq_report} or \link{dq_report2}}
 
-\item{v1.0}{\link{logical} if \code{TRUE}, create old \code{dq_report} reports, use
-\code{dq_report2}, otherwise}
-
 \item{output_dir}{\link{character} if given, the output is not returned but}
 
 \item{also_print}{\link{logical} if \code{output_dir} is not \code{NULL}, also create
 \code{HTML} output for each segment using
 \code{\link[=print.dataquieR_resultset2]{print.dataquieR_resultset2()}}.
 written to the path \code{output_dir}}
+
+\item{disable_plotly}{\link{logical} do not use \code{plotly}, even if installed}
 }
 \value{
 named \link{list} of named \link{list}s of \link{dq_report2} reports or,
@@ -100,6 +99,14 @@ dq_report_by("study_data",
   meta_data_split = STUDY_SEGMENT, output_dir = "/tmp/testRep",
   also_print = TRUE
 )
+dq_report_by(study_data = "study_data", meta_data_v2 = "meta_data_v2",
+  advanced_options = list(dataquieR.study_data_cache_max = 0,
+  dataquieR.study_data_cache_metrics = TRUE,
+  dataquieR.study_data_cache_metrics_env = environment()),
+  cores = NULL, dimensions = "int")
+dq_report_by(study_data = "study_data", meta_data_v2 = "meta_data_v2",
+  advanced_options = list(dataquieR.study_data_cache_max = 0),
+  cores = NULL, dimensions = "int")
 }
 }
 \seealso{

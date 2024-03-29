@@ -8,7 +8,8 @@ util_find_var_by_meta(
   resp_vars,
   meta_data = "item_level",
   label_col = LABEL,
-  allowed_sources = c(VAR_NAMES, label_col, LABEL, LONG_LABEL),
+  allowed_sources = c(VAR_NAMES, label_col, LABEL, LONG_LABEL, "ORIGINAL_VAR_NAMES",
+    "ORIGINAL_LABEL"),
   target = VAR_NAMES,
   ifnotfound = NA_character_
 )
@@ -35,3 +36,17 @@ vector of mapped target names of resp_vars
 does not warn on ambiguities nor if not found (but in the latter case,
 it returns \code{ifnotfound})
 }
+\seealso{
+Other metadata_management: 
+\code{\link{CAN_THIS_BE_REMOVED_util_combine_missing_lists}()},
+\code{\link{util_dist_selection}()},
+\code{\link{util_find_free_missing_code}()},
+\code{\link{util_get_var_att_names_of_level}()},
+\code{\link{util_get_vars_in_segment}()},
+\code{\link{util_looks_like_missing}()},
+\code{\link{util_no_value_labels}()},
+\code{\link{util_validate_known_meta}()},
+\code{\link{util_validate_missing_lists}()}
+}
+\concept{metadata_management}
+\keyword{internal}

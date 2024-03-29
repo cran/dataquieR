@@ -29,7 +29,7 @@ with labels of variables}
 ranging from 0-100}
 
 \item{check_table}{\link{data.frame} contradiction rules table.  Table defining
-contractions. See details for
+contradictions. See details for
 its required structure.}
 
 \item{summarize_categories}{\link{logical} Needs a column 'tag' in the
@@ -77,6 +77,8 @@ Important to note, each value that is used for comparison may represent a
 possible characteristic but the combination of these two values is considered
 to be impossible. The approach does not consider implausible or inadmissible
 values.
+
+\link{Descriptor}
 }
 \details{
 \subsection{Algorithm of this implementation:}{

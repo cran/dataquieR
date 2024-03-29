@@ -4,14 +4,14 @@
 \alias{dataquieR_resultset_verify}
 \title{Verify an object of class dataquieR_resultset}
 \usage{
-dataquieR_resultset_verify(list_to_verify)
+dataquieR_resultset_verify(...)
 }
 \arguments{
-\item{list_to_verify}{object to be checked}
+\item{...}{Deprecated}
 }
 \value{
-\code{invisible(TRUE)} -- stops on errors.
+Deprecated
 }
 \description{
-stops on errors
+Deprecated
 }

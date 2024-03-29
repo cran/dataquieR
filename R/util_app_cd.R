@@ -12,6 +12,9 @@
 #' - 2 data type matches but not applicable
 #' - 3 data type matches and applicable
 #'
+#' @seealso [pro_applicability_matrix]
+#' @keywords internal
+
 util_app_cd <- function(x, dta) {
   if ("CONTRADICTIONS" %in% names(x)) { # TODO: This is not really relevant
     c1 <- ifelse(is.na(x[["CONTRADICTIONS"]]), 0, 1)

@@ -4,6 +4,10 @@
 #'
 #' @return vector of logical values:
 #'    `TRUE`, wherever x is somehow empty
+#'
+#' @family missing_functions
+#' @concept robustness
+#' @keywords internal
 util_is_na_0_empty_or_false <- function(x) { # TODO: generic?
   y <- x
   class(y) <- "logical"

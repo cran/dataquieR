@@ -15,6 +15,7 @@
 #' and irrelevant differences may become significant. The contrary holds if
 #' sample size is low.
 #'
+#' [Indicator]
 #'
 #' @details
 #' Limitations
@@ -97,30 +98,41 @@
 #' )
 acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
                         threshold_type = NULL, threshold_value,
-                        min_obs_in_subgroup,
+                        min_obs_in_subgroup = 5,
                         study_data, meta_data, label_col
-                          # TODO: flip_mode =
-                        ) {
+                        # TODO: flip_mode =
+) {
+
+  # to avoid "no visible binding for global variable ‘sample_size’"
+  sample_size <- NULL
 
   # preps ----------------------------------------------------------------------
   # map metadata to study data
   prep_prepare_dataframes(.replace_hard_limits = TRUE)
 
-  util_correct_variable_use("resp_vars", need_type = "integer|float")
+  util_correct_variable_use("resp_vars",
+                            need_type = "integer|float",
+                            need_scale = "!na | !nominal | !ordinal",
+                            min_distinct_values = 2)
+
   util_correct_variable_use("group_vars",
-    allow_any_obs_na = TRUE,
-    need_type = "!float"
-  )
+                            allow_any_obs_na = TRUE,
+                            need_type = "!float",
+                            need_scale = "nominal | ordinal")
+
   util_correct_variable_use("co_vars",
-    allow_more_than_one = TRUE,
-    allow_null = TRUE
-  )
+                            allow_more_than_one = TRUE,
+                            allow_all_obs_na = FALSE,
+                            allow_null = TRUE,
+                            allow_na = TRUE)
+
+  co_vars <- na.omit(co_vars)
   if (is.null(co_vars)) {
-    co_vars <- NA
+    co_vars <- character(0)
   }
 
+  # replace dollar signs for emmeans
   dollar <- "\uFE69"
-
   colnames(ds1) <- gsub("$", dollar, fixed = TRUE, colnames(ds1))
   if (any(grepl('$', fixed = TRUE, c(resp_vars, group_vars, co_vars)))) {
     util_message(c("emmeans used by acc_margins does not support variable",
@@ -134,41 +146,25 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   group_vars <- gsub("$", dollar, fixed = TRUE, group_vars)
   co_vars <- gsub("$", dollar, fixed = TRUE, co_vars)
 
+  util_expect_scalar(min_obs_in_subgroup,
+                     check_type = util_is_numeric_in(min = 5,
+                                                     whole_num = TRUE,
+                                                     finite = TRUE),
+                     convert_if_possible = function(x) {
+                       x1 <- suppressWarnings(as.integer(x))
+                       if (is.na(x1) ||
+                           !util_is_numeric_in(min = 5, whole_num = TRUE,
+                                               finite = TRUE)(x1)) {
+                         x1 <- as.integer(5)
+                         util_message(
+                           paste("min_obs_in_subgroup is not specified",
+                                 "correctly and is set to 5 instead."),
+                           applicability_problem = TRUE)
+                       }
+                       x1
+                     })
 
-  rvs <- resp_vars
-
-  # no minimum observations specified
-  # TODO: util_expect_scalar(min_obs_in_subgroup, is.integer, ...)
-  if (missing(min_obs_in_subgroup) || length(min_obs_in_subgroup) != 1) {
-    if (!missing(min_obs_in_subgroup) ||
-        !.called_in_pipeline) util_message(
-      "No or many minimum observation count was specified and is set to n=5.",
-      applicability_problem = TRUE)
-    min_obs_in_subgroup <- 5
-  } else {
-    .min_obs_in_subgroup <- as.integer(min_obs_in_subgroup)
-    if (is.na(.min_obs_in_subgroup)) {
-      util_message(
-       "min_obs_in_subgroup is not integer: %s, setting it to default value 5.",
-        dQuote(try(as.character(min_obs_in_subgroup))),
-       applicability_problem = TRUE)
-      min_obs_in_subgroup <- 5
-    } else {
-      min_obs_in_subgroup <-
-        .min_obs_in_subgroup
-    }
-  }
-
-  if (min_obs_in_subgroup < 5) {
-    min_obs_in_subgroup <- 5
-    util_message("min_obs_in_subgroup cannot be set below 5.",
-                 applicability_problem = TRUE)
-  }
-
-
-  # Label assignment -----------------------------------------------------------
-  # temporary study data
-
+  # Label assignment
   if (!is.null(group_vars)) {
     # all labelled variables
     levlabs <- meta_data$VALUE_LABELS[meta_data[[label_col]] %in% group_vars]
@@ -190,39 +186,43 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     }
   }
 
-  # missings -------------------------------------------------------------------
-  co_vars <- na.omit(co_vars)
-
-  # co_vars and group_vars
-  n_prior <- dim(ds1)[1]
-  ds1 <- ds1[rowSums(is.na(ds1[, c(co_vars, group_vars), drop = FALSE])) == 0, ,
-    drop = FALSE
-  ]
-  n_post <- dim(ds1)[1]
-
+  # omit missing values and unnecessary variables
+  n_prior <- nrow(ds1)
+  ds1 <- ds1[, c(resp_vars, group_vars, co_vars), drop = FALSE]
+  ds1 <- ds1[complete.cases(ds1[, c(group_vars, co_vars)]), ]
+  n_post <- nrow(ds1)
+  msg <- NULL
   if (n_post < n_prior) {
-    util_message(paste0(
-      "Due to missing values in ", paste0(co_vars, collapse = ", "),
-      " or ", group_vars, " N=", n_prior - n_post,
-      " observations were excluded."
-    ),
-    applicability_problem = FALSE)
+    msg <- paste0(
+      "Due to missing values in ",
+      ifelse(length(co_vars) > 0,
+             paste(paste0(co_vars, collapse = ", "), "or "),
+             ""),
+      group_vars, ", N = ", n_prior - n_post,
+      " observations were excluded. "
+    )
+  }
+  n_prior <- n_post
+  ds1 <- ds1[complete.cases(ds1), ]
+  n_post <- nrow(ds1)
+  if (n_post < n_prior) {
+    msg <- paste0(
+      msg, "Due to missing values in ", resp_vars, ", N = ",
+      n_prior - n_post, " observations were excluded",
+      ifelse(nchar(msg) > 0, " additionally.", "."))
+  }
+  if (nchar(msg) > 0) {
+    util_message(trimws(msg),
+                 applicability_problem = FALSE)
   }
 
-  # rvs
-  n_prior <- dim(ds1)[1]
-  ds1 <- ds1[!is.na(ds1[[rvs]]), ]
-  n_post <- dim(ds1)[1]
-
-  if (n_post < n_prior) {
-    util_message(paste0(
-      "Due to missing values in ", paste0(rvs), " N=",
-      n_prior - n_post, " observations were excluded."
-    ), applicability_problem = FALSE)
-  }
-
-  # type factor
+  # convert group_vars to factor
   ds1[[group_vars]] <- factor(ds1[[group_vars]])
+
+  # resp_vars should not be coded as factor
+  if (is.factor(ds1[[resp_vars]])) {
+    ds1[[resp_vars]] <- as.numeric(ds1[[resp_vars]])
+  }
 
   if (!missing(threshold_value)) {
     if (is.vector(threshold_value)) {
@@ -233,7 +233,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     if (length(threshold_value) != 1 || is.na(.threshold_value)) {
       util_message(
         "threshold_value is not numeric(1): %s, setting it to default value 1.",
-                   dQuote(head(try(as.character(threshold_value)), 1)),
+        dQuote(head(try(as.character(threshold_value)), 1)),
         applicability_problem = TRUE)
       threshold_value <- 1
     } else {
@@ -249,7 +249,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
       ||
       !.called_in_pipeline
     ) util_message("No or many threshold type specified and set to empirical.",
-                 applicability_problem = TRUE)
+                   applicability_problem = TRUE)
     threshold_type <- "empirical"
   }
 
@@ -263,17 +263,17 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   # threshold is user but no value defined -> switch to empirical
   if (threshold_type == "user" & missing(threshold_value)) {
     util_message(
-     c(
-      "Threshold was set to user but no value for the unit of measurements",
-      "was defined.\n",
-      "The function switches to one SD as default."),
-     applicability_problem = TRUE)
+      c(
+        "Threshold was set to user but no value for the unit of measurements",
+        "was defined.\n",
+        "The function switches to one SD as default."),
+      applicability_problem = TRUE)
     threshold_type == "empirical"
     threshold_value <- 1
   }
 
   # summary data frame of observations by level of random effect and non-missing
-  # values in rvs
+  # values in resp_vars
   check_df <- util_table_of_vct(ds1[[group_vars]])
 
   # Consider remaining obs/level after na.rm() ---------------------------------
@@ -292,27 +292,21 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     ds1 <- ds1[!(ds1[[group_vars]] %in% critical_levels), ]
   }
 
+  if (!(prod(dim(ds1)))) {
+    util_error("No data left after data preparation.")
+  }
+
+  # Modelling ------------------------------------------------------------------
   # if no co_vars are defined for adjustment only the intercept is modelled
-  if (length(co_vars) == 1 & is.na(co_vars)[1]) {
+  if (length(co_vars) == 0) {
     co_vars <- "1"
   } else {
     co_vars <- util_bQuote(co_vars)
   }
 
-  #############
-  # Modelling #
-  #############
-
-  # determine distributional approximation
-  seldist <- util_dist_selection(ds1[[rvs]], meta_data = meta_data)
-
-  if (!(prod(dim(ds1)))) {
-    util_error("No data left")
-  }
-
   # build model formula
   fmla <- as.formula(paste0(
-    paste0(util_bQuote(rvs), "~"),
+    paste0(util_bQuote(resp_vars), "~"),
     paste0(
       paste0(co_vars, collapse = " + "),
       " + ",
@@ -320,116 +314,114 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     )
   ))
 
-  # variable of type float or integer with > 20 categories
-  if (seldist$IsInteger == FALSE | seldist$IsInteger == TRUE &
-      seldist$NCategory > 20) {
-    # call linear model
-    model <- lm(fmla, data = ds1)
+  # choose a suitable modeling approach
+  var_prop <- util_dist_selection(ds1[[resp_vars]])
+  if (var_prop$NDistinct < 2) {
+    util_error("The response variable is constant after data preparation.",
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
+  }
+  var_scale <- meta_data[[SCALE_LEVEL]][meta_data[[label_col]] == resp_vars]
+  var_dtype <- meta_data[[DATA_TYPE]][meta_data[[label_col]] == resp_vars]
+  if (var_dtype == DATA_TYPES$INTEGER &
+      var_prop$NCategory > 2 & var_prop$NCategory <= 20 &
+      # TODO: Count data can exceed 20, of course! How do we identify count
+      # data here? Maybe include a pre-test to choose between poisson and
+      # linear regression? Or also consider negative binomial regression here?
+      !var_prop$AnyNegative) {
+    method <- "poisson"
+  } else if (!is.na(var_prop$NCategory) && var_prop$NCategory == 2) {
+    method <- "logistic"
+  } else if (var_scale %in% c(SCALE_LEVELS$RATIO, SCALE_LEVELS$INTERVAL)) {
+    method <- "linear"
+  } else {
+    util_error("No suitable method implemented yet, sorry.")
   }
 
-  # variable of type binary
-  if (seldist$IsInteger == TRUE & seldist$IsMultCat == 0) {
-    if (is.factor(ds1[[rvs]])) {
-      ds1[[rvs]] <- as.integer(ds1[[rvs]])
-    }
-
-    # other levels than 0/1
-    if (!all(unique(ds1[[rvs]]) %in% c(0, 1))) {
-      mf <- as.numeric(tail(names(sort(table(ds1[[rvs]]))), 1))
-        # https://stackoverflow.com/questions/12187187/
-        #     how-to-retrieve-the-most-repeated-value-in-a-
-        #                                         column-present-in-a-data-frame
-      ds1[[rvs]][ds1[[rvs]] == mf] <- 0
+  if (method == "linear") {
+    # call linear model
+    model <- lm(fmla, data = ds1)
+  } else if (method == "poisson") {
+    # call poisson model
+    model <- glm(fmla, data = ds1, family = poisson(link = "log"))
+  } else {
+    # recode binary variable to 0/1, if needed
+    if (!all(unique(ds1[[resp_vars]]) %in% c(0, 1))) {
+      bin_codes <- names(sort(table(ds1[[resp_vars]])))
+      mf <- as.numeric(tail(bin_codes, 1))
+      # https://stackoverflow.com/questions/12187187/
+      #     how-to-retrieve-the-most-repeated-value-in-a-
+      #                                         column-present-in-a-data-frame
+      ds1[[resp_vars]][ds1[[resp_vars]] == mf] <- 0
       # could be other than 1
-      lf <- as.numeric(head(names(sort(table(ds1[[rvs]]))), 1))
-      ds1[[rvs]][ds1[[rvs]] == lf] <- 1
-      util_message(paste0("The levels of ", rvs, " (", mf, " and ", lf,
-                          ") have been recoded to 0 and 1)"),
-                   applicability_problem = FALSE)
+      lf <- as.numeric(head(bin_codes, 1))
+      ds1[[resp_vars]][ds1[[resp_vars]] == lf] <- 1
     }
-
-    # call logreg
+    # call logistic regression
     model <- glm(fmla, data = ds1, family = binomial(link = "logit"))
   }
 
-  # variable of type integer with > 2 categories
-  if (seldist$IsMultCat == 1 & seldist$NCategory <= 20) {
-    if (is.factor(ds1[[rvs]])) {
-      ds1[[rvs]] <- as.integer(ds1[[rvs]])
-    }
-    # call poisson model
-    model <- glm(fmla, data = ds1, family = poisson(link = "log"))
-  }
-
+  # TODO: check whether the following problem still occurs:
   # emmeans::emmeans appears not working correctly for the overall mean. Somehow
   # the package assumes an interaction term although there isn't.
   # browser()
-  # call emmeans::emmeans ------------------------------------------------------
+  # call emmeans::emmeans
   res_df <- data.frame(emmeans::emmeans(model, group_vars, type = "response"),
                        check.names = FALSE)
-  if (seldist$IsInteger == FALSE | seldist$IsInteger == TRUE &
-      seldist$NCategory > 20) {
+  summary_ds <- as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
+                                                                 unname(group_vars)), sample_size = dplyr::n()))
+
+  res_df<- merge(res_df, summary_ds, by = group_vars, all.x = TRUE)
+
+
+
+  if (method == "linear") {
     res_df <- dplyr::rename(res_df, c("margins" = "emmean", "LCL" = "lower.CL",
                                       "UCL" = "upper.CL"))
-  }
-  if (seldist$IsInteger == 1 & seldist$IsMultCat == 0) {
-    res_df <- dplyr::rename(res_df, c("margins" = "prob", "LCL" = "asymp.LCL",
-                                      "UCL" = "asymp.UCL"))
-  }
-  if (seldist$IsMultCat == 1 & seldist$NCategory <= 20) {
+  } else if (method == "poisson") {
     res_df <- dplyr::rename(res_df, c("margins" = "rate", "LCL" = "asymp.LCL",
+                                      "UCL" = "asymp.UCL"))
+  } else {
+    res_df <- dplyr::rename(res_df, c("margins" = "prob", "LCL" = "asymp.LCL",
                                       "UCL" = "asymp.UCL"))
   }
 
   # adjusted overall mean
   omv <- data.frame(emmeans::emmeans(model, "1", type = "response"))
-  if (seldist$IsInteger == FALSE | seldist$IsInteger == TRUE &
-      seldist$NCategory > 20) {
+  if (method == "linear") {
     omv <- dplyr::rename(omv, c("margins" = "emmean", "LCL" = "lower.CL",
                                 "UCL" = "upper.CL"))
-  }
-  if (seldist$IsInteger == 1 & seldist$IsMultCat == 0) {
-    omv <- dplyr::rename(omv, c("margins" = "prob", "LCL" = "asymp.LCL",
-                                "UCL" = "asymp.UCL"))
-  }
-  if (seldist$IsMultCat == 1 & seldist$NCategory <= 20) {
+  } else if (method == "poisson") {
     omv <- dplyr::rename(omv, c("margins" = "rate", "LCL" = "asymp.LCL",
+                                "UCL" = "asymp.UCL"))
+  } else {
+    omv <- dplyr::rename(omv, c("margins" = "prob", "LCL" = "asymp.LCL",
                                 "UCL" = "asymp.UCL"))
   }
 
   res_df$overall <- omv$margins
 
-  ##############
-  # THRESHOLDS #
-  ##############
-  # continuous data or count data with mor than 20 categories
+  # Thresholds -----------------------------------------------------------------
   if (threshold_type %in% c("empirical", "none")) {
-    if (seldist$IsInteger == FALSE | seldist$IsInteger == TRUE &
-        seldist$NCategory > 20) {
-      th <- sd(ds1[[rvs]])
+    if (method == "linear") {
+      th <- sd(ds1[[resp_vars]])
       parn <- c(
         paste("-", threshold_value, "TH", sep = ""), "Mean",
         paste("+", threshold_value, "TH", sep = "")
       )
-    }
-
-    # binary data
-    if (seldist$IsInteger == 1 & seldist$IsMultCat == 0) {
-      th <- mean(ds1[[rvs]])
-      th <- th * (1 - th)
-      parn <- c(
-        paste("-", threshold_value, "TH", sep = ""), "Prob.",
-        paste("+", threshold_value, "TH", sep = "")
-      )
-    }
-
-    # poisson
-    if (seldist$IsMultCat == 1 & seldist$NCategory <= 20) {
+    } else if (method == "poisson") {
       # th <- exp(as.numeric(coefficients(glm(v101 ~ 1,
       #    family = poisson(link="log"), data = expl_df))))
       th <- 1
       parn <- c(
         paste("-", threshold_value, "TH", sep = ""), "Mean",
+        paste("+", threshold_value, "TH", sep = "")
+      )
+    } else {
+      th <- mean(ds1[[resp_vars]])
+      th <- th * (1 - th)
+      parn <- c(
+        paste("-", threshold_value, "TH", sep = ""), "Prob.",
         paste("+", threshold_value, "TH", sep = "")
       )
     }
@@ -442,22 +434,23 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     # store threshold
     res_df$threshold <- threshold_value
 
-    # select abnormalties
+    # select abnormalities
     res_df$GRADING <- ifelse(res_df$margins < pars[1] |
                                res_df$margins > pars[3], 1, 0)
+
   } else if (threshold_type == "user") {
     th <- threshold_value
     # store threshold
     res_df$threshold <- th
 
     pars <- as.vector(c(th, th, th))
-    if (seldist$IsInteger == 1 & seldist$IsMultCat == 0) {
+    if (method == "logistic") {
       parn <- c("", paste0("Prob.=", threshold_value, sep = ""), "")
     } else {
       parn <- c("", paste0("Mean=", threshold_value, sep = ""), "")
     }
 
-    # select abnormalties
+    # select abnormalities
     res_df$GRADING <- mapply(
       function(th, l, u) {
         ifelse(th >= l & th <= u, 0, 1)
@@ -466,7 +459,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     )
   }
 
-  if (length(co_vars) > 0) {
+  if (length(setdiff(co_vars, "1")) > 0) {
     if (length(co_vars) < 10) {
       subtitle <- sprintf("adjusted for %s", paste0(co_vars, collapse = ", "))
     } else {
@@ -476,20 +469,20 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     subtitle <- ""
   }
 
-  ############
-  # Graphics #
-  ############
+  # Graphics -------------------------------------------------------------------
   # use offset for annotation depending on variable scale
   offs <- ifelse(th <= 50, th / 10, th / 20)
 
-  if (seldist$IsInteger == FALSE | seldist$IsInteger == TRUE &
-      seldist$NCategory > 20) {
+  if (method == "linear") {
+    #calculate sample size per group
+    #    summary_ds<- as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
+    #                                                                   group_vars), samplesize = dplyr::n()))
+
     # Plot 1: hybrid density/boxplot graph
     warn_code <- c("1" = "#B2182B", "0" = "#2166AC")
 
-
-    p1 <- ggplot(data = ds1[, c(rvs, group_vars), drop = FALSE],
-                 aes(x = .data[[group_vars]], y = .data[[rvs]])) +
+    p1 <- ggplot(data = ds1[, c(resp_vars, group_vars), drop = FALSE],
+                 aes(x = .data[[group_vars]], y = .data[[resp_vars]])) +
       geom_violin(alpha = 0.9, draw_quantiles = TRUE, fill = "gray99") +
       geom_boxplot(width = 0.1, fill = "white", color = "gray", alpha = 0.5) +
       geom_pointrange(
@@ -499,6 +492,7 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
           ymin = LCL,
           ymax = UCL,
           color = as.factor(GRADING)
+          # n = sample_size
         ),
         shape = 18, linewidth = 1,
         inherit.aes = FALSE,
@@ -511,7 +505,11 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
         text = element_text(size = 16),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
       ) +
-      scale_colour_manual(values = warn_code)
+      scale_colour_manual(values = warn_code)+
+      geom_text(data = summary_ds, aes(x = summary_ds[, group_vars],
+                                       y = max(ds1[, c(resp_vars), drop = FALSE])+1.2,
+                                       label =  sample_size), hjust = 0.5, angle = 90)+
+      annotate("text", x=0.50, y=max(ds1[, c(resp_vars), drop = FALSE])+1.2, label= "N")
 
     if (threshold_type != "none") {
       p1 <- p1 +
@@ -521,13 +519,15 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
       p1 <- p1 +
         geom_hline(yintercept = pars[2], color = "red")
     }
-  }
-
-  if (seldist$IsInteger == 1 & seldist$NCategory <= 20) {
+  } else {
     warn_code <- c("1" = "#B2182B", "0" = "#2166AC")
 
-    p1 <- ggplot(data = ds1[, c(rvs, group_vars), drop = FALSE],
-                 aes(x =  .data[[group_vars]], y =  .data[[rvs]])) +
+    #calculate sample size per group
+    #    summary_ds<- as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
+    #                                                                   group_vars), samplesize = dplyr::n()))
+
+    p1 <- ggplot(data = ds1[, c(resp_vars, group_vars), drop = FALSE],
+                 aes(x =  .data[[group_vars]], y =  .data[[resp_vars]])) +
       geom_count(aes(alpha = 0.9), color = "gray") +
       geom_pointrange(
         data = res_df, aes(
@@ -535,7 +535,8 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
           y = margins,
           ymin = LCL,
           ymax = UCL,
-          color = as.factor(GRADING)
+          color = as.factor(GRADING),
+          # n = sample_size
         ),
         shape = 18, linewidth = 1,
         inherit.aes = FALSE,
@@ -548,7 +549,12 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
         text = element_text(size = 16),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
       ) +
-      scale_colour_manual(values = warn_code)
+      scale_colour_manual(values = warn_code)+
+      geom_text(data = summary_ds, aes(x = summary_ds[, group_vars],
+                                       y = max(ds1[, c(resp_vars), drop = FALSE])+1.2,
+                                       label =  sample_size), hjust = 0.5, angle = 90)+
+      annotate("text", x=0.50, y=max(ds1[, c(resp_vars), drop = FALSE])+1.2, label= "N")
+
     if (threshold_type != "none") {
       p1 <-
         p1 +
@@ -562,15 +568,15 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   }
 
   # Plot 2: overall distributional plot flipped on y-axis of plot 1
-  get_y_scale <- ggplot(ds1[, rvs, drop = FALSE], aes(x = .data[[rvs]])) +
+  get_y_scale <- ggplot(ds1[, resp_vars, drop = FALSE], aes(x = .data[[resp_vars]])) +
     geom_density(alpha = 0.35)
   aty <- mean(range(ggplot_build(get_y_scale)$data[[1]]$y))
 
-  p2 <- ggplot(ds1[, rvs, drop = FALSE], aes(.data[[rvs]])) +
+  p2 <- ggplot(ds1[, resp_vars, drop = FALSE], aes(.data[[resp_vars]])) +
     geom_density(alpha = 0.35) +
     coord_flip() +
     theme_minimal() +
-#    coord_flip() +
+    #    coord_flip() +
     labs(x = NULL, y = NULL) +
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
           text = element_text(size = 16))
@@ -596,17 +602,41 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     p2 +
     plot_layout(nrow = 1,
                 widths = c(5, 1)
-                ) +
-    plot_annotation(title = paste(group_vars, "margins in", rvs),
+    ) +
+    plot_annotation(title = paste(group_vars, "margins in", resp_vars),
                     subtitle = subtitle)
 
-  SummaryTable <- data.frame(Variables = rvs, GRADING =
-                               as.numeric(any(res_df$GRADING > 0)))
+  SummaryTable <- data.frame(Variables = resp_vars, FLG_acc_ud_loc =
+                               as.numeric(any(res_df$GRADING > 0)),
+                             PCT_acc_ud_loc = round(sum(res_df$GRADING == 1)/nrow(res_df)*100, digits = 2))
+
+  SummaryData <- res_df
+  SummaryData$df <- NULL
+  SummaryData$threshold <- NULL
+  SummaryData$overall <- NULL
+  SummaryData$GRADING <- NULL
+  SummaryData$CL <- paste0("[", format(SummaryData$LCL), "; ",
+                           format(SummaryData$UCL), "]")
+  SummaryData$LCL <- NULL
+  SummaryData$UCL <- NULL
+
+  colnames(SummaryData)[[4]] <- "n"
+
+  attr(SummaryData, "description") <- character(0)
+  attr(SummaryData, "description")[[group_vars]] <- "Group: Observer/Device/..."
+  attr(SummaryData, "description")[["margins"]] <- "Mean for the Group"
+  attr(SummaryData, "description")[["SE"]] <- "Standard error for the Group"
+  attr(SummaryData, "description")[["n"]] <-
+    "Number of Observations of the Group"
+  attr(SummaryData, "description")[["CL"]] <-
+    "Confidence Interval for the Group"
+
+
 
   # length(unique(fit_df$GROUP)))
   # output
   return(util_attach_attr(list(
-    SummaryData = res_df,
+    SummaryData = SummaryData,
     SummaryTable = SummaryTable,
     SummaryPlot = util_set_size(res_plot, width_em = 25 +
                                   1.2 * length(unique(ds1[[group_vars]])),
@@ -614,30 +644,83 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   ), as_plotly = "util_as_plotly_acc_margins"))
 }
 
+
+#' @family plotly_shims
+#' @concept plotly_shims
+#' @keywords internal
 util_as_plotly_acc_margins <- function(res, ...) {
+  #remove classes for plotly to work properly
   res$SummaryPlot <- util_remove_dataquieR_result_class(res$SummaryPlot)
-  # use res$SummaryPlot, not res_plot to avoid dependeing on the enclosure
+  # use res$SummaryPlot, not res_plot to avoid depending on the enclosure
   # of the result, that may contain study data.
   util_ensure_suggested("plotly")
   util_stop_if_not(inherits(res$SummaryPlot, "patchwork"))
+  # extract estimates on size of the plot from the patchwork object
+  # obtain relative width of the single elements of the plot
   rel_w <- res$SummaryPlot$patches$layout$widths /
     sum(res$SummaryPlot$patches$layout$widths, na.rm = TRUE)
+  # extract the violin plots
   py1 <- try(plotly::ggplotly(res$SummaryPlot[[1]],
                               ...), silent = TRUE)
+
   py1$x$data[[2]]$mode <- NULL # suppress a warning on print (https://github.com/plotly/plotly.R/issues/2242)
+  # extract the overall distribution plot
   py2 <- try(plotly::ggplotly(res$SummaryPlot[[2]],
                               ...), silent = TRUE)
+  # check if both are plotly objects
   util_stop_if_not(!inherits(py1, "try-error"))
   util_stop_if_not(!inherits(py2, "try-error"))
   # https://plotly.com/r/subplots/#subplots-with-shared-yaxes
-  plotly::layout(plotly::subplot(py1,
+
+
+  #  summary_ds<-as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
+  #                                                               group_vars), samplesize = dplyr::n()))
+
+
+  # py1<- plotly::ggplotly(py1, tooltip = paste("Sample size:",
+  #                                            as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
+  #                                                                                                             group_vars), samplesize = dplyr::n()))[,2]))
+  #py2<- plotly::layout(py2)
+
+  target_layers <-
+    which(lapply(lapply(py1$x$data, `[[`, "marker"), `[[`, "symbol") == "diamond")
+
+  hovertexts <- lapply(py1$x$data, `[[`, "hovertext")
+  hovertexts_matching_sample_size <- lapply(hovertexts, grepl, pattern = "sample_size: ", fixed = TRUE)
+  hovertexts_matching_sample_size_with_length_nr_groups <-
+    vapply(hovertexts_matching_sample_size, function(x) length(x) == length(unique(res$SummaryPlot[[1]]$data[[2]])) && all(x, na.rm = TRUE), FUN.VALUE = logical(1))
+  layer_with_sample_size <- which(hovertexts_matching_sample_size_with_length_nr_groups)
+  if (length(layer_with_sample_size) != 1) {
+    util_warning(c("Internal error: unexpected number of",
+                   "layer_with_sample_size. Sorry, please report to us"))
+  } else {
+    hovertexts_with_hovertexts <- py1$x$data[[layer_with_sample_size]]$hovertext
+
+    xpositions_with_hovertexts <- py1$x$data[[layer_with_sample_size]]$x
+
+    for (tl in target_layers) {
+      # amend texts for hover-texts, matching by x position.
+
+      py1$x$data[[tl]]$text <- paste0(
+        py1$x$data[[tl]]$text,
+        "<br />",
+        hovertexts_with_hovertexts[match(py1$x$data[[tl]]$x,
+                                         xpositions_with_hovertexts)]
+      )
+    }
+  }
+
+
+  # recombine plots
+  suppressMessages(force(plotly::layout(plotly::subplot(py1,
                                  py2,
                                  nrows =
                                    res$SummaryPlot$patches$layout$nrow,
-                                 shareY = TRUE,
-                                 widths =
+                                 shareY = TRUE, #all plots use the same y axes
+                                 widths = #define relative width
                                    rel_w),
-                 title = list(text =
+                 title = list(text = #get the overall title from patch
                                 res$SummaryPlot$patches$annotation$title),
-                 margin = 0.01)
+                 font = list(size = 12),
+                 margin = 0.01)))
 }

@@ -57,6 +57,7 @@ attributes of study data}
 a list with:
 \itemize{
 \item \code{SummaryTable}: data frame with ICCs per \code{rvs}
+\item \code{SummaryData}: data frame with ICCs per \code{rvs}
 \item \code{ScalarValue_max_icc}: maximum variance contribution value by group_vars
 \item \code{ScalarValue_argmax_icc}: variable with maximum variance contribution by
 group_vars
@@ -76,6 +77,8 @@ However, in multi-level analysis the ICC is interpreted differently. Please
 see Snijders et al. (Sniders and Bosker 1999). In this context the proportion
 of variance explained by respective group levels indicate an influence of (at
 least one) level of the respective group_vars. An ICC close to 0 is desired.
+
+\link{Indicator}
 }
 \section{ALGORITHM OF THIS IMPLEMENTATION:}{
 \itemize{

@@ -90,7 +90,10 @@ prep_add_missing_codes <- function(resp_vars,
 
   util_expect_scalar(overwrite, check_type = is.logical)
 
-  prep_prepare_dataframes(.replace_missings = FALSE)
+  prep_prepare_dataframes(.replace_missings = FALSE,
+                          .replace_hard_limits = FALSE,
+                          .adjust_data_type = FALSE,
+                          .amend_scale_level = FALSE)
 
   if (missing(use_value_labels)) {
     use_value_labels <- VALUE_LABELS %in% colnames(meta_data) &&
@@ -106,21 +109,18 @@ prep_add_missing_codes <- function(resp_vars,
                                        all(x %in% c("MISSING", "JUMP"))
                                      },
                                      "CODE_LABEL" = is.character,
-                                     "CODE_VALUE" = function(x) {
-                                        suppressWarnings(
-                                          all(is.na(as.integer(x)) == is.na(x)))
-                                       },
+                                     "CODE_VALUE" = util_is_valid_missing_codes,
                                      "RULE" = is.character))
 
   if (missing(resp_vars) || identical(resp_vars, NA)) {
     resp_vars <- rules$resp_vars
   }
 
-  util_correct_variable_use(resp_vars)
+  util_correct_variable_use(resp_vars, allow_more_than_one = TRUE)
 
   rules <- rules[rules[["resp_vars"]] %in% resp_vars]
 
-  rules$CODE_VALUE <- as.integer(rules$CODE_VALUE)
+  rules$CODE_VALUE <- util_as_valid_missing_codes(rules$CODE_VALUE)
 
   compiled_rules <- lapply(setNames(nm = rules$RULE), util_parse_redcap_rule)
 

@@ -13,6 +13,10 @@
 #' @seealso [dplyr::recode]
 #'
 #' @importFrom dplyr recode
+#'
+#' @family mapping
+#' @concept process
+#' @keywords internal
 util_recode <- function(values, mapping_table, from, to, default = NULL) {
   util_expect_scalar(values,
                      allow_more_than_one = TRUE,

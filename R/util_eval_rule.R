@@ -15,6 +15,10 @@
 #'                                  the codes.
 #'
 #' @return the result of the parsed rule
+#'
+#' @family redcap
+#' @concept process
+#' @keywords internal
 util_eval_rule <- function(rule, ds1, meta_data = "item_level",
                            use_value_labels,
                            replace_missing_by = "NA",
@@ -69,7 +73,8 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
     if (!!prod(dim(meta_data))) {
       prep_prepare_dataframes(.replace_hard_limits = replace_limits,
                               .replace_missings = (replace_missing_by == "NA"),
-                              .study_data = ds1)
+                              .study_data = ds1,
+                              .label_col = attr(ds1, "label_col"))
     }
   }
   if (missing(use_value_labels)) {
@@ -213,6 +218,11 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
         jl <- jl[!is.na(jl)]
         ml <- ml[!is.na(ml)]
 
+        if (!any(grepl(SPLIT_CHAR, labs, fixed = TRUE)) &&
+            (any(grepl("<", labs, fixed = TRUE)))) {
+          labs <- gsub("<", SPLIT_CHAR, labs, fixed = TRUE)
+        }
+
         labs <- paste(c(labs, jl, ml), collapse = sprintf(" %s ", SPLIT_CHAR))
 
         col_as_factor <-
@@ -258,6 +268,24 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
       util_map_labels(colnames(ds2_varnames),
                       meta_data = meta_data,
                       to = LONG_LABEL,
+                      from = label_col)
+    ds2 <- cbind(ds2, ds2_varnames)
+  }
+  if ("ORIGINAL_VAR_NAMES" %in% colnames(meta_data)) {
+    ds2_varnames <- ds2_0
+    colnames(ds2_varnames) <-
+      util_map_labels(colnames(ds2_varnames),
+                      meta_data = meta_data,
+                      to = "ORIGINAL_VAR_NAMES",
+                      from = label_col)
+    ds2 <- cbind(ds2, ds2_varnames)
+  }
+  if ("ORIGINAL_LABEL" %in% colnames(meta_data)) {
+    ds2_varnames <- ds2_0
+    colnames(ds2_varnames) <-
+      util_map_labels(colnames(ds2_varnames),
+                      meta_data = meta_data,
+                      to = "ORIGINAL_LABEL",
                       from = label_col)
     ds2 <- cbind(ds2, ds2_varnames)
   }

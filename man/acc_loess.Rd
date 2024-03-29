@@ -6,16 +6,18 @@
 \usage{
 acc_loess(
   resp_vars,
-  group_vars,
+  group_vars = NULL,
   time_vars,
   co_vars = NULL,
-  min_obs_in_subgroup,
-  label_col = NULL,
   study_data,
   meta_data,
-  resolution = 180,
-  se_line = list(color = "red", linetype = 2),
-  plot_data_time,
+  label_col = NULL,
+  min_obs_in_subgroup = 30,
+  resolution = 80,
+  comparison_lines = list(type = c("mean/sd", "quartiles"), color = "grey30", linetype =
+    2, sd_factor = 0.5),
+  mark_time_points = getOption("dataquieR.acc_loess.mark_time_points", FALSE),
+  plot_observations = getOption("dataquieR.acc_loess.plot_observations", TRUE),
   plot_format = "AUTO"
 )
 }
@@ -25,89 +27,104 @@ acc_loess(
 \item{group_vars}{\link{variable} the name of the observer, device or reader
 variable}
 
-\item{time_vars}{\link{variable} a variable identifying the variable with the time
+\item{time_vars}{\link{variable} the name of the variable giving the time
 of measurement}
 
-\item{co_vars}{\link{variable list} a vector of covariables, e.g. age and sex for
-adjustment. Can be NULL (default) for no
+\item{co_vars}{\link{variable list} a vector of covariables for adjustment, for
+example age and sex. Can be NULL (default) for no
 adjustment.}
-
-\item{min_obs_in_subgroup}{\link{integer} from=0. optional argument if
-\code{group_vars} are used. This argument
-specifies the minimum number of observations
-that is required to include a subgroup
-(level) of the group variable named by
-\code{group_vars} in the analysis. Subgroups
-with less observations are excluded. The
-default is \code{30}.}
-
-\item{label_col}{\link{variable attribute} the name of the column in the metadata
-with labels of variables}
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
 \item{meta_data}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
-\item{resolution}{\link{numeric} how many timepoints have a standard error
-estimation}
+\item{label_col}{\link{variable attribute} the name of the column in the metadata
+with labels of variables}
 
-\item{se_line}{\link{list} standard error estimator line style, as arguments
-passed to \code{\link[ggplot2:geom_path]{ggplot2::geom_line()}}}
+\item{min_obs_in_subgroup}{\link{integer} (optional argument) If \code{group_vars} is
+specified, this argument can be used to specify
+the minimum number of observations required for
+each of the subgroups. Subgroups with fewer
+observations are excluded. The default number
+is \code{30}.}
 
-\item{plot_data_time}{\link{logical} mark times with data values (caution, there
-may be many marks)}
+\item{resolution}{\link{numeric} the maximum number of time points used for
+plotting the trend lines}
 
-\item{plot_format}{\link{enum} AUTO | COMBINED | FACETS | BOTH. Return the
-LOESS plot as a combined plot or as facets plots
-one per group. BOTH will return both plot variants,
-AUTO will decide based on the number of observers.}
+\item{comparison_lines}{\link{list} type and style of lines with which trend
+lines are to be compared. Can be mean +/- 0.5
+standard deviation (the factor can be specified
+differently in \code{sd_factor}) or quartiles
+(Q1, Q2, and Q3). Arguments \code{color} and
+\code{linetype} are passed to \code{\link[ggplot2:geom_path]{ggplot2::geom_line()}}.}
+
+\item{mark_time_points}{\link{logical} mark time points with observations
+(caution, there may be many marks)}
+
+\item{plot_observations}{\link{logical} show observations as scatter plot in the
+background. If there are \code{co_vars} specified,
+the values of the observations in the plot will
+also be adjusted for the specified covariables.}
+
+\item{plot_format}{\link{enum} AUTO | COMBINED | FACETS | BOTH. Return the plot
+as one combined plot for all groups or as
+facet plots (one figure per group). \code{BOTH} will
+return both variants, \code{AUTO} will decide based
+on the number of observers.}
 }
 \value{
 a \link{list} with:
 \itemize{
-\item \code{SummaryPlotList}: list with two plots:
+\item \code{SummaryPlotList}: list with two plots if \code{plot_format = "BOTH"},
+otherwise one of the two figures described below:
 \itemize{
-\item \code{Loess_fits_facets}: ggplot2 LOESS plot provides panels for each
-subject/object. The plot contains LOESS-smoothed curves
-for each level of the group_vars. The red dashed lines represent the
-confidence interval of a LOESS curve for the whole data.
-\item \code{Loess_fits_combined}: ggplot2 LOESS plot combines all curves into one
-panel and is obtained by \code{myloess$Loess_fits_combined}. Given a low
-number of levels in the group_vars
-this plot eases comparisons. However, if number increases this plot may
+\item \code{Loess_fits_facets}: The plot contains LOESS-smoothed curves
+for each level of the \code{group_vars} in a separate panel. Added trend
+lines represent mean and standard deviation or quartiles (specified
+in \code{comparison_lines}) for moving windows over the whole data.
+\item \code{Loess_fits_combined}: This plot combines all curves into one
+panel. Given a low number of levels in the \code{group_vars}, this plot
+eases comparisons. However, if the number increases this plot may
 be too crowded and unclear.
 }
 }
 }
 \description{
 The following R implementation executes calculations for quality indicator
-Unexpected distribution wrt location (link). Local regression (LOESS) is a
-versatile statistical method to explore an averaged course of time series
+"Unexpected location" (see \href{https://dataquality.qihs.uni-greifswald.de/PDQC_DQ_3_2_1_3.html}{here}. Local regression (LOESS) is a versatile statistical method to explore an
+averaged course of time series
 measurements (Cleveland, Devlin, and Grosse 1988). In context of
 epidemiological data, repeated measurements using the same measurement
 device or by the same examiner can be considered a time series. LOESS allows
 to explore changes in these measurements over time.
+
+\link{Descriptor}
 }
 \details{
-If \code{plot_data_time} is not set, it will be selected based on the number of
-data points per group: If more than 4000 points would be plotted for at least
-one group, the > 4000 marks will not be plotted.
+If \code{mark_time_points} or \code{plot_observations} is selected, but would result in
+plotting more than 400 points, only a sample of the data will be displayed.
 
 Limitations
 
-The application of LOESS usually requires model fitting, i.e. the smoothness
+The application of LOESS requires model fitting, i.e. the smoothness
 of a model is subject to a smoothing parameter (span).
-Particularly in the presence of interval-based missing data (\code{USR_181}), high
+Particularly in the presence of interval-based missing data, high
 variability of measurements combined with a low number of
-observations in one level of the group_vars the fit to the data may be
-distorted. Since our approach handles data without knowledge
+observations in one level of the \code{group_vars} may distort the fit.
+Since our approach handles data without knowledge
 of such underlying characteristics, finding the best fit is complicated if
 computational costs should be minimal. The default of
-LOESS in R uses a span 0.75 which provides in most cases reasonable fits. The
-function above increases the fit to the data automatically
-if the minimum of observations in one level of the group_vars is higher than
-\code{n=30}.
+LOESS in R uses a span of 0.75, which provides in most cases reasonable fits.
+The function \code{acc_loess} adapts the span for each level of the \code{group_vars}
+(with at least as many observations as specified in \code{min_obs_in_subgroup}
+and with at least three time points) based on the respective
+number of observations.
+LOESS consumes a lot of memory for larger datasets. That is why \code{acc_loess}
+switches to a generalized additive model with integrated smoothness
+estimation (\code{gam} by \code{mgcv}) if there are 1000 observations or more for
+at least one level of the \code{group_vars} (similar to \code{geom_smooth}
+from \code{ggplot2}).
 }
 \seealso{
 \href{https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_loess.html}{Online Documentation}

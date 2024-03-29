@@ -51,9 +51,7 @@ for a report
 }
 }
 \description{
-Data quality indicator checks "Unexpected location" and "Unexpected
-proportion" with histograms and, if a grouping variable is included, plots of
-empirical cumulative distributions for the subgroups.
+\link{Descriptor}
 }
 \section{Algorithm of this implementation:}{
 \itemize{

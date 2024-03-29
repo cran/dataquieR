@@ -60,8 +60,10 @@ rbind.ReportSummaryTable <- function(...) {
     class(r) <- union("ReportSummaryTable", class(r))
     attr(r, "higher_means") <- attr(x, "higher_means")
     attr(r, "continuous") <- attr(x, "continuous")
+    attr(r, "colscale") <- attr(x, "colscale")
     attr(r, "colcode") <- attr(x, "colcode")
     attr(r, "level_names") <- attr(x, "level_names")
+    attr(r, "relative") <- attr(x, "relative")
     r
   } else {
     x <-

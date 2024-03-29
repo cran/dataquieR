@@ -8,6 +8,11 @@
 #' @return binary vector
 #'
 #' @importFrom stats sd
+#'
+#' @family outlier_functions
+#' @concept outlier
+#' @keywords internal
+
 util_sigmagap <- function(x) {
 
   # sd

@@ -21,4 +21,6 @@ a \link{list} with
 \description{
 This function contrasts the expected record number in each study in
 the metadata with the actual record number in each study data frame.
+
+\link{Indicator}
 }

@@ -21,6 +21,10 @@
 #' }
 #' f()
 #' }
+#'
+#' @family robustness_functions
+#' @concept process
+#' @keywords internal
 util_ensure_suggested <- function(pkg, goal =
                                     ifelse(
                                       is.null(
@@ -28,20 +32,44 @@ util_ensure_suggested <- function(pkg, goal =
                                       "work",
                                       paste("call", sQuote(rlang::call_name(
                                                       rlang::caller_call())))),
-                                  err = TRUE, and_import = c()) { # TODO: rlang::check_installed
+                                  err = TRUE, and_import = c()) {
   util_expect_scalar(err, check_type = is.logical)
   missingp <- !vapply(pkg,
                       FUN.VALUE = logical(1),
                       requireNamespace,
                       quietly = TRUE)
+  if (err && any(missingp)) {
+    rlang::check_installed(
+      call = rlang::caller_env(),
+      pkg = pkg,
+      reason = paste("to", goal)
+    )
+    missingp <- !vapply(pkg,
+                        FUN.VALUE = logical(1),
+                        requireNamespace,
+                        quietly = TRUE)
+  }
   if (any(missingp)) {
     if (err) {
       lambda <- util_error
     } else {
       lambda <- util_warning
     }
+    if (rlang::is_installed("cli")) {
+      install_all <-
+        cli::cli_text(
+          sprintf("Call {.run [%s](%s)} to install all suggested packages",
+                  "prep_check_for_dataquieR_updates()",
+                  "dataquieR::prep_check_for_dataquieR_updates()")
+        )
+    } else {
+      install_all <-
+        sprintf("Call %s to install all suggested packages",
+                dQuote("prep_check_for_dataquieR_updates()"))
+    }
     lambda(c("Missing the package(s) %s to %s.",
-             "Install with install.packages(%s)"),
+             "Install with install.packages(%s).",
+             install_all),
            paste0(dQuote(pkg[missingp]), collapse = ", "),
            goal,
            deparse(pkg[missingp]))

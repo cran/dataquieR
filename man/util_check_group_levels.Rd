@@ -40,14 +40,14 @@ used. This argument specifies the
 minimum no. of subgroups (levels)
 included "group_var". If the variable
 defined in "group_var" has fewer
-subgroups it is splitted for analysis.}
+subgroups it is split for analysis.}
 
 \item{max_subgroups}{\link{integer} from=0. optional argument if a "group_var" is
 used. This argument specifies the
 maximum no. of subgroups (levels)
 included "group_var". If the variable
 defined in "group_var" has more
-subgroups it is splitted for analysis.}
+subgroups it is split for analysis.}
 }
 \value{
 modified study data frame
@@ -63,4 +63,24 @@ prep_prepare_dataframes(.label_col = LABEL)
 util_check_group_levels(ds1, "CENTER_0")
 dim(util_check_group_levels(ds1, "USR_BP_0", min_obs_in_subgroup = 400))
 }
+
+
 }
+\seealso{
+\link{prep_min_obs_level}
+
+Other data_management: 
+\code{\link{util_assign_levlabs}()},
+\code{\link{util_check_data_type}()},
+\code{\link{util_compare_meta_with_study}()},
+\code{\link{util_dichotomize}()},
+\code{\link{util_merge_data_frame_list}()},
+\code{\link{util_rbind}()},
+\code{\link{util_remove_na_records}()},
+\code{\link{util_replace_hard_limit_violations}()},
+\code{\link{util_study_var2factor}()},
+\code{\link{util_table_of_vct}()}
+}
+\concept{data_management}
+\concept{robustness}
+\keyword{internal}

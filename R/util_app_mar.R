@@ -12,6 +12,10 @@
 #' - 2 data type matches but not applicable
 #' - 3 data type matches and applicable
 #' - 4 not applicable because of not suitable data type
+#'
+#' @seealso [pro_applicability_matrix]
+#' @keywords internal
+
 util_app_mar <- function(x, dta) {
   c1 <- rowSums(!is.na(x[, grep("^GROUP_VAR_", colnames(x),
          perl = TRUE, value = TRUE), drop = FALSE])) > 0

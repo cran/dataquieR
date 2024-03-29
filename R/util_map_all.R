@@ -13,6 +13,10 @@
 #'                names
 #'
 #' @importFrom utils adist
+#'
+#' @family mapping
+#' @concept metadata_management
+#' @keywords internal
 util_map_all <- function(label_col = VAR_NAMES,
                          study_data,
                          meta_data) {
@@ -106,7 +110,7 @@ util_map_all <- function(label_col = VAR_NAMES,
     }
   }
 
-  if (lost > 0 && !getOption("dataquieR.RECORD_MISSMATCH_CHECKTYPE", # TODO: This may not be a suitable option name: Replace all occurences in dataquieR by ELEMENT_MISSMATCH_CHECKTYPE
+  if (lost > 0 && !getOption("dataquieR.ELEMENT_MISSMATCH_CHECKTYPE",
                              "exact") %in%
       c("none", "subset_m")) {
     util_warning(
@@ -133,7 +137,7 @@ util_map_all <- function(label_col = VAR_NAMES,
     }
   }
 
-  if (unlost > 0 && !getOption("dataquieR.RECORD_MISSMATCH_CHECKTYPE",
+  if (unlost > 0 && !getOption("dataquieR.ELEMENT_MISSMATCH_CHECKTYPE",
                                "exact") %in%
       c("none", "subset_u")) {
     util_warning(

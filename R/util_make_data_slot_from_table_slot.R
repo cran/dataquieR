@@ -3,6 +3,10 @@
 #' @param Table [data.frame], a table
 #'
 #' @return renamed table
+#'
+#' @family reporting_functions
+#' @concept summary
+#' @keywords internal
 util_make_data_slot_from_table_slot <- function(Table) { # TODO: Use also in both qualified missingness functions
   abbreviationMetrics <- util_get_concept_info("abbreviationMetrics") # TODO: Use util_translate_indicator_metrics
   dqi <- util_get_concept_info("dqi")

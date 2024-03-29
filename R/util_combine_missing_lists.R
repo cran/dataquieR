@@ -27,7 +27,14 @@
 #'   - `ModifiedStudyData`: data frame with re-coded (if needed) study data
 #'   - `cause_label_df`: data frame with re-coded missing codes suitable for all
 #'                       variables
-util_combine_missing_lists <-
+#'
+#' @family metadata_management
+#' @concept robustness
+#' @keywords internal
+
+
+# FIXME
+CAN_THIS_BE_REMOVED_util_combine_missing_lists <-
   function(resp_vars, study_data, meta_data, label_col,
            include_sysmiss, cause_label_df, assume_consistent_codes = TRUE,
            expand_codes = assume_consistent_codes,
@@ -43,7 +50,7 @@ util_combine_missing_lists <-
                                 suppressWarnings = suppressWarnings)
     cause_label_df <- validated$cause_label_df
 
-    util_prepare_dataframes(.replace_missings = FALSE)
+    prep_prepare_dataframes(.replace_missings = FALSE)
 
     # correct variable use?
     util_correct_variable_use("resp_vars",
@@ -67,7 +74,7 @@ util_combine_missing_lists <-
     }
 
     overall_max_val <- max(
-      suppressWarnings(as.numeric(as.matrix(study_data))), na.rm = TRUE)
+      suppressWarnings(as.numeric(as.matrix(study_data))), na.rm = TRUE) # TODO: Here may be a problem, if we have DATETIME missing codes
 
     mc_labs <- lapply(setNames(nm = resp_vars), function(rv) {
       ml <-
@@ -173,7 +180,7 @@ util_combine_missing_lists <-
 
     # prepare a generator for globally unused codes
 
-    overall_max_val <- max(overall_max_val,
+    overall_max_val <- max(overall_max_val,# TODO: Here may be a problem, if we have DATETIME missing codes
                            vapply(mc_labs, function(x) {
                              if (is.data.frame(x) && any(!is.finite(
                                x$CODE_VALUE)))

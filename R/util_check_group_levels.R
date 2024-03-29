@@ -22,13 +22,13 @@
 #'                                        minimum no. of subgroups (levels)
 #'                                        included "group_var". If the variable
 #'                                        defined in "group_var" has fewer
-#'                                        subgroups it is splitted for analysis.
+#'                                        subgroups it is split for analysis.
 #' @param max_subgroups [integer] from=0. optional argument if a "group_var" is
 #'                                        used. This argument specifies the
 #'                                        maximum no. of subgroups (levels)
 #'                                        included "group_var". If the variable
 #'                                        defined in "group_var" has more
-#'                                        subgroups it is splitted for analysis.
+#'                                        subgroups it is split for analysis.
 #'
 #' @return modified study data frame
 #' @examples
@@ -39,6 +39,12 @@
 #' util_check_group_levels(ds1, "CENTER_0")
 #' dim(util_check_group_levels(ds1, "USR_BP_0", min_obs_in_subgroup = 400))
 #' }
+#'
+#'
+#' @seealso [prep_min_obs_level]
+#' @family data_management
+#' @concept robustness
+#' @keywords internal
 util_check_group_levels <- function(study_data,
                                     group_vars,
                                     min_obs_in_subgroup = -Inf,

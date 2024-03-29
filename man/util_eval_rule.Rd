@@ -37,3 +37,10 @@ the result of the parsed rule
 also allows to use \code{VAR_NAMES} in the rules,
 if other labels have been selected
 }
+\seealso{
+Other redcap: 
+\code{\link{util_get_redcap_rule_env}()}
+}
+\concept{process}
+\concept{redcap}
+\keyword{internal}

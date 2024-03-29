@@ -12,3 +12,11 @@ number of available CPU cores.
 \description{
 See \code{parallel::detectCores} for further details.
 }
+\seealso{
+Other system_functions: 
+\code{\link{util_user_hint}()},
+\code{\link{util_view_file}()}
+}
+\concept{process}
+\concept{system_functions}
+\keyword{internal}

@@ -35,7 +35,7 @@ test_that("util_validate_known_meta works", {
                                     paste("Some code labels or -values are",
                                           "missing from .+meta_data.+"),
                                     paste("Suspicious .+MISSING_LIST.+:",
-                                          "not numeric/assignment")
+                                          "not numeric/date/assignment")
                                     ),
                    all = TRUE,
                    perl = TRUE)
@@ -47,7 +47,7 @@ test_that("util_validate_known_meta works", {
                                     paste("Some code labels or -values are",
                                           "missing from .+meta_data.+"),
                                     paste("Suspicious .+MISSING_LIST.+:",
-                                          "not numeric/assignment")
+                                          "not numeric/date/assignment")
                    ),
                    all = TRUE,
                    perl = TRUE)

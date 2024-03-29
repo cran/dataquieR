@@ -29,6 +29,8 @@ The unexpected element record check can be conducted by providing the number of 
 an additional table with the expected records.
 It is possible to conduct the checks by study segments or to consider only selected
 segments.
+
+\link{Indicator}
 }
 \examples{
 \dontrun{

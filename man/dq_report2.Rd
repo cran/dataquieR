@@ -17,9 +17,10 @@ dq_report2(
   cores = list(mode = "socket", logging = FALSE, cpus = util_detect_cores(),
     load.balancing = TRUE),
   specific_args = list(),
+  advanced_options = list(),
   author = prep_get_user_name(),
   title = "Data quality report",
-  subtitle = "Report information",
+  subtitle = as.character(Sys.Date()),
   user_info = NULL,
   debug_parallel = FALSE,
   resp_vars = character(0),
@@ -79,13 +80,16 @@ correspond to the indicator functions whose calls
 should be modified. The elements are lists of
 arguments.}
 
+\item{advanced_options}{\link{list} options to set during report computation,
+see \code{\link[=options]{options()}}}
+
 \item{author}{\link{character} author for the report documents.}
 
 \item{title}{\link{character} optional argument to specify the title for
-the first page of the data quality report}
+the data quality report}
 
 \item{subtitle}{\link{character} optional argument to specify a subtitle for
-the first page of the data quality report}
+the data quality report}
 
 \item{user_info}{\link{list} additional info stored with the report, e.g.,
 comments, title, ...}

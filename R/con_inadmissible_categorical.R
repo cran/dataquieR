@@ -5,6 +5,8 @@
 #'  This implementation will examine, if all observed levels in the study data
 #'  are valid.
 #'
+#' [Indicator]
+#'
 #' @details
 #' ### Algorithm of this implementation:
 #'
@@ -82,7 +84,8 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
                             allow_more_than_one = TRUE,
                             allow_null = TRUE,
                             allow_any_obs_na = TRUE,
-                            need_type = "integer | string"
+                            need_type = "integer | string", # TODO: What about datetime as categorical variable, if there are, e.g., only three timepoints?
+                            need_scale = "nominal | ordinal"
   )
 
   if (length(resp_vars) == 0) {
@@ -132,7 +135,8 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
   get_obs_cats <- function(x) {
     as.character(sort(unique(x[!is.na(x)])))
   }
-  sumdf1$OBSERVED_CATEGORIES <- lapply(ds1[, resp_vars, drop = FALSE], get_obs_cats)
+  sumdf1$OBSERVED_CATEGORIES <- lapply(ds1[, resp_vars, drop = FALSE],
+                                       get_obs_cats)
 
   # Which categories were defined in metadata?
   def_cats <- lapply(lapply(
@@ -146,7 +150,8 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
       ),
       nm = resp_vars
     ),
-    util_parse_assignments
+    util_parse_assignments,
+    split_on_any_split_char = TRUE, split_char = c(SPLIT_CHAR, '<')
   ), unlist)
   sumdf1$DEFINED_CATEGORIES <- mapply(lapply(def_cats, names), def_cats,
                                       SIMPLIFY = FALSE,
@@ -183,7 +188,8 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
           na.rm = TRUE
         )
         n_per_cat <- table(ds1[[sumdf1$Variables[i]]][which(
-          ds1[[sumdf1$Variables[i]]] %in% as_numeric_now_warn(unlist(sumdf1$NON_MATCHING[i])))])
+          ds1[[sumdf1$Variables[i]]] %in%
+            as_numeric_now_warn(unlist(sumdf1$NON_MATCHING[i])))])
         sumdf1$NON_MATCHING_N_PER_CATEGORY[i] <- paste(
           paste0(n_per_cat, " (", dQuote(names(n_per_cat)), ")"),
           collapse = ", ")
@@ -250,7 +256,8 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
   sumdf1$NON_MATCHING_N <-
     ifelse(is.na(sumdf1$NON_MATCHING_N), 0, sumdf1$NON_MATCHING_N)
   sumdf1$NON_MATCHING_N_PER_CATEGORY <-
-    ifelse(is.na(sumdf1$NON_MATCHING_N_PER_CATEGORY), 0, sumdf1$NON_MATCHING_N_PER_CATEGORY)
+    ifelse(is.na(sumdf1$NON_MATCHING_N_PER_CATEGORY), 0,
+           sumdf1$NON_MATCHING_N_PER_CATEGORY)
   sumdf1[["GRADING"]] <-
     ifelse(sumdf1$NON_MATCHING_N > threshold_value / 100 * nrow(ds1), 1, 0)
 
@@ -259,6 +266,22 @@ con_inadmissible_categorical <- function(resp_vars = NULL, study_data,
   sumdf2$PCT_con_rvv_icat <- round(sumdf2$NUM_con_rvv_icat / nrow(ds1) * 100, 1)
   sumdf2$GRADING <- sumdf1$GRADING
   sumdf2$FLG_con_rvv_icat <- ifelse(sumdf2$GRADING == 1, TRUE, FALSE)
+
+
+  # to add descriptions in the hover text of the headers of the table
+  text_to_display <-
+    c(Variables = "",
+      `OBSERVED_CATEGORIES`= "Categories present in the study data",
+      `DEFINED_CATEGORIES` = "Categories defined in the metadata",
+      `NON_MATCHING` = paste0("Categories present in the study data but",
+                              " not defined in the metadata"),
+      `NON_MATCHING_N` = "Total number of observational units with mis-matches",
+      `NON_MATCHING_N_PER_CATEGORY` = paste0("Number of observational units ",
+                                             "with mis-matches per undefined",
+                                             " but found category"),
+      `GRADING` = "1 = presence of categories not defined in the metadata")
+
+  attr(sumdf1, "description") <- text_to_display
 
   return(list(SummaryData = sumdf1,
               SummaryTable = sumdf2,

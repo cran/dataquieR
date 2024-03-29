@@ -5,7 +5,7 @@
 \alias{dims}
 \title{Dimension Titles for Prefixes}
 \format{
-An object of class \code{character} of length 4.
+An object of class \code{character} of length 5.
 }
 \usage{
 dims

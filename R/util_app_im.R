@@ -15,6 +15,10 @@
 #'
 #' @importFrom dplyr recode
 #'
+#'
+#' @seealso [pro_applicability_matrix]
+#' @keywords internal
+
 util_app_im <- function(x, dta) {
   if (MISSING_LIST %in% names(x)) {
     c1 <- ifelse(is.na(x[[MISSING_LIST]]) |

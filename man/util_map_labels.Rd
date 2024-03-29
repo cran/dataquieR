@@ -66,3 +66,12 @@ stopifnot(all(prep_map_labels(c("AGE", "DOE"), meta_data) == c("Age",
                                                  "Examination Date")))
 }
 }
+\seealso{
+Other mapping: 
+\code{\link{util_map_all}()},
+\code{\link{util_map_by_largest_prefix}()},
+\code{\link{util_recode}()}
+}
+\concept{mapping}
+\concept{metadata_management}
+\keyword{internal}

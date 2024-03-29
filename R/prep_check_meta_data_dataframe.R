@@ -30,6 +30,9 @@ prep_check_meta_data_dataframe <- function(meta_data_dataframe =
                                              "dataframe_level") {
   util_expect_data_frame(meta_data_dataframe)
 
+  if (!(DF_ELEMENT_COUNT %in% colnames(meta_data_dataframe))) {
+    meta_data_dataframe$DF_ELEMENT_COUNT <- rep(NA_integer_, nrow(meta_data_dataframe))
+  }
   if (!(DF_RECORD_COUNT %in% colnames(meta_data_dataframe))) {
     meta_data_dataframe$DF_RECORD_COUNT <- rep(NA_integer_, nrow(meta_data_dataframe))
   }
@@ -52,6 +55,7 @@ prep_check_meta_data_dataframe <- function(meta_data_dataframe =
       DF_ID_VARS = is.character, # TODO: Write utility functions for converting data types with proper warnings
       DF_NAME = is.character,
       DF_RECORD_COUNT = util_all_is_integer,
+      DF_ELEMENT_COUNT = util_all_is_integer,
       DF_ID_REF_TABLE = is.character,
       DF_RECORD_CHECK = function(x) {
         all(util_empty(x) | x %in% c("subset", "exact"))
@@ -63,6 +67,7 @@ prep_check_meta_data_dataframe <- function(meta_data_dataframe =
       DF_ID_VARS = as.character,
       DF_NAME = as.character,
       DF_RECORD_COUNT = as.integer,
+      DF_ELEMENT_COUNT = as.integer,
       DF_ID_REF_TABLE = as.character,
       DF_RECORD_CHECK = function(x) {
         r <-

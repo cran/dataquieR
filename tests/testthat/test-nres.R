@@ -9,5 +9,5 @@ test_that("nres works", {
   report <-
     dq_report2("study_data", dimensions = c("int"), label_col = "LABEL",
                cores = 1, filter_result_slots = NULL);
-  expect_equal(nres(report), 11)
+  expect_equal(nres(report), 12)
 })

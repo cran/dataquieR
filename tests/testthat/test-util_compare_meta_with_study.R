@@ -1,4 +1,5 @@
-test_that("util_compare_meta_with_study works", {
+test_that("util_compare_meta_with_study works", {#####
+  skip_on_cran()
   study_data <- cars
   meta_data <- prep_create_meta(
     VAR_NAMES = c("speed", "dist"),

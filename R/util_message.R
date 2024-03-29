@@ -12,4 +12,7 @@
 #'
 #' @return [condition] the condition object, if the execution is not stopped
 #'
+#' @family condition_functions
+#' @concept process
+#' @keywords internal
 util_message <- util_condition_constructor_factory("message")

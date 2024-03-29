@@ -23,6 +23,10 @@
 #'
 #' @return a vector with the number of expected observations for each
 #'         `resp_vars`.
+#'
+#' @family missing_functions
+#' @concept process
+#' @keywords internal
 util_count_expected_observations <- function(resp_vars, study_data, meta_data,
                                              label_col = LABEL,
                                              expected_observations =

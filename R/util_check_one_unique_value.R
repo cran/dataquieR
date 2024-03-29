@@ -8,6 +8,11 @@
 #'                           is observed in `x`,
 #'                     FALSE otherwise
 #'
+#' @family robustness_functions
+#' @concept data_management
+#' @keywords internal
+
+
 util_check_one_unique_value <- function(x) {
   howmany <- length(unique(x[!is.na(x)]))
   return(as.logical(ifelse(howmany == 1, 1, 0)))

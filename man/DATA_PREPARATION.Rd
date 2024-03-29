@@ -11,6 +11,7 @@ An object of class \code{character} of length 1.
 DATA_PREPARATION
 }
 \description{
+For contradiction rules, the required pre-processing steps that can be given.
 TODO JM: MISSING_LABEL will not work for non-factor variables
 }
 \details{

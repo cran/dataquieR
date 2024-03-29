@@ -23,10 +23,13 @@
 #' @return a [data.frame] with labels assigned to categorical variables
 #'         (if available)
 #'
+#' @family data_management
+#' @concept data_management
+#' @keywords internal
 util_assign_levlabs <- function(variable, string_of_levlabs, splitchar,
                                 assignchar, ordered = TRUE, variable_name = "",
-                                warn_if_inadmissible = TRUE)
-  {
+                                warn_if_inadmissible = TRUE) {
+  # TODO: handle VALUE_LABELS w/o codes, e.g. male | female
   util_expect_scalar(variable_name, check_type = is.character)
   if (!util_empty(variable_name)) {
     variable_name <- sprintf(" for variable %s", dQuote(variable_name))
@@ -86,10 +89,19 @@ util_assign_levlabs <- function(variable, string_of_levlabs, splitchar,
   }
 
   # assign levels and labels to vector
-  if ((length(levs) == length(labs)) & (length(levs) >=
-                                        length(
-                                          unique(
-                                            variable[!(is.na(variable))])))) {
+  if ((length(levs) == length(labs))) {
+    # & (length(levs) >=
+    #                                     length(
+    #                                       unique(
+    #                                         variable[!(is.na(variable))])))) {
+    if (warn_if_inadmissible & !all(variable %in% c(NA, levs))) {
+      util_warning(
+        c("Inadmissible categorical values found, use levels as labels%s"),
+                   variable_name, applicability_problem = TRUE)
+      inadm <- unique(variable[!(variable %in% c(NA, levs))])
+      levs <- c(levs, inadm)
+      labs <- c(labs, inadm)
+    }
     variable <- factor(variable, levels = levs,
                        labels = labs, ordered = ordered)
   }

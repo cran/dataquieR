@@ -69,6 +69,11 @@
 #'   '[dist] > sum(1, +(2, [dist] + 5), [speed]) + 3 + [dist]'),
 #' cars, util_get_redcap_rule_env())
 #' }
+#'
+#' @family parser_functions
+#' @concept metadata_management
+#' @keywords internal
+
 util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
                                    must_eof = FALSE) {
   util_expect_scalar(must_eof, check_type = is.logical)
@@ -285,8 +290,14 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
             s <- remove_empty_part(s)
             s_str <- unlist(s)[!grepl("type$", perl = TRUE, names(unlist(s)))]
             if (any(unlist(s) == "option")) {
-              tz <- unname(tail(unlist(s), 1))
-              s_str <- head(s_str, -2)
+              tz0 <- unname(tail(unlist(s), 1))
+              if (tz0 != "option") {
+                tz <- tz0
+                s_str <- head(s_str, -2)
+              } else {
+                tz <- ""
+              }
+              rm("tz0")
             } else {
               tz <- ""
             }

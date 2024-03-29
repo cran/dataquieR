@@ -96,6 +96,8 @@ filled by variable-IDs indicating for each variable the respective
 intro-variable. This structure has the benefit that subsequent calculation of
 item missingness obtains correct denominators for the calculation of
 missingness rates.
+
+\link{Descriptor}
 }
 }
 \details{

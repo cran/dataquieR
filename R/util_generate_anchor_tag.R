@@ -10,6 +10,10 @@
 #'             separator, then
 #'
 #' @return the `htmltools` tag
+#'
+#' @family reporting_functions
+#' @concept process
+#' @keywords internal
 util_generate_anchor_tag <- function(
     varname,
     callname,
@@ -59,6 +63,10 @@ util_generate_anchor_tag <- function(
 #' @param title optional, replaces auto-generated link title
 #'
 #' @return the `htmltools` tag
+#'
+#' @family reporting_functions
+#' @concept process
+#' @keywords internal
 util_generate_anchor_link <- function(
     varname,
     callname,
@@ -86,12 +94,16 @@ util_generate_anchor_link <- function(
   dot <- ""
   if (nzchar(varname)) {
     varname <- prep_link_escape(varname, html = TRUE)
-    if (nzchar(callname)) {
+    if (nzchar(as.character(callname))) {
       dot <- "."
     }
   }
   if (util_match_arg(order_context) == "variable") {
-    .title <- prep_title_escape(util_alias2caption(callname), html = TRUE)
+    if (!missing(title)) {
+      .title <- title
+    } else {
+      .title <- prep_title_escape(util_alias2caption(callname), html = TRUE)
+    }
     href <- sprintf("VAR_%s.html#%s%s%s", varname, varname, dot, callname)
   } else {
     .title <- prep_title_escape(orig_varname, html = TRUE)

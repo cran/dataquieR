@@ -1,4 +1,5 @@
 test_that("util_parse_assignments works", {
+  skip_on_cran()
   expected <- list("1" = "married", "2" = "single", "3" = "divorced",
                    "4" = "widowed")
 
@@ -14,6 +15,7 @@ test_that("util_parse_assignments works", {
 
 test_that(paste("util_parse_assignments equivalent with an old independent",
                 "development from con inadmissible categories"), {
+  skip_on_cran()
 
   meta_data <- prep_get_data_frame("meta_data")
 

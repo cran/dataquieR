@@ -27,3 +27,7 @@ util_app_sos(x, dta)
 Test for applicability of checks for deviation form expected
 probability distribution shapes/scales
 }
+\seealso{
+\link{pro_applicability_matrix}
+}
+\keyword{internal}

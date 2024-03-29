@@ -1,5 +1,6 @@
 test_that(".onLoad works", {
   skip_if_not_installed("pkgload")
+  skip_on_cran()
   try(.onLoad(), silent = TRUE)
   expect_equal(
     intersect(

@@ -14,6 +14,11 @@
 #'    "http://www.uni-giessen.de/#xxx", "This is Gießen", "cruising on the A45"
 #' ))
 #' }
+#'
+#'
+#' @family reporting_functions
+#' @concept html
+#' @keywords internal
 util_float_index_menu <- function(index_menu_table, object) {
   if (missing(object)) {
     object <- do.call(htmltools::tagList,

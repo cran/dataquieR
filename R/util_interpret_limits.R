@@ -9,6 +9,10 @@
 #'
 #' @return augments metadata by interpretable limit columns
 #'
+#' @seealso [util_validate_known_meta]
+#' @family parser_functions
+#' @concept robustness
+#' @keywords internal
 util_interpret_limits <- function(mdata) { # TODO: Use the redcap parser, instead
 
   report_generation_time <- as.character(Sys.time())
@@ -38,7 +42,9 @@ util_interpret_limits <- function(mdata) { # TODO: Use the redcap parser, instea
   }
 
   # prefix/type of LIMITS
-  pv <- unlist(lapply(strsplit(lv, split = "_", fixed = TRUE), `[[`, 1))
+  pv <- lapply(strsplit(lv, split = "_", fixed = TRUE), function(syllables) {
+    paste0(syllables[!grepl("LIMIT", syllables)], collapse = "_")
+  })
 
   # result
   mdata_ext <- mdata

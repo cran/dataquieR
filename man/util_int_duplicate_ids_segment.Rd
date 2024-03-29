@@ -39,3 +39,14 @@ This function tests for duplicates entries in identifiers. It is possible to
 check duplicated identifiers by study segments or to consider only selected
 segments.
 }
+\seealso{
+Other integrity_indicator_functions: 
+\code{\link{util_int_duplicate_content_dataframe}()},
+\code{\link{util_int_duplicate_content_segment}()},
+\code{\link{util_int_duplicate_ids_dataframe}()},
+\code{\link{util_int_unexp_records_set_dataframe}()},
+\code{\link{util_int_unexp_records_set_segment}()}
+}
+\concept{integrity_indicator}
+\concept{integrity_indicator_functions}
+\keyword{internal}

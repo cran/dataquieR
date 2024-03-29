@@ -7,15 +7,20 @@
 util_parse_assignments(
   text,
   split_char = SPLIT_CHAR,
-  multi_variate_text = FALSE
+  multi_variate_text = FALSE,
+  split_on_any_split_char = FALSE
 )
 }
 \arguments{
 \item{text}{Text to be parsed}
 
-\item{split_char}{Character separating assignments}
+\item{split_char}{Character separating assignments, may be a vector, then
+all will be tried and the the most likely matching one will
+be returned as attribute \code{split_char} of the result.}
 
 \item{multi_variate_text}{don't paste text but parse element-wise}
+
+\item{split_on_any_split_char}{split on any split \code{split_char}, if > 1 given.}
 }
 \value{
 the parsed assignments as a named list
@@ -27,3 +32,32 @@ but this would not match the metadata concept. The split-character can
 be given, if not the default from \link{SPLIT_CHAR} is to be used, but this
 would also violate the metadata concept.
 }
+\examples{
+\dontrun{
+md <- prep_get_data_frame("meta_data")
+vl <- md$VALUE_LABELS
+vl[[50]] <- "low<medium < high"
+a <- util_parse_assignments(vl, split_char = c(SPLIT_CHAR, "<"),
+  multi_variate_text = TRUE)
+b <- util_parse_assignments(vl, split_char = c(SPLIT_CHAR, "<"),
+  split_on_any_split_char = TRUE, multi_variate_text = TRUE)
+is_ordered <- vapply(a, attr, "split_char", FUN.VALUE = character(1)) == "<"
+md$VALUE_LABELS[[50]] <- "low<medium < high"
+md$VALUE_LABELS[[51]] <- "1 = low< 2=medium < 3=high"
+md$VALUE_LABELS[[49]] <- "2 = medium< 1=low < 3=high" # counter intuitive
+with_sl <- prep_scalelevel_from_data_and_metadata(study_data = "study_data",
+  meta_data = md)
+View(with_sl[, union(SCALE_LEVEL, colnames(with_sl))])
+}
+
+}
+\seealso{
+Other parser_functions: 
+\code{\link{util_interpret_limits}()},
+\code{\link{util_interpret_range}()},
+\code{\link{util_parse_interval}()},
+\code{\link{util_parse_redcap_rule}()}
+}
+\concept{metadata_management}
+\concept{parser_functions}
+\keyword{internal}

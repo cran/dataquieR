@@ -3,6 +3,9 @@ test_that("acc_multivariate_outlier works with 3 args", {
   skip_if_translated()
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
   expect_error(
     res1 <-
       acc_multivariate_outlier(
@@ -48,7 +51,7 @@ test_that("acc_multivariate_outlier works with 3 args", {
   expect_equal(
     suppressWarnings(abs(sum(as.numeric(
       as.matrix(res1$SummaryTable)),
-      na.rm = TRUE))), 182
+      na.rm = TRUE))), 182+3.13
   )
 })
 
@@ -56,6 +59,9 @@ test_that("acc_multivariate_outlier works with label_col", {
   skip_on_cran() # slow and tested elsewhere
   meta_data <- prep_get_data_frame("meta_data")
   study_data <- prep_get_data_frame("study_data")
+  meta_data <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
   expect_error(
     res1 <-
       acc_multivariate_outlier(
@@ -104,17 +110,15 @@ test_that("acc_multivariate_outlier works with label_col", {
   expect_equal(
     suppressWarnings(abs(sum(as.numeric(
       as.matrix(res1$SummaryTable)),
-      na.rm = TRUE))), 182
+      na.rm = TRUE))), 182+3.13
   )
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
-  skip_if_not(capabilities()["long.double"])
+  # TODO: skip_if_not(capabilities()["long.double"])
   vdiffr::expect_doppelganger(
     "acc_mv_outlierCRP0GLOBHEAVA0",
                               res1$SummaryPlot)
 })
 
-test_that("criteria is robust", {
-
-})
+# TODO:  a test for invalid values in the criteria argument.

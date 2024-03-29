@@ -43,7 +43,7 @@ print.dataquieR_resultset2 <- function(
         if (!is.null(attr(e, "applicability_problem")) &&
             is.logical(attr(e, "applicability_problem")) &&
             identical(attr(e, "applicability_problem"), TRUE)) {
-              "Applicabiility problem(s)"
+              "Applicability problem(s)"
         } else {
           paste(conditionMessage(e), collapse = "\n")
         }
@@ -85,6 +85,14 @@ print.dataquieR_resultset2 <- function(
     if (!is.logical(view) || length(view) != 1 || is.na(view))
       util_error("view must be a logical(1)")
   }
+  if ("by_report" %in% names(opts)) {
+    by_report <- opts[["by_report"]]
+    if (!is.logical(by_report) || length(by_report) != 1 || is.na(by_report))
+      util_error("by_report must be a logical(1)")
+  } else {
+    by_report <- FALSE
+  }
+
 
   util_setup_rstudio_job("Rendering dq_report2 to HTML...")
   start_time <- Sys.time()
@@ -94,6 +102,11 @@ print.dataquieR_resultset2 <- function(
     util_message("No output directory given (with dir=), setting it to %s",
                  dQuote(dir))
   }
+
+  content_dir <- dir
+  content_file <- file.path(content_dir, "index.html")
+  dir <- file.path(dir, ".report")
+
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   dir <- normalizePath(dir)
   old_dir <- setwd(dir)
@@ -144,7 +157,19 @@ print.dataquieR_resultset2 <- function(
                                            progress = progress,
                                            progress_msg = progress_msg,
                                            block_load_factor =
-                                             block_load_factor)
+                                             block_load_factor,
+                                           dir = dir)
+
+  all_ids <- util_extract_all_ids(pages)
+  cat(sep = "",
+      "window.all_ids = {\"all_ids\": ",
+      paste0("[",
+                 paste0('"', all_ids, '"', collapse = ", "),
+                 "]"),
+      "}",
+      file = file.path(dir, "anchor_list.js")
+  )
+
 
   logo <- "logo.png"
   loading <-
@@ -153,28 +178,23 @@ print.dataquieR_resultset2 <- function(
                   package =
                     packageName))
 
+  jqui <- rmarkdown::html_dependency_jqueryui()
+  jqui$stylesheet <- "jquery-ui.min.css"
+
   deps_prepro <- util_copy_all_deps(dir = dir,
                                     pages,
                                     rmarkdown::html_dependency_jquery(),
-                                    htmltools::htmlDependency(
-                                      name = "clipboard",
-                                      version = "2.0.11",
-                                      src = system.file("clipboard", package = packageName),
-                                      script = c("clipboard.min.js")
-                                    ),
-                                    htmltools::htmlDependency(
-                                        name = "tippy",
-                                        version = "6.7.3",
-                                        src = system.file("tippy", package = packageName),
-                                        script = c("core.js", "tippy.js")
-                                      ),
-                                      rmarkdown::html_dependency_font_awesome(),
-                                      htmltools:: htmlDependency("menu", "1.0.0",
-                                                                 src = system.file("menu", package =
-                                                                                   packageName),
-                                                                 stylesheet = "style.css",
-                                                                 script = "script.js")
+                                    jqui,
+                                    html_dependency_clipboard(),
+                                    html_dependency_tippy(),
+                                    rmarkdown::html_dependency_font_awesome(),
+                                    html_dependency_dataquieR()
   )
+
+  title <- attr(report, "title")
+  if (is.null(title)) {
+    title <- "Data Quality Report"
+  }
 
   fnms <- lapply(
     setNames(nm = seq_along(pages)),
@@ -189,7 +209,9 @@ print.dataquieR_resultset2 <- function(
     logo = logo,
     loading = loading,
     packageName = packageName,
-    deps = deps_prepro$deps
+    deps = deps_prepro$deps,
+    title = title,
+    by_report = by_report
   )
 
   end_time <- Sys.time()
@@ -210,10 +232,35 @@ print.dataquieR_resultset2 <- function(
       file = file.path(dir, "renderinfo.js")
   )
 
+  util_hide_file_windows(dir)
+
   progress_msg(sprintf("Wrote %s", paste0(dQuote(fnms), collapse = ", ")))
 
+  f <- file(description = content_file,
+            open = "w", encoding = "utf-8")
+  on.exit(close(f), add = TRUE)
+
+  cat("<html>",
+      "<head>",
+      "<title>",
+      title,
+      "</title>",
+      '<meta http-equiv="refresh" content="0; URL=.report/',
+      basename(fnms[[1]]),
+      '">',
+      "</head>",
+      "<body><a href=\".report/",
+      basename(fnms[[1]]),
+      "\">Report</a></body></html>",
+      sep = "",
+      file = f)
+
+  if (util_really_rstudio()) {
+    rstudioapi::executeCommand("activateConsole")
+  }
+
   if (view) {
-    util_view_file(fnms[[1]])
+    util_view_file(content_file)
     invisible(fnms)
   } else {
     fnms

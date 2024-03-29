@@ -17,3 +17,6 @@ a data frame
 \description{
 Read additional concept tables
 }
+\concept{concept_functions}
+\concept{reporting}
+\keyword{internal}

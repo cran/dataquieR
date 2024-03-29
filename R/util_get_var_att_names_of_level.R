@@ -8,6 +8,11 @@
 #'
 #' @return all matching variable attribute names
 #'
+#' @family metadata_management
+#' @concept metadata_management
+#' @keywords internal
+
+
 util_get_var_att_names_of_level <- function(level, cumulative = TRUE) {
   if (length(level) > 0) {
     level <- match.arg(level, choices = unlist(VARATT_REQUIRE_LEVELS),

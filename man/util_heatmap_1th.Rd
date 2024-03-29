@@ -50,3 +50,10 @@ a \link{list} with:
 Function to create heatmap-like plot given one threshold -- works for
 percentages for now.
 }
+\seealso{
+Other figure_functions: 
+\code{\link{util_optimize_histogram_bins}()}
+}
+\concept{figure_functions}
+\concept{summary}
+\keyword{internal}

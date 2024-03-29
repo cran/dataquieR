@@ -12,6 +12,10 @@
 #' - 2 data type matches but not applicable
 #' - 3 data type matches and applicable
 #' - 4 not applicable because of not suitable data type
+#'
+#' @seealso [pro_applicability_matrix]
+#' @keywords internal
+
 util_app_mol <- function(x, dta) {
   aa <- paste0(dta, 1)
   score <- as.numeric(recode(as.factor(aa), "00" = 0, "01" = 1,
