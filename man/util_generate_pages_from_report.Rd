@@ -11,7 +11,8 @@ util_generate_pages_from_report(
   progress = progress,
   progress_msg = progress_msg,
   block_load_factor,
-  dir
+  dir,
+  my_dashboard
 )
 }
 \arguments{
@@ -29,6 +30,9 @@ util_generate_pages_from_report(
 by this factor.}
 
 \item{dir}{\link{character} output directory for potential \code{iframes}.}
+
+\item{my_dashboard}{\link{list} of class \code{shiny.tag.list} featuring a dashboard or
+missing or \code{NULL}}
 }
 \value{
 named list, each entry becomes a file with the name of the entry.
@@ -50,7 +54,9 @@ save(report, file = "report_v2_short.RData")
 }
 \seealso{
 Other html: 
-\code{\link{util_extract_all_ids}()}
+\code{\link{util_dashboard_table}()},
+\code{\link{util_extract_all_ids}()},
+\code{\link{util_get_hovertext}()}
 }
 \concept{html}
 \concept{process}

@@ -10,9 +10,16 @@
 #'
 #' @family summary_functions
 #' @export
-prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If use_plotly is FALSE? also: support some way for dq_report_by to switch plotly off
+prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If use_plotly is FALSE?
                                                       meta_data = "item_level") {
 # FIXME: Amend prep_render_pie_chart_from_summaryclasses_ggplot2 to handle this also.
+  te <- topenv(parent.frame(1)) # see https://stackoverflow.com/a/27870803
+  if (!(isNamespace(te) && getNamespaceName(te) == "dataquieR")) {
+    lifecycle::deprecate_soft("2.1.0.9007",
+                              "prep_render_pie_chart_from_summaryclasses_plotly()",
+                              "plot.dataquieR_summary()")
+  }
+
   if (!util_ensure_suggested(c("plotly", "htmltools"), err = FALSE)) {
     return(NULL)
   }
@@ -28,6 +35,8 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
   groups <- unique(data[[grouped_by]])
 
   util_stop_if_not(length(groups) > 0)
+
+
 
   if (length(groups) > 1) {
     all_pys <- lapply(setNames(nm = groups), function(g) {
@@ -75,6 +84,36 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
   labs <- util_get_labels_grading_class()
   labs["NA"] <- "Not classified"
 
+  # wrap the text of the labs if too long. Max no. characters = 20
+  no_char_labs<- vapply(labs, FUN = function(x){
+    no_char <- nchar(x)
+  }, FUN.VALUE = numeric(1))
+
+  if (any(no_char_labs > 10)) {
+    labs<- vapply(labs, FUN = function(x){
+      #remove white spaces at beginning or end
+      x <- trimws(x)
+
+      #If labs >20 characters, cut it at 20
+      if (nchar(x) > 20) {
+        x <- substr(x, start = 1, stop = 20)
+      }
+
+      sst <- strsplit(x, '')[[1]]  #from https://stackoverflow.com/questions/11619616/how-to-split-a-string-into-substrings-of-a-given-length
+      m <- matrix('', nrow=10,
+                  ncol=(length(sst)+10-1)%/%10)
+      m[seq_along(sst)] <- sst
+      x <- apply(m, 2, paste, collapse='')
+      rm(sst, m)
+      #remove white spaces at beginning or end
+      x <- trimws(x)
+      x <- paste0(x, collapse = "<br>")
+    }, FUN.VALUE = character(1))
+  }
+
+
+
+
   if (all(is.na(data$class))) {
     return(htmltools::browsable(htmltools::HTML("")))
   }
@@ -107,7 +146,9 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
     #   type = 'sunburst'
     # )
   } else {
-    py <- plotly::add_pie(plotly::plot_ly(data),
+    py <- plotly::add_pie(plotly::plot_ly(data,
+                                          height = 400,
+                                          width = 400),
                           sort = FALSE,
                           rotation = 90,
                           labels = labs[
@@ -118,8 +159,10 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
                           #                hoverinfo = "label+percent+name",
                           hoverinfo = hoverinfo,
                           textinfo = 'label+percent+value',
+                          showlegend = FALSE,
                           marker = list(
                             colors = py_colors[paste(data$class)]))
+
   }
 
   if (identical(grouped_by, "indicator_metric")) { # TODO: Hiearchical structure support
@@ -127,11 +170,18 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
                                               long = FALSE)
     subtitle <- "percentage of QA classes"
   } else if (identical(grouped_by, "call_names")) { # TODO: Hiearchical structure support
-    title <- util_map_labels(groups,
+    fnms <- util_cll_nm2fkt_nm(groups)
+    if (nchar(fnms) < nchar(groups)) {
+      suff <- gsub("^.*_", ": ", groups)
+      substr(suff, 3, 3) <- toupper(substr(suff, 3, 3))
+    } else {
+      suff <- ""
+    }
+    title <- paste0(util_map_labels(fnms,
                             util_get_concept_info("implementations"),
                             to = "dq_report2_short_title",
                             from = "function_R",
-                            ifnotfound = NA_character_)
+                            ifnotfound = NA_character_), suff)
     subtitle <- "percentage of QA classes"
   } else if (identical(grouped_by, as.character(STUDY_SEGMENT))) { # TODO: Hiearchical structure support
     title <- groups
@@ -158,18 +208,17 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
                                         nrow(meta_data)
                                       )) # TODO: Maybe, we should not compute this here, but earlier.
 
-  py <- plotly::layout(py,
+   py <- plotly::layout(py,
                title =
                  list(
                    text =
                      as.character(htmltools::tagList(
                        title,
                        htmltools::tags$sup(subtitle)
-                     ))
-                 ),
+                     ))),
+               autosize = FALSE,  #maybe can cause trouble
                margin = list(
-                 t = 40
-               )
+                 t = 50, r = 100, l = 100, b = 50)
             )
 
   py <- htmltools::span(
@@ -181,6 +230,5 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
   py <- htmltools::browsable(
     py
   )
-
-  py
+  return(py)
 }

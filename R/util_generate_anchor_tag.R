@@ -102,7 +102,8 @@ util_generate_anchor_link <- function(
     if (!missing(title)) {
       .title <- title
     } else {
-      .title <- prep_title_escape(util_alias2caption(callname), html = TRUE)
+      .title <- prep_title_escape(util_alias2caption(callname, long = TRUE),
+                                  html = TRUE)
     }
     href <- sprintf("VAR_%s.html#%s%s%s", varname, varname, dot, callname)
   } else {

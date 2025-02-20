@@ -16,11 +16,7 @@ util_map_labels(
 \arguments{
 \item{x}{\link{character} variable names, character vector, see parameter from}
 
-\item{meta_data}{\link{data.frame} metadata data frame, if, as a \code{dataquieR}
-developer, you do not have
-\strong{item-level-metadata}, you should use
-\link{util_map_labels} instead to avoid consistency
-checks on for item-level \code{meta_data}.}
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
 
 \item{to}{\link{character} variable attribute to map to}
 

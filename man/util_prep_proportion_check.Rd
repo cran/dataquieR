@@ -7,8 +7,9 @@
 util_prep_proportion_check(
   resp_vars,
   meta_data,
-  study_data,
-  report_problems = c("error", "warning", "message")
+  ds1,
+  report_problems = c("error", "warning", "message"),
+  label_col = attr(ds1, "label_col")
 )
 }
 \arguments{
@@ -17,13 +18,16 @@ util_prep_proportion_check(
 \item{meta_data}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
-\item{study_data}{\link{data.frame} the data frame that contains the measurements
+\item{ds1}{\link{data.frame} the data frame that contains the measurements
 (hint: missing value codes should be excluded,
 so the function should be called with \code{ds1}, if
 available)}
 
 \item{report_problems}{\link{enum} Should missing metadata information be reported
 as error, warning or message?}
+
+\item{label_col}{\link{variable attribute} the name of the column in the metadata
+with labels of variables}
 }
 \value{
 a \link{list} with the expected range for the proportion check

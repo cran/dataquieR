@@ -33,6 +33,10 @@ div.content {
   display: flex;
 }
 
+.navbar div.breadcrumb {
+  margin-left: 1em;
+}
+
 @media screen and (max-width: 1082px) { /* also adjust in CSS at line tagged with !!MEDIA!!*/
   .navbar .dq-title {
     float: left;
@@ -149,11 +153,17 @@ div.content {
 
 div.singlePageFinal {
 /*  padding-top: 3em; */
+    margin-left: 1em;
+    margin-right: 1em;
 }
 
 div.singlePageFinal {display: none}
 div.singlePageFinal:target {display: block}
 div.singlePageFinal:has(:target) {display: block}
+
+div.singlePageFinal h5 {
+  font-size: 1.08em;
+}
 
 div.default-target {
   display: block;
@@ -190,7 +200,7 @@ div.default-target {
 
 /* https://stackoverflow.com/a/7354648 */
 /* The "responsive" class is added to the navbar with JavaScript when the user clicks on the icon. This class makes the navbar look good on small screens (display the links vertically instead of horizontally) */
-@media screen and (max-width: 1082px) { /* 835px is the point, where full fledged menus break, currently */
+@media screen and (max-width: 1082px) { /* 835px is the point, where full fledged menus break, currently FIXME: seems to be not needed cause of huge menue, meanwhile, but unsure. */
   .navbar.responsive *.icon {          /* also adjust in CSS at line tagged with !!MEDIA!!*/
     position: absolute;
     right: 0;
@@ -348,4 +358,13 @@ div.td-div {
 
 body {
   margin: 0px; /* avoid scroll problems in tables */
+}
+
+.statichtmlWidget .navbar { /* if used in an html widget, likely in rmarkdown, omit the navigation bar */
+    display: none;
+}
+
+.statichtmlWidget .datatables.html-widget.html-widget-static-bound { /* if used in an html widget, likely in rmarkdown, different width coumputation */
+  height: auto !important;
+  width: auto !important;
 }

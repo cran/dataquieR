@@ -1,7 +1,8 @@
 test_that("prep_min_obs_level works", {
   skip_on_cran() # function not used, yet
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   label_col <- LABEL
   prep_prepare_dataframes(.internal = TRUE)
   expect_message(
@@ -12,7 +13,6 @@ test_that("prep_min_obs_level works", {
       paste("The following levels: .+USR_559.+ have < 50",
             "observations and are disregarded"),
     perl = TRUE,
-    all = TRUE
   )
   expect_equal(nrow(study_data) - nrow(x), 29)
 
@@ -49,8 +49,7 @@ test_that("prep_min_obs_level works", {
     ),
     regexp = sprintf("(%s)",
                      paste("Subsets based only on one variable possible.")),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
 
   expect_message(
@@ -62,8 +61,7 @@ test_that("prep_min_obs_level works", {
             "observations and are disregarded"),
       paste("argument .+min_obs_in_subgroup.+ was missing,",
             "not of length 1 or NA, setting to its default, 30")),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
   expect_equal(nrow(study_data) - nrow(x), 29)
 
@@ -83,8 +81,7 @@ test_that("prep_min_obs_level works", {
                            "observations and are disregarded"),
                      paste("argument .+min_obs_in_subgroup.+ was missing,",
                            "not of length 1 or NA, setting to its default, 30")),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
 
   ds1. <- subset(ds1, USR_BP_0 != "USR_559")

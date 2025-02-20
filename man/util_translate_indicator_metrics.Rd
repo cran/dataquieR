@@ -4,7 +4,12 @@
 \alias{util_translate_indicator_metrics}
 \title{Translate standard column names to readable ones}
 \usage{
-util_translate_indicator_metrics(colnames, short = FALSE, long = TRUE)
+util_translate_indicator_metrics(
+  colnames,
+  short = FALSE,
+  long = TRUE,
+  ignore_unknown = FALSE
+)
 }
 \arguments{
 \item{colnames}{\link{character} the names to translate}
@@ -12,6 +17,9 @@ util_translate_indicator_metrics(colnames, short = FALSE, long = TRUE)
 \item{short}{\link{logical} include unit letter in output}
 
 \item{long}{\link{logical} include unit description in output}
+
+\item{ignore_unknown}{\link{logical} do not replace unknown indicator metrics
+by \code{NA}, keep them}
 }
 \value{
 translated names

@@ -12,9 +12,11 @@ test_that("prep_study2meta works", {
   )
 
   expect_snapshot_value(style = "deparse",
-                        prep_study2meta(iris, convert_factors = TRUE))
+                        prep_study2meta(iris, convert_factors = TRUE,
+                                        guess_missing_codes = TRUE))
 
-  meta_data <- prep_study2meta(cars, cumulative = FALSE)
+  meta_data <- prep_study2meta(cars, cumulative = FALSE,
+                               guess_missing_codes = TRUE)
   reference <- data.frame(VAR_NAMES = colnames(cars),
                           LABEL = colnames(cars),
                           DATA_TYPE = "integer",
@@ -41,13 +43,13 @@ test_that("prep_study2meta works", {
 
   expect_equal(meta_data, reference)
 
-  expect_error(prep_study2meta(42),
+  expect_error(prep_study2meta(42, guess_missing_codes = TRUE),
                regexp = ".+study_data.+ is not a data frame.")
-  expect_error(prep_study2meta(NULL),
+  expect_error(prep_study2meta(NULL, guess_missing_codes = TRUE),
                regexp = ".+study_data.+ is not a data frame.")
   expect_error(prep_study2meta(),
                regexp = "Missing .+study_data.+")
-  expect_error(prep_study2meta(cars[, c()]),
+  expect_error(prep_study2meta(cars[, c()], guess_missing_codes = TRUE),
                regexp = "No study variables found -- cannot proceed.")
 })
 
@@ -56,7 +58,8 @@ test_that("prep_study2meta handles tibbles correctly", {
   skip_if_not_installed("tibble") # should never be skipped, since dplyr is a
                                   # dependency of dataquieR and dplr depends on
                                   # tibble
-  meta_data <- prep_study2meta(tibble::as_tibble(cars), cumulative = FALSE)
+  meta_data <- prep_study2meta(tibble::as_tibble(cars), cumulative = FALSE,
+                               guess_missing_codes = TRUE)
   expect_equal(meta_data,
                data.frame(VAR_NAMES = colnames(cars),
                           LABEL = colnames(cars),
@@ -82,20 +85,22 @@ test_that("prep_study2meta handles tibbles correctly", {
                           stringsAsFactors = FALSE,
                           row.names = colnames(cars))
   )
-  meta_data <-
-    expect_warning(
-      with_mock(requireNamespace = function(...) {
+    suppressWarnings(expect_warning(
+      meta_data <-
+        with_mocked_bindings(.package = "base",
+                           requireNamespace = function(package, ...,
+                                                       quietly = FALSE) {
         return(FALSE)
       },
-        prep_study2meta(tibble::as_tibble(cars))
+        prep_study2meta(tibble::as_tibble(cars),
+                        guess_missing_codes = TRUE)
       ),
     regexp =
       sprintf("%s",
               paste(".+study_data.+ looks like a tibble. However, the package",
                     ".+tibble.+ seems not to be available,")),
-    perl = TRUE,
-    all = TRUE
-  )
+    perl = TRUE
+  ))
   expect_equal(meta_data,
                data.frame(VAR_NAMES = colnames(cars),
                           LABEL = colnames(cars),
@@ -125,14 +130,15 @@ test_that("prep_study2meta handles tibbles correctly", {
 
 test_that("prep_study2meta works on study_data", {
   skip_on_cran() # slow, rarely used, since w/o metdata, reports are not really informative
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   study_data <- study_data[, order(colnames(study_data)), FALSE]
   meta_data <- meta_data[order(meta_data$VAR_NAMES), , FALSE]
   meta_data[meta_data$LABEL %in% c("SBP_0", "DBP_0", "ARM_CIRC_0", "BSG_0"),
             DATA_TYPE] <- # values are not really float
     DATA_TYPES$INTEGER
-  guessed_meta_data <- prep_study2meta(study_data)
+  guessed_meta_data <- prep_study2meta(study_data, guess_missing_codes = TRUE)
   expect_equal(
     guessed_meta_data,
     data.frame(
@@ -140,59 +146,59 @@ test_that("prep_study2meta works on study_data", {
       LABEL = meta_data$VAR_NAMES,
       DATA_TYPE = meta_data$DATA_TYPE,
       SCALE_LEVEL = c(
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$`NA`,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$RATIO,
-        SCALE_LEVELS$RATIO,
-        SCALE_LEVELS$RATIO,
-        SCALE_LEVELS$RATIO,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$RATIO,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$INTERVAL,
-        SCALE_LEVELS$RATIO,
-        SCALE_LEVELS$RATIO,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$INTERVAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$INTERVAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$INTERVAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$RATIO,
-        SCALE_LEVELS$ORDINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$NOMINAL,
-        SCALE_LEVELS$NOMINAL
+        "nominal",
+        "na",
+        "nominal",
+        "ratio",
+        "ratio",
+        "ratio",
+        "ratio",
+        "nominal",
+        "nominal",
+        "ratio",
+        "nominal",
+        "nominal",
+        "nominal",
+        "interval",
+        "ratio",
+        "ratio",
+        "nominal",
+        "interval",
+        "nominal",
+        "nominal",
+        "nominal",
+        "ordinal",
+        "nominal",
+        "nominal",
+        "nominal",
+        "nominal",
+        "ordinal",
+        "ordinal",
+        "nominal",
+        "nominal",
+        "nominal",
+        "ordinal",
+        "nominal",
+        "interval",
+        "ordinal",
+        "ordinal",
+        "ordinal",
+        "ordinal",
+        "ordinal",
+        "ordinal",
+        "ordinal",
+        "ordinal",
+        "interval",
+        "nominal",
+        "nominal",
+        "nominal",
+        "ratio",
+        "nominal",
+        "nominal",
+        "nominal",
+        "nominal",
+        "nominal",
+        "nominal"
       ),
       UNIT = NA_character_,
       VALUE_LABELS = NA_character_,
@@ -213,50 +219,50 @@ test_that("prep_study2meta works on study_data", {
         SPLIT_CHAR,
         SPLIT_CHAR,
         SPLIT_CHAR,
-        "99980|99988|99989|99990",
-        "99980|99988|99989|99990",
-        "99980|99988|99989|99990",
-        "99980|99988|99989",
+        "99980|99981|99982|99983|99984|99985|99986|99987|99988|99989|99990|99991|99992|99993|99994|99995",
+        "99980|99981|99982|99983|99984|99985|99986|99987|99988|99989|99990|99991|99992|99993|99994|99995",
+        "99980|99983|99987|99988|99989|99990|99991|99992|99993|99994|99995",
+        "99980|99988|99989|99991|99993|99994|99995",
         SPLIT_CHAR,
-        "99980|99988|99989|99990",
-        "99980",
-        SPLIT_CHAR,
-        SPLIT_CHAR,
-        SPLIT_CHAR,
-        "99980|99988|99989|99990",
-        "99980|99988|99989|99990",
+        "99980|99981|99982|99983|99984|99985|99986|99988|99989|99990|99991|99992|99993|99994|99995",
+        "99980|99987",
         SPLIT_CHAR,
         SPLIT_CHAR,
-        "99980|99988|99989|99990",
-        "99980|99988|99989|99990",
-        "99980|99988|99989|99990",
-        "99980|99988|99989|99990",
-        "99980|99988|99989|99990",
-        "99980|99988|99989|99990",
-        "99980|99988|99989|99990",
-        "99980|99988|99989|99990",
-        "99980|99988|99989|99990",
-        "88880|99980|99988|99989|99990",
-        "99980|99988|99989|99990",
-        "88880|99980|99988|99989|99990",
-        "99980|99988|99989|99990",
-        "99980|99988|99989|99990",
+        SPLIT_CHAR,
+        "99980|99981|99982|99983|99984|99985|99986|99988|99989|99990|99991|99992|99994|99995",
+        "99980|99981|99982|99983|99984|99985|99986|99988|99989|99990|99991|99992|99994|99995",
         SPLIT_CHAR,
         SPLIT_CHAR,
-        "99980|99988|99989",
-        "99980|99988|99989",
-        "99980|99988|99989",
-        "99980|99988|99989",
-        "99980|99988|99989",
-        "99980|99988|99989",
-        "99980|99988|99989",
-        "99980|99988|99989",
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "88880|99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "88880|99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
         SPLIT_CHAR,
         SPLIT_CHAR,
-        "99980|99988|99989|99990",
+        "99980|99983|99988|99989|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99991|99993|99994|99995",
+        "99980|99983|99988|99989|99991|99993|99994|99995",
         SPLIT_CHAR,
         SPLIT_CHAR,
-        "99980|99988|99989|99990",
+        "99980|99981|99982|99983|99984|99985|99986|99987|99988|99989|99990|99991|99992|99993|99994|99995",
+        SPLIT_CHAR,
+        SPLIT_CHAR,
+        "99980|99983|99988|99989|99990|99991|99993|99994|99995",
         SPLIT_CHAR,
         SPLIT_CHAR,
         SPLIT_CHAR,

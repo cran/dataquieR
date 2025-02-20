@@ -28,7 +28,6 @@ Other reporting_functions:
 \code{\link{util_generate_calls}()},
 \code{\link{util_generate_calls_for_function}()},
 \code{\link{util_load_manual}()},
-\code{\link{util_make_function}()},
 \code{\link{util_order_by_order}()},
 \code{\link{util_set_size}()}
 }

@@ -6,19 +6,29 @@
 \usage{
 acc_shape_or_scale(
   resp_vars,
+  study_data,
+  label_col,
+  item_level = "item_level",
   dist_col,
   guess,
   par1,
   par2,
   end_digits,
-  label_col,
-  study_data,
-  meta_data,
-  flip_mode = "noflip"
+  flip_mode = "noflip",
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
 \item{resp_vars}{\link{variable} the name of the continuous measurement variable}
+
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
+
+\item{label_col}{\link{variable attribute} the name of the column in the metadata
+with labels of variables}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
 
 \item{dist_col}{\link{variable attribute} the name of the variable attribute in
 meta_data that provides the expected
@@ -32,14 +42,6 @@ distribution of a study variable}
 
 \item{end_digits}{\link{logical} internal use. check for end digits preferences}
 
-\item{label_col}{\link{variable attribute} the name of the column in the metadata
-with labels of variables}
-
-\item{study_data}{\link{data.frame} the data frame that contains the measurements}
-
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
-
 \item{flip_mode}{\link{enum} default | flip | noflip | auto. Should the plot be
 in default orientation, flipped, not flipped or
 auto-flipped. Not all options are always supported.
@@ -48,12 +50,20 @@ setting the \code{roptions(dataquieR.flip_mode = ...)}. If
 called from \code{dq_report}, you can also pass
 \code{flip_mode} to all function calls or set them
 specifically using \code{specific_args}.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 a list with:
 \itemize{
-\item \code{SummaryData}: \link{data.frame} underlying the plot
-\item \code{SummaryPlot}: \link{ggplot2} probability distribution plot
+\item \code{ResultData}: \link{data.frame} underlying the plot
+\item \code{SummaryPlot}: \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} probability distribution plot
 \item \code{SummaryTable}: \link{data.frame} with the columns \code{Variables} and \code{FLG_acc_ud_shape}
 }
 }

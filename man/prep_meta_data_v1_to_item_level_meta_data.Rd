@@ -5,14 +5,15 @@
 \title{Convert item-level metadata from v1.0 to v2.0}
 \usage{
 prep_meta_data_v1_to_item_level_meta_data(
-  meta_data = "item_level",
+  item_level = "item_level",
   verbose = TRUE,
   label_col = LABEL,
-  cause_label_df
+  cause_label_df,
+  meta_data = item_level
 )
 }
 \arguments{
-\item{meta_data}{\link{data.frame} the old item-level-metadata}
+\item{item_level}{\link{data.frame} the old item-level-metadata}
 
 \item{verbose}{\link{logical} display all estimated decisions, defaults to \code{TRUE},
 except if called in a \link{dq_report2} pipeline.}
@@ -23,6 +24,8 @@ with labels of variables}
 \item{cause_label_df}{\link{data.frame} missing code table, see \link{cause_label_df}.
 Optional. If this argument is given,
 you can add missing code tables.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
 }
 \value{
 \link{data.frame} the updated metadata

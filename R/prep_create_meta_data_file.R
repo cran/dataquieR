@@ -60,9 +60,8 @@ prep_create_meta_data_file <- function(file_name,
       )
     }
   }
-  mdl <- util_rio_import_list(system.file("extdata",
-                               "meta_data_v2.xlsx",
-                               package = packageName()))
+  mdl <- util_rio_import_list("https://dataquality.ship-med.uni-greifswald.de/extdata/meta_data_v2.xlsx",
+                              keep_types = FALSE)
 
   if (!missing(study_data)) {
     old_cache <- prep_list_dataframes()
@@ -84,7 +83,7 @@ prep_create_meta_data_file <- function(file_name,
                            silent = TRUE)
     }
     new_cache <- prep_list_dataframes()
-    rm(list = setdiff(new_cache, old_cache), envir = .dataframe_environment)
+    rm(list = setdiff(new_cache, old_cache), envir = .dataframe_environment())
   }
 
   e <- try(rio::export(mdl,

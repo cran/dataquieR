@@ -4,10 +4,10 @@
 \alias{util_cll_nm2fkt_nm}
 \title{Get Function called for a Call Name}
 \usage{
-util_cll_nm2fkt_nm(cll_name, report)
+util_cll_nm2fkt_nm(cll_names, report)
 }
 \arguments{
-\item{cll_name}{\link{character} then systematic function call name to fetch its
+\item{cll_names}{\link{character} then systematic function call name to fetch its
 function name}
 
 \item{report}{\link{dataquieR_resultset2} the report}

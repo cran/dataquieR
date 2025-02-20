@@ -16,6 +16,11 @@
   attr(r, "error") <- attr(x, "error")
   attr(r, "message") <- attr(x, "message")
   attr(r, "warning") <- attr(x, "warning")
+  attr(r, "as_plotly") <- attr(x, "as_plotly")
+  attr(r, "dont_util_adjust_geom_text_for_plotly") <- attr(x, "dont_util_adjust_geom_text_for_plotly")
+  attr(r, "function_name") <- attr(x, "function_name")
+  attr(r, "cn") <- attr(x, "cn")
+  attr(r, "call") <- attr(x, "call")
   class(r) <- unique(c("dataquieR_result", class(r)))
   r
 }
@@ -35,11 +40,17 @@
 #' @keywords internal
 `[[.dataquieR_result` <- function(x, ...) {
   r <- NextMethod()
-  if (!is.null(r) && !inherits(x, "ggplot")) {
+  if (is.null(r)) {
+    r <- list()
+    class(r) <- union("dataquieR_NULL", class(r))
+  }
+  if (!inherits(x, "ggplot")) {
     attr(r, "error") <- attr(x, "error")
     attr(r, "message") <- attr(x, "message")
     attr(r, "warning") <- attr(x, "warning")
-    class(r) <- unique(c("dataquieR_result", class(r)))
+    # do not assign this class, here:
+    # class(r) <- unique(c("dataquieR_result", class(r)))
+    class(r) <- unique(c("Slot", class(r)))
   }
   r
 }
@@ -57,13 +68,4 @@
 #' @export
 #'
 #' @keywords internal
-`$.dataquieR_result` <- function(x, ...) {
-  r <- NextMethod()
-  if (!is.null(r) && !inherits(x, "ggplot")) {
-    attr(r, "error") <- attr(x, "error")
-    attr(r, "message") <- attr(x, "message")
-    attr(r, "warning") <- attr(x, "warning")
-    class(r) <- unique(c("dataquieR_result", class(r)))
-  }
-  r
-}
+`$.dataquieR_result` <- `[[.dataquieR_result`

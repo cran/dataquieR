@@ -6,8 +6,9 @@
 \usage{
 prep_get_data_frame(
   data_frame_name,
-  .data_frame_list = .dataframe_environment,
-  keep_types = FALSE
+  .data_frame_list = .dataframe_environment(),
+  keep_types = FALSE,
+  column_names_only = FALSE
 )
 }
 \arguments{
@@ -19,6 +20,10 @@ details}
 \item{keep_types}{\link{logical} keep types as possibly defined in a file, if the
 data frame is loaded from one. set \code{TRUE} for
 study data.}
+
+\item{column_names_only}{\link{logical} if TRUE imports only headers (column names)
+of the data frame and no content
+(an empty data frame)}
 }
 \value{
 \link{data.frame} a data frame
@@ -64,10 +69,6 @@ plot(bl, n)
 # ship_meta
 #
 prep_get_data_frame("meta_data | meta_data")
-prep_get_data_frame(file.path(system.file(package = "dataquieR"),
-  "extdata", "meta_data.RData"))
-prep_get_data_frame(file.path(system.file(package = "dataquieR"),
-  "extdata", "meta_data.RData|meta_data"))
 }
 }
 \seealso{
@@ -80,6 +81,7 @@ Other data-frame-cache:
 \code{\link{prep_list_dataframes}()},
 \code{\link{prep_load_folder_with_metadata}()},
 \code{\link{prep_load_workbook_like_file}()},
-\code{\link{prep_purge_data_frame_cache}()}
+\code{\link{prep_purge_data_frame_cache}()},
+\code{\link{prep_remove_from_cache}()}
 }
 \concept{data-frame-cache}

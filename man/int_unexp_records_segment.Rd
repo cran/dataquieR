@@ -6,19 +6,40 @@
 \usage{
 int_unexp_records_segment(
   study_segment,
-  data_record_count,
   study_data,
-  meta_data
+  label_col,
+  item_level = "item_level",
+  data_record_count,
+  meta_data = item_level,
+  meta_data_segment = "segment_level",
+  meta_data_v2,
+  segment_level
 )
 }
 \arguments{
 \item{study_segment}{\link{character} a character vector indicating the name of each study data frame, mandatory.}
 
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
+
+\item{label_col}{\link{variable attribute} the name of the column in the metadata
+with labels of variables}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
+
 \item{data_record_count}{\link{integer}  an integer vector with the number of expected data records, mandatory.}
 
-\item{study_data}{\link{data.frame} the data frame that contains the measurements, mandatory.}
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata attributes of the study data, mandatory.}
+\item{meta_data_segment}{\link{data.frame} -- optional: Segment level metadata}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
 }
 \value{
 a \link{list} with
@@ -35,18 +56,4 @@ the metadata with the actual record number in each segment data frame.
 }
 \details{
 The current implementation does not take into account jump or missing codes, the function is rather based on checking whether NAs are present in the study data
-}
-\examples{
-\dontrun{
-study_data <- readRDS(system.file("extdata", "ship.RDS", package = "dataquieR"))
-meta_data <- readRDS(system.file("extdata", "ship_meta.RDS", package = "dataquieR"))
-
-int_unexp_records_segment(
-  study_segment = c("PART_STUDY", "PART_INTERVIEW"),
-  data_record_count = c(3000, 1100),
-  study_data = study_data,
-  meta_data = meta_data
-)
-}
-
 }

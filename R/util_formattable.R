@@ -14,6 +14,12 @@
 #' @param text_color_mode [enum] bw | gs. Should the text be displayed in black
 #'                               and white or using a grey scale? In both cases,
 #'                               the color will be adapted to the background.
+#' @param hover_texts [data.frame] if not `NULL`, this data frame contains html
+#'                                 code displayed when the user's mouse pointer
+#'                                 moves inside corresponding cells from
+#'                                 `tb`. Can contain `HTML` code.
+#' @param escape_all_content [logical] if `TRUE`, treat `tb` and `hover_texts`
+#'                                     using some `HTML` escaping function
 #'
 #' @seealso [util_html_table()]
 #'
@@ -39,7 +45,9 @@ util_formattable <- function(tb,
                                                   location = 0.5,
                                                   scale = 0.1),
                              style_header = "font-weight: bold;",
-                             text_color_mode = c("bw", "gs")) {
+                             text_color_mode = c("bw", "gs"),
+                             hover_texts = NULL,
+                             escape_all_content = TRUE) {
   util_ensure_suggested("htmltools", "create colored tables")
   text_color_mode <- match.arg(text_color_mode)
   tb_val <- as.matrix(as.data.frame(suppressWarnings(lapply(tb, as.numeric))))
@@ -113,11 +121,24 @@ util_formattable <- function(tb,
                         if (inherits(txtcolor, "try-error")) {
                           txtcolor <- "#222222"
                         }
+                        if (!is.null(hover_texts)) {
+                          hover_text <- hover_texts[rw, cl]
+                          if (escape_all_content) {
+                            hover_text <- htmltools::htmlEscape(hover_text)
+                          }
+                        } else {
+                          hover_text <- NULL
+                        }
+                        val <- tb[rw, cl]
+                        if (!escape_all_content) {
+                          val <- htmltools::HTML(val)
+                        }
                         td(
                           style =
                             sprintf("background-color: %s; color: %s; text-align: right;",
                                     color, txtcolor),
-                          tb[rw, cl]
+                          title = hover_text,
+                          val
                         )
                       })
              )

@@ -9,15 +9,80 @@
 #' @param data_record_count [integer]  an integer vector with the number of expected data records per study data frame, mandatory.
 #' @param identifier_name_list [character] a character vector indicating the name of each study data frame, mandatory.
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @return a [list] with
 #'   - `DataframeData`: data frame with the results of the quality check for unexpected data elements
 #'   - `DataframeTable`: data frame with selected unexpected data elements check results, used for the data quality report.
 #'
 #' @export
-int_unexp_records_dataframe <- function(identifier_name_list, # TODO: Don't pass an assignments as two separate vectors.
-                              data_record_count) {
+int_unexp_records_dataframe <- function(identifier_name_list,
+                              data_record_count,
+                              meta_data_dataframe = "dataframe_level",
+                              meta_data_v2,
+                              dataframe_level) {
 
   # Checks arguments ----
+  util_maybe_load_meta_data_v2()
+
+  util_ck_arg_aliases()
+
+  if (missing(identifier_name_list) &&
+      missing(data_record_count) &&
+      missing(meta_data_dataframe) &&
+      formals()$meta_data_dataframe %in% prep_list_dataframes()) {
+    meta_data_dataframe <- force(meta_data_dataframe)
+  }
+
+  if (missing(identifier_name_list) &&
+      missing(data_record_count) &&
+      !missing(meta_data_dataframe)) {
+    meta_data_dataframe <- prep_check_meta_data_dataframe(meta_data_dataframe)
+    meta_data_dataframe <- meta_data_dataframe[
+      vapply(meta_data_dataframe[[DF_NAME]],
+             function(x) { !util_is_try_error(try(prep_get_data_frame(data_frame_name = x,
+                                                                      keep_types = TRUE), silent = TRUE)) },
+             FUN.VALUE = logical(1))
+      , , drop = FALSE]
+    meta_data_dataframe <- meta_data_dataframe[
+      !util_empty(meta_data_dataframe[[DF_RECORD_COUNT]])
+      , , drop = FALSE]
+    # TODO: if nothing left
+    identifier_name_list <- meta_data_dataframe[[DF_NAME]];
+    data_record_count <- meta_data_dataframe[[DF_RECORD_COUNT]]
+  } else if (!missing(meta_data_dataframe)) {
+    util_error(c("I have %s and one of the following: %s.",
+                 "This is not supported, please provide",
+                 "either %s or all of %s."),
+               sQuote("meta_data_dataframe"),
+               util_pretty_vector_string(
+                 c("identifier_name_list",
+                   "data_record_count"
+                 )),
+               sQuote("meta_data_dataframe"),
+               util_pretty_vector_string(
+                 c("identifier_name_list",
+                   "data_record_count"
+                 )))
+  } else if (missing(meta_data_dataframe) && (
+    missing(identifier_name_list) ||
+    missing(data_record_count)
+  )) {
+    util_error(c("I don't have %s and also miss at least",
+                 "one of the following: %s.",
+                 "This is not supported, please provide",
+                 "either %s or all of %s."),
+               sQuote("meta_data_dataframe"),
+               util_pretty_vector_string(
+                 c("identifier_name_list",
+                   "data_record_count"
+                 )),
+               sQuote("meta_data_dataframe"),
+               util_pretty_vector_string(
+                 c("identifier_name_list",
+                   "data_record_count"
+                 )))
+  }
 
   util_expect_scalar(identifier_name_list,
                      allow_more_than_one = TRUE,

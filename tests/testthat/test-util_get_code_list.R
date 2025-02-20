@@ -62,7 +62,6 @@ test_that("util_get_code_list works", {
       "Metadata does not provide a column called .*XJUMP_LIST.*",
       "for replacing codes with NAs."
     ),
-    all = TRUE,
     perl = TRUE
   )
   expect_warning(
@@ -76,7 +75,6 @@ test_that("util_get_code_list works", {
       "Metadata does not provide a column called .+xx.+",
       "for the labels."
     ),
-    all = TRUE,
     perl = TRUE
   )
   # util_get_code_list(c("sex", "age"), "JUMP_LIST",

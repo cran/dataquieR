@@ -17,6 +17,11 @@ prep_extract_summary.dataquieR_result <- function(
     r,
     ...
     ) {
+  te <- topenv(parent.frame(1)) # see https://stackoverflow.com/a/27870803
+  if (!(isNamespace(te) && getNamespaceName(te) == "dataquieR")) {
+    lifecycle::deprecate_soft("2.1.0.9007",
+                              "prep_extract_summary.dataquieR_result()")
+  }
   # TODO: Tidy up, and remove all left-overs from the copy from prep_extract_summary.dataquieR_resultset2
   util_stop_if_not(
     "Can only be called for results objects from a dq_report2 of class dataquieR_result" =

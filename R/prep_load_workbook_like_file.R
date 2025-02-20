@@ -15,14 +15,6 @@
 #' @seealso [prep_add_data_frames]
 #' @seealso [prep_get_data_frame]
 #' @family data-frame-cache
-#' @examples
-#' \dontrun{
-#' file_name <-
-#'   system.file("extdata", "meta_data_extended.xlsx", package = "dataquieR")
-#' prep_load_workbook_like_file(file_name)
-#' prep_get_data_frame(
-#'   "dataframe_level") # dataframe_level is a sheet in the file
-#' }
 prep_load_workbook_like_file <- function(file,
                                          keep_types = FALSE) {
 
@@ -35,6 +27,17 @@ prep_load_workbook_like_file <- function(file,
   }
 
   util_expect_scalar(file, check_type = is.character)
+
+  if (file %in% c("meta_data_v2",
+                  "ship_meta_dataframe",
+                  "ship_meta_v2")) {
+    util_stop_if_not(
+      `no shortcuts in tests` =
+        !identical(Sys.getenv("TESTTHAT"), "true"))
+    file <- sprintf(
+      "https://dataquality.qihs.uni-greifswald.de/extdata/%s.xlsx",
+      file)
+  }
 
   if (startsWith(file, "https://") ||
       startsWith(file, "http://")) {

@@ -6,25 +6,27 @@
 \usage{
 acc_univariate_outlier(
   resp_vars = NULL,
-  label_col,
   study_data,
-  meta_data,
+  label_col,
+  item_level = "item_level",
   exclude_roles,
   n_rules = length(unique(criteria)),
   max_non_outliers_plot = 10000,
-  criteria = c("tukey", "3sd", "hubert", "sigmagap")
+  criteria = c("tukey", "3sd", "hubert", "sigmagap"),
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
 \item{resp_vars}{\link{variable list} the name of the continuous measurement
 variable}
 
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
+
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
 
-\item{study_data}{\link{data.frame} the data frame that contains the measurements}
-
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
 \item{exclude_roles}{\link{variable roles} a character (vector) of variable roles
@@ -41,6 +43,14 @@ sampling is not deterministic.}
 
 \item{criteria}{\link{set} tukey | 3SD | hubert | sigmagap. a vector with
 methods to be used for detecting outliers.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 a list with:
@@ -53,8 +63,8 @@ a list with:
 \item \code{SummaryData}: \code{\link{data.frame}} with the columns
 \code{Variables}, \code{Mean}, \code{SD}, \code{Median}, \code{Skewness}, \code{Tukey (N)},
 \verb{3SD (N)}, \code{Hubert (N)}, \code{Sigma-gap (N)}, \code{Outliers (N)},
-\verb{Outliers, low (N)}, \verb{Outliers, high (N)} \code{Grading}
-\item \code{SummaryPlotList}: \code{\link{ggplot}} univariate outlier plots
+\verb{Outliers, low (N)}, \verb{Outliers, high (N)}
+\item \code{SummaryPlotList}: \code{\link[ggplot2:ggplot]{ggplot2::ggplot}} univariate outlier plots
 }
 }
 }

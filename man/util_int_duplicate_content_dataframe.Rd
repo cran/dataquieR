@@ -6,20 +6,36 @@
 \usage{
 util_int_duplicate_content_dataframe(
   level = c("dataframe"),
-  identifier_name_list
+  identifier_name_list,
+  id_vars_list,
+  unique_rows,
+  meta_data_dataframe = "dataframe_level",
+  ...,
+  dataframe_level
 )
 }
 \arguments{
 \item{level}{\link{character} a character vector indicating whether the assessment should be conducted at the study level (level = "dataframe") or at the segment level (level = "segment").}
 
 \item{identifier_name_list}{\link{vector} the vector that contains the name of the identifier to be used in the assessment. For the study level, corresponds to the names of the different data frames. For the segment level, indicates the name of the segments.}
+
+\item{id_vars_list}{\link{list} the list containing the identifier variables names to be used in the assessment.}
+
+\item{unique_rows}{\link{vector} named. for each data frame, either true/false or \code{no_id} to exclude ID variables from check}
+
+\item{meta_data_dataframe}{\link{data.frame} the data frame that contains the
+metadata for the data frame level}
+
+\item{...}{Not used.}
+
+\item{dataframe_level}{\link{data.frame} alias for \code{meta_data_dataframe}}
 }
 \value{
 a \link{list} with
 \itemize{
 \item \code{SegmentData}: data frame with the results of the quality check for duplicated entries
 \item \code{SegmentTable}: data frame with selected duplicated entries check results, used for the data quality report.
-\item \code{Duplicates}: vector with row indices of duplicated entries, if any, otherwise NULL.
+\item \code{Other}: vector with row indices of duplicated entries, if any, otherwise NULL.
 }
 }
 \description{

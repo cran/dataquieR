@@ -4,5 +4,5 @@
 #' @family data-frame-cache
 #' @export
 prep_list_dataframes <- function() {
-  ls(.dataframe_environment)
+  ls(.dataframe_environment())
 }

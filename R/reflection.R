@@ -46,10 +46,36 @@ Descriptor <- "Descriptor"
 
 
 #' being called by the active binding function for .manual
+#'
+#' @param rebuild rebuild the cache
+#' @param target file for `..manual`
+#' @param target2 file for `..indicator_or_descriptor`
+#' @param man_hash internal use: hash-sum over the manual to prevent rebuild
+#'                 if not changed.
+#'
 #' @family reporting_functions
 #' @concept system
 #' @keywords internal
-util_load_manual <- function() {
+util_load_manual <- function(rebuild = FALSE,
+                             target = "inst/manual.RData",
+                             target2 = "inst/indicator_or_descriptor.RData",
+                             man_hash = "") {
+  if (!rebuild) {
+    .manual_file <-
+      system.file("manual.RData", package = "dataquieR")
+    .indicator_or_descriptor_file <-
+      system.file("indicator_or_descriptor.RData", package = "dataquieR")
+    if (file.exists(.manual_file) &&
+        file.exists(.indicator_or_descriptor_file)) {
+      if ((!util_is_try_error(try(load(.manual_file, envir = ..manual),
+                                 silent = TRUE))) &&
+           !util_is_try_error(try(load(.indicator_or_descriptor_file, envir =
+                                       ..indicator_or_descriptor),
+                               silent = TRUE)))
+
+        return()
+    }
+  }
   is_dev_package <- function() FALSE
   if (suppressWarnings(util_ensure_suggested("pkgload", err = FALSE,
                                              goal =
@@ -62,7 +88,7 @@ util_load_manual <- function() {
   ind_fkts <- setNames(nm =
              ls(envir = parent.env(environment()),
                 pattern = "^(des|int|com|con|acc)_"))
-  if (dev_package) {
+  if (FALSE && dev_package) {
     ..manual$rd_objects <- lapply(ind_fkts,
                                  function(fn) eval(call("?", as.symbol(fn))))
   } else {
@@ -72,51 +98,74 @@ util_load_manual <- function() {
     ))) {
       ..manual$rd_objects <- lapply(ind_fkts,
                                    function(f) {
-                                     list(path = attr(Rdpack::Rdo_fetch(f,
-                                                            utils::packageName(),
-                                                            installed = FALSE),
-                                          "Rdfile"))
+                                     o <- Rdpack::Rdo_fetch(f,
+                                                          utils::packageName(),
+                                                            installed = FALSE)
+                                     list(#path = attr(o, "Rdfile"),
+                                          doc = o)
                                    })
     } else {
       ..manual$rd_objects <- lapply(ind_fkts,
-                                   function(f) list(path = ""))
+                                   function(f) list(
+                                     # path = "",
+                                     doc = NULL))
     }
   }
 
-  docs <- lapply(..manual$rd_objects, function(rdo) {
-    if (!!length(rdo) &&
-        "path" %in% names(rdo) &&
-        length(rdo[["path"]]) == 1 &&
-        is.character(rdo[["path"]]) &&
-        file.exists(rdo[["path"]])) {
-      doc <- tools::parse_Rd(rdo[["path"]])
-      rd_as_latex <- capture.output(tools::Rd2latex(doc))
-      list(
-        doc = doc,
-        rd_as_latex = rd_as_latex
-      )
-    } else {
-      list(
-        doc = NULL,
-        rd_as_latex = NULL
-      )
-    }
-  })
+
+  # docs <- lapply(..manual$rd_objects, function(rdo) {
+  #   if (!!length(rdo) &&
+  #       "path" %in% names(rdo) &&
+  #       length(rdo[["path"]]) == 1 &&
+  #       is.character(rdo[["path"]]) &&
+  #       file.exists(rdo[["path"]])) {
+  #       doc <- tools::parse_Rd(rdo[["path"]])
+  #     list(
+  #       doc = doc,
+  #       rd_as_latex = rd_as_latex
+  #     )
+  #   } else {
+  #     list(
+  #       doc = NULL,
+  #       rd_as_latex = NULL
+  #     )
+  #   }
+  # })
+  docs <- ..manual$rd_objects
 
   for (function_name in names(docs)) {
     assign(function_name,
            NA,
            envir = ..indicator_or_descriptor)
     doc <- docs[[function_name]]$doc
-    rd_as_latex <-  docs[[function_name]]$rd_as_latex
-    is_descriptor <- any(grepl(fixed = TRUE,
-                               sprintf("\\LinkA{%s}{%s}",
-                                       Descriptor, Descriptor),
-                               rd_as_latex))
-    is_indicator <- any(grepl(fixed = TRUE,
-                              sprintf("\\LinkA{%s}{%s}",
-                                      Indicator, Indicator),
-                              rd_as_latex))
+
+    is_descriptor <- FALSE
+    is_indicator <- FALSE
+
+    if (!is.null(doc)) {
+      find_rd_tag_link <- function(el, parent = NULL) {
+        if (!is.null(attr(el, "Rd_tag"))) {
+          if (identical(attr(el, "Rd_tag"), "TEXT") &&
+              identical(attr(parent, "Rd_tag"), "\\link") &&
+              length(el) == 1 &&
+              !is.na(el) &&
+              is.character(el)) {
+            if (el %in% c("Indicator", "Descriptor")) {
+              return(el)
+            }
+          }
+        }
+        if (!identical(el, parent)) {
+          return(lapply(el, find_rd_tag_link, parent = el))
+        } else {
+          return(NULL)
+        }
+      }
+      ind_or_desc <- unlist(find_rd_tag_link(doc))
+      is_indicator <- "Indicator" %in% ind_or_desc
+      is_descriptor <- "Descriptor" %in% ind_or_desc
+    }
+
     if (is_indicator && is_descriptor) {
       util_warning(
         c("Internal error, sorry. Please report: For function %s,",
@@ -130,7 +179,7 @@ util_load_manual <- function() {
              FALSE,
              envir = ..indicator_or_descriptor)
     } else if (!is_indicator && !is_descriptor) {
-      if (length(rd_as_latex) > 0) {
+      if (length(doc) > 0) {
         util_warning(
           c("Internal error, sorry. Please report: For function %s,",
             "the information, if it is an",
@@ -175,4 +224,13 @@ util_load_manual <- function() {
       }
       title
   })
+  if (rebuild) {
+    ..manual$.man_hash <- man_hash
+    save(list = ls(envir = ..manual), envir = ..manual, file = target,
+         compress = "xz")
+    ..indicator_or_descriptor$.man_hash <- man_hash
+    save(list = ls(envir = ..indicator_or_descriptor),
+         envir = ..indicator_or_descriptor, file = target2,
+         compress = "xz")
+  }
 }

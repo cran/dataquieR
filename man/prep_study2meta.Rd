@@ -8,7 +8,9 @@ prep_study2meta(
   study_data,
   level = c(VARATT_REQUIRE_LEVELS$REQUIRED, VARATT_REQUIRE_LEVELS$RECOMMENDED),
   cumulative = TRUE,
-  convert_factors = FALSE
+  convert_factors = FALSE,
+  guess_missing_codes = getOption("dataquieR.guess_missing_codes",
+    dataquieR.guess_missing_codes_default)
 )
 }
 \arguments{
@@ -21,6 +23,8 @@ prep_study2meta(
 \item{convert_factors}{\link{logical} convert factor columns to coded integers.
 if selected, then also the study data will
 be updated and returned.}
+
+\item{guess_missing_codes}{\link{logical} try to guess missing codes from the data}
 }
 \value{
 a meta_data data frame or a list with study data and metadata, if

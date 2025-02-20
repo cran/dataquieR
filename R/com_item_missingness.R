@@ -23,12 +23,9 @@
 #'  - *OPTIONAL:* if `show_causes` is selected, one summary plot for all
 #'                `resp_vars` is provided
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @param resp_vars [variable list] the name of the measurement variables
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
 #' @param show_causes [logical] if TRUE, then the distribution of missing codes
 #'                              is shown
 #' @param cause_label_df [data.frame] missing code table. If missing codes have
@@ -87,10 +84,10 @@
 #' [Online Documentation](
 #' https://dataquality.qihs.uni-greifswald.de/VIN_com_impl_item_missingness.html
 #' )
-com_item_missingness  <- function(study_data,
-                                  meta_data,
-                                  resp_vars = NULL,
+com_item_missingness  <- function(resp_vars = NULL,
+                                  study_data,
                                   label_col,
+                                  item_level = "item_level",
                                   show_causes = TRUE,
                                   cause_label_df,
                                   include_sysmiss = TRUE,
@@ -98,11 +95,14 @@ com_item_missingness  <- function(study_data,
                                   suppressWarnings = FALSE,
                                   assume_consistent_codes = TRUE,
                                   expand_codes = assume_consistent_codes,
-                                  drop_levels = TRUE,
+                                  drop_levels = FALSE,
                                   expected_observations = c("HIERARCHY",
                                                             "ALL",
                                                             "SEGMENT"),
-                                  pretty_print = lifecycle::deprecated()) {
+                                  pretty_print = lifecycle::deprecated(),
+                                  meta_data = item_level,
+                                  meta_data_v2) {
+  util_maybe_load_meta_data_v2()
 
   if (lifecycle::is_present(pretty_print)) {
 
@@ -124,6 +124,10 @@ com_item_missingness  <- function(study_data,
   util_expect_scalar(include_sysmiss, check_type = is.logical)
   util_expect_scalar(suppressWarnings, check_type = is.logical)
   util_expect_scalar(drop_levels, check_type = is.logical)
+
+  if (is.character(study_data)) {
+    study_data <- prep_get_data_frame(study_data)
+  }
 
   study_data <- util_cast_off(study_data, "study_data", TRUE)
   .sd <- study_data
@@ -161,7 +165,7 @@ com_item_missingness  <- function(study_data,
   }
 
   if (!missing(cause_label_df)) {
-    util_expect_data_frame(cause_label_df, c("CODE_VALUE", "CODE_LABEL"))
+    util_expect_data_frame(cause_label_df, c(CODE_VALUE, CODE_LABEL))
     util_warning(c("The argument %s has been deprecated. It will be",
                    "in a future version be removed."),
                  dQuote("cause_label_df"))
@@ -183,9 +187,23 @@ com_item_missingness  <- function(study_data,
     )
   }
 
-  if (missing(resp_vars)) {
+  if (missing(resp_vars) || is.null(resp_vars)) {
     resp_vars <- meta_data[[label_col]]
+    if (VARIABLE_ORDER %in% colnames(meta_data)) {
+      try(
+        resp_vars <- resp_vars[order(util_as_numeric(meta_data[[VARIABLE_ORDER]],
+                                                     warn =
+                                                       sprintf("%s is not fully numeric: %%s",
+                                                               sQuote(VARIABLE_ORDER))))],
+        silent = TRUE
+      )
+    }
   }
+
+  util_correct_variable_use("resp_vars",
+                            allow_more_than_one = TRUE,
+                            allow_all_obs_na = TRUE,
+                            allow_null = TRUE)
 
   if (!expected_observations_missing && expected_observations != "ALL" &&
       !(PART_VAR %in% colnames(meta_data))) {
@@ -220,7 +238,6 @@ com_item_missingness  <- function(study_data,
                       meta_data,
                       to = VAR_NAMES,
                       from = label_col)
-
     m <-
       vapply(lapply(util_seg_table(r, study_data,
                                    meta_data,
@@ -301,6 +318,7 @@ com_item_missingness  <- function(study_data,
                                   to = VAR_NAMES),
               meta_data = meta_data,
                                          from = PART_VAR, to = STUDY_SEGMENT)),
+              paste0("(if ", dQuote(segvars), " \u2260 1)"),
                   collapse = ", "),
             applicability_problem = TRUE)
         }
@@ -337,7 +355,7 @@ com_item_missingness  <- function(study_data,
   SummaryTable$GRADING <- ifelse(N_meas_P < threshold_value, 1, 0)
 
   #Create SummaryData
-  SummaryData<-SummaryTable
+  SummaryData<-SummaryTable[, !names(SummaryTable) %in% c("GRADING")]
 
   names(SummaryData)[names(SummaryData) == "Observations N"] <-
     "Expected observations N"
@@ -376,31 +394,7 @@ com_item_missingness  <- function(study_data,
   # to add formulas in hover text:
   # create a named vector with names = column names of the SummaryData and
   # values = what you want to be displayed in the hover text
-  text_to_display <-
-    c(Variables = "",
-      `Expected observations N`= paste0("Number of observational units after",
-                                        " removing non-participants"),
-      `Sysmiss N (%)` = "Percentage = (Sysmiss/Expected observations)*100",
-      `Datavalues N (%)` = paste0("Number of datavalues = ",
-                                  "Expected observations - Sysmiss. ",
-                                  "Percentage = (Expected observations",
-                                  " - Sysmiss)/Expected observations*100"),
-      `Missing codes N (%)` = "Percentage = (Missing codes/Expected observations)*100",
-      `Jumps N (%)` = "Percentage = (Jumps/Expected observations)*100",
-      `Measurements N (%)` = paste0("Number of expected observations",
-                                    " = Expected observations - (Sysmiss + ",
-                                    "Missing codes + Jumps). ",
-                                    "Percentage = (Expected observations - Sysmiss - Missing ",
-                                    "codes - Jumps)/(Expected observations - Jumps) *100"),
-      `Missing expected obs. N (%)` = paste0("Number of missing measurements ",
-                                             "= Sysmiss + Missing codes + Jumps. ",
-                                             "Percentage = (Sysmiss + Missing codes + Jumps)",
-                                             "/Expected observations*100"),
-      `Crude missingness N (%)` = paste0("Crude missingness = Sysmiss + ",
-                                         "Missing codes + Jumps. ",
-                                         "Percentage = (Sysmiss + Missing ",
-                                         "codes + Jumps)/Number of observational units"),
-      `GRADING` = "1 = missing values are exceeding the defined threshold")
+  text_to_display <- util_get_hovertext("[com_item_missingness_hover]")
 
 
   #  result_table$check_MC <- paste0(N_class_MC, " (", N_MC_avail, ")")
@@ -447,13 +441,16 @@ com_item_missingness  <- function(study_data,
                                      meta_data = meta_data,
                                      label_col = label_col,
                                      expected_observations = expected_observations)
-  class(mctab) <- union("ReportSummaryTable", class(mctab))
+
+  mctab <- util_validate_report_summary_table(mctab,
+                                              meta_data = meta_data,
+                                              label_col = label_col)
 
   attr(SummaryData, "description") <- text_to_display
 
-
   list(SummaryTable = SummaryTable,
        SummaryData = SummaryData,
-       SummaryPlot = print(mctab, view = FALSE, relative = FALSE),
+       SummaryPlot = print(util_attach_attr(mctab, relative = FALSE),
+                           view = FALSE),
        ReportSummaryTable = mctab)
 }

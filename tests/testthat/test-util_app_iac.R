@@ -15,7 +15,9 @@ test_that("util_app_iac works", {
     DATA_TYPE = c(rep(DATA_TYPES$FLOAT, 13), rep(DATA_TYPES$INTEGER, 10),
                   DATA_TYPES$STRING, DATA_TYPES$DATETIME, DATA_TYPES$STRING),
     MISSING_LIST = "",
-    VALUE_LABELS = c(rep(c(NA_character_, "", "12 = x | 14 = z", "|"), 26)),
+    VALUE_LABELS =
+      head(c(rep(c(NA_character_, "", "12 = x | 14 = z", "|"),
+                 ceiling(26 / 4))), 26),
     DETECTION_LIMITS =
       c(rep("[0;9)", 10), rep(NA, 6), rep("", 10))
   )

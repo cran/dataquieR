@@ -14,6 +14,8 @@ prep_prepare_dataframes(
   .allow_empty = FALSE,
   .adjust_data_type = TRUE,
   .amend_scale_level = TRUE,
+  .apply_factor_metadata = FALSE,
+  .apply_factor_metadata_inadm = FALSE,
   .internal = rlang::env_inherits(rlang::caller_env(), parent.env(environment()))
 )
 }
@@ -42,6 +44,15 @@ item-level \code{meta_data}. internally used to prevent
 recursion, if called from
 \code{\link[=prep_scalelevel_from_data_and_metadata]{prep_scalelevel_from_data_and_metadata()}}.}
 
+\item{.apply_factor_metadata}{\link{logical} convert categorical variables to
+labeled factors.}
+
+\item{.apply_factor_metadata_inadm}{\link{logical} convert categorical variables
+to labeled factors keeping
+inadmissible values. Implies, that
+.apply_factor_metadata will be set
+to \code{TRUE}, too.}
+
 \item{.internal}{\link{logical} internally called, modify caller's environment.}
 }
 \value{
@@ -66,10 +77,11 @@ on-the-fly-calling is not recommended for an instructive use of \code{dataquieR}
 The function also detects \code{tibbles}, which are then converted to base-R
 \link{data.frame}s, which are expected by \code{dataquieR}.
 
-Different from the other utility function that work
-in the caller's environment, so it modifies objects in the calling function.
-It defines a new object \code{ds1}, it modifies \code{study_data} and/or \code{meta_data}
-and \code{label_col}, if \code{.internal} is \code{TRUE}.
+If \code{.internal} is \code{TRUE}, differently from the other utility function that
+work in their caller's environment, this function modifies objects in the
+calling function's environment. It defines a new object \code{ds1},
+it modifies \code{study_data} and/or \code{meta_data}
+and \code{label_col}.
 }
 \examples{
 \dontrun{
@@ -111,8 +123,8 @@ environment(acc_test3) <- asNamespace("dataquieR")
 environment(acc_test4) <- asNamespace("dataquieR")
 # perform this inside the package (not needed for functions that have been
 # integrated with the package already)
-load(system.file("extdata/meta_data.RData", package = "dataquieR"))
-load(system.file("extdata/study_data.RData", package = "dataquieR"))
+meta_data <- prep_get_data_frame("meta_data")
+study_data <- prep_get_data_frame("study_data")
 try(acc_test1())
 try(acc_test2())
 acc_test1(study_data = study_data)

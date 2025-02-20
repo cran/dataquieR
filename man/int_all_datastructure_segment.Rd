@@ -5,17 +5,35 @@
 \title{Wrapper function to check for segment data structure}
 \usage{
 int_all_datastructure_segment(
-  meta_data_segment = "segment_level",
   study_data,
-  meta_data = "item_level"
+  label_col,
+  item_level = "item_level",
+  meta_data = item_level,
+  meta_data_v2,
+  segment_level,
+  meta_data_segment = "segment_level"
 )
 }
 \arguments{
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
+
+\item{label_col}{\link{variable attribute} the name of the column in the metadata
+with labels of variables}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
+
 \item{meta_data_segment}{\link{data.frame} the data frame that contains the metadata for the segment level, mandatory}
-
-\item{study_data}{\link{data.frame} the data frame that contains the measurements, mandatory.}
-
-\item{meta_data}{\link{data.frame} the data frame that contains metadata attributes of the study data, mandatory.}
 }
 \value{
 a \link{list} with

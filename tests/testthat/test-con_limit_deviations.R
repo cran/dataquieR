@@ -1,9 +1,10 @@
 test_that("con_limit_deviations works", {
   skip_on_cran() # slow, errors obvious
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_timezone("CET")
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -24,20 +25,28 @@ test_that("con_limit_deviations works", {
     regexp = "No limits specified for SEX_0")
 
    expect_equal(
-     unname(rowSums(MyValueLimits$SummaryTable[
+     sum(unname(rowSums(MyValueLimits$SummaryTable[#Sum all values outside HARD_LIMITS in SummaryTable
        order(MyValueLimits$SummaryTable$Variables),
-       c("NUM_con_rvv_inum", "NUM_con_rvv_itdat")], na.rm = TRUE)),
-     MyValueLimits$SummaryData %>%
-       dplyr::filter(Section != "within" & Limits == "HARD_LIMITS") %>%
-       dplyr::group_by(Variables) %>%
-       dplyr::summarise(n = sum(Number)) %>%
-       dplyr::pull(n)
+       c("NUM_con_rvv_inum", "NUM_con_rvv_itdat")], na.rm = TRUE))),
+     sum(as.numeric( #Sum all values outside HARD_LIMITS in SummaryData
+       unname(
+         vapply(
+           X = unlist(
+             as.vector(
+               MyValueLimits$SummaryData[MyValueLimits$SummaryData$Limits == "HARD_LIMITS",
+                                         c("Below.limits-N (%)",
+                                           "Above.limits-N (%)")])),
+           FUN = function(x) {
+             gsub("\\s*\\([^\\)]+\\)", "", x)
+             },
+           FUN.VALUE = character(1)))))
    )
 })
 
 test_that("con_limit_deviations and timevars with < 20 integer sec-values ok", {
   skip_on_cran() # slow, errors obvious
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_timezone("CET")
   for (i in 1:2) {
     # This command failed in the first try, but worked in the second try for me.
@@ -47,8 +56,8 @@ test_that("con_limit_deviations and timevars with < 20 integer sec-values ok", {
   if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
     withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
   }
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -68,6 +77,7 @@ test_that("con_limit_deviations and timevars with < 20 integer sec-values ok", {
 
   expect_lt(length(unique(as.character(sd0[[vn]]))), 20)
 
+  set.seed(1843) # randomly scattered points should stay in their position for testing
   MyValueLimits <- con_limit_deviations(resp_vars  = "QUEST_DT_0",
                                         label_col  = "LABEL",
                                         study_data = sd0,
@@ -80,7 +90,7 @@ test_that("con_limit_deviations and timevars with < 20 integer sec-values ok", {
   # TODO: skip_if_not(capabilities()["long.double"])
   # TODO: skip_if_not(capabilities()["long.double"])
   suppressWarnings(
-    vdiffr::expect_doppelganger(
+    expect_doppelganger2(
       "con_limit_deviations QUEST_DT_0",
                                 MyValueLimits$SummaryPlotList$QUEST_DT_0)
   )
@@ -89,10 +99,11 @@ test_that("con_limit_deviations and timevars with < 20 integer sec-values ok", {
 
 test_that("con_limit_deviations works w/o resp_vars", {
   skip_on_cran() # slow, errors obvious
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_if_not_installed("withr")
   withr::local_timezone("CET")
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -130,7 +141,6 @@ test_that("con_limit_deviations works w/o resp_vars", {
                      paste("Not all entries in.+KEY_STUDY_SEGMENT.+are",
                            "found in.+VAR_NAMES.+")
     ),
-    all = TRUE,
     perl = TRUE
   )
 
@@ -150,9 +160,9 @@ test_that("con_limit_deviations handles errors", {
   skip_on_cran() # slow, errors obvious
   skip_if_not_installed("withr")
   withr::local_timezone("CET")
-
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -229,10 +239,11 @@ test_that("con_limit_deviations handles errors", {
 test_that("con_limit_deviations and values < 0", {
   skip_on_cran() # slow, errors obvious
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_timezone("CET")
 
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -252,7 +263,8 @@ test_that("con_limit_deviations and values < 0", {
   md0 <- meta_data
   md0[md0$LABEL == "EDUCATION_0", HARD_LIMITS] <-
     "[-6;0]"
-
+  md0[md0$LABEL == "EDUCATION_0", SCALE_LEVEL] <- SCALE_LEVELS$INTERVAL
+  set.seed(2012) # randomly scattered points should stay in their position for testing
   MyValueLimits <- con_limit_deviations(resp_vars  = "EDUCATION_0",
                                         label_col  = "LABEL",
                                         study_data = sd0,
@@ -265,8 +277,8 @@ test_that("con_limit_deviations and values < 0", {
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
   suppressWarnings(
-    vdiffr::expect_doppelganger(
-      "con_limit_deviations for reverse order ok",
+    expect_doppelganger2(
+      "con_limit_deviations for reverted",
       MyValueLimits$SummaryPlotList$EDUCATION_0)
   )
 
@@ -276,9 +288,9 @@ test_that("con_limit_deviations and values < 0 with max -1", {
   skip_on_cran() # slow, errors obvious
   skip_if_not_installed("withr")
   withr::local_timezone("CET")
-
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -298,7 +310,9 @@ test_that("con_limit_deviations and values < 0 with max -1", {
   md0 <- meta_data
   md0[md0$LABEL == "EDUCATION_0", HARD_LIMITS] <-
     "[-7;-1]"
+  md0[md0$LABEL == "EDUCATION_0", SCALE_LEVEL] <- SCALE_LEVELS$INTERVAL
 
+  set.seed(2024) # randomly scattered points should stay in their position for testing
   MyValueLimits <- con_limit_deviations(resp_vars  = "EDUCATION_0",
                                         label_col  = "LABEL",
                                         study_data = sd0,
@@ -311,8 +325,8 @@ test_that("con_limit_deviations and values < 0 with max -1", {
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
   suppressWarnings(
-    vdiffr::expect_doppelganger(
-      "con_limit_deviations rev order w/ -1 ==> 0 max ok",
+    expect_doppelganger2(
+      "con_limit_deviations reverse w/ -1 ==> 0 max",
       MyValueLimits$SummaryPlotList$EDUCATION_0)
   )
 
@@ -322,9 +336,9 @@ test_that("con_limit_deviations with no lower limit", {
   skip_on_cran() # slow, errors obvious
   skip_if_not_installed("withr")
   withr::local_timezone("CET")
-
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -341,7 +355,7 @@ test_that("con_limit_deviations with no lower limit", {
 
   sd0[[prep_map_labels("EDUCATION_0", meta_data, VAR_NAMES, LABEL)]] <- x
   md0 <- meta_data
-
+  md0[md0$LABEL == "EDUCATION_0", SCALE_LEVEL] <- SCALE_LEVELS$INTERVAL
   expect_silent(
     MyValueLimits1 <- con_limit_deviations(resp_vars  = "EDUCATION_0",
                                           label_col  = "LABEL",
@@ -370,9 +384,9 @@ test_that("con_limit_deviations with constant data", {
   skip_on_cran() # slow, errors obvious
   skip_if_not_installed("withr")
   withr::local_timezone("CET")
-
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -387,6 +401,7 @@ test_that("con_limit_deviations with constant data", {
 
   md0 <- meta_data
 
+  set.seed(12) # randomly scattered points should stay in their position for testing
   expect_silent(
     MyValueLimits  <- con_limit_deviations(resp_vars  = "CRP_0",
                                          label_col  = "LABEL",
@@ -400,7 +415,7 @@ test_that("con_limit_deviations with constant data", {
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
   suppressWarnings(
-    vdiffr::expect_doppelganger(
+    expect_doppelganger2(
       "con_limit_deviations 4 hists 1 val",
       MyValueLimits$SummaryPlotList$CRP_0)
   )
@@ -425,9 +440,9 @@ test_that("con_limit_deviations does not crash with missing codes", {
   skip_on_cran() # slow, errors obvious
   skip_if_not_installed("withr")
   withr::local_timezone("CET")
-
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -455,12 +470,19 @@ test_that("con_limit_deviations does not crash with missing codes", {
   )
 
   expect_type(MyValueLimits, "list")
-  expect_equal(MyValueLimits$SummaryData$Number[
-    which(MyValueLimits$SummaryData$Section == "above" &
-            MyValueLimits$SummaryData$Limits == "HARD_LIMITS")], 1)
-  expect_equal(MyValueLimits$SummaryData$Number[
-    which(MyValueLimits$SummaryData$Section == "below" &
-            MyValueLimits$SummaryData$Limits == "HARD_LIMITS")], 0)
+  expect_equal(as.numeric(
+    gsub("\\s*\\([^\\)]+\\)",
+         "",
+         unlist(MyValueLimits$SummaryData[MyValueLimits$SummaryData$Limits ==
+                                            "HARD_LIMITS",
+                                          "Above.limits-N (%)" ]))),
+    1)
+  expect_equal(as.numeric(
+    gsub("\\s*\\([^\\)]+\\)",
+         "",
+         unlist(MyValueLimits$SummaryData[MyValueLimits$SummaryData$Limits ==
+                                            "HARD_LIMITS", "Below.limits-N (%)" ]))),
+    0)
 
   sd0 <- study_data
   x <- sd0[[prep_map_labels("SBP_0", meta_data, VAR_NAMES, LABEL)]]
@@ -470,6 +492,7 @@ test_that("con_limit_deviations does not crash with missing codes", {
 
   sd0[[prep_map_labels("SBP_0", meta_data, VAR_NAMES, LABEL)]] <- x
 
+  set.seed(20) # randomly scattered points should stay in their position for testing
   expect_silent(
     MyValueLimits  <- con_limit_deviations(resp_vars  = "SBP_0",
                                            label_col  = "LABEL",
@@ -479,18 +502,26 @@ test_that("con_limit_deviations does not crash with missing codes", {
   )
 
   expect_type(MyValueLimits, "list")
-  expect_equal(MyValueLimits$SummaryData$Number[
-    which(MyValueLimits$SummaryData$Section == "above" &
-            MyValueLimits$SummaryData$Limits == "HARD_LIMITS")], 1)
-  expect_equal(MyValueLimits$SummaryData$Number[
-    which(MyValueLimits$SummaryData$Section == "below" &
-            MyValueLimits$SummaryData$Limits == "HARD_LIMITS")], 0)
+  expect_equal(
+    as.numeric(gsub("\\s*\\([^\\)]+\\)",
+                    "",
+                    unlist(MyValueLimits$SummaryData[MyValueLimits$SummaryData$Limits ==
+                                                       "HARD_LIMITS",
+                                                     "Above.limits-N (%)" ]))),
+    1)
+  expect_equal(
+    as.numeric(gsub("\\s*\\([^\\)]+\\)",
+                    "",
+                    unlist(MyValueLimits$SummaryData[MyValueLimits$SummaryData$Limits ==
+                                                       "HARD_LIMITS",
+                                                     "Below.limits-N (%)" ]))),
+    0)
 
   skip_on_cran()
   # TODO: skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
   suppressWarnings(
-    vdiffr::expect_doppelganger(
+    expect_doppelganger2(
       "con_limit_deviations histgrms + misscds",
       MyValueLimits$SummaryPlotList$SBP_0)
   )
@@ -498,12 +529,13 @@ test_that("con_limit_deviations does not crash with missing codes", {
 
 test_that("con_limit_deviations does not crash with strong outliers", {
   skip_on_cran() # slow, errors obvious
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # issue 116
   skip_if_not_installed("withr")
   withr::local_timezone("CET")
 
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -533,12 +565,13 @@ test_that("con_limit_deviations does not crash with strong outliers", {
 
 test_that("con_limits_deviations does not crash with NAs in datetime vars", {
   skip_on_cran() # slow, errors obvious
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # issue 106
   skip_if_not_installed("withr")
   withr::local_timezone("CET")
 
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -569,9 +602,9 @@ test_that("con_limit_deviations works with no values within limits", {
   skip_on_cran() # slow, errors obvious
   skip_if_not_installed("withr")
   withr::local_timezone("CET")
-
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -585,6 +618,7 @@ test_that("con_limit_deviations works with no values within limits", {
   md0[["HARD_LIMITS"]][which(md0$LABEL == "BSG_0")] <- "[51.5;51.8]"
   sd0 <- study_data
 
+  set.seed(24) # randomly scattered points should stay in their position for testing
   expect_silent(
     MyValueLimits  <- con_limit_deviations(resp_vars  = "BSG_0",
                                          label_col  = "LABEL",
@@ -598,7 +632,7 @@ test_that("con_limit_deviations works with no values within limits", {
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
   suppressWarnings(
-    vdiffr::expect_doppelganger(
+    expect_doppelganger2(
       "con_limit_deviations_nothing_within",
       MyValueLimits$SummaryPlotList$BSG_0)
   )
@@ -608,9 +642,9 @@ test_that("con_limit_deviations works with wrong datetime limits", {
   skip_on_cran() # slow, errors obvious
   skip_if_not_installed("withr")
   withr::local_timezone("CET")
-
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -634,19 +668,19 @@ test_that("con_limit_deviations works with wrong datetime limits", {
 
   md0[["HARD_LIMITS"]][which(md0$LABEL == "QUEST_DT_0")] <-
     "[2018-10-01; 2017-10-01]"
-  expect_warning(expect_error(
+  suppressWarnings(suppressMessages(expect_warning(expect_error(
     MyValueLimits <- con_limit_deviations(resp_vars  = "QUEST_DT_0",
                                           label_col  = "LABEL",
                                           study_data = sd0,
                                           meta_data  = md0,
-                                          limits     = "HARD_LIMITS")))
+                                          limits     = "HARD_LIMITS")))))
 
   md0[["HARD_LIMITS"]][which(md0$LABEL == "QUEST_DT_0")] <-
     "[0; test]"
-  expect_warning(expect_error(
+  suppressWarnings(suppressMessages(expect_warning(expect_error(
     MyValueLimits <- con_limit_deviations(resp_vars  = "QUEST_DT_0",
                                           label_col  = "LABEL",
                                           study_data = sd0,
                                           meta_data  = md0,
-                                          limits     = "HARD_LIMITS")))
+                                          limits     = "HARD_LIMITS")))))
 })

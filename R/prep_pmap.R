@@ -43,10 +43,13 @@ prep_pmap <- function(.l, .f, ..., cores = 0) {
     on.exit(suppressMessages(parallelMap::parallelStop()))
   }
   more_args <- list(...)
+  ..f <- function(...) {
+    return(.f(...))
+  }
   do.call(
     parallelMap::parallelMap,
     c(.l, list(
-      fun = .f, more.args = more_args, simplify = FALSE, use.names = FALSE,
+      fun = ..f, more.args = more_args, simplify = FALSE, use.names = FALSE,
       show.info = FALSE, impute.error = identity
     ))
   )

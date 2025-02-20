@@ -16,14 +16,6 @@
 #' @seealso [prep_add_data_frames]
 #' @seealso [prep_get_data_frame]
 #' @family data-frame-cache
-#' @examples
-#' \dontrun{
-#' folder_name <-
-#'   system.file("extdata", package = "dataquieR")
-#' prep_load_folder_with_metadata(folder_name)
-#' prep_get_data_frame(
-#'   "dataframe_level") # dataframe_level is a sheet in the file
-#' }
 prep_load_folder_with_metadata <- function(folder,
                                          keep_types = FALSE,
                                          ...) {
@@ -63,6 +55,7 @@ prep_load_folder_with_metadata <- function(folder,
         paste0(folder,
                "/", all_refs[!startsWith(tolower(all_refs), "http://") &
                            !startsWith(tolower(all_refs), "https://")])
+      all_refs <- trimws(all_refs)
       lapply(
         all_refs,
         function(ref) {
@@ -99,12 +92,8 @@ prep_load_folder_with_metadata <- function(folder,
             rf <- paste0(rf, ext)
           }
 
-          ref <- file.path(fp, rf)
-
           try(utils::download.file(ref,
-                                   destfile = sprintf("%s/%s",
-                                                      fp,
-                                                      basename(ref)),
+                                   destfile = file.path(fp, rf),
                                    quiet = TRUE, mode = "wb"),
               silent = TRUE)
         }
@@ -117,9 +106,11 @@ prep_load_folder_with_metadata <- function(folder,
   util_stop_if_not(`Folder not found` = dir.exists(folder))
   util_stop_if_not(`Access denied` = file.access(folder) == 0)
 
-  lapply(list.files(folder,
+  fls <- list.files(folder,
                     full.names = TRUE,
-                    ...), function(fn) {
+                    ...)
+
+  lapply(fls, function(fn) {
     if (inherits(suppressWarnings(try(prep_load_workbook_like_file(fn,
                                                                    keep_types = keep_types),
                                       silent = TRUE)),
@@ -133,5 +124,5 @@ prep_load_folder_with_metadata <- function(folder,
     }
   })
 
-  invisible(.dataframe_environment)
+  invisible(.dataframe_environment())
 }

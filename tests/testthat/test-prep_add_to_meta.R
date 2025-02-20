@@ -1,6 +1,7 @@
 test_that("prep_add_to_meta works", {
   skip_on_cran()
-  meta_data <- prep_get_data_frame("meta_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
   md <- prep_add_to_meta(VAR_NAMES = c("X", "Y"),
                          LABEL = c("x", "y"),
                          DATA_TYPE = c(DATA_TYPES$INTEGER, DATA_TYPES$FLOAT),

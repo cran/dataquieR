@@ -1,7 +1,8 @@
 test_that("util_heatmap_1th works", {
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_on_cran() # will be remoed, currently used only by segment missingness which is also tested
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   label_col <- LABEL
   prep_prepare_dataframes(.internal = TRUE)
   hm1 <- util_heatmap_1th(
@@ -38,11 +39,11 @@ test_that("util_heatmap_1th works", {
     right_intv = TRUE
   )
   suppressWarnings({
-    vdiffr::expect_doppelganger("util_heatmap_1th_1",
+    expect_doppelganger2("util_heatmap_1th_1",
                                 hm1$SummaryPlot)
-    vdiffr::expect_doppelganger("util_heatmap_1th_2",
+    expect_doppelganger2("util_heatmap_1th_2",
                                 hm2$SummaryPlot)
-    vdiffr::expect_doppelganger("util_heatmap_1th_3",
+    expect_doppelganger2("util_heatmap_1th_3",
                                 hm3$SummaryPlot)
   })
 })

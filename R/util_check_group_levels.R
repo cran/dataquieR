@@ -51,7 +51,7 @@ util_check_group_levels <- function(study_data,
                                     max_obs_in_subgroup = +Inf,
                                     min_subgroups = -Inf,
                                     max_subgroups = +Inf) {
-  util_correct_variable_use(group_vars)
+  # util_correct_variable_use(group_vars) cannot work, here, should be called in the calling function, anyway
   util_expect_scalar(min_obs_in_subgroup, check_type = is.numeric)
   util_expect_scalar(max_obs_in_subgroup, check_type = is.numeric)
   util_expect_scalar(min_subgroups, check_type = is.numeric)

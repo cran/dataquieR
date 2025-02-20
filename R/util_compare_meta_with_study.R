@@ -80,7 +80,7 @@ util_compare_meta_with_study <- function(sdf, mdf, label_col,
     res_template <- integer(1)
   }
   sdf[trimws(sdf) == ""] <- NA # enable robust_na = FALSE option to accelerate
-  is_data_type <- vapply(setNames(nm = colnames(sdf)),
+  is_data_type <- lapply(setNames(nm = colnames(sdf)),
                          function(x, check_convertible, threshold_value,
                                   return_percentages, check_conversion_stable) {
     res <- util_check_data_type(sdf[, x, drop = TRUE],
@@ -91,18 +91,35 @@ util_compare_meta_with_study <- function(sdf, mdf, label_col,
                                 return_percentages = return_percentages,
                                 check_conversion_stable =
                                   check_conversion_stable)
-    if (return_percentages) {
-      setNames(as.numeric(res), nm = names(res))
-    } else {
-      as.integer(res)
+    bitsToInt<-function(x) { # https://stackoverflow.com/a/25411493
+      packBits(rev(c(rep(FALSE, 32-length(x)%%32), as.logical(x))), "integer")
     }
-  }, FUN.VALUE = res_template,
-    check_convertible = check_convertible,
-    threshold_value = threshold_value,
-    return_percentages = return_percentages,
-    check_conversion_stable = check_conversion_stable)
+    which_vec <- NULL
+    try({
+      which_vec <- # loosing this on vapply. also: this is too slow.
+        apply(as.matrix(do.call(cbind.data.frame, attr(res, "which"))) * 1, 1,
+              bitsToInt)
+    }, silent = TRUE)
+
+    if (return_percentages) {
+      util_attach_attr(setNames(as.numeric(res), nm = names(res)),
+                       which_vec = which_vec)
+    } else {
+      util_attach_attr(as.integer(res), which_vec = which_vec)
+    }
+  },
+  check_convertible = check_convertible,
+  threshold_value = threshold_value,
+  return_percentages = return_percentages,
+  check_conversion_stable = check_conversion_stable)
+  which_vec <- NULL
+  if (length(res_template) > 1) {
+    which_vec <- lapply(is_data_type, attr, "which_vec")
+  }
+  is_data_type <- vapply(is_data_type, identity, FUN.VALUE = res_template)
   if (length(res_template) > 1) {
     is_data_type <- as.data.frame(is_data_type)
   }
+  attr(is_data_type, "which_vec") <- which_vec
   return(is_data_type)
 }

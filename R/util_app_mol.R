@@ -23,9 +23,19 @@ util_app_mol <- function(x, dta) {
   if (is.null(x[[VALUE_LABELS]])) {
     x[[VALUE_LABELS]] <- NA
   }
+  if (is.null(x[[VALUE_LABEL_TABLE]])) {
+    x[[VALUE_LABEL_TABLE]] <- NA
+  }
+  if (is.null(x[[STANDARDIZED_VOCABULARY_TABLE]])) {
+    x[[STANDARDIZED_VOCABULARY_TABLE]] <- NA
+  }
   score <- ifelse(x[["DATA_TYPE"]] == DATA_TYPES$FLOAT |
                     (x[["DATA_TYPE"]] == DATA_TYPES$INTEGER &
-    (is.null(x[[VALUE_LABELS]]) | util_empty(x[[VALUE_LABELS]]))), score, 4)
+    (is.null(x[[VALUE_LABELS]]) | util_empty(x[[VALUE_LABELS]])) &
+      (is.null(x[[VALUE_LABEL_TABLE]]) | util_empty(x[[VALUE_LABEL_TABLE]])) &
+      (is.null(x[[STANDARDIZED_VOCABULARY_TABLE]]) |
+         util_empty(x[[STANDARDIZED_VOCABULARY_TABLE]]))),
+    score, 4)
   score <- as.factor(score)
   return(score)
 }

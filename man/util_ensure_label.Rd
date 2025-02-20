@@ -4,16 +4,9 @@
 \alias{util_ensure_label}
 \title{Utility function ensuring valid labels and variable names}
 \usage{
-util_ensure_label(
-  study_data,
-  meta_data,
-  label_col,
-  max_label_len = MAX_LABEL_LEN
-)
+util_ensure_label(meta_data, label_col, max_label_len = MAX_LABEL_LEN)
 }
 \arguments{
-\item{study_data}{\link{data.frame} the data frame that contains the measurements}
-
 \item{meta_data}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
@@ -30,9 +23,6 @@ table informing about the changes
 }
 \description{
 Valid labels should not be empty, be unique and do not exceed a certain
-length. This also applies to the VAR_NAMES. When adjusting the VAR_NAMES, we
-have to ensure that we do not introduce additional matches or mismatches
-between the column names of the study data and the VAR_NAMES column in the
-metadata.
+length.
 }
 \keyword{internal}

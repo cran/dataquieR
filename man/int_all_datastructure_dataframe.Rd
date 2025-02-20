@@ -6,14 +6,28 @@
 \usage{
 int_all_datastructure_dataframe(
   meta_data_dataframe = "dataframe_level",
-  meta_data = "item_level"
+  item_level = "item_level",
+  meta_data = item_level,
+  meta_data_v2,
+  dataframe_level
 )
 }
 \arguments{
-\item{meta_data_dataframe}{\link{data.frame} the data frame that contains the metadata for the data frame level, mandatory}
+\item{meta_data_dataframe}{\link{data.frame} the data frame that contains the
+metadata for the data frame level}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata attributes of the study data, mandatory. The metadata data frame is assumed to contain the  information from all the studies.
-this is needed to know the \code{VAR_NAMES}, i.e., the column names used in data frames and  known from the metadata.}
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{dataframe_level}{\link{data.frame} alias for \code{meta_data_dataframe}}
 }
 \value{
 a \link{list} with

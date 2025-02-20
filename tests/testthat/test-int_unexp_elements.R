@@ -1,8 +1,9 @@
 test_that("int_unexp_elements works", {
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_on_cran()
   skip("TODO") # TODO
-  sd1 <- prep_get_data_frame("ship")
-  md1 <- prep_get_data_frame("ship_meta")
+  sd1 <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/ship.RDS")
+  md1 <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/ship_meta.RDS")
 
   expect_error(
     int_unexp_elements(

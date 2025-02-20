@@ -6,9 +6,9 @@
 #' level
 #'
 #' @details
-#' This functions removes observations having less than `min_obs_in_subgroup`
+#' This functions removes observations having fewer than `min_obs_in_subgroup`
 #' distinct values in a group variable, e.g. blood pressure measurements
-#' performed by an examiner having less than e.g. 50 measurements done. It
+#' performed by an examiner having fewer than e.g. 50 measurements done. It
 #' displays a warning, if samples/rows are removed and returns the modified
 #' study data frame.
 #'

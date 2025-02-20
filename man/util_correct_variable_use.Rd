@@ -118,6 +118,8 @@ space replaced by NAs).
 It expects two objects in the caller's environment: \code{ds1} and \code{meta_data}.
 \code{meta_data} is the metadata data frame and \code{ds1} is produced by a preceding
 call of \link{prep_prepare_dataframes} using \code{meta_data} and \code{study_data}.
+So this function can only be used after calling the function
+\link{prep_prepare_dataframes}
 }
 \details{
 \link{util_correct_variable_use} and \link{util_correct_variable_use2} differ only in
@@ -151,7 +153,6 @@ Other robustness_functions:
 \code{\link{util_is_valid_missing_codes}()},
 \code{\link{util_match_arg}()},
 \code{\link{util_observations_in_subgroups}()},
-\code{\link{util_only_NAs}()},
 \code{\link{util_stop_if_not}()},
 \code{\link{util_warn_unordered}()}
 
@@ -169,7 +170,6 @@ Other robustness_functions:
 \code{\link{util_is_valid_missing_codes}()},
 \code{\link{util_match_arg}()},
 \code{\link{util_observations_in_subgroups}()},
-\code{\link{util_only_NAs}()},
 \code{\link{util_stop_if_not}()},
 \code{\link{util_warn_unordered}()}
 }

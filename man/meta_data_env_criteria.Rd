@@ -2,22 +2,32 @@
 % Please edit documentation in R/meta_data_env.R
 \name{meta_data_env_criteria}
 \alias{meta_data_env_criteria}
-\title{Extract selected outlier criteria for a given item or variable group}
+\title{Extract \code{MULTIVARIATE_OUTLIER_CHECK} for variable group}
 \arguments{
 \item{entity}{vector of item- or variable group identifiers}
 }
 \value{
 a vector with id-variables for each entity-entry, having the
 \code{explode} attribute set to \code{FALSE}
+
+a vector with id-variables for each entity-entry, having the
+\code{explode} attribute set to \code{FALSE}
 }
 \description{
+Extract \code{MULTIVARIATE_OUTLIER_CHECK} for variable group
+
 Extract selected outlier criteria for a given item or variable group
 }
 \details{
 In the environment, \code{target_meta_data} should be set either to
 \code{item_level} or to \code{cross-item_level}.
+
+In the environment, \code{target_meta_data} should be set either to
+\code{item_level} or to \code{cross-item_level}.
 }
 \seealso{
+\link{meta_data_env}
+
 \link{meta_data_env}
 }
 \keyword{internal}

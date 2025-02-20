@@ -27,9 +27,11 @@ Other data_management:
 \code{\link{util_check_group_levels}()},
 \code{\link{util_compare_meta_with_study}()},
 \code{\link{util_dichotomize}()},
+\code{\link{util_fix_merge_dups}()},
 \code{\link{util_merge_data_frame_list}()},
 \code{\link{util_rbind}()},
 \code{\link{util_remove_na_records}()},
+\code{\link{util_round_to_decimal_places}()},
 \code{\link{util_study_var2factor}()},
 \code{\link{util_table_of_vct}()}
 }

@@ -1,5 +1,6 @@
 test_that("util_correct_variable_use works", {
   skip_on_cran() # slow and implicitly tested by other tests
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   acc_test <- function(resp_variable, aux_variable, time_variable,
                        co_variables, group_vars, study_data, meta_data,
                        label_col) {
@@ -86,8 +87,8 @@ test_that("util_correct_variable_use works", {
       allow_more_than_one = TRUE)
   }
   environment(acc_test_type) <- asNamespace("dataquieR")
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -139,17 +140,11 @@ test_that("util_correct_variable_use works", {
     perl = TRUE
   )
 
-  expect_warning(
-    expect_error(
-      acc_test("v00001", "v00001", "v00001", study_data = study_data,
-       meta_data = meta_data),
-      regexp = paste(
-        "Need character variable names in argument co_variables"
-      ),
-      perl = TRUE
-    ),
+  expect_error(
+    acc_test("v00001", "v00001", "v00001", study_data = study_data,
+     meta_data = meta_data, co_variables = 1:10),
     regexp = paste(
-      "No co_variables were defined"
+      "Need character variable names in argument co_variables"
     ),
     perl = TRUE
   )
@@ -289,7 +284,8 @@ test_that("util_correct_variable_use works", {
   }
   environment(acc_test4) <- asNamespace("dataquieR")
   delayedAssign("resp_variable", stop("Error"))
-  expect_warning(
+
+  suppressWarnings(expect_warning(expect_warning(
     expect_error(
       acc_test4(resp_variable = resp_variable,
               "v00001", "v00001", "v00001",
@@ -297,15 +293,13 @@ test_that("util_correct_variable_use works", {
               group_vars = c("v00001", "v00000")),
       regexp = "Argument resp_variable is NULL"
     ),
-    regexp = sprintf("(%s|%s)",
-                     paste("Could not get value of argument",
-                           "resp_variable for unexpected reasons.",
-                           "Setting to NULL."),
-                     paste("Error in get.arg_name, envir = p. : Error")
+    regexp = paste("Could not get value of argument",
+                   "resp_variable for unexpected reasons.",
+                   "Setting to NULL."
     ),
-    perl = TRUE,
-    all = TRUE
-  )
+    perl = TRUE
+  ), regexp = paste("Error")))
+
   resp_variable <- "v00001"
 
   acc_test5 <- function(resp_variable, aux_variable, time_variable,
@@ -374,8 +368,7 @@ test_that("util_correct_variable_use works", {
               meta_data = md0,
               cmd = function() { }, need_type = "string"),
     regexp = paste("predicted the.+DATA_TYPE"),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
 
   expect_error(

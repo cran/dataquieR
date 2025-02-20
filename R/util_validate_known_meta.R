@@ -6,14 +6,11 @@
 #' @param meta_data [data.frame] the data frame that contains metadata
 #'                               attributes of study data
 #'
-#' @return invisible(NULL)
+#' @return [data.frame] possibly modified `meta_data`, `invisible()`
 #'
 #' @family metadata_management
 #' @concept robustness
 #' @keywords internal
-
-
-
 util_validate_known_meta <- function(meta_data) {
   # TODO: use redcap parser instead, include tests for LOCATION columns and PROPORTIONS columns
   if (!VAR_NAMES %in% colnames(meta_data)) { # avoid errors in checks, if
@@ -26,10 +23,32 @@ util_validate_known_meta <- function(meta_data) {
     meta_data[[VAR_NAMES]][util_empty(meta_data[[VAR_NAMES]])] <-
       paste0("v", seq_len(nrow(meta_data)))[util_empty(meta_data[[VAR_NAMES]])]
   }
+  if (any(duplicated(meta_data))) {
+    util_error(
+      "Found duplicated rows in item-level metadata. Please fix.",
+      applicability_problem = TRUE)
+    # sorrry, cannot fix on the fly, because the context, where this is called, is too heterogeneous.
+#    meta_data <- meta_data[!duplicated(meta_data), , FALSE]
+  }
+  for (no_dups in
+        c(VAR_NAMES,
+          grep("^LABEL(_.+)?$", colnames(meta_data)),
+          grep("^LONG_LABEL(_.+)?$", colnames(meta_data)))
+       ) {
+    if (any(duplicated(meta_data[[no_dups]]))) {
+      util_error("Found duplicated %s in item-level metadata: %s. Please fix.",
+                 sQuote(no_dups),
+                 util_pretty_vector_string(
+                   sort(unique(meta_data[[no_dups]][
+                     duplicated(meta_data[[no_dups]])]))
+                 ),
+                 applicability_problem = TRUE)
+    }
+  }
   util_validate_missing_lists(meta_data)
   env <- new.env(environment())
+  env$error <- character(0)
   if (any(grepl("^(HARD|SOFT|DETECTION)_LIMITS$", colnames(meta_data)))) {
-    env$error <- character(0)
     suppressMessages(suppressWarnings(
       l <- withCallingHandlers(
         util_interpret_limits(mdata = meta_data),
@@ -60,8 +79,84 @@ util_validate_known_meta <- function(meta_data) {
                    applicability_problem = TRUE)
     }
   }
+
+  env$error <- character(0)
+
+  md9 <- meta_data
+  if (!VALUE_LABEL_TABLE %in% colnames(md9)) {
+    md9[[VALUE_LABEL_TABLE]] <- NA_character_
+  }
+  if (!STANDARDIZED_VOCABULARY_TABLE %in% colnames(md9)) {
+    md9[[STANDARDIZED_VOCABULARY_TABLE]] <- NA_character_
+  }
+  if (!SCALE_LEVEL %in% colnames(md9)) {
+    md9[[SCALE_LEVEL]] <- NA_character_
+  }
+  invisible(mapply(
+    vlt = md9[[VALUE_LABEL_TABLE]],
+    svt = md9[[STANDARDIZED_VOCABULARY_TABLE]],
+    sl = md9[[SCALE_LEVEL]],
+    vn = md9[[VAR_NAMES]],
+    FUN = function(vlt, svt, sl, vn) {
+      if (!util_empty(vlt)) {
+        df <- try(prep_get_data_frame(vlt))
+        if (util_is_try_error(df)) {
+          env$error <- c(env$error,
+                         sprintf(
+                           "Cannot load %s %s for %s: %s",
+                           sQuote(VALUE_LABEL_TABLE),
+                           dQuote(vlt),
+                           dQuote(vn),
+                           util_condition_from_try_error(df)))
+        } else {
+          if (!CODE_VALUE %in% colnames(df)) {
+            env$error <- c(env$error,
+                           sprintf(
+                             "%s %s is missing column %s for %s",
+                             sQuote(VALUE_LABEL_TABLE),
+                             dQuote(vlt),
+                             sQuote(CODE_VALUE),
+                             dQuote(vn)))
+          } else if (length(unique(df[[CODE_VALUE]])) == 0) {
+            env$error <- c(env$error,
+                           sprintf(
+                             "%s %s is empty for %s",
+                             sQuote(VALUE_LABEL_TABLE),
+                             dQuote(vlt),
+                             dQuote(vn)))
+          } else if (length(unique(df[[CODE_VALUE]])) == 1) {
+            env$error <- c(env$error,
+                           sprintf(
+                             "%s %s is suspicious for %s: only one value",
+                             sQuote(VALUE_LABEL_TABLE),
+                             dQuote(vlt),
+                             dQuote(vn)))
+          }
+          if (CODE_ORDER %in% colnames(df) &&
+              !is.na(sl) &&
+              sl != SCALE_LEVELS$ORDINAL) {
+            env$error <- c(env$error,
+                           sprintf(
+                             "Ordinal variable with unordered %s: %s",
+                             sQuote(VALUE_LABEL_TABLE),
+                             dQuote(vn)))
+          }
+          if (!CODE_ORDER %in% colnames(df) &&
+              !is.na(sl) &&
+              sl != SCALE_LEVELS$NOMINAL) {
+            env$error <- c(env$error,
+                           sprintf(
+                             "Nominal variable with ordered %s: %s",
+                             sQuote(VALUE_LABEL_TABLE),
+                             dQuote(vn)))
+          }
+        }
+      }
+    }
+  ))
+
+  # TODO: Check STANDARDIZED_VOCABULARY_TABLE, too
   if (VALUE_LABELS %in% colnames(meta_data)) {
-    env$error <- character(0)
     invisible(mapply(vl = meta_data[[VALUE_LABELS]],
            vn = meta_data[[VAR_NAMES]],
       FUN = function(vl, vn) {
@@ -184,5 +279,29 @@ util_validate_known_meta <- function(meta_data) {
     if (length(env$error) > 0)
       util_warning(env$error, applicability_problem = TRUE)
   }
-  invisible(NULL)
+
+  invisible(meta_data)
+}
+
+#' Abbreviate a vector of strings
+#'
+#' @param initial [character] vector with stuff to abbreviate
+#' @param max_value_label_len [integer] maximum length (may not strictly
+#'                                      be met, if not possible keeping a maybe
+#'                                      detected uniqueness of `initial`)
+#'
+#' @return [character] uniquely abbreviated `initial`
+#' @family string_functions
+#' @concept string
+#' @keywords internal
+util_abbreviate_unique <- function(initial, max_value_label_len) {
+  # TODO: use code from util_ensure_label for abbreviations
+  no_dups <- !any(duplicated(initial))
+  abb <- substr(initial, 1, max_value_label_len)
+  if (no_dups) while (any(dups <- duplicated(abb))) {
+    abb[dups] <- substr(initial[dups], 1, max(1, max_value_label_len -
+                          nchar(sum(dups))))
+    abb[dups] <- paste0(abb[dups], seq_len(sum(dups)))
+  }
+  abb
 }

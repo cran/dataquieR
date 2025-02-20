@@ -1,33 +1,24 @@
 test_that("acc_margins works without label_col", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
 
-  expect_error({# STRING not allowed
+  expect_error({
     res1 <-
       acc_margins(resp_vars = "v00001", study_data = study_data,
                   meta_data = meta_data)
   },
-  regexp = paste(".*Argument .+resp_vars.+: Variable .+v00001.+ \\(string\\)",
-                 "does not have an allowed type \\(integer\\|float\\)"),
-  perl = TRUE
-  )
-
-  expect_error({# DATETIME not allowed
-    res1 <-
-      acc_margins(resp_vars = "v00013", study_data = study_data,
-                  meta_data = meta_data)
-  },
-  regexp = paste(".*Argument .+resp_vars.+: Variable .+v00013.+ \\(datetime\\)",
-                 "does not have an allowed type \\(integer\\|float\\)"),
+  regexp = paste(".*Argument .+resp_vars.+: Variable .+v00001.+ \\(na\\)",
+                 "has a disallowed scale level \\(.+na.+\\)"),
   perl = TRUE
   )
 
@@ -40,7 +31,7 @@ test_that("acc_margins works without label_col", {
     perl = TRUE
   )
 
-  expect_error( # no group_vars
+  expect_error( # wrong group_vars
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "not_avail",
                 label_col = LABEL),
@@ -57,8 +48,6 @@ test_that("acc_margins works without label_col", {
     perl = TRUE
   )
 
-  skip_on_cran() # the remainder of this file runs slow.
-
   expect_error( # many group_vars
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = c("DEV_NO_0", "USR_BP_0"),
@@ -68,20 +57,14 @@ test_that("acc_margins works without label_col", {
     perl = TRUE
   )
 
-
   expect_message(
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
-                meta_data = meta_data, group_vars = c("SEX_0"),
+                meta_data = meta_data, group_vars = "SEX_0",
                 label_col = LABEL),
-    regexp = sprintf(
-      "(%s|%s)",
-      paste("Due to missing values in SEX_0, N = 60 observations",
-            "were excluded. Due to missing values in CRP_0, N = 241",
-            "observations were excluded additionally."),
-      paste("No or many threshold type specified and set to empirical.")
-    ),
-    perl = TRUE,
-    all = TRUE
+    regexp = paste("Due to missing values in SEX_0, N = 60 observations",
+                   "were excluded. Due to missing values in CRP_0, N = 241",
+                   "observations were excluded additionally."),
+    perl = TRUE
   )
 
   expect_message( # float
@@ -99,28 +82,112 @@ test_that("acc_margins works without label_col", {
     perl = TRUE,
     all = FALSE
   )
-
-  prep_load_workbook_like_file("meta_data_v2")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx")
 
   md <- prep_get_data_frame("item_level")
 
-  # tweak metadata to enable the test
-  md$SCALE_LEVEL[md$LABEL == "MEAT_CONS_0"] <- SCALE_LEVELS$INTERVAL
-
-  expect_message( # integer
-    acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
-                meta_data = md, group_vars = "DEV_NO_0",
-                label_col = LABEL)
+  # test function for different scale levels, with and without sorting
+  # 1. nominal (dichotomized or not)
+  md$SCALE_LEVEL[md$LABEL == "MEAT_CONS_0"] <- SCALE_LEVELS$NOMINAL
+  expect_message(
+    res2 <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
+                        meta_data = md, group_vars = "CENTER_0",
+                        label_col = LABEL, dichotomize_categorical_resp = TRUE)
   )
-
-  expect_error(
-    res1 <-
-      acc_margins(resp_vars = "v00014", study_data = study_data,
-                meta_data = meta_data),
-    regexp = paste("Argument group_vars is NULL"),
-    fixed = TRUE
+  expect_false(
+    inherits(try(ggplot_build(res2$SummaryPlot)), "try-error"))
+  expect_message(
+    res2b <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
+                         meta_data = md, group_vars = "CENTER_0",
+                         label_col = LABEL, dichotomize_categorical_resp = TRUE,
+                         sort_group_var_levels = FALSE)
   )
+  expect_false(
+    inherits(try(ggplot_build(res2b$SummaryPlot)), "try-error"))
 
+  # should also work if some levels of the grouping variable did detect only
+  # a single category
+  sd1 <- study_data
+  sd1[which(sd1[, md$VAR_NAMES[md$LABEL == "CENTER_0"]] == 1),
+      md$VAR_NAMES[md$LABEL == "MEAT_CONS_0"]] <- 0
+  sd1[which(sd1[, md$VAR_NAMES[md$LABEL == "CENTER_0"]] == 4),
+      md$VAR_NAMES[md$LABEL == "MEAT_CONS_0"]] <- 1
+  expect_message(
+    res2c <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = sd1,
+                         meta_data = md, group_vars = "CENTER_0",
+                         label_col = LABEL, dichotomize_categorical_resp = TRUE)
+  )
+  expect_false(
+    inherits(try(ggplot_build(res2c$SummaryPlot)), "try-error"))
+
+  # variant if the response variable is not being dichotomized
+  res2d <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
+                       meta_data = md, group_vars = "CENTER_0",
+                       label_col = LABEL, dichotomize_categorical_resp = FALSE)
+  expect_false(
+    inherits(try(ggplot_build(res2d$SummaryPlot)), "try-error"))
+  res2e <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
+                       meta_data = md, group_vars = "CENTER_0",
+                       label_col = LABEL, dichotomize_categorical_resp = FALSE,
+                       sort_group_var_levels = FALSE)
+  expect_false(
+    inherits(try(ggplot_build(res2e$SummaryPlot)), "try-error"))
+
+  # 2. ordinal (linear model or ordinal regression)
+  md$SCALE_LEVEL[md$LABEL == "MEAT_CONS_0"] <- SCALE_LEVELS$ORDINAL
+  expect_message(
+    res3 <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
+                        meta_data = md, group_vars = "CENTER_0",
+                        label_col = LABEL, sort_group_var_levels = TRUE,
+                        include_numbers_in_figures = TRUE)
+  )
+  expect_false(
+    inherits(try(ggplot_build(res3$SummaryPlot)), "try-error"))
+  expect_message(
+    res3b <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
+                         meta_data = md, group_vars = "CENTER_0",
+                         label_col = LABEL, sort_group_var_levels = FALSE,
+                         include_numbers_in_figures = FALSE,
+                         n_violin_max = 3)
+  )
+  expect_false(
+    inherits(try(ggplot_build(res3b$SummaryPlot)), "try-error"))
+
+  expect_message(
+    res3c <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
+                         meta_data = md, group_vars = "CENTER_0",
+                         label_col = LABEL, cut_off_linear_model_for_ord = NULL)
+  )
+  expect_false(
+    inherits(try(ggplot_build(res3c$SummaryPlot)), "try-error"))
+  expect_message(
+    res3d <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
+                         meta_data = md, group_vars = "CENTER_0",
+                         label_col = LABEL, cut_off_linear_model_for_ord = NULL,
+                         sort_group_var_levels = FALSE)
+  )
+  expect_false(
+    inherits(try(ggplot_build(res3d$SummaryPlot)), "try-error"))
+
+  # 3. poisson model
+  md$SCALE_LEVEL[md$LABEL == "N_INJURIES_0"] <- SCALE_LEVELS$INTERVAL
+  expect_message(
+    res4 <- acc_margins(resp_vars = "N_INJURIES_0", study_data = study_data,
+                        meta_data = md, group_vars = "USR_SOCDEM_0",
+                        label_col = LABEL, sort_group_var_levels = TRUE,
+                        include_numbers_in_figures = FALSE)
+  )
+  expect_false(
+    inherits(try(ggplot_build(res4$SummaryPlot)), "try-error"))
+  expect_message(
+    res4b <- acc_margins(resp_vars = "N_INJURIES_0", study_data = study_data,
+                         meta_data = md, group_vars = "USR_SOCDEM_0",
+                         label_col = LABEL, sort_group_var_levels = FALSE,
+                         include_numbers_in_figures = TRUE)
+  )
+  expect_false(
+    inherits(try(ggplot_build(res4b$SummaryPlot)), "try-error"))
 
   expect_error(
     res1 <-
@@ -130,21 +197,12 @@ test_that("acc_margins works without label_col", {
     perl = TRUE
   )
 
-  # TODO: Should this throw an error or be caught and replaced? (check also the warnings here)
-  expect_error(
-    res1 <-
-      suppressWarnings(acc_margins(resp_vars = "v00014", study_data = study_data,
-                  meta_data = meta_data, group_vars = "v00016",
-                  min_obs_in_subgroup = NA)),
-    regexp = "Argument min_obs_in_subgroup must match the predicate",
-    perl = TRUE
-  )
-
   expect_message(
     res1 <-
       acc_margins(resp_vars = "v00014", study_data = study_data,
                   meta_data = meta_data, group_vars = "v00016",
-                  min_obs_in_subgroup = 2),
+                  min_obs_in_subgroup = 2, sort_group_var_levels = FALSE,
+                  n_violin_max = 3),
     regexp =
       paste("min_obs_in_subgroup is not specified correctly",
             "and is set to 5 instead.")
@@ -162,19 +220,18 @@ test_that("acc_margins works without label_col", {
               "v00014, N = 131 observations were excluded additionally."),
         paste("No or many threshold type specified and set to empirical.")
       ),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
 
   expect_true(all(
-    c("SummaryData",
+    c("ResultData",
       "SummaryTable",
       "SummaryPlot"
       ) %in% names(res1)))
 
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
-      as.matrix(res1$SummaryData)),
+      as.matrix(res1$ResultData)),
       na.rm = TRUE) - 2590.933)), 0.1
   )
 
@@ -190,12 +247,13 @@ test_that("acc_margins works without label_col", {
 test_that("acc_margins works with label_col", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -244,8 +302,7 @@ expect_message(
             "observations were excluded additionally."),
       paste("threshold_value is not numeric.+it to default value 1.")
     ),
-  perl = TRUE,
-  all = TRUE
+  perl = TRUE
 )
 
 expect_message(
@@ -263,8 +320,7 @@ expect_message(
             "observations were excluded. Due to missing values in",
             "CRP_0, N = 131 observations were excluded additionally")
     ),
-  perl = TRUE,
-  all = TRUE
+  perl = TRUE
 )
 
 expect_message(
@@ -283,8 +339,7 @@ expect_message(
             "CRP_0, N = 131 observations were excluded additionally."),
       paste("Threshold was set to user but no value for the unit of",
             "measurements was defined.")),
-  perl = TRUE,
-  all = TRUE
+  perl = TRUE
 )
 
 expect_message(
@@ -301,34 +356,27 @@ expect_message(
             "observations were excluded. Due to missing values in",
             "CRP_0, N = 131 observations were excluded additionally.")
     ),
-  perl = TRUE,
-  all = TRUE
+  perl = TRUE
 )
 
 expect_message(
     res1 <-
       acc_margins(resp_vars = "CRP_0", study_data = study_data,
                   meta_data = meta_data, group_vars = "DEV_NO_0",
-                  label_col = LABEL),
-    regexp =
-      sprintf(
-        "(%s|%s)",
-        paste("Due to missing values .+", "observations were excluded."),
-        paste("No or many threshold type specified and set to empirical.")
-      ),
-    perl = TRUE,
-    all = TRUE
+                  label_col = LABEL, sort_group_var_levels = FALSE),
+    regexp = paste("Due to missing values .+", "observations were excluded."),
+    perl = TRUE
   )
 
   expect_true(all(
-    c("SummaryData",
+    c("ResultData",
       "SummaryTable",
       "SummaryPlot"
     ) %in% names(res1)))
 
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
-      as.matrix(res1$SummaryData)),
+      as.matrix(res1$ResultData)),
       na.rm = TRUE) - 2590.933)), 0.1
   )
 
@@ -342,7 +390,12 @@ expect_message(
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
+
+  # TODO: As soon as vdiffr supports the variant argument for snapshots -- https://github.com/r-lib/vdiffr/issues/125, use it everywhere.
+  # r_minor_version <- function() paste0("R", getRversion()[, 1:2])
+  # ggplot_version <- function() packageVersion("ggplot2")
+
   # TODO: skip_if_not(capabilities()["long.double"])
-  vdiffr::expect_doppelganger("margins plot for CRP_0 ok",
+  expect_doppelganger2("margins plot for CRP_0 ok",
                               res1$SummaryPlot)
 })

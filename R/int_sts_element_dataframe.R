@@ -1,20 +1,16 @@
 #' Determine missing and/or superfluous data elements
 #'
-#' Depends on `dataquieR.ELEMENT_MISSMATCH_CHECKTYPE` option,
-#' see there -- # TODO: Rind out, how to document and link
-#' it here using `Roxygen`.
+#' Depends on [dataquieR.ELEMENT_MISSMATCH_CHECKTYPE] option,
+#' see there
 #'
 #' [Indicator]
-#'
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
+#' @inheritParams .template_function_indicator
+#' @param check_type [enum] none | exact | subset_u | subset_m. See
+#'                               [dataquieR.ELEMENT_MISSMATCH_CHECKTYPE]
 #'
 #' @return [list] with names lots:
 #'   - `DataframeData`: data frame with the unexpected elements check results.
 #'   - `DataframeTable`: [data.frame] table with all errors, used for the data quality report:
-#'                       - `MISSING`: `meta_data` or `study_data`: where is
-#'                                    the element missing
 #'                       - `PCT_int_sts_element`: Percentage of element
 #'                                                mismatches
 #'                       - `NUM_int_sts_element`: Number of element
@@ -22,179 +18,199 @@
 #'                       - `resp_vars`: affected element names
 #'
 #' @export
-int_sts_element_dataframe <- function(study_data,
-                                      meta_data = "item_level") { # TODO: by far too complicated.
-  # TODO: also differntly implemetned from int_sts_element_segment -- other loop level!!
-  util_expect_data_frame(meta_data, c(VAR_NAMES))
-  if (STUDY_SEGMENT %in% colnames(meta_data) && any(meta_data$STUDY_SEGMENT == "ALL")) {
-    util_message("No segment should be named %s, renaming it.",
-                 dQuote("ALL"), applicability_problem = TRUE)
-    meta_data$STUDY_SEGMENT[meta_data$STUDY_SEGMENT == "ALL"] <-
-      "RENAMED SEGMENT: ALL"
-  }
+#' @examples
+#' \dontrun{
+#' prep_load_workbook_like_file("~/tmp/df_level_test.xlsx")
+#' meta_data_dataframe <- "dataframe_level"
+#' meta_data <- "item_level"
+#' }
+int_sts_element_dataframe <- function(item_level = "item_level",
+                                      meta_data_dataframe = "dataframe_level",
+                                      meta_data = item_level,
+                                      meta_data_v2,
+                                      check_type =
+                                        getOption(
+                                          "dataquieR.ELEMENT_MISSMATCH_CHECKTYPE",
+                                          dataquieR.ELEMENT_MISSMATCH_CHECKTYPE_default),
+                                      dataframe_level) { # TODO: Add MISSING-column as in segment
+  # Preps and checks ----
 
-  if (!(STUDY_SEGMENT %in% colnames(meta_data))) {
-    meta_data$STUDY_SEGMENT <- "ALL"
-  }
+  util_maybe_load_meta_data_v2()
 
-  Q <- substr(dQuote(""), 1, 1)
-  E <- substr(dQuote(""), 2, 2)
-  e <- new.env(parent = emptyenv())
-  e$conds <- list()
-  register_cond <- function(cond) {
-    if (identical(
-      attr(cond, "integrity_indicator"), "int_sts_element")) {
-      e$conds <- c(e$conds, list(cond))
-    }
-  }
+  # checks and fixes the function arguments
+  util_ck_arg_aliases()
 
-  .orig_meta <- meta_data
+  meta_data_dataframe <- prep_check_meta_data_dataframe(meta_data_dataframe)
+  util_expect_data_frame(meta_data_dataframe, col_names = DF_CODE)
 
-  suppressMessages(
-    suppressWarnings(
-      withCallingHandlers(
-        prep_prepare_dataframes(.label_col = VAR_NAMES, .allow_empty = TRUE),
-        message = register_cond,
-        warning = register_cond
-      )
+  util_expect_data_frame(meta_data, col_names = DATAFRAMES)
+  prep_check_meta_names(meta_data = meta_data,
+                        level = REQUIRED)
+
+
+  util_match_arg(check_type,
+                 choices = c(
+                   "none",
+                   "exact",
+                   "subset_u",
+                   "subset_m"
+                 ))
+
+  DataframeData <- data.frame(DF_NAME = meta_data_dataframe[[DF_NAME]],
+                              NUM_int_sts_element = rep(NA_integer_,
+                                                        nrow(meta_data_dataframe
+                                                        )),
+                              PCT_int_sts_element = rep(NA_real_,
+                                                        nrow(meta_data_dataframe
+                                                        )),
+                              resp_vars = rep(NA_character_,
+                                              nrow(meta_data_dataframe))
+  )
+  if (check_type != "none") {
+    # dfr_names <- list2env(
+    #   setNames(as.list(meta_data_dataframe[[DF_NAME]]),
+    #            nm = meta_data_dataframe[[DF_CODE]])
+    # )
+
+    dfr_codes <- list2env(
+      setNames(as.list(meta_data_dataframe[[DF_CODE]]),
+               nm = meta_data_dataframe[[DF_NAME]])
     )
-  )
 
-  meta_data <- .orig_meta
+    meta_data_dataframe <-
+      meta_data_dataframe[!util_empty(meta_data_dataframe[[DF_CODE]]), , FALSE]
+    parsed_dataframes_col <- lapply(setNames(
+      meta_data[[DATAFRAMES]],
+      nm = meta_data[[VAR_NAMES]]
+    ), util_parse_assignments,
+    multi_variate_text = TRUE
+    )
 
-  msgs <- vapply(e$conds, inherits, "simpleMessage", FUN.VALUE = logical(1))
-  wrns <- vapply(e$conds, inherits, "warning", FUN.VALUE = logical(1))
+    # switch names and values
+    # usable_df_names <- intersect(prep_list_dataframes(),
+    #           meta_data_dataframe[[DF_NAME]])
 
-  pct <- data.frame(stringsAsFactors = FALSE,
-             Segment = rep("ALL", sum(wrns)), # TODO: If segment-wiese, how to tell the segemnt of an uexpected study variable
-             DESCRIPTION = vapply(e$conds[wrns],
-                                  conditionMessage,
-                                  FUN.VALUE = character(1)),
-             MISSING = ifelse(grepl("of the study data", vapply(e$conds[wrns],
-                                                                conditionMessage,
-                                                                FUN.VALUE = character(1)), fixed = TRUE),
-                              "metadata",
-                              "study data"
-                              ),
-             PCT_int_sts_element = as.numeric(gsub("^.*?([0-9,.]+)%.*$", "\\1",
-                                                   vapply(e$conds[wrns],
-               conditionMessage,
-               FUN.VALUE = character(1)))))
+    DataframeData <- data.frame(DF_NAME = meta_data_dataframe[[DF_NAME]],
+                                NUM_int_sts_element = rep(NA_integer_,
+                                                          nrow(meta_data_dataframe
+                                                          )),
+                                PCT_int_sts_element = rep(NA_real_,
+                                                          nrow(meta_data_dataframe
+                                                          )),
+                                resp_vars = rep(NA_character_,
+                                                nrow(meta_data_dataframe))
+    )
 
-  abs <- data.frame(stringsAsFactors = FALSE,
-                    Segment = rep("ALL", sum(msgs)), # TODO: If segment-wiese, how to tell the segemnt of an uexpected study variable
-                    DESCRIPTION = vapply(e$conds[msgs],
-                                         conditionMessage,
-                                         FUN.VALUE = character(1)),
-                    MISSING = ifelse(grepl("Did not find any metadata", vapply(e$conds[msgs],
-                                                                                conditionMessage,
-                                                                                FUN.VALUE = character(1)), fixed = TRUE),
-                                     "metadata",
-                                     "study data"
-                    ),
-                    NUM_int_sts_element = vapply(gsub(sprintf("[^%s]", Q), "", vapply(e$conds[msgs],
-                                                                                                             conditionMessage,
-                                                                                                             FUN.VALUE = character(1))), nchar, FUN.VALUE = integer(1))
-  )
 
-  r <- merge(pct, abs, by = c("Segment", "MISSING"), suffixes = c("p", "a"))
+    DataframeData$resp_vars <-
+      vapply(meta_data_dataframe[[DF_NAME]], function(df) {
+        cur_code <- dfr_codes[[df]]
 
-  r$DESCRIPTION <- paste(r$DESCRIPTIONp, r$DESCRIPTIONa)
-  r$DESCRIPTIONa <- NULL
-  r$DESCRIPTIONp <- NULL
+        from_item_level <- meta_data[, VAR_NAMES]
+        from_df <- colnames(prep_get_data_frame(df,
+                                                column_names_only = TRUE))
+        from_all <- union(from_item_level, from_df)
 
-  vars <- util_extract_matches(
-    r$DESCRIPTION,
-    paste0(Q, ".+?", E)
-  )
+        not_in_df <- from_all[(!(from_all %in% from_df))]
+        not_in_il <- from_all[(!(from_all %in% from_item_level))]
 
-  vars <- lapply(
-    vars,
-    gsub,
-    pattern = paste0("^", Q, collapse = ""),
-    replacement = ""
-  )
+        r <- character(0)
+        if (length(not_in_df) > 0) {
+          r["not_in_df"] <- paste("{",
+                                  util_pretty_vector_string(not_in_df, n_max = 5),
+                                  "} \u2209 sd")
+        }
+        if (length(not_in_il) > 0) {
+          r["not_in_il"] <- paste("{",
+                                  util_pretty_vector_string(not_in_il, n_max = 5),
+                                  "} \u2209 md")
+        }
 
-  vars <- lapply(
-    vars,
-    gsub,
-    pattern = paste0(E, "$", collapse = ""),
-    replacement = ""
-  )
+        if (check_type == "subset_u") {
+          r <- r["not_in_il"]
+        }
+        if (check_type == "subset_m") {
+          r <- r["not_in_df"]
+        }
+        return(paste(r, collapse = " \u2227 "))
+        # optional: add the dataframes to the cache?
+        # cur_df <- prep_get_data_frame(df,
+        #                     keep_types = TRUE)
+        # prep_add_data_frames(data_frame_list = setNames(
+        #   list(cur_df),
+        #   nm = get(DF_CODE, envir = dfr_names)
+        # ))
+      }, FUN.VALUE = character(1))
 
-  rr <- lapply(seq_len(nrow(r)), function(x) r[x, , FALSE])
+    DataframeData$NUM_int_sts_element <-
+      vapply(meta_data_dataframe[[DF_NAME]], function(df) {
+        cur_code <- dfr_codes[[df]]
 
-  segsizes <- util_table_of_vct(meta_data$STUDY_SEGMENT) # TODO: Use [[STUDY_SEGMENT]]
-  segsizes <- setNames(segsizes$Freq, nm = segsizes$Var1)
+        from_item_level <- meta_data[, VAR_NAMES]
+        from_df <- colnames(prep_get_data_frame(df,
+                                                column_names_only = TRUE))
+        from_all <- union(from_item_level, from_df)
 
-  rrr <- mapply(rr, vars, SIMPLIFY = FALSE, FUN = function(a, v) {
-    x <- merge(a, v, by = NULL)
-    x$Segment <- prep_map_labels(x = v,
-                                  meta_data = meta_data,
-                                  to = STUDY_SEGMENT,
-                                  ifnotfound = NA_character_)
+        not_in_df <- sum(!(from_all %in% from_df))
+        not_in_il <- sum(!(from_all %in% from_item_level))
 
-    x$Segment <- ifelse(is.na(x$Segment), "ALL", x$Segment)
-    x$resp_vars <- x$y
-    x$y <- NULL
+        if (check_type == "exact") {
+          return(not_in_df + not_in_il)
+        }
+        if (check_type == "subset_u") {
+          return(not_in_il)
+        }
+        if (check_type == "subset_m") {
+          return(not_in_df)
+        }
+        # optional: add the dataframes to the cache?
+        # cur_df <- prep_get_data_frame(df,
+        #                     keep_types = TRUE)
+        # prep_add_data_frames(data_frame_list = setNames(
+        #   list(cur_df),
+        #   nm = get(DF_CODE, envir = dfr_names)
+        # ))
+      }, FUN.VALUE = integer(1))
 
-    SPLIT_STRING <- paste0(" ", SPLIT_CHAR, " ")
+    DataframeData$PCT_int_sts_element <-
+      vapply(meta_data_dataframe[[DF_NAME]], function(df) {
+        cur_code <- dfr_codes[[df]]
 
-    if (all(x$Segment != "ALL")) {
-      xl <- split(x, x$Segment)
-      xl <- lapply(xl, function(x) {
-        x$NUM_int_sts_element <- nrow(x)
-        x$PCT_int_sts_element <- nrow(x) / segsizes[unique(x$Segment)]
-        x$resp_vars <- paste(sort(unique(x$resp_vars)),
-                             collapse = SPLIT_STRING)
-        x[!duplicated(x), , FALSE]
-      })
-      x <- do.call(rbind.data.frame, c(xl, list(
-        make.row.names = FALSE,
-        stringsAsFactors = FALSE)))
-    } else {
-      if (any(x$Segment != "ALL")) {
-        util_error(c("Unexpected error for segments: found a mixture of",
-                   "segments. Internal error in dataquieR, please report."))
-      }
-      x <- data.frame(stringsAsFactors = FALSE,
-                      Segment = "ALL",
-                      MISSING = paste(unique(x$MISSING), collapse = SPLIT_STRING),
-                      DESCRIPTION = paste(unique(x$DESCRIPTION),
-                                          collapse = SPLIT_STRING),
-                      NUM_int_sts_element = nrow(x),
-                      PCT_int_sts_element = max(x$PCT_int_sts_element),
-                      resp_vars = paste(sort(unique(x$resp_vars)),
-                                        collapse = SPLIT_STRING)
-      )
-    }
-    x
-  })
+        from_item_level <- meta_data[, VAR_NAMES]
+        from_df <- colnames(prep_get_data_frame(df,
+                                                column_names_only = TRUE))
+        from_all <- union(from_item_level, from_df)
 
-  DataframeTable <- do.call(rbind.data.frame,
-                          c(rrr, list(
-                            make.row.names = FALSE,
-                            stringsAsFactors = FALSE)))
-  DataframeTable$DESCRIPTION <- NULL
+        not_in_df <- sum(!(from_all %in% from_df))
+        not_in_il <- sum(!(from_all %in% from_item_level))
 
-  if (!prod(dim(DataframeTable))) {
-    DataframeTable <- data.frame(
-      # Segment = character(0),
-      MISSING = character(0),
-      PCT_int_sts_element = numeric(0),
-      NUM_int_sts_element = integer(0),
-      resp_vars = character(0))
+        if (check_type == "exact") {
+          return(100 * (not_in_df + not_in_il) / length(from_all))
+        }
+        if (check_type == "subset_u") {
+          return(100 * not_in_il / length(from_df))
+        }
+        if (check_type == "subset_m") {
+          return(100 * not_in_df / length(from_item_level))
+        }
+      }, FUN.VALUE = numeric(1))
   }
 
-  DataframeTable$Segment <- NULL
-
-  DataframeData <- DataframeTable
-  names(DataframeData) <- c("Missing",
-                            "Number of unexpected elements",
-                            "Percentage of unexpected elements",
-                            "Response variables")
-
-  list(DataframeData = DataframeData,
-       DataframeTable = DataframeTable)
+  DataframeTable <- DataframeData[, c(
+    "DF_NAME",
+    "NUM_int_sts_element" ,
+    "PCT_int_sts_element"
+  ), FALSE]
+  DataframeData$PCT_int_sts_element <-
+    round(DataframeData$PCT_int_sts_element, 2)
+  colnames(DataframeData) <-
+    util_translate_indicator_metrics(colnames(DataframeData),
+                                     ignore_unknown = TRUE)
+  colnames(DataframeData)[colnames(DataframeData) == "resp_vars"] <-
+    "Affected Elements"
+  return(list(
+    DataframeTable = DataframeTable,
+    DataframeData = DataframeData
+  ))
 
 }

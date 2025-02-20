@@ -3,6 +3,7 @@
 \docType{data}
 \name{CONTRADICTION_TERM}
 \alias{CONTRADICTION_TERM}
+\alias{RULE}
 \title{Cross-item level metadata attribute name}
 \format{
 An object of class \code{character} of length 1.
@@ -11,6 +12,9 @@ An object of class \code{character} of length 1.
 CONTRADICTION_TERM
 }
 \description{
+Note: in some \code{prep_}-functions, this field is named \code{RULE}
+}
+\details{
 Specifies a contradiction rule. Use \code{REDCap} like syntax, see
 \href{https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html}{online vignette}
 }
@@ -27,10 +31,12 @@ Other meta_data_cross:
 \code{\link{CONTRADICTION_TYPE}},
 \code{\link{DATA_PREPARATION}},
 \code{\link{GOLDSTANDARD}},
+\code{\link{MULTIVARIATE_OUTLIER_CHECK}},
 \code{\link{MULTIVARIATE_OUTLIER_CHECKTYPE}},
 \code{\link{N_RULES}},
 \code{\link{REL_VAL}},
 \code{\link{VARIABLE_LIST}},
+\code{\link{meta_data_cross}},
 \code{\link{util_normalize_cross_item}()}
 }
 \concept{meta_data_cross}

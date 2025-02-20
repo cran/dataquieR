@@ -32,11 +32,14 @@ test_that("util_check_data_type works", {
                                             check_convertible = TRUE)))
 
   expect_equal(util_check_data_type(42, DATA_TYPES$INTEGER,
-                                   return_percentages = TRUE), 0)
+                                   return_percentages = TRUE),
+               util_attach_attr(0, which = FALSE))
   expect_equal(util_check_data_type(42.5, DATA_TYPES$INTEGER,
-                                   return_percentages = TRUE), 100)
+                                   return_percentages = TRUE),
+               util_attach_attr(100, which = TRUE))
   expect_equal(util_check_data_type(c("42", "x"), DATA_TYPES$INTEGER,
-                                    return_percentages = TRUE), 100)
+                                    return_percentages = TRUE),
+               util_attach_attr(100, which = c(`42` = TRUE, x = TRUE)))
   expect_equal(util_check_data_type(c("42", "x"), DATA_TYPES$INTEGER,
                                     check_convertible = TRUE,
                                     return_percentages = FALSE), 0)
@@ -50,9 +53,14 @@ test_that("util_check_data_type works", {
                                     check_convertible = TRUE,
                                     check_conversion_stable = TRUE,
                                     return_percentages = TRUE),
-                   c(match = 200/3,
+                   util_attach_attr(c(match = 200/3,
                      convertible_mismatch_stable = 0,
                      convertible_mismatch_unstable = 100/3,
-                     nonconvertible_mismatch = 0))
+                     nonconvertible_mismatch = 0), which = list(
+                       match = c(FALSE, TRUE, FALSE),
+                       convertible_mismatch_stable = c(FALSE, FALSE, FALSE),
+                       convertible_mismatch_unstable = c(FALSE, TRUE, FALSE),
+                       nonconvertible_mismatch = c(FALSE, FALSE, FALSE)
+                     )))
 
 })

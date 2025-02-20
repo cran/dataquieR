@@ -38,7 +38,6 @@ it returns \code{ifnotfound})
 }
 \seealso{
 Other metadata_management: 
-\code{\link{CAN_THIS_BE_REMOVED_util_combine_missing_lists}()},
 \code{\link{util_dist_selection}()},
 \code{\link{util_find_free_missing_code}()},
 \code{\link{util_get_var_att_names_of_level}()},

@@ -17,7 +17,7 @@
 #' observed data type in the study data.
 #'
 #' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
+#' @param item_level [data.frame] the data frame that contains metadata
 #'                               attributes of study data
 #' @param split_segments [logical] return one matrix per study segment
 #' @param label_col [variable attribute] the name of the column in the metadata
@@ -27,6 +27,14 @@
 #' @param meta_data_segment [data.frame] -- optional: Segment level metadata
 #' @param meta_data_dataframe [data.frame] -- optional: Data frame level
 #'                                                                 metadata
+#' @param meta_data [data.frame] old name for `item_level`
+#' @param meta_data_v2 [character] path to workbook like metadata file, see
+#'                                 [`prep_load_workbook_like_file`] for details.
+#'                                 **ALL LOADED DATAFRAMES WILL BE PURGED**,
+#'                                 using [`prep_purge_data_frame_cache`],
+#'                                 if you specify `meta_data_v2`.
+#' @param segment_level [data.frame] alias for `meta_data_segment`
+#' @param dataframe_level [data.frame] alias for `meta_data_dataframe`
 #'
 #' @inheritParams acc_distributions
 #'
@@ -40,7 +48,7 @@
 #'                               2. Matching datatype + Incomplete metadata,
 #'                               3. Matching datatype + complete metadata,
 #'                               4. Not applicable according to data type
-#'   - `ApplicabilityPlot`: [ggplot2] heatmap plot, graphical representation of
+#'   - `ApplicabilityPlot`: [ggplot2::ggplot2] heatmap plot, graphical representation of
 #'                       `SummaryTable`
 #'   - `ApplicabilityPlotList`: [list] of plots per (maybe artificial) segment
 #'   - `ReportSummaryTable`: data frame underlying `ApplicabilityPlot`
@@ -48,22 +56,21 @@
 #' @importFrom ggplot2 ggplot aes geom_tile scale_fill_manual facet_wrap
 #'                     theme_minimal scale_x_discrete xlab guides
 #'                     guide_legend theme element_text
-#' @examples
-#' \dontrun{
-#' load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-#'   environment())
-#' load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-#'   environment())
-#' appmatrix <- pro_applicability_matrix(study_data = study_data,
-#'                                       meta_data = meta_data,
-#'                                       label_col = LABEL)
-#' }
-pro_applicability_matrix <- function(study_data, meta_data, split_segments =
-                                     FALSE, label_col,
+pro_applicability_matrix <- function(study_data,
+                                     item_level = "item_level",
+                                     split_segments =
+                                      FALSE,
+                                     label_col,
                                      max_vars_per_plot = 20,
                                      meta_data_segment,
                                      meta_data_dataframe,
-                                     flip_mode = "noflip") { # TODO: add meta_data_cross_item
+                                     flip_mode = "noflip",
+                                     meta_data_v2,
+                                     meta_data = item_level,
+                                     segment_level,
+                                     dataframe_level) { # TODO: add meta_data_cross_item
+  util_maybe_load_meta_data_v2()
+  util_ck_arg_aliases()
   if (!missing(meta_data_segment) && !is.null(meta_data_segment)) {
     meta_data_segment <-
       prep_check_meta_data_segment(meta_data_segment) # TODO: Which columns are mandatory
@@ -369,8 +376,8 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
       theme(
         legend.position = "bottom",
         axis.text.x = element_text(angle = 90, hjust = 0),
-        axis.text.y = element_text(size = 10),
-        aspect.ratio = ratio
+        axis.text.y = element_text(size = 10)#,
+        #aspect.ratio = ratio
       ) + util_coord_flip(ref_env = ref_env)
   }
 
@@ -400,8 +407,9 @@ pro_applicability_matrix <- function(study_data, meta_data, split_segments =
     setNames(nm = 0:4, levels(app_matrix_long$APP_SCORE))
 
 
-  class(ReportSummaryTable) <- union("ReportSummaryTable",
-                                     class(ReportSummaryTable))
+  ReportSummaryTable <- util_validate_report_summary_table(ReportSummaryTable,
+                                                           meta_data = meta_data,
+                                                           label_col = label_col)
 
   return(list(
     ApplicabilityPlot = p,

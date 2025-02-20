@@ -1,12 +1,13 @@
 test_that("pro_applicability_matrix works", {
   skip_on_cran() # deprecated
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -75,7 +76,6 @@ test_that("pro_applicability_matrix works", {
                                               max_vars_per_plot),
       regexp =
         paste("yielding .+v00001 = string.+"),
-    all = TRUE,
     perl = TRUE)
 
   expect_silent(
@@ -98,7 +98,6 @@ test_that("pro_applicability_matrix works", {
     regexp =
       paste("Some .+STUDY_SEGMENT.+ are NA.",
             "Will assign those to an artificial segment .+SEGMENT.+"),
-    all = TRUE,
     perl = TRUE
   )
 
@@ -111,7 +110,6 @@ test_that("pro_applicability_matrix works", {
     regexp =
       paste(".*Will split segemnt",
             ".+ arbitrarily avoiding too large figures"),
-    all = TRUE,
     perl = TRUE
   )
 
@@ -127,8 +125,7 @@ test_that("pro_applicability_matrix works", {
     regexp = paste("Stratification for STUDY_SEGMENT is not",
                    "possible due to missing metadata. Will split arbitrarily",
                    "avoiding too large figures"),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
 
   appmatrix <- pro_applicability_matrix(study_data = study_data,
@@ -143,9 +140,9 @@ test_that("pro_applicability_matrix works", {
   skip_on_cran()
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
-  vdiffr::expect_doppelganger("appmatrix plot ok",
+  expect_doppelganger2("appmatrix plot ok",
                               appmatrix$ApplicabilityPlot)
-  vdiffr::expect_doppelganger("appmatrix plot for segment v10000 ok",
+  expect_doppelganger2("appmatrix segment v10000",
                               appmatrix$ApplicabilityPlotList$v10000)
 
 })

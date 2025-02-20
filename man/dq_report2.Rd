@@ -6,11 +6,13 @@
 \usage{
 dq_report2(
   study_data,
-  meta_data = "item_level",
+  item_level = "item_level",
   label_col = LABEL,
   meta_data_segment = "segment_level",
   meta_data_dataframe = "dataframe_level",
   meta_data_cross_item = "cross-item_level",
+  meta_data_item_computation = "item_computation_level",
+  meta_data = item_level,
   meta_data_v2,
   ...,
   dimensions = c("Completeness", "Consistency"),
@@ -29,13 +31,21 @@ dq_report2(
     "^ReportSummaryTable", "^Dataframe", "^Result", "^VariableGroup"),
   mode = c("default", "futures", "queue", "parallel"),
   mode_args = list(),
-  notes_from_wrapper = list()
+  notes_from_wrapper = list(),
+  storr_factory = NULL,
+  amend = FALSE,
+  cross_item_level,
+  `cross-item_level`,
+  segment_level,
+  dataframe_level,
+  item_computation_level,
+  .internal = rlang::env_inherits(rlang::caller_env(), parent.env(environment()))
 )
 }
 \arguments{
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
@@ -48,6 +58,11 @@ metadata}
 
 \item{meta_data_cross_item}{\link{data.frame} -- optional: Cross-item level
 metadata}
+
+\item{meta_data_item_computation}{\link{data.frame} optional. computation rules
+for computed variables.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
 
 \item{meta_data_v2}{\link{character} path to workbook like metadata file, see
 \code{\link{prep_load_workbook_like_file}} for details.
@@ -137,6 +152,31 @@ overhead and idling workers.}
 
 \item{notes_from_wrapper}{\link{list} a list containing notes about changed labels
 by \code{dq_report_by} (otherwise NULL)}
+
+\item{storr_factory}{\link{function} \code{NULL}, or
+a function returning a \code{storr} object as
+back-end for the report's results. If used with
+\code{cores > 1}, the storage must be accessible from all
+cores and capable of concurrent writing according
+to \code{storr}. Hint: \code{dataquieR} currently only supports
+\code{storr::storr_rds()}, officially, while other back-
+ends may nevertheless work, yet, they are not tested.}
+
+\item{amend}{\link{logical} if there is already data in.\code{storr_factory},
+use it anyways -- unsupported, so far!}
+
+\item{cross_item_level}{\link{data.frame} alias for \code{meta_data_cross_item}}
+
+\item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
+
+\item{dataframe_level}{\link{data.frame} alias for \code{meta_data_dataframe}}
+
+\item{item_computation_level}{\link{data.frame} alias for
+\code{meta_data_item_computation}}
+
+\item{.internal}{\link{logical} internal use, only.}
+
+\item{`cross-item_level`}{\link{data.frame} alias for \code{meta_data_cross_item}}
 }
 \value{
 a \link{dataquieR_resultset2} that can be
@@ -161,6 +201,17 @@ xx <- parallel
 cat(vapply(x, deparse1, FUN.VALUE = character(1)), sep = "\n", file = "all_calls.txt")
 rstudioapi::navigateToFile("all_calls.txt")
 eval(x$`acc_multivariate_outlier.Blood pressure checks`)
+
+prep_load_workbook_like_file("meta_data_v2")
+rules <- tibble::tribble(
+  ~resp_vars,  ~RULE,
+  "BMI", '[BODY_WEIGHT_0]/(([BODY_HEIGHT_0]/100)^2)',
+  "R", '[WAIST_CIRC_0]/2/[pi]', # in m^3
+  "VOL_EST", '[pi]*([WAIST_CIRC_0]/2/[pi])^2*[BODY_HEIGHT_0] / 1000', # in l
+ )
+prep_load_workbook_like_file("ship_meta_v2")
+prep_add_data_frames(computed_items = rules)
+r <- dq_report2("ship", dimensions = NULL, label_col = "LABEL")
 }
 }
 \seealso{

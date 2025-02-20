@@ -6,19 +6,23 @@
 \usage{
 pro_applicability_matrix(
   study_data,
-  meta_data,
+  item_level = "item_level",
   split_segments = FALSE,
   label_col,
   max_vars_per_plot = 20,
   meta_data_segment,
   meta_data_dataframe,
-  flip_mode = "noflip"
+  flip_mode = "noflip",
+  meta_data_v2,
+  meta_data = item_level,
+  segment_level,
+  dataframe_level
 )
 }
 \arguments{
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
 \item{split_segments}{\link{logical} return one matrix per study segment}
@@ -42,6 +46,18 @@ setting the \code{roptions(dataquieR.flip_mode = ...)}. If
 called from \code{dq_report}, you can also pass
 \code{flip_mode} to all function calls or set them
 specifically using \code{specific_args}.}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
+
+\item{dataframe_level}{\link{data.frame} alias for \code{meta_data_dataframe}}
 }
 \value{
 a list with:
@@ -55,7 +71,7 @@ categories:
 2. Matching datatype + Incomplete metadata,
 3. Matching datatype + complete metadata,
 4. Not applicable according to data type
-\item \code{ApplicabilityPlot}: \link{ggplot2} heatmap plot, graphical representation of
+\item \code{ApplicabilityPlot}: \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} heatmap plot, graphical representation of
 \code{SummaryTable}
 \item \code{ApplicabilityPlotList}: \link{list} of plots per (maybe artificial) segment
 \item \code{ReportSummaryTable}: data frame underlying \code{ApplicabilityPlot}
@@ -76,15 +92,4 @@ applicability of each data quality implementation.
 
 In addition, the data type defined in the metadata is compared with the
 observed data type in the study data.
-}
-\examples{
-\dontrun{
-load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-  environment())
-load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-  environment())
-appmatrix <- pro_applicability_matrix(study_data = study_data,
-                                      meta_data = meta_data,
-                                      label_col = LABEL)
-}
 }

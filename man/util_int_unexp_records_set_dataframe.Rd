@@ -9,7 +9,10 @@ util_int_unexp_records_set_dataframe(
   id_vars_list,
   identifier_name_list,
   valid_id_table_list,
-  meta_data_record_check_list
+  meta_data_record_check_list,
+  meta_data_dataframe = "dataframe_level",
+  ...,
+  dataframe_level
 )
 }
 \arguments{
@@ -22,6 +25,13 @@ util_int_unexp_records_set_dataframe(
 \item{valid_id_table_list}{\link{list} the reference list with the identifier variable values.}
 
 \item{meta_data_record_check_list}{\link{character} a character vector indicating the type of check to conduct, either "subset" or "exact".}
+
+\item{meta_data_dataframe}{\link{data.frame} the data frame that contains the
+metadata for the data frame level}
+
+\item{...}{not used}
+
+\item{dataframe_level}{\link{data.frame} alias for \code{meta_data_dataframe}}
 }
 \value{
 a \link{list} with

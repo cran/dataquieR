@@ -4,11 +4,63 @@
 \name{dataquieR}
 \alias{dataquieR}
 \alias{dataquieR-package}
+\alias{dataquieR-options}
 \title{The \code{dataquieR} package about Data Quality in
 Epidemiological Research}
 \description{
 For a quick start please read \link{dq_report2} and maybe the vignettes
 or the package's \href{https://dataquality.qihs.uni-greifswald.de/}{website}.
+}
+\section{Options}{
+This package features the following \code{options()}:
+\itemize{
+\item \link{dataquieR.CONDITIONS_LEVEL_TRHESHOLD}
+\item \link{dataquieR.CONDITIONS_WITH_STACKTRACE}
+\item \link{dataquieR.ELEMENT_MISSMATCH_CHECKTYPE}
+\item \link{dataquieR.ERRORS_WITH_CALLER}
+\item \link{dataquieR.GAM_for_LOESS}
+\item \link{dataquieR.MAX_LABEL_LEN}
+\item \link{dataquieR.MAX_VALUE_LABEL_LEN}
+\item \link{dataquieR.MESSAGES_WITH_CALLER}
+\item \link{dataquieR.MULTIVARIATE_OUTLIER_CHECK}
+\item \link{dataquieR.VALUE_LABELS_htmlescaped}
+\item \link{dataquieR.WARNINGS_WITH_CALLER}
+\item \link{dataquieR.acc_loess.exclude_constant_subgroups}
+\item \link{dataquieR.acc_loess.mark_time_points}
+\item \link{dataquieR.acc_loess.plot_format}
+\item \link{dataquieR.acc_loess.plot_observations}
+\item \link{dataquieR.acc_margins_num}
+\item \link{dataquieR.acc_margins_sort}
+\item \link{dataquieR.acc_multivariate_outlier.scale}
+\item \link{dataquieR.col_con_con_empirical}
+\item \link{dataquieR.col_con_con_logical}
+\item \link{dataquieR.debug}
+\item \link{dataquieR.des_summary_hard_lim_remove}
+\item \link{dataquieR.dontwrapresults}
+\item \link{dataquieR.fix_column_type_on_read}
+\item \link{dataquieR.flip_mode}
+\item \link{dataquieR.force_item_specific_missing_codes}
+\item \link{dataquieR.force_label_col}
+\item \link{dataquieR.grading_formats}
+\item \link{dataquieR.grading_rulesets}
+\item \link{dataquieR.guess_missing_codes}
+\item \link{dataquieR.lang}
+\item \link{dataquieR.max_group_var_levels_in_plot}
+\item \link{dataquieR.max_group_var_levels_with_violins}
+\item \link{dataquieR.min_obs_per_group_var_in_plot}
+\item \link{dataquieR.non_disclosure}
+\item \link{dataquieR.scale_level_heuristics_control_binaryrecodelimit}
+\item \link{dataquieR.scale_level_heuristics_control_metriclevels}
+\item \link{dataquieR.testdebug}
+}
+}
+
+\references{
+\itemize{
+\item \href{https://joss.theoj.org/papers/10.21105/joss.06581}{JOSS 2024}
+\item \href{https://joss.theoj.org/papers/10.21105/joss.03093}{JOSS 2021}
+\item \href{https://www.researchsquare.com/article/rs-119457/v1}{DQ_OBS data quality framework}
+}
 }
 \seealso{
 Useful links:
@@ -17,6 +69,48 @@ Useful links:
   \item Report bugs at \url{https://gitlab.com/libreumg/dataquier/-/issues}
 }
 
+
+Other options: 
+\code{\link{dataquieR.CONDITIONS_LEVEL_TRHESHOLD}},
+\code{\link{dataquieR.CONDITIONS_WITH_STACKTRACE}},
+\code{\link{dataquieR.ELEMENT_MISSMATCH_CHECKTYPE}},
+\code{\link{dataquieR.ERRORS_WITH_CALLER}},
+\code{\link{dataquieR.GAM_for_LOESS}},
+\code{\link{dataquieR.MAX_LABEL_LEN}},
+\code{\link{dataquieR.MAX_VALUE_LABEL_LEN}},
+\code{\link{dataquieR.MESSAGES_WITH_CALLER}},
+\code{\link{dataquieR.MULTIVARIATE_OUTLIER_CHECK}},
+\code{\link{dataquieR.VALUE_LABELS_htmlescaped}},
+\code{\link{dataquieR.WARNINGS_WITH_CALLER}},
+\code{\link{dataquieR.acc_loess.exclude_constant_subgroups}},
+\code{\link{dataquieR.acc_loess.mark_time_points}},
+\code{\link{dataquieR.acc_loess.plot_format}},
+\code{\link{dataquieR.acc_loess.plot_observations}},
+\code{\link{dataquieR.acc_margins_num}},
+\code{\link{dataquieR.acc_margins_sort}},
+\code{\link{dataquieR.acc_multivariate_outlier.scale}},
+\code{\link{dataquieR.col_con_con_empirical}},
+\code{\link{dataquieR.col_con_con_logical}},
+\code{\link{dataquieR.debug}},
+\code{\link{dataquieR.des_summary_hard_lim_remove}},
+\code{\link{dataquieR.dontwrapresults}},
+\code{\link{dataquieR.fix_column_type_on_read}},
+\code{\link{dataquieR.flip_mode}},
+\code{\link{dataquieR.force_item_specific_missing_codes}},
+\code{\link{dataquieR.force_label_col}},
+\code{\link{dataquieR.grading_formats}},
+\code{\link{dataquieR.grading_rulesets}},
+\code{\link{dataquieR.guess_missing_codes}},
+\code{\link{dataquieR.lang}},
+\code{\link{dataquieR.max_group_var_levels_in_plot}},
+\code{\link{dataquieR.max_group_var_levels_with_violins}},
+\code{\link{dataquieR.min_obs_per_group_var_in_plot}},
+\code{\link{dataquieR.non_disclosure}},
+\code{\link{dataquieR.progress_fkt}},
+\code{\link{dataquieR.progress_msg_fkt}},
+\code{\link{dataquieR.scale_level_heuristics_control_binaryrecodelimit}},
+\code{\link{dataquieR.scale_level_heuristics_control_metriclevels}},
+\code{\link{dataquieR.testdebug}}
 }
 \author{
 \strong{Maintainer}: Stephan Struckmann \email{stephan.struckmann@uni-greifswald.de} (\href{https://orcid.org/0000-0002-8565-7962}{ORCID})
@@ -39,4 +133,5 @@ Other contributors:
 }
 
 }
+\concept{options}
 \keyword{internal}

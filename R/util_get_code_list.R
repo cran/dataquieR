@@ -77,6 +77,7 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
   if (code_name != VALUE_LABELS) {
     r <- util_parse_assignments(cl, split_char = SPLIT_CHAR)
   } else {
+    # FIXME: "Deprecated, should never be used"
     r <- util_parse_assignments(cl,
                                 split_on_any_split_char = TRUE,
                                 split_char = c(SPLIT_CHAR, '<'),)

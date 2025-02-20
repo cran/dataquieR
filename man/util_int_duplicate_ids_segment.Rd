@@ -10,7 +10,9 @@ util_int_duplicate_ids_segment(
   study_segment,
   repetitions,
   study_data,
-  meta_data
+  meta_data,
+  meta_data_segment = "segment_level",
+  segment_level
 )
 }
 \arguments{
@@ -20,18 +22,26 @@ util_int_duplicate_ids_segment(
 
 \item{study_segment}{\link{vector} the segments or data frame names being assessed}
 
-\item{repetitions}{\link{vector} an integer vector indicating the number of allowed repetitions in the id_vars. Currently, no repetitions are supported. # TODO}
+\item{repetitions}{\link{vector} an integer vector indicating the number of allowed repetitions in the id_vars. Currently, no repetitions are supported.}
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements, mandatory.}
 
 \item{meta_data}{\link{data.frame} the data frame that contains metadata attributes of the study data, mandatory.}
+
+\item{meta_data_segment}{\link{data.frame} -- optional: Segment level metadata}
+
+\item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
 }
 \value{
 a \link{list} with
 \itemize{
 \item \code{SegmentData}: data frame with the results of the quality check for duplicated identifiers
 \item \code{SegmentTable}: data frame with selected duplicated identifiers check results, used for the data quality report.
-\item \code{Duplicates}: vector with row indices of duplicated identifiers, if any, otherwise NULL.
+\item \code{Other}: named list with inner lists of unique cases containing each the
+row indices of duplicated identifiers separated by "|" , if any.
+outer names are names of the segments.
+Use \code{\link[=prep_get_study_data_segment]{prep_get_study_data_segment()}} to get the data frame the
+indices refer to.
 }
 }
 \description{

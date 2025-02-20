@@ -17,28 +17,26 @@
 #'
 #' List function.
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @param resp_vars [variable] the names of the measurement variables, if
 #'                             missing or `NULL`, all variables will be checked
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
 #' @param split_segments [logical] return one matrix per study segment
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
 #' @param max_vars_per_plot [integer] from=0. The maximum number of variables
 #'                                            per single plot.
 #' @param threshold_value [numeric] from=0 to=100. percentage failing
 #'                                  conversions allowed to still classify a
 #'                                  study variable convertible.
-#' `inheritParams` `acc_distributions`
 #' @return a list with:
-#'   - `SummaryTable`: data frame about the applicability of each indicator
-#'                   function (each function in a column).
-#'                   its [integer] values can be one of the following four
-#'                   categories:
-#'                               0. Non-matching datatype,
-#'                               1. Matching datatype,
-#'   - `SummaryPlot`: [ggplot2] heatmap plot, graphical representation of
+#'   - `SummaryTable`: data frame containing data quality check for
+#'                    "data type mismatch" (`CLS_int_vfe_type`,
+#'                    `PCT_int_vfe_type`). The following categories are possible:
+#'                    categories: "Non-matching datatype",
+#'                    "Non-Matching datatype, convertible",
+#'                    "Matching datatype"
+#'   - `SummaryData`: data frame containing data quality check for
+#'                    "data type mismatch" for a report
+#'   - `SummaryPlot`: [ggplot2::ggplot2] heatmap plot, graphical representation of
 #'                       `SummaryTable`
 #'   - `DataTypePlotList`: [list] of plots per (maybe artificial) segment
 #'   - `ReportSummaryTable`: data frame underlying `SummaryPlot`
@@ -46,37 +44,24 @@
 #' @importFrom ggplot2 ggplot aes geom_tile scale_fill_manual facet_wrap
 #'                     theme_minimal scale_x_discrete xlab guides
 #'                     guide_legend theme element_text
-#' @examples
-#' \dontrun{
-#' load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-#'   environment())
-#' load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-#'   environment())
-#' study_data$v00000 <- as.character(study_data$v00000)
-#' study_data$v00002 <- as.character(study_data$v00002)
-#' study_data$v00002[3] <- ""
-#' appmatrix <- int_datatype_matrix(study_data = study_data,
-#'                                  meta_data = meta_data,
-#'                                  label_col = LABEL)
-#' study_data$v00002[5] <- "X"
-#' appmatrix <- int_datatype_matrix(study_data = study_data,
-#'                                  meta_data = meta_data,
-#'                                  label_col = LABEL)
-#' appmatrix$ReportSummaryTable
-#' }
 int_datatype_matrix <- function(resp_vars = NULL,
-                                study_data, meta_data, split_segments =
-                                     FALSE, label_col,
-                                     max_vars_per_plot = 20,
-                                threshold_value = 0
+                                study_data,
+                                label_col,
+                                item_level = "item_level",
+                                split_segments = FALSE,
+                                max_vars_per_plot = 20,
+                                threshold_value = 0,
                                 # , flip_mode = "noflip" # TODO: Improve style
-                                ) {
+                                meta_data = item_level,
+                                meta_data_v2) {
 
   if (.called_in_pipeline) {
     return(list(
       SummaryData =
         "Dummy result, should not be displayed, internal error, please report."))
   }
+
+  util_maybe_load_meta_data_v2()
 
   if (length(max_vars_per_plot) != 1 || !util_is_integer(max_vars_per_plot) ||
       is.na(max_vars_per_plot) || is.nan(max_vars_per_plot) ||
@@ -86,6 +71,18 @@ int_datatype_matrix <- function(resp_vars = NULL,
       "value, may be Inf."
     ), applicability_problem = TRUE)
   }
+
+  if (missing(label_col)) {
+    orig_label_col <- rlang::missing_arg()
+  } else {
+    orig_label_col <- force(label_col)
+  }
+
+  label_col <- attr(prep_get_labels("",
+                                    item_level = meta_data,
+                                    label_class = "SHORT",
+                                    label_col = label_col),
+                    "label_col")
 
   prep_prepare_dataframes(.replace_missings = FALSE, .adjust_data_type = FALSE)
 
@@ -296,8 +293,8 @@ int_datatype_matrix <- function(resp_vars = NULL,
       theme(
         legend.position = "bottom",
         axis.text.x = element_text(angle = 90, hjust = 0),
-        axis.text.y = element_text(size = 10),
-        aspect.ratio = ratio
+        axis.text.y = element_text(size = 10)#,
+       # aspect.ratio = ratio
       ) # + util_coord_flip(ref_env = ref_env) # TODO: estimate w and h, since p is not using discrete axes
   }
 
@@ -308,14 +305,51 @@ int_datatype_matrix <- function(resp_vars = NULL,
     plot_me
   )
 
-  ReportSummaryTable <- as.data.frame(
-    t(util_compare_meta_with_study(sdf = ds1, mdf = meta_data,
-                                                     label_col = label_col,
-                                                     check_convertible = TRUE,
-                                                check_conversion_stable = TRUE,
-                                                     return_percentages = TRUE,
-                                                     threshold_value =
-                                                       threshold_value)))
+  # Figure size hint for plot p and list of plots pl
+  attr(p, "sizing_hints") <- list(
+    figure_type_id = "dot_mat",
+    rotated = FALSE,
+    number_of_vars = nrow(app_matrix_long) ,
+    number_of_cat = 3) # this is always 3 types
+
+  attr(pl, "sizing_hints") <- list(
+    figure_type_id = "dot_mat",
+    rotated = FALSE,
+    number_of_vars = length(lapply(
+      split(app_matrix_long, app_matrix_long$SEGMENT),
+      nrow)), # a list with the no. variables per segment
+    number_of_cat = 3) # this is always 3 types
+
+
+
+  cmp_res <- util_compare_meta_with_study(sdf = ds1, mdf = meta_data,
+                               label_col = label_col,
+                               check_convertible = TRUE,
+                               check_conversion_stable = TRUE,
+                               return_percentages = TRUE,
+                               threshold_value =
+                                 threshold_value)
+  ReportSummaryTable <- as.data.frame(t(cmp_res))
+  wv <- attr(cmp_res, "which_vec")
+  wv <- wv[vapply(wv, length, FUN.VALUE = integer(1)) > 0] # TODO: Why is this needed, example was from NAKO with a two-row table from /Users/struckmanns/tmp/NAKO_int_prob.RData
+  FlaggedStudyData <- as.data.frame(wv,
+                                    stringsAsFactors = FALSE)
+  # FIXME: we do not need 4 bits, 2 would suffice
+  # 0 -- match
+  # 12 -- convertible mismatch, stable
+  # 10 -- convertible mismatch, unstable
+  # 9  -- nonconvertible mismatch
+  FlaggedStudyData[] <- lapply(FlaggedStudyData,
+                               factor,
+                               ordered = TRUE,
+                               levels = c(0, 12, 10, 9),
+                               labels = c(
+                                 "match",
+                                 "convertible mismatch, stable",
+                                 "convertible mismatch, unstable",
+                                 "nonconvertible mismatch"
+                                 ))
+
   #######
   match <- ReportSummaryTable$match
   ReportSummaryTable$match <- NULL
@@ -343,8 +377,9 @@ int_datatype_matrix <- function(resp_vars = NULL,
   attr(ReportSummaryTable, "continuous") <- TRUE
   attr(ReportSummaryTable, "colscale") <- c("#B2182B", "#92C5DE", "#2166AC")
 
-  class(ReportSummaryTable) <- union("ReportSummaryTable",
-                                     class(ReportSummaryTable))
+  ReportSummaryTable <- util_validate_report_summary_table(ReportSummaryTable,
+                                                    meta_data = meta_data,
+                                                    label_col = label_col)
 
   app_matrix$PCT_int_vfe_type <-
     setNames(100 * ReportSummaryTable$`nonconvertible mismatch`,
@@ -356,7 +391,7 @@ int_datatype_matrix <- function(resp_vars = NULL,
   SummaryData <- app_matrix[, c("Variables", "PCT_int_vfe_type")]
 
   SummaryData$PCT_int_vfe_type <-
-    paste0(round(SummaryData$PCT_int_vfe_type * nrow(ds1), digits = 0),
+    paste0(round(SummaryData$PCT_int_vfe_type * nrow(ds1) / 100, digits = 0),
            " (",
            base::format(SummaryData$PCT_int_vfe_type, digits = 2, nsmall = 2), "%)")
 
@@ -411,35 +446,7 @@ int_datatype_matrix <- function(resp_vars = NULL,
     "State, given threshold"
 
   #Add hover text to SummaryData table
-  text_to_display <- c(Variables = "",
-                       `Data type mismatch N (%)` =
-                         paste0("No. observational units with expected and ",
-                                "observed data types not matching"),
-                       `Convertible mismatch, stable N (%)` =
-                         paste0("No. observational units with expected and ",
-                                "observed data types not matching. A conversion ",
-                                "is possible without modifying the ",
-                                "data ",
-                                "(e.g., string '1.05' -> float 1.05)"),
-                       `Convertible mismatch, unstable N (%)` =
-                         paste0("No. observational units with expected and ",
-                                "observed data types not matching. A conversion ",
-                                "is possible but implies changes in",
-                                " the data (e.g., string '2.06' -> integer 2)"),
-                       `Match N (%)` =
-                         paste0("No. observational units with ",
-                                "matching expected-observed data types"),
-                       `Expected DATA_TYPE` =
-                         "Data type expected from the metadata",
-                       `Observed DATA_TYPE` =
-                         "Data type observed in the study data",
-                       `State, given threshold` =
-                         paste0("Classification of the variable in one of ",
-                         "the categories: 1) Non-matching datatype; ",
-                         "2) Non-matching datatype, convertible, unstable; ",
-                         "3) Non-Matching datatype, convertible, stable; ",
-                         "4) Matching datatype"),
-                       `STUDY_SEGMENT`= ""  )
+  text_to_display <- util_get_hovertext("[int_datatype_matrix_hover]")
   attr(SummaryData, "description") <- text_to_display
 
 
@@ -459,11 +466,38 @@ int_datatype_matrix <- function(resp_vars = NULL,
                            "N")] / ReportSummaryTable$N * nrow(ds1), digits = 0)
   attr(ReportSummaryTable, "relative") <- TRUE
 
-  return(list(
+  if (!missing(orig_label_col)) { # map back ReportSummaryTable to requested label_col and tables to suitable table labels
+    SummaryTable[["Variables"]] <-
+      prep_map_labels(x = SummaryTable[["Variables"]],
+                      item_level = meta_data,
+                      to  = orig_label_col,
+                      from = label_col,
+                      ifnotfound = SummaryTable[["Variables"]],
+                      warn_ambiguous = FALSE)
+    ReportSummaryTable[["Variables"]] <-
+      prep_map_labels(x = ReportSummaryTable[["Variables"]],
+                      item_level = meta_data,
+                      to  = orig_label_col,
+                      from = label_col,
+                      ifnotfound = SummaryTable[["Variables"]],
+                      warn_ambiguous = FALSE)
+    SummaryData[["Variables"]] <-
+      prep_map_labels(x = SummaryData[["Variables"]],
+                      item_level = meta_data,
+                      to  = orig_label_col,
+                      from = label_col,
+                      ifnotfound = SummaryTable[["Variables"]],
+                      warn_ambiguous = FALSE)
+  }
+
+  attr(ReportSummaryTable, "flip_mode") <- "noflip";
+
+  return(list( # FIXME: Add Flagged- and Modified-StudyData
     SummaryPlot = p,
     DataTypePlotList = pl,
     SummaryTable = SummaryTable,
     SummaryData = SummaryData,
-    ReportSummaryTable = ReportSummaryTable
+    ReportSummaryTable = ReportSummaryTable,
+    FlaggedStudyData = FlaggedStudyData
   ))
 }

@@ -4,12 +4,18 @@
 \alias{prep_check_for_dataquieR_updates}
 \title{Check for package updates}
 \usage{
-prep_check_for_dataquieR_updates(beta = FALSE, deps = TRUE)
+prep_check_for_dataquieR_updates(
+  beta = FALSE,
+  deps = TRUE,
+  ask = interactive()
+)
 }
 \arguments{
 \item{beta}{\link{logical} check for beta version too}
 
 \item{deps}{\link{logical} check for missing (optional) dependencies}
+
+\item{ask}{\link{logical} ask for updates}
 }
 \value{
 \code{invisible(NULL)}

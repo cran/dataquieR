@@ -17,7 +17,9 @@ Extract all ids from a list of \code{htmltools} objects
 }
 \seealso{
 Other html: 
-\code{\link{util_generate_pages_from_report}()}
+\code{\link{util_dashboard_table}()},
+\code{\link{util_generate_pages_from_report}()},
+\code{\link{util_get_hovertext}()}
 }
 \concept{html}
 \keyword{internal}

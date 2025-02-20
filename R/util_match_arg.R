@@ -15,7 +15,7 @@
 #' @concept string
 #' @keywords internal
 util_match_arg <- function(arg, choices, several_ok = FALSE, error = TRUE) {
-
+#TODO: util_expect_scalar check_type = as.character
   if (missing(arg)) {
     util_error("%s needs the argument %s",
                sQuote("util_match_arg"),
@@ -24,10 +24,10 @@ util_match_arg <- function(arg, choices, several_ok = FALSE, error = TRUE) {
 
   arg_name <- util_deparse1(substitute(arg))
 
-  calling_fkt <- sys.function(-1)
+  calling_fkt <- rlang::caller_fn()
   fkt_name <- "<unknown function>"
   try({
-    fkt_name <- as.character(sys.call(-1)[[1]])
+    fkt_name <- as.character(rlang::caller_call()[[1]])
   }, silent = TRUE)
 
   if (missing(choices)) {
@@ -63,7 +63,9 @@ util_match_arg <- function(arg, choices, several_ok = FALSE, error = TRUE) {
       sQuote(fkt_name), sQuote(arg_name))
   }
 
-  if (eval.parent(call("missing", arg_name)) &&
+  if ((eval.parent(call("missing", arg_name)) ||
+       !(arg_name %in% names(rlang::call_match(rlang::caller_call(),
+                                               rlang::caller_fn())))) &&
       missing(choices) &&
       all(arg == choices1) &&
       length(arg) != 1 &&

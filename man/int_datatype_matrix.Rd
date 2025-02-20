@@ -7,11 +7,13 @@
 int_datatype_matrix(
   resp_vars = NULL,
   study_data,
-  meta_data,
-  split_segments = FALSE,
   label_col,
+  item_level = "item_level",
+  split_segments = FALSE,
   max_vars_per_plot = 20,
-  threshold_value = 0
+  threshold_value = 0,
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
@@ -20,32 +22,41 @@ missing or \code{NULL}, all variables will be checked}
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{label_col}{\link{variable attribute} the name of the column in the metadata
+with labels of variables}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
 \item{split_segments}{\link{logical} return one matrix per study segment}
-
-\item{label_col}{\link{variable attribute} the name of the column in the metadata
-with labels of variables}
 
 \item{max_vars_per_plot}{\link{integer} from=0. The maximum number of variables
 per single plot.}
 
 \item{threshold_value}{\link{numeric} from=0 to=100. percentage failing
 conversions allowed to still classify a
-study variable convertible.
-\code{inheritParams} \code{acc_distributions}}
+study variable convertible.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 a list with:
 \itemize{
-\item \code{SummaryTable}: data frame about the applicability of each indicator
-function (each function in a column).
-its \link{integer} values can be one of the following four
-categories:
-0. Non-matching datatype,
-1. Matching datatype,
-\item \code{SummaryPlot}: \link{ggplot2} heatmap plot, graphical representation of
+\item \code{SummaryTable}: data frame containing data quality check for
+"data type mismatch" (\code{CLS_int_vfe_type},
+\code{PCT_int_vfe_type}). The following categories are possible:
+categories: "Non-matching datatype",
+"Non-Matching datatype, convertible",
+"Matching datatype"
+\item \code{SummaryData}: data frame containing data quality check for
+"data type mismatch" for a report
+\item \code{SummaryPlot}: \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} heatmap plot, graphical representation of
 \code{SummaryTable}
 \item \code{DataTypePlotList}: \link{list} of plots per (maybe artificial) segment
 \item \code{ReportSummaryTable}: data frame underlying \code{SummaryPlot}
@@ -67,23 +78,4 @@ static metadata and returns a heatmap like matrix indicating data type
 mismatches in the study data.
 
 List function.
-}
-\examples{
-\dontrun{
-load(system.file("extdata/meta_data.RData", package = "dataquieR"), envir =
-  environment())
-load(system.file("extdata/study_data.RData", package = "dataquieR"), envir =
-  environment())
-study_data$v00000 <- as.character(study_data$v00000)
-study_data$v00002 <- as.character(study_data$v00002)
-study_data$v00002[3] <- ""
-appmatrix <- int_datatype_matrix(study_data = study_data,
-                                 meta_data = meta_data,
-                                 label_col = LABEL)
-study_data$v00002[5] <- "X"
-appmatrix <- int_datatype_matrix(study_data = study_data,
-                                 meta_data = meta_data,
-                                 label_col = LABEL)
-appmatrix$ReportSummaryTable
-}
 }

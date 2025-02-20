@@ -4,7 +4,7 @@
 \alias{.get_internal_api}
 \title{Get Access to Utility Functions}
 \usage{
-.get_internal_api(fkt, version = API_VERSION)
+.get_internal_api(fkt, version = API_VERSION, or_newer = TRUE)
 }
 \arguments{
 \item{fkt}{function name}
@@ -16,6 +16,5 @@ an API object
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
-TODO: more life-cycle stuff, also for deprecation
 }
 \keyword{internal}

@@ -77,7 +77,7 @@ prep_valuelabels_from_data <-
     lapply(study_data[, factor_resp_vars, FALSE], as.integer)
 
   return(list(
-    VALUE_LABELS = valuelabels,
+    VALUE_LABELS = valuelabels, # TODO: create VALUE_LABEL_TABLE, instead
     ModifiedStudyData = modifiedstudydata
   ))
 }

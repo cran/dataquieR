@@ -20,10 +20,11 @@
 #' The function also detects `tibbles`, which are then converted to base-R
 #' [data.frame]s, which are expected by `dataquieR`.
 #'
-#' Different from the other utility function that work
-#' in the caller's environment, so it modifies objects in the calling function.
-#' It defines a new object `ds1`, it modifies `study_data` and/or `meta_data`
-#' and `label_col`, if `.internal` is `TRUE`.
+#' If `.internal` is `TRUE`, differently from the other utility function that
+#' work in their caller's environment, this function modifies objects in the
+#' calling function's environment. It defines a new object `ds1`,
+#' it modifies `study_data` and/or `meta_data`
+#' and `label_col`.
 #'
 #' @param .study_data if provided, use this data set as study_data
 #' @param .meta_data if provided, use this data set as meta_data
@@ -41,6 +42,13 @@
 #'                           recursion, if called from
 #'                           [prep_scalelevel_from_data_and_metadata()].
 #' @param .internal [logical] internally called, modify caller's environment.
+#' @param .apply_factor_metadata  [logical] convert categorical variables to
+#'                                          labeled factors.
+#' @param .apply_factor_metadata_inadm  [logical] convert categorical variables
+#'                                          to labeled factors keeping
+#'                                          inadmissible values. Implies, that
+#'                                          .apply_factor_metadata will be set
+#'                                          to `TRUE`, too.
 #'
 #' @seealso acc_margins
 #'
@@ -86,8 +94,8 @@
 #' environment(acc_test4) <- asNamespace("dataquieR")
 #' # perform this inside the package (not needed for functions that have been
 #' # integrated with the package already)
-#' load(system.file("extdata/meta_data.RData", package = "dataquieR"))
-#' load(system.file("extdata/study_data.RData", package = "dataquieR"))
+#' meta_data <- prep_get_data_frame("meta_data")
+#' study_data <- prep_get_data_frame("study_data")
 #' try(acc_test1())
 #' try(acc_test2())
 #' acc_test1(study_data = study_data)
@@ -109,22 +117,26 @@
 #' @importFrom rlang caller_fn
 #' @importFrom utils object.size
 prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
-                                    .replace_hard_limits, # TODO: .replace_inadmissible_categorical_values
+                                    .replace_hard_limits,
                                     .replace_missings, .sm_code = NULL,
                                     .allow_empty = FALSE,
                                     .adjust_data_type = TRUE,
                                     .amend_scale_level = TRUE,
+                                    .apply_factor_metadata = FALSE,
+                                    .apply_factor_metadata_inadm = FALSE,
                                     .internal =
                                       rlang::env_inherits(
                                         rlang::caller_env(),
                                         parent.env(environment()))) {
-
 #  dimension <- substr(rlang::call_name(rlang::caller_call()), 1, 3)
-  # TODO: Add missing tables from meta_data$MISSING_LIST_TABLE
-
   util_expect_scalar(.sm_code,
                      check_type = util_all_is_integer,
                      allow_null = TRUE)
+
+  util_expect_scalar(.apply_factor_metadata, check_type = is.logical)
+  util_expect_scalar(.apply_factor_metadata_inadm, check_type = is.logical)
+  if (.apply_factor_metadata_inadm)
+    .apply_factor_metadata <- TRUE
 
   if (missing(.replace_hard_limits)) .replace_hard_limits <- FALSE
   util_expect_scalar(.replace_hard_limits, check_type = is.logical)
@@ -134,18 +146,26 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
                                       !is.logical(.replace_missings) ||
                                       is.na(.replace_missings))) {
     util_error(
-      "Called prepare_dataframes with .replace_missings not being logical(1)",
-      applicability_problem = TRUE)
+      c("Internal error, sorry, please report: .replace_missings needs to",
+        "be 1 logical value."))
   }
   if (missing(.replace_missings)) .replace_missings <- TRUE
-# TODO: include check for (hard) limits similar to replace_missings
+
+
   callfn <- caller_fn(1)
 
   caller_defaults <- suppressWarnings(formals(callfn))
   caller_formals <- names(caller_defaults)
   caller_has_default <- suppressWarnings({
-    !vapply(formals(callfn), identical, formals(function(x) {
-        })[["x"]], FUN.VALUE = logical(1))
+    !vapply(formals(callfn), identical, rlang::missing_arg(),
+            FUN.VALUE = logical(1))
+  })
+
+  missing_in_parent <- suppressWarnings({
+    vapply(names(formals(callfn)), function(x) eval(call("missing",
+                                                         as.symbol(x)),
+                                                    envir = parent.frame(3)),
+           FUN.VALUE = logical(1))
   })
 
   if (missing(.label_col)) {
@@ -186,7 +206,7 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
       if (!eval.parent(substitute({
         missing(study_data)
       }))) {
-        if (exists("study_data", parent.frame())) { # FIXME: Test this and the same for metadata
+        if (exists("study_data", parent.frame())) { # TODO: Test this and the same for metadata
           .study_data <- try(eval(quote(study_data), parent.frame()),
                              silent = TRUE)
           if (inherits(.study_data, "try-error")) {
@@ -228,52 +248,109 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
                conditionMessage(attr(.study_data, "condition")))
   }
 
+  if (!exists("already_ppdf", parent.frame()) &&
+      all(c("item_level", "meta_data") %in% caller_formals) &&
+      !isTRUE(missing_in_parent["item_level"]) &&
+      !isTRUE(missing_in_parent["meta_data"]) &&
+      !identical(dynGet("item_level"), dynGet("meta_data"))
+      ) {
+    # IDEA: if (rlang::hash())
+    util_error(c("You cannot provide both, %s as well as %s",
+                 "these arguments are synonyms and must be",
+                 "used mutually exclusively"),
+               sQuote("item_level"),
+               sQuote("meta_data"))
+    # see prep_get_labels
+  }
+
   if (missing(.meta_data)) {
-    if ("meta_data" %in% caller_formals) {
-      if (!eval.parent(substitute({
-        missing(meta_data)
-      }))) {
-        if (exists("meta_data", parent.frame())) {
-          .meta_data <- try(eval(quote(meta_data), envir = parent.frame()),
-                             silent = TRUE)
-          if (inherits(.meta_data, "try-error")) {
-            cnd <- attr(.meta_data, "condition")
-            cnd$call <- sys.call(1)
-            util_error(cnd)
-          }
-        } else {
-          util_error("object %s not found", dQuote("meta_data"))
-        }
-      } else if (caller_has_default[["meta_data"]]) {
-        .meta_data <- try(eval.parent(caller_defaults[["meta_data"]], n = 2),
+    if ("meta_data" %in% caller_formals &&
+       (!isTRUE(missing_in_parent["meta_data"]) ||
+                  caller_has_default[["meta_data"]])) {
+      if (isTRUE(missing_in_parent["meta_data"])) {
+        .meta_data <- try(eval(caller_defaults[["meta_data"]], parent.frame(2)),
                           silent = TRUE)
-        if (inherits(.meta_data, "try-error")) {
-          cnd <- attr(.meta_data, "condition")
-          cnd$call <- sys.call(1)
-          util_error(cnd)
+        if (util_is_try_error(.meta_data)) {
+          .meta_data <- try(eval(caller_defaults[["meta_data"]], parent.frame(1)),
+                            silent = TRUE)
         }
       } else {
-        if ("item_level" %in% prep_list_dataframes()) {
-          .meta_data <- util_expect_data_frame("item_level")
-        }
-        if (missing(.meta_data) || !is.data.frame(.meta_data)) {
-          util_warning(
-            c("Missing %s, try to guess a preliminary one from the data",
-              "using %s. Please consider amending this minimum guess manually."),
-            dQuote("meta_data"),
-            dQuote("prep_prepare_dataframes"),
-            applicability_problem = TRUE
-          )
-          .meta_data <- prep_study2meta(.study_data, level =
-                                          VARATT_REQUIRE_LEVELS$RECOMMENDED)
-        }
+        .meta_data <- try(eval(quote(meta_data), parent.frame(1)),
+                          silent = TRUE)
       }
-    } else if (exists("meta_data", parent.frame())) {
-      .meta_data <- get("meta_data", parent.frame())
-    } else {
-      .meta_data <- data.frame()
+      if (inherits(.meta_data, "try-error")) {
+        cnd <- attr(.meta_data, "condition")
+        cnd$call <- sys.call(1)
+        util_error(cnd)
+      }
     }
   }
+
+
+  if (missing(.meta_data)) {
+    if ("item_level" %in% caller_formals &&
+        (!isTRUE(missing_in_parent["item_level"]) ||
+         caller_has_default[["item_level"]])) {
+      if (isTRUE(missing_in_parent["item_level"])) {
+        .meta_data <- try(eval(caller_defaults[["item_level"]], parent.frame(2)),
+                          silent = TRUE)
+        if (util_is_try_error(.meta_data)) {
+          .meta_data <- try(eval(caller_defaults[["item_level"]], parent.frame(1)),
+                            silent = TRUE)
+        }
+      } else {
+        .meta_data <- try(eval(quote(item_level), parent.frame(1)),
+                          silent = TRUE)
+      }
+      if (inherits(.meta_data, "try-error")) {
+        cnd <- attr(.meta_data, "condition")
+        cnd$call <- sys.call(1)
+        util_error(cnd)
+      }
+    }
+  }
+  if (missing(.meta_data)) {
+    if (exists("item_level", envir = parent.frame()) &&
+        !("item_level" %in% caller_formals)) {
+      .meta_data <- get("item_level", envir = parent.frame())
+    } else if (exists("meta_data", envir = parent.frame()) &&
+               !("meta_data" %in% caller_formals)) {
+      .meta_data <- get("meta_data", envir = parent.frame())
+    }
+  }
+  if (missing(.meta_data)) {
+    if ("item_level" %in% prep_list_dataframes()) {
+      .meta_data <- util_expect_data_frame("item_level")
+    }
+  }
+  if (!missing(.meta_data) && !is.data.frame(.meta_data)) {
+    if (util_is_try_error(try(util_expect_data_frame(.meta_data, keep_types = FALSE),
+        silent = TRUE))) {
+      .meta_data <- rlang::missing_arg()
+      # util_error("Need metadata as a data frame", applicability_problem = TRUE)
+    }
+  }
+  if (missing(.meta_data)) {
+    w <- paste("Missing %s, try to guess a preliminary one from the data",
+           "using %s. Please consider amending this minimum guess manually.")
+    if (requireNamespace("cli", quietly = TRUE)) {
+      w <- cli::bg_red(cli::col_br_yellow(w))
+    }
+
+    util_warning(
+      w,
+      dQuote("meta_data"),
+      dQuote("prep_study2meta"),
+      applicability_problem = TRUE, immediate = TRUE
+    )
+    .meta_data <- prep_study2meta(.study_data, level =
+                                    VARATT_REQUIRE_LEVELS$REQUIRED) # recommended would include part vars, which causes many warnings
+  } else if (!is.data.frame(.meta_data)) {
+    util_error("Need metadata as a data frame", applicability_problem = TRUE)
+  }
+
+  .meta_data <- util_normalize_clt(meta_data = .meta_data)
+  # prep_add_data_frames(item_level = .meta_data)
 
   # if no meta_data have been provided -> error
   e <- new.env(parent = environment())
@@ -303,6 +380,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
                                     VARATT_REQUIRE_LEVELS$REQUIRED)
   }
 
+  assign("already_ppdf", TRUE, envir = parent.frame())
+
   if (is.null(.label_col)) {
     .label_col <- VAR_NAMES
   }
@@ -326,6 +405,11 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
   try(if (missing(label_col)) {
     label_col <- VAR_NAMES
   }, silent = TRUE)
+
+  util_expect_scalar(label_col, check_type = is.character,
+                     error_message =
+                       sprintf("%s needs to be of type character",
+                               sQuote("label_col")))
 
   # TODO: include a check that VAR_NAMES/label_col exists, and that they are unique and not too long
   # intermediate solution - fill empty labels, since we will map to metadata label columns, and otherwise empty fields will cause errors
@@ -359,29 +443,30 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     datatypes <- prep_datatype_from_data(resp_vars = wrong_names,
                                          study_data = study_data)
 
-    util_warning(
-      c("For the variables %s, I have no valid %s in the %s. I've predicted",
-        "the %s from the %s yielding %s."),
-      util_pretty_vector_string(wrong_names),
-      sQuote(DATA_TYPE),
-      sQuote("meta_data"),
-      sQuote(DATA_TYPE),
-      sQuote("study_data"),
-      dQuote(prep_deparse_assignments(names(datatypes), datatypes,
-                                      mode = "string_codes")),
-      applicability_problem = TRUE,
-      intrinsic_applicability_problem = FALSE
-    )
-
+    if (length(datatypes) != 0) {
+      util_warning(
+       c("For the variables %s, I have no valid %s in the %s. I've predicted",
+         "the %s from the %s yielding %s."),
+        util_pretty_vector_string(wrong_names),
+       sQuote(DATA_TYPE),
+       sQuote("meta_data"),
+       sQuote(DATA_TYPE),
+       sQuote("study_data"),
+       dQuote(prep_deparse_assignments(names(datatypes), datatypes,
+                                       mode = "string_codes")),
+        applicability_problem = TRUE,
+        intrinsic_applicability_problem = FALSE
+      )
+    }
     meta_data[which_wrong, DATA_TYPE] <-
       datatypes[meta_data[which_wrong, VAR_NAMES]]
   }
 
-  if (!.called_in_pipeline) util_validate_known_meta(meta_data)
+  if (!.called_in_pipeline) meta_data <- util_validate_known_meta(meta_data)
 
   if (.replace_missings) {
     # Are missing codes replaced?
-    if (!("Codes_to_NA" %in% names(attributes(study_data)))) {
+    if (!isTRUE(attr(study_data, "Codes_to_NA"))) {
       study_data <-
         util_replace_codes_by_NA(
           study_data = study_data, meta_data = meta_data,
@@ -389,21 +474,17 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     }
   }
 
-  # The call below is not executed here, but stored for later use
-  # when ds1 is actually available.
-  repl_lim_viol <- quote({
-    if (.replace_hard_limits) {
-      # Are hard limit violations replaced?
-      if (!("HL_viol_to_NA" %in% names(attributes(ds1)))) {
-        ds1 <-
-          util_replace_hard_limit_violations(
-            study_data = ds1, meta_data = meta_data, label_col = label_col)
-      }
-    }
-  })
-
   study_data_hash <- rlang::hash(.study_data)
   meta_data_hash <- rlang::hash(.meta_data)
+  meta_tabs_hash <- rlang::hash(lapply(unique(unlist(meta_data[,
+                                                               endsWith(
+                                                                 colnames(
+                                                                   meta_data),
+                                                                 "_TABLE")])),
+                                       function(tb) {
+                                         try(prep_get_data_frame(tb),
+                                             silent = TRUE)
+                                       }))
   a <- formals(prep_prepare_dataframes)[.to_combine]
   a2 <- rlang::call_args(sys.call())
   a2 <- a2[intersect(names(a2), .to_combine)]
@@ -412,8 +493,11 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
   a[missing_from_a] <- mget(names(which(missing_from_a)))
   a <- rlang::hash(a)
   key <-
-    paste0(a, "@", study_data_hash,
-           "@", meta_data_hash, "@", label_col)
+    paste0(a,
+           "@", study_data_hash,
+           "@", meta_data_hash,
+           "@", meta_tabs_hash,
+           "@", label_col)
 
   if (key %in% names(.study_data_cache)) {
     if (getOption("dataquieR.study_data_cache_metrics", FALSE)) {
@@ -422,68 +506,59 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
       if (is.null(e$usage[[key]])) e$usage[[key]] <- 0
       e$usage[[key]] <- e$usage[[key]] + 1
     }
-    study_data <- .study_data_cache[[key]]
+    ds1 <- .study_data_cache[[key]]
+    study_data <- attr(ds1, "study_data") # IDEA, but not robust enough: use a hash as name and keep the dataframe in the cache only once
+  } else {
+    ds1 <- NULL
   }
 
   # If study_data exist and metadata were already mapped, then we can return ds1
   # directly, but only if all requested modifications are already considered
   # (if possible).
   if (isTRUE(attr(study_data, "MAPPED", exact = TRUE))) {
+    ds1 <- study_data
+    study_data <- attr(ds1, "study_data")
     # labels can be modified easily
-    if (attr(study_data, "label_col") != label_col) {
-      colnames(study_data) <-
-        util_map_labels(colnames(study_data),
+    if (attr(ds1, "label_col") != label_col) {
+      colnames(ds1) <-
+        util_map_labels(colnames(ds1),
                         meta_data = meta_data,
-                        from = attr(study_data, "label_col"),
+                        from = attr(ds1, "label_col"),
                         to = label_col)
-      attr(study_data, "label_col") <- label_col
+      attr(ds1, "label_col") <- label_col
     }
+    ds1_ready <- TRUE
     # replacement of missing value codes can not be undone
-    if ("Codes_to_NA" %in% names(attributes(study_data)) &&
-        !.replace_missings) {
-      browser()
-      util_error("Substitution of missing value codes cannot be undone.",
-                 applicability_problem = TRUE)
+    if (isTRUE(attr(ds1, "Codes_to_NA")) && !.replace_missings) {
+      ds1_ready <- FALSE
     }
     # replacement of hard limits can not be undone
-    if ("HL_viol_to_NA" %in% names(attributes(study_data)) &&
+    if (isTRUE(attr(ds1, "HL_viol_to_NA")) &&
         !.replace_hard_limits) {
-      util_error("Discarding values outside the limits cannot be undone.",
-                 applicability_problem = TRUE)
+      ds1_ready <- FALSE
+    }
+    # replacement of hard limits can not be undone, also, it may prevent hard limit replacement, e.g.
+    if (isTRUE(attr(ds1, "apply_fact_md"))) {
+      ds1_ready <- FALSE
+    }
+    if (isTRUE(attr(ds1, "apply_fact_md_inadm"))) {
+      ds1_ready <- FALSE
     }
     # data type correction can not be undone
-    if ("Data_type_matches" %in% names(attributes(study_data)) &&
+    if (isTRUE(attr(ds1, "Data_type_matches")) &&
         !.adjust_data_type) {
-      util_error("Correction of data type mismatches cannot be undone.",
-                 applicability_problem = TRUE)
+      ds1_ready <- FALSE
     }
-    # missing value codes replaced, if required (and vice versa)?
-    check_miss <-
-      (.replace_missings &&
-         "Codes_to_NA" %in% names(attributes(study_data))) ||
-      (!.replace_missings &&
-         !("Codes_to_NA" %in% names(attributes(study_data))))
-    # hard limit violations replaced, if required (and vice versa)?
-    check_hl <-
-      (.replace_hard_limits &&
-         "HL_viol_to_NA" %in% names(attributes(study_data))) ||
-      (!.replace_hard_limits &&
-         !("HL_viol_to_NA" %in% names(attributes(study_data))))
-    # data type adjusted, if required (and vice versa)?
-    check_dt <-
-      (.adjust_data_type &&
-         "Data_type_matches" %in% names(attributes(study_data))) ||
-      (!.adjust_data_type &&
-         !("Data_type_matches" %in% names(attributes(study_data))))
-    # if SCALE_LEVEL is required, then there should be no empty entries
     check_sl <-
       (.amend_scale_level && SCALE_LEVEL %in% colnames(meta_data) &&
          !any(util_empty(meta_data[[SCALE_LEVEL]][meta_data$VAR_NAMES %in%
                                                     colnames(study_data)]))) ||
       !.amend_scale_level
-    if (check_miss && check_hl && check_dt && check_sl) {
-      ds1 <- study_data
-      eval(repl_lim_viol) # TODO: Is this line needed here??
+
+    ds1_ready <- ds1_ready &&
+      check_sl
+
+    if (ds1_ready) {
       if (.internal) {
         assign("study_data", study_data, parent.frame())
         assign("meta_data", meta_data, parent.frame())
@@ -492,19 +567,9 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
       }
       return(invisible(study_data))
     } else {
-      # map column names to VAR_NAMES and let the rest of this function
-      # do its work
-      colnames(study_data) <-
-        util_map_labels(colnames(study_data),
-                        meta_data = meta_data,
-                        from = label_col,
-                        to = VAR_NAMES)
-      attr(study_data, "label_col") <- VAR_NAMES
-      attr(study_data, "MAPPED") <- FALSE
+      ds1 <- NULL
     }
   }
-
-  Codes_to_NA <- attr(study_data, "Codes_to_NA")
 
   if (!"VAR_NAMES" %in% colnames(meta_data)) {
     # Should get caught before by 'util_validate_known_meta'.
@@ -556,13 +621,15 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
                              any(util_empty(
                                meta_data[[SCALE_LEVEL]][meta_data$VAR_NAMES %in%
                                                         colnames(study_data)])))) {
-    util_message(c("Did not find any %s column in item-level %s. Predicting",
+    util_message(c(
+      "Missing some or all entries in %s column in item-level %s. Predicting",
                    "it from the data -- please verify these predictions, they",
                    "may be wrong and lead to functions claiming not to be",
                    "reasonably applicable to a variable."),
                    sQuote(SCALE_LEVEL), "meta_data",
                  applicability_problem = TRUE,
                  intrinsic_applicability_problem = FALSE)
+
     meta_data <- prep_scalelevel_from_data_and_metadata(
       study_data = study_data,
       meta_data = meta_data,
@@ -571,9 +638,7 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
   }
 
   # create ds1 -----------------------------------------------------------------
-  if (isTRUE(attr(study_data, "MAPPED", exact = TRUE))) {
-    ds1 <- study_data
-  } else {
+  if (is.null(ds1) || !isTRUE(attr(ds1, "MAPPED", exact = TRUE))) {
     ds1 <- util_map_all(label_col = label_col, study_data = study_data,
                         meta_data = meta_data)$df
   }
@@ -585,11 +650,16 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
       applicability_problem = FALSE)
   }
 
+  my_atts <- attributes(ds1)[.ds1_attribute_names]
   ds1 <- as.data.frame(ds1)
+  attributes(ds1)[.ds1_attribute_names] <- my_atts
+
   meta_data <- as.data.frame(meta_data)
 
   .all <- ncol(ds1)
+  my_atts <- attributes(ds1)[.ds1_attribute_names]
   ds1 <- ds1[, colnames(ds1) %in% meta_data[[label_col]], FALSE]
+  attributes(ds1)[.ds1_attribute_names] <- my_atts
   .mapped <- ncol(ds1)
   if (.all > .mapped) { # nocov start
     # Should be dead code, because util_map_all is called above, which
@@ -625,10 +695,13 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     meta_data[] <- meta_data[order(meta_data[[VARIABLE_ORDER]]), , drop = FALSE]
     vars <- meta_data[, label_col, drop = TRUE]
     vars <- vars[vars %in% colnames(ds1)]
+    my_atts <- attributes(ds1)[.ds1_attribute_names]
     ds1 <- ds1[, vars, drop = FALSE]
+    attributes(ds1)[.ds1_attribute_names] <- my_atts
   }
 
-  if (PART_VAR %in% colnames(meta_data)) local({
+  if (!isTRUE(attr(study_data, "MAPPED", exact = TRUE)) &&
+      PART_VAR %in% colnames(meta_data)) local({
     .kssvs <- intersect(colnames(study_data), meta_data[, PART_VAR])
     for (rv in .kssvs) {
       vals <- util_replace_codes_by_NA(
@@ -650,18 +723,121 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     }
   })
 
-  attr(study_data, "Codes_to_NA") <- Codes_to_NA
-  attr(ds1, "Codes_to_NA") <- Codes_to_NA
+  attr(study_data, "Codes_to_NA") <- .replace_missings
+  attr(ds1, "Codes_to_NA") <- .replace_missings
 
   attr(ds1, "MAPPED") <- TRUE
   attr(ds1, "label_col") <- label_col
-  attr(ds1, "Data_type_matches") <- attr(study_data, "Data_type_matches")
+  attr(ds1, "Data_type_matches") <- .adjust_data_type
 
-  eval(repl_lim_viol)
+  if (.replace_hard_limits) {
+    # Are hard limit violations replaced?
+    if (!isTRUE(attr(ds1, "HL_viol_to_NA"))) {
+      ds1 <-
+        util_replace_hard_limit_violations(
+          study_data = ds1, meta_data = meta_data, label_col = label_col)
+    }
+  }
+
+  attr(ds1, "HL_viol_to_NA") <- .replace_hard_limits
+
+  if (.apply_factor_metadata) {
+    # convert columns to factors?
+    if (!isTRUE(attr(ds1, "apply_fact_md"))) {
+      which_cols <- intersect(meta_data[[attr(ds1, "label_col")]],
+                              colnames(ds1))
+      ds1[, which_cols] <- lapply(which_cols,
+                                  function(cl) { # IDEA: What to do with mising labels for numerical variables?
+                                    # prep_load_workbook_like_file("meta_data_v2")
+                                    # (prep_prepare_dataframes(.study_data = "study_data", .meta_data = il, .label_col = LABEL, .apply_factor_metadata = TRUE))
+                                    sl <- meta_data[meta_data[[attr(ds1, "label_col")]] == cl,
+                                                    SCALE_LEVEL, drop = TRUE]
+                                    if (sl %in% c(
+                                      SCALE_LEVELS$NOMINAL, SCALE_LEVELS$ORDINAL
+                                    )) {
+                                      util_stop_if_not(
+                                        `Internal error, sorry, please report: unexp. VALUE_LABELS` =
+                                          util_empty(meta_data[
+                                            meta_data[[attr(ds1, "label_col")]] == cl,
+                                            VALUE_LABELS, drop = TRUE]))
+                                      vlt <- try(prep_get_data_frame(
+                                        meta_data[meta_data[[attr(ds1, "label_col")]] == cl,
+                                                  VALUE_LABEL_TABLE, drop = TRUE]), silent = TRUE)
+                                      levels <- NULL
+                                      labels <- NULL
+                                      if (!util_is_try_error(vlt)) {
+                                        if (CODE_VALUE %in% colnames(vlt)) {
+                                          levels <- vlt[[CODE_VALUE]]
+                                        }
+                                        if (CODE_LABEL %in% colnames(vlt)) {
+                                          labels <- vlt[[CODE_LABEL]]
+                                        }
+                                        if (is.null(levels) && !is.null(labels)) {
+                                          util_error(applicability_problem = TRUE,
+                                                     "Have only code labels, but not code levels for %s",
+                                                     dQuote(cl)
+                                          )
+                                        } else if (is.null(labels)) {
+                                          labels <- levels
+                                        }
+                                      }
+                                      ordered <- sl == SCALE_LEVELS$ORDINAL
+                                      if (is.null(levels)) {
+                                        levels <- unique(sort(ds1[[cl]]))
+                                      }
+                                      if (is.null(labels)) {
+                                        labels <- levels
+                                      }
+                                      if (!.replace_missings) {
+                                        .m <- util_get_code_list(x = cl,
+                                                           code_name = MISSING_LIST,
+                                                           mdf = meta_data,
+                                                           label_col = label_col,
+                                                           warning_if_no_list = FALSE,
+                                                           warning_if_unsuitable_list = FALSE)
+                                        .j <- util_get_code_list(x = cl,
+                                                           code_name = JUMP_LIST,
+                                                           mdf = meta_data,
+                                                           label_col = label_col,
+                                                           warning_if_no_list = FALSE,
+                                                           warning_if_unsuitable_list = FALSE)
+                                        defined <- levels %in% c(unname(.m),
+                                                                 unname(.j))
+                                        levels <- levels[!defined]
+                                        labels <- labels[!defined]
+
+                                        levels <- c(levels, unname(.j))
+                                        labels <- c(labels, names(.j))
+                                        levels <- c(levels, unname(.m))
+                                        labels <- c(labels, names(.m))
+                                      }
+                                      if (.apply_factor_metadata_inadm) {
+                                        empir <- unique(ds1[[cl]])
+                                        empir <- empir[!is.na(empir)]
+                                        empir <- setdiff(empir, levels)
+                                        levels <- c(levels, empir)
+                                        labels <- c(labels, empir)
+                                      }
+                                      ds1[[cl]] <- do.call(factor, list(
+                                        x = ds1[[cl]],
+                                        levels = levels,
+                                        labels = labels,
+                                        ordered = ordered
+                                      ), quote = TRUE);
+                                    }
+                                    return(ds1[[cl]])
+                                  }
+      )
+    }
+  }
+
+  attr(ds1, "apply_fact_md") <- .apply_factor_metadata
+  attr(ds1, "apply_fact_md_inadm") <- .apply_factor_metadata_inadm
 
   study_data <- util_cast_off(study_data, "study_data", TRUE)
   meta_data <- util_cast_off(meta_data, "meta_data", TRUE)
   ds1 <- util_cast_off(ds1, "ds1", TRUE)
+  attr(ds1, "study_data") <- study_data
 
   if (.internal) {
     assign("study_data", study_data, parent.frame())
@@ -697,5 +873,113 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
   invisible(ds1)
 }
 
+util_maybe_load_meta_data_v2 <- function() {
+  if ("meta_data_v2" %in% rlang::fn_fmls_names(fn = rlang::caller_fn(1))) {
+    eval.parent(substitute({
+      if (!missing(meta_data_v2)) {
+        util_message("Have %s set, so I'll remove all loaded data frames",
+                     sQuote("meta_data_v2"))
+        prep_purge_data_frame_cache()
+        prep_load_workbook_like_file(meta_data_v2)
+        if (!exists("item_level", .dataframe_environment())) {
+          w <- paste("Did not find any sheet named %s in %s, is this",
+                     "really dataquieR version 2 metadata?")
+          if (requireNamespace("cli", quietly = TRUE)) {
+            w <- cli::bg_red(cli::col_br_yellow(w))
+          }
+          util_warning(w, dQuote("item_level"), dQuote(meta_data_v2),
+                       immediate = TRUE)
+        }
+      }
+    }))
+  } else {
+    util_error(c("Internal error: Need a %s formal, sorry. Please report.",
+                 "As a dataquieR developer: You need to declare a formal",
+                 "argument %s, if you want to call %s."),
+               sQuote("meta_data_v2"),
+               sQuote("meta_data_v2"),
+               sQuote("util_maybe_load_meta_data_v2"))
+  }
+}
+
+# fixes aliases for all metadata levels except item level for the data frame names as well as for arguemnts of exported functions
+util_ck_arg_aliases <- function() {
+  arg_maps_to = c( # this function does not handle item_level/meta_data, because this pair is addressed by prep_prepare_dataframes()
+    segment_level = "meta_data_segment",
+    cross_item_level = "meta_data_cross_item",
+    `cross-item_level` = "meta_data_cross_item",
+    dataframe_level = "meta_data_dataframe",
+    item_computation_level =
+      "meta_data_item_computation"
+  )
+
+  # handle metadata argument aliases --------
+  caller_formal_names <- rlang::fn_fmls_names(fn = rlang::caller_fn(1))
+  caller_formals <- rlang::fn_fmls(fn = rlang::caller_fn(1))
+  missing_in_parent <- suppressWarnings({
+    vapply(caller_formal_names, function(x) eval(call("missing",
+                                                         as.symbol(x)),
+                                                    envir = parent.frame(3)),
+           FUN.VALUE = logical(1))
+  })
+
+  for (arg in intersect(names(arg_maps_to),
+                        caller_formal_names)) {
+    list_of_synonyms <- names(arg_maps_to)[arg_maps_to == arg_maps_to[[arg]]]
+    for (syn in setdiff(
+      union(list_of_synonyms, arg_maps_to[[arg]]), arg)) {
+      if (syn %in% caller_formal_names) { # have both
+        if (!missing_in_parent[[syn]] &&
+            !missing_in_parent[[arg]] &&
+            !identical(dynGet(syn), dynGet(arg))) {
+          # IDEA: if (rlang::hash())
+          util_error(c("You cannot provide both, %s as well as %s",
+                       "these arguments are synonyms and must be",
+                       "used mutually exclusively"),
+                     sQuote(syn),
+                     sQuote(arg))
+        }
+      }
+    }
+    v <- rlang::missing_arg()
+    if (!missing_in_parent[[arg]]) {
+      v <- eval.parent(as.symbol(arg))
+    } else for (syn in setdiff(
+      union(list_of_synonyms, arg_maps_to[[arg]]), arg)) {
+      if (!missing_in_parent[[syn]]) {
+        v <- eval.parent(as.symbol(syn))
+      }
+    }
+    if (!missing(v)) {
+      assign(arg_maps_to[[arg]], v, envir = parent.frame())
+      for (syn in list_of_synonyms) {
+        assign(syn, v, envir = parent.frame())
+      }
+    }
+  }
+
+  # handle data frame alias names --------
+  # order does matter, because if the above stops,
+  # the data frame cache stays untouched
+  df_names <- prep_list_dataframes()
+  cils2rn <- grep("(^|\\|)\\s*cross_item_level$", perl =  TRUE, value = TRUE,
+                  df_names)
+  for (cil2rn in cils2rn) { # rename dataframes named cross_item_level
+    new_nm <- sub("cross_item_level$", "cross-item_level", cil2rn)
+    if (!new_nm %in% df_names) {
+      prep_add_data_frames(
+        data_frame_list =
+          setNames(list(
+            prep_get_data_frame(cil2rn)
+          ), nm = new_nm)
+      )
+    }
+  }
+
+}
+
+# used, in case ds1 is copied or similar to keep the attributes in place
 .ds1_attribute_names <- c("Codes_to_NA", "MAPPED", "label_col", "HL_viol_to_NA",
-                          "Data_type_matches")
+                          "Data_type_matches", "apply_fact_md",
+                          "apply_fact_md_inadm", "study_data",
+                          "normalized", "version")

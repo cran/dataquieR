@@ -5,19 +5,16 @@
 \title{Counts all individuals with no measurements at all}
 \usage{
 com_unit_missingness(
-  study_data,
-  meta_data,
   id_vars = NULL,
   strata_vars = NULL,
-  label_col
+  label_col,
+  study_data,
+  item_level = "item_level",
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
-\item{study_data}{\link{data.frame} the data frame that contains the measurements}
-
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
-
 \item{id_vars}{\link{variable list} optional, a (vectorized) call of ID-variables
 that should not be
 considered in the calculation of unit-
@@ -28,6 +25,19 @@ stratification}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
+
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 A list with:

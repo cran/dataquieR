@@ -10,6 +10,16 @@
 #' @keywords internal
 util_combine_res <- function(all_of_f) {
 
+  cn <- unique(unlist(lapply(all_of_f, attr, "cn")))
+  if (length(cn) != 1) {
+    cn <- ""
+  }
+
+  all_of_f <- lapply(all_of_f, function(x) {
+    class(x) <- setdiff(class(x), "dataquieR_result")
+    x
+  })
+
   # combine results for the indicator functions related overview
 
   nms <- sub("^([^\\.]*).*$", "\\1", names(all_of_f))
@@ -77,19 +87,47 @@ util_combine_res <- function(all_of_f) {
   clls <- paste0(clls, "$", slot, collapse = ", \n\t")
   clls <- paste0("rbind(\n\t", clls, "\n)")
 
+  # for ReportSummaryTables: extract and combine VAR_NAMES attributes
+  vns <- NULL
+  if (any(RSTs)) {
+    vns <- unlist(lapply(unname(lapply(all_of_f[RESs & !NULLs], `[[`, slot)), attr, "VAR_NAMES"))
+  }
+
   # copy hover text for table headers
   description <- lapply(lapply(all_of_f[RESs & !NULLs], `[[`, slot), attr, "description")
   description <- unique(description)
 
 
-
+  # rescue plain label attributes if assigned for single result tables
+  plain_label_atts <- lapply(lapply(lapply(all_of_f[RESs & !NULLs],
+                                           `[[`,
+                                           slot), `[[`, "Variables"), attr, "plain_label")
+  if (all(vapply(plain_label_atts, length, FUN.VALUE = integer(1)) %in% 0:1) &&
+      all(vapply(plain_label_atts, is.character, FUN.VALUE = logical(1)) == TRUE) &&
+      !any(vapply(plain_label_atts, identical, NA_character_, FUN.VALUE = logical(1)))) {
+    plain_label_atts <- unname(unlist(plain_label_atts))
+  } else {
+    if (!is.null(plain_label_atts) &&
+        !all(vapply(plain_label_atts, length, FUN.VALUE = integer(1)) == 0)) {
+      util_error(
+        "Internal error, sorry, please report: invalid plain label atts")
+    }
+    plain_label_atts <- NULL
+  }
   # combine results (ReportSummaryTable and tables)
   # select results according to the logical vectors, extract the corresponding slots, and then bind by row
   # then write the combined result to all_of_f keeping its original structure (a list of encapsulated lists)
-  all_of_f <- list(setNames(list(do.call(rbind, lapply(all_of_f[RESs & !NULLs],
+  all_of_f <- list(setNames(list(do.call(util_rbind, lapply(all_of_f[RESs & !NULLs],
                                                        `[[`,
                                                        slot))), nm = slot))
+  if (!is.null(all_of_f[[1]][[slot]][["Variables"]])) {
+    attr(all_of_f[[1]][[slot]][["Variables"]], "plain_label") <-
+      plain_label_atts
+  }
   attr(all_of_f[[1]], "call") <- clls
+  if (!is.null(vns)) { # attach VAR_NAMES for ReportSummaryTables
+    attr(all_of_f[[1]][[slot]], "VAR_NAMES") <- vns
+  }
 
   # add attribute "description" for hover text
   if (length(description)>1) {
@@ -114,6 +152,8 @@ util_combine_res <- function(all_of_f) {
   else
     attr(all_of_f[[1]], "message") <- list()
   names(all_of_f) <- cll
+
+  attr(all_of_f[[1]], "cn") <- cn
 
   return(all_of_f)
 }

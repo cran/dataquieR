@@ -2,6 +2,8 @@
 #'
 #' function to assign labels to levels of a variable
 #'
+#' DEPRECATED from v2.5.0
+#'
 #' @param variable [vector] vector with values of a study variable
 #' @param string_of_levlabs [character] len=1. value labels,
 #'                                             e.g. `1 = no | 2 = yes`
@@ -20,7 +22,7 @@
 #' @param warn_if_inadmissible [logical] warn on [con_inadmissible_categorical]
 #'                                       values
 #'
-#' @return a [data.frame] with labels assigned to categorical variables
+#' @return a factor with labels assigned to categorical variables
 #'         (if available)
 #'
 #' @family data_management
@@ -29,6 +31,10 @@
 util_assign_levlabs <- function(variable, string_of_levlabs, splitchar,
                                 assignchar, ordered = TRUE, variable_name = "",
                                 warn_if_inadmissible = TRUE) {
+  # FIXME: deprecate
+  # lifecycle::deprecate_soft("2.5.0",
+  #                           what = "util_assign_levlabs()",
+  #                           with = "prep_prepare_dataframes()")
   # TODO: handle VALUE_LABELS w/o codes, e.g. male | female
   util_expect_scalar(variable_name, check_type = is.character)
   if (!util_empty(variable_name)) {
@@ -76,7 +82,8 @@ util_assign_levlabs <- function(variable, string_of_levlabs, splitchar,
                  variable_name, applicability_problem = TRUE) # nocov
   }
 
-  if (length(levs) < length(unique(variable[!(is.na(variable))]))) {
+  if (warn_if_inadmissible && length(levs) <
+      length(unique(variable[!(is.na(variable))]))) {
     util_warning(
       "Number of levels in variable greater than in character string%s.",
       variable_name, applicability_problem = TRUE)

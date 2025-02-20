@@ -4,10 +4,34 @@
 \alias{int_unexp_records_set}
 \title{Check for unexpected data record set}
 \usage{
-int_unexp_records_set(level = c("dataframe", "segment"), ...)
+int_unexp_records_set(
+  level = c("dataframe", "segment"),
+  study_data,
+  item_level = "item_level",
+  label_col,
+  meta_data = item_level,
+  meta_data_v2,
+  ...
+)
 }
 \arguments{
 \item{level}{\link{character} a character vector indicating whether the assessment should be conducted at the study level (level = "dataframe") or at the segment level (level = "segment").}
+
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
+
+\item{label_col}{\link{variable attribute} the name of the column in the metadata
+with labels of variables}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 
 \item{...}{Depending on \code{level}, passed to either
 \link{util_int_unexp_records_set_segment} or
@@ -24,32 +48,4 @@ check for unexpected data record sets by study segments or to consider only sele
 segments.
 
 \link{Indicator}
-}
-\examples{
-\dontrun{
-study_data <- readRDS(system.file("extdata", "ship.RDS",
-  package = "dataquieR"
-))
-meta_data <- readRDS(system.file("extdata", "ship_meta.RDS",
-  package = "dataquieR"
-))
-md1_segment <- readRDS(system.file("extdata", "meta_data_segment.RDS",
-  package = "dataquieR"
-))
-ids_segment <- readRDS(system.file("extdata", "meta_data_ids_segment.RDS",
-  package = "dataquieR"
-))
-
-# TODO: update examples
-int_unexp_records_set(
-  level = "segment",
-  identifier_name_list = c("INTERVIEW", "LABORATORY"),
-  valid_id_table_list = ids_segment,
-  meta_data_record_check = md1_segment[,
-    c("STUDY_SEGMENT", "SEGMENT_RECORD_CHECK")],
-  study_data = study_data,
-  meta_data = meta_data,
-  meta_data_level = md1_segment
-)
-}
 }

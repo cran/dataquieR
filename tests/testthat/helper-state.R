@@ -4,6 +4,7 @@ set_state_inspector(function() {
   # the caches are emptied. Maybe, we need to be more careful and edit
   # each and any test to explicitly run the functions below, if needed.
   suppressMessages(prep_purge_data_frame_cache())
+  options(rio.import.trust = TRUE) # the tests run well-known files, only
   # Sys.unsetenv("NOT_CRAN")
   prep_list_dataframes()
   util_reset_cache()

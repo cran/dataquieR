@@ -3,7 +3,7 @@
 #'
 #'  - `uniform` For uniform distribution
 #'  - `normal` For Gaussian distribution
-#'  - `GAMMA` For a gamma distribution
+#'  - `gamma` For a gamma distribution
 #'
 #' @export
 DISTRIBUTIONS <- list(
@@ -211,7 +211,7 @@ VARATT_REQUIRE_LEVELS_ORDER <- c(
 #' all entries of this list will be mapped to the package's exported NAMESPACE
 #' environment directly, i.e. they are available directly by their names too:
 #'
-#' `r paste0(' - [', names(WELL_KNOWN_META_VARIABLE_NAMES), ']')`
+#' `r paste0(' - [', names(WELL_KNOWN_META_VARIABLE_NAMES), ']', collapse = "\n")`
 #'
 #' @rawRd \alias{variable attribute}
 #'
@@ -237,6 +237,8 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
                             VARATT_REQUIRE_LEVELS$RECOMMENDED),
   VALUE_LABELS = structure("VALUE_LABELS", var_att_required =
                              VARATT_REQUIRE_LEVELS$RECOMMENDED),
+  VALUE_LABEL_TABLE = structure("VALUE_LABEL_TABLE", var_att_required =
+                             VARATT_REQUIRE_LEVELS$OPTIONAL),
   MISSING_LIST = structure("MISSING_LIST", var_att_required =
                              VARATT_REQUIRE_LEVELS$COMPATIBILITY),
   JUMP_LIST = structure("JUMP_LIST", var_att_required =
@@ -329,10 +331,21 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
                                          VARATT_REQUIRE_LEVELS$TECHNICAL),
   #  VARSHORTLABEL = structure("varshortlabel", var_att_required =
   #                                     VARATT_REQUIRE_LEVELS$OPTIONAL),
-  RECODE = structure("recode", var_att_required =
+  RECODE_CASES = structure("RECODE_CASES", var_att_required =
                        VARATT_REQUIRE_LEVELS$OPTIONAL),
+  RECODE_CONTROL = structure("RECODE_CONTROL", var_att_required =
+                             VARATT_REQUIRE_LEVELS$OPTIONAL),
   GRADING_RULESET = structure("GRADING_RULESET", var_att_required =
-                                VARATT_REQUIRE_LEVELS$OPTIONAL)
+                                VARATT_REQUIRE_LEVELS$OPTIONAL),
+  STANDARDIZED_VOCABULARY_TABLE = structure("STANDARDIZED_VOCABULARY_TABLE",
+                                            var_att_required =
+                                              VARATT_REQUIRE_LEVELS$OPTIONAL),
+  DATAFRAMES = structure("DATAFRAMES",
+                         var_att_required =
+                           VARATT_REQUIRE_LEVELS$OPTIONAL),
+  ENCODING = structure("ENCODING",
+                         var_att_required =
+                           VARATT_REQUIRE_LEVELS$OPTIONAL)
 )
 
 .onAttach <- function(...) { # nocov start
@@ -347,6 +360,11 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
     utils::globalVariables(
       c(
         names(WELL_KNOWN_META_VARIABLE_NAMES),
+        "....alt_call_res",
+        "colcode",
+        "colscale",
+        "continuous",
+        "level_names",
         "APP_SCORE",
         "FITTED_VALUE",
         "GRADING",
@@ -437,6 +455,12 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
     .dq2_globs$.called_in_pipeline
   }, environment(.onLoad))
 
+  makeActiveBinding("MAX_LABEL_LEN", function() {
+    min(.MAX_LABEL_LEN, getOption("dataquieR.MAX_LABEL_LEN",
+                                  dataquieR.MAX_LABEL_LEN_default),
+        na.rm = TRUE)
+  }, env = environment(.onLoad))
+
   util_fix_rstudio_bugs()
 
   if (!l10n_info()[["UTF-8"]]) {
@@ -526,25 +550,43 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
 .SM_LAB <- "ADDED: SysMiss"
 
 #' Data frame with labels for missing- and jump-codes
-#' @name cause_label_df
-#' @aliases missing_matchtable CODE_VALUE CODE_LABEL CODE_CLASS CODE_INTERPRET
+#' #' Metadata about value and missing codes
+#'
+#'
+
+#' @name value/missing-lists
+#' @aliases cause_label_df missing_matchtable CODE_VALUE CODE_LABEL CODE_CLASS CODE_INTERPRET value_label_table
 #' @description
 #' [data.frame] with the following columns:
-#'   - `CODE_VALUE`: [numeric] | [DATETIME] Missing code
-#'                                (the number or date representing a missing)
-#'   - `CODE_LABEL`: [character] a label for the missing code
-#'   - `CODE_CLASS`: [enum] JUMP | MISSING. Class of the missing code.
+#'   - `CODE_VALUE`: [numeric] | [DATETIME] Missing or categorical code
+#'                                (the number or date representing a
+#'                                missing/category)
+#'   - `CODE_LABEL`: [character] a label for the missing code or category
+#'   - `CODE_CLASS`: [enum] JUMP | MISSING. For missing lists: Class of the
+#'                             missing code.
 #'   - `CODE_INTERPRET` [enum] I | P | PL | R | BO | NC | O | UH | UO | NE.
-#'                             Class of the missing code according to
+#'                             For missing lists: Class of the missing code
+#'                             according to
 #'       [`AAPOR`](https://aapor.org/standards-and-ethics/standard-definitions/).
-#'   - `resp_vars`: [character] optional, if a missing code is specific for some
+#'   - `resp_vars`: [character] For missing lists: optional, if a missing code
+#'                              is specific for some
 #'                              variables, it is listed for each such variable
 #'                              with one entry in `resp_vars`, If `NA`, the
 #'                              code is assumed shared among all variables.
 #'                              For v1.0 metadata, you need to refer to
 #'                              `VAR_NAMES` here.
 #'
-#' @seealso [Online](https://dataquality.qihs.uni-greifswald.de/Item_Level_Metadata.html#MISSING_LIST_TABLE)
+#' @seealso [Online](https://dataquality.qihs.uni-greifswald.de/VIN_Item_Level_Metadata.html#MISSING_LIST_TABLE)
+#' @seealso [com_item_missingness()]
+#' @seealso [com_segment_missingness()]
+#' @seealso [com_qualified_item_missingness()]
+#' @seealso [com_qualified_segment_missingness()]
+#' @seealso [con_inadmissible_categorical()]
+#' @seealso [con_inadmissible_vocabulary()]
+#' @seealso [MISSING_LIST_TABLE]
+#' @seealso [VALUE_LABEL_TABLE]
+#' @seealso [STANDARDIZED_VOCABULARY_TABLE]
+#' @seealso [cause_label_df]
 NULL
 
 #' Data frame with contradiction rules
@@ -564,7 +606,7 @@ NULL
 #'
 #' Variable level metadata.
 #'
-#' @seealso [further details on variable level metadata.](https://dataquality.qihs.uni-greifswald.de/Annotation_of_Metadata.html)
+#' @seealso [further details on variable level metadata.](https://dataquality.qihs.uni-greifswald.de/VIN_Annotation_of_Metadata.html)
 #' @seealso [meta_data_segment]
 #' @seealso [meta_data_dataframe]
 #'
@@ -584,6 +626,11 @@ NULL
 #' Metadata describing study segments, e.g., a full questionnaire, not its
 #' items.
 NULL
+
+#' Default Name of the Table featuring Code Lists
+#'
+#' @export
+CODE_LIST_TABLE = "CODE_LIST_TABLE"
 
 # this has already been defined
 # @inherit meta_data_segment
@@ -642,6 +689,15 @@ SEGMENT_ID_VARS <- "SEGMENT_ID_VARS"
 
 #' Segment level metadata attribute name
 #'
+#' @seealso [DF_UNIQUE_ID]
+#'
+#' @seealso [meta_data_segment]
+#'
+#' @export
+SEGMENT_UNIQUE_ID <- "SEGMENT_UNIQUE_ID"
+
+#' Segment level metadata attribute name
+#'
 #' Specifies whether identical data is permitted across rows in a
 #' segment (excluding ID variables)
 #'
@@ -686,6 +742,15 @@ NULL
 #'
 #' @export
 DF_NAME <- "DF_NAME"
+
+#' Data frame level metadata attribute name
+#'
+#' Name of the data frame
+#'
+#' @seealso [meta_data_dataframe]
+#'
+#' @export
+DF_CODE <- "DF_CODE"
 
 #' Data frame level metadata attribute name
 #'
@@ -760,10 +825,13 @@ DF_UNIQUE_ROWS <- "DF_UNIQUE_ROWS"
 
 #' Well known columns on the `meta_data_cross-item` sheet
 #' @name meta_data_cross
-#' @seealso check_table
+#' @seealso [check_table]
+#' @seealso [Online Documentation](https://dataquality.qihs.uni-greifswald.de/VIN_Cross_Item_Level_Metadata.html)
+#' @family meta_data_cross
 #' @description
 #' Metadata describing groups of variables, e.g., for their multivariate
 #' distribution or for defining contradiction rules.
+#'
 NULL
 
 #' Valid unit symbols according to [units::valid_udunits()]
@@ -841,11 +909,14 @@ VARIABLE_LIST <- "VARIABLE_LIST" # TODO: STS Add to 000_globs
 
 #' Cross-item level metadata attribute name
 #'
+#' Note: in some `prep_`-functions, this field is named `RULE`
+#'
 #' Specifies a contradiction rule. Use `REDCap` like syntax, see
 #' [online vignette](https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html)
 #'
 #' @seealso [meta_data_cross]
 #' @family meta_data_cross
+#' @aliases RULE
 #'
 #' @export
 CONTRADICTION_TERM <- "CONTRADICTION_TERM"
@@ -892,6 +963,23 @@ N_RULES <- "N_RULES" # TODO: STS add to WELL_KNOWN_META_VARIABLE_NAMES
 #'
 #' @export
 MULTIVARIATE_OUTLIER_CHECKTYPE <- "MULTIVARIATE_OUTLIER_CHECKTYPE"
+
+#' Cross-item level metadata attribute name
+#'
+#' Select, whether to compute [acc_multivariate_outlier].
+#'
+#' You can leave the cell empty, then the depends on the setting of the
+#' `option` [dataquieR.MULTIVARIATE_OUTLIER_CHECK]. If this column is missing,
+#' all this is the same as having all cells empty and
+#' `dataquieR.MULTIVARIATE_OUTLIER_CHECK` set to `"auto"`.
+#'
+#' See also [`MULTIVARIATE_OUTLIER_CHECKTYPE`].
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#'
+#' @export
+MULTIVARIATE_OUTLIER_CHECK <- "MULTIVARIATE_OUTLIER_CHECK"
 
 #' Item level metadata attribute name
 #'
@@ -980,13 +1068,39 @@ GOLDSTANDARD <- "GOLDSTANDARD"
 #' For contradiction rules, the required pre-processing steps that can be given.
 #' TODO JM: MISSING_LABEL will not work for non-factor variables
 #'
-#' LABEL MISSING LIMITS MISSING_LABEL MISSING_INTERPRET
+#' LABEL LIMITS MISSING_NA MISSING_LABEL MISSING_INTERPRET
 #'
 #' @seealso [meta_data_cross]
 #' @family meta_data_cross
 #'
 #' @export
 DATA_PREPARATION <- "DATA_PREPARATION"
+
+#' @export
+CODE_VALUE <- "CODE_VALUE"
+
+#' @export
+RULE <- "RULE"
+
+#' @export
+CODE_LABEL <- "CODE_LABEL"
+
+#' @export
+CODE_INTERPRET <- "CODE_INTERPRET"
+
+#' @export
+CODE_CLASS <- "CODE_CLASS"
+
+# TODO
+#' Only existence is checked, order not yet used
+#' @export
+CODE_ORDER <- "CODE_ORDER"
+
+#' types of value codes
+#' @export
+CODE_CLASSES <- list(MISSING = "MISSING",
+                  JUMP = "JUMP",
+                  VALUE = "VALUE")
 
 #' Dimension Titles for Prefixes
 #'
@@ -995,7 +1109,7 @@ DATA_PREPARATION <- "DATA_PREPARATION"
 #' @seealso [util_html_for_var()]
 #' @seealso [util_html_for_dims()]
 dims <- c(
-  des = "Descriptors",
+  des = "Descriptive statistics",
   int = "Integrity",
   com = "Completeness",
   con = "Consistency",
@@ -1005,7 +1119,26 @@ dims <- c(
 # Use cli, if available.
 rlang::local_use_cli()
 
-# Maximum length for labels according to
-# file names https://stackoverflow.com/a/265782/4242747
-# and label handling in plot.ly
-MAX_LABEL_LEN <- min(200L, 30L)
+#' Metadata sheet name containing VALUE_LABEL_TABLES
+#' This metadata sheet can contain both value labels of several
+#' VALUE_LABEL_TABLE and also Missing and JUMP tables
+#' @export
+CODE_LIST_TABLE <- "CODE_LIST_TABLE"
+
+# for global options for dataquieR not exposed to the user like options()
+dataquieR.properties <- new.env(parent = emptyenv())
+
+.set_properties <- function(p) {
+  list2env(p, dataquieR.properties)
+}
+
+with_pipeline <- withr::with_(new = FALSE,
+  function(x) {
+    res <- force(.dq2_globs$.called_in_pipeline)
+    if (missing(x)) {
+      .dq2_globs$.called_in_pipeline <- TRUE
+    } else {
+      .dq2_globs$.called_in_pipeline <- x
+    }
+    res
+  })

@@ -4,14 +4,13 @@
 \alias{util_dist_selection}
 \title{Utility function to characterize study variables}
 \usage{
-util_dist_selection(study_data, val_lab = NULL)
+util_dist_selection(study_data, val_lab = lifecycle::deprecated())
 }
 \arguments{
 \item{study_data}{study data, pre-processed with \code{prep_prepare_dataframes}
 to replace missing value codes by \code{NA}}
 
-\item{val_lab}{matching metadata column containing the \code{VALUE_LABELS}
-as vector (if available)}
+\item{val_lab}{deprecated}
 }
 \value{
 data frame with one row for each variable in the study data and the
@@ -34,7 +33,6 @@ This function summarizes some properties of measurement variables.
 }
 \seealso{
 Other metadata_management: 
-\code{\link{CAN_THIS_BE_REMOVED_util_combine_missing_lists}()},
 \code{\link{util_find_free_missing_code}()},
 \code{\link{util_find_var_by_meta}()},
 \code{\link{util_get_var_att_names_of_level}()},

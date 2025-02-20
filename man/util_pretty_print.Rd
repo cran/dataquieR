@@ -11,7 +11,8 @@ util_pretty_print(
   meta_data,
   label_col,
   use_plot_ly,
-  dir
+  dir,
+  ...
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ with labels of variables}
 \item{use_plot_ly}{\link{logical} use \code{plotly}}
 
 \item{dir}{\link{character} output directory for potential \code{iframes}.}
+
+\item{...}{further arguments passed through, if applicable}
 }
 \value{
 \code{htmltools} compatible object with rendered \code{dqr}

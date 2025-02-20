@@ -6,16 +6,18 @@
 to v2.0 missing list / jump list assignments}
 \usage{
 prep_add_cause_label_df(
-  meta_data = "item_level",
+  item_level = "item_level",
   cause_label_df,
   label_col = VAR_NAMES,
   assume_consistent_codes = TRUE,
-  replace_meta_data = ("resp_vars" \%in\% colnames(cause_label_df))
+  replace_meta_data = ("resp_vars" \%in\% colnames(cause_label_df)),
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data.}
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
 
 \item{cause_label_df}{\link{data.frame} missing code table. If missing codes have
 labels the respective data frame can be
@@ -35,6 +37,14 @@ and jump codes and replace them with
 data from the \code{cause_label_df}. Otherwise,
 copy the labels from \code{cause_label_df} to
 the existing code columns.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 \link{data.frame} updated metadata including all the code labels in

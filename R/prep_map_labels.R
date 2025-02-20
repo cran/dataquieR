@@ -16,17 +16,23 @@
 #' all `HARD_LIMITS` from the metadata.
 #'
 #' @param x [character] variable names, character vector, see parameter from
-#' @param meta_data [data.frame] metadata data frame, if, as a `dataquieR`
+#' @param item_level [data.frame] metadata data frame, if, as a `dataquieR`
 #'                               developer, you do not have
 #'                               **item-level-metadata**, you should use
 #'                               [util_map_labels] instead to avoid consistency
 #'                               checks on for item-level `meta_data`.
+#' @param meta_data [data.frame] old name for `item_level`
 #' @param to [character] variable attribute to map to
 #' @param from [character] variable identifier to map from
 #' @param ifnotfound [list] A list of values to be used if the item is not
 #'                          found: it will be coerced to a list if necessary.
 #' @param warn_ambiguous [logical] print a warning if mapping variables from
 #'                            `from` to `to` produces ambiguous identifiers.
+#' @param meta_data_v2 [character] path to workbook like metadata file, see
+#'                                 [`prep_load_workbook_like_file`] for details.
+#'                                 **ALL LOADED DATAFRAMES WILL BE PURGED**,
+#'                                 using [`prep_purge_data_frame_cache`],
+#'                                 if you specify `meta_data_v2`.
 #'
 #' @return a character vector with:
 #'   - mapped values
@@ -44,9 +50,22 @@
 #' stopifnot(all(prep_map_labels(c("AGE", "DOE"), meta_data) == c("Age",
 #'                                                  "Examination Date")))
 #' }
-prep_map_labels <- function(x, meta_data = "item_level",
+prep_map_labels <- function(x, item_level = "item_level",
                             to = LABEL, from = VAR_NAMES, ifnotfound,
-                            warn_ambiguous = FALSE) {
+                            warn_ambiguous = FALSE,
+                            meta_data_v2,
+                            meta_data = item_level) {
+  if (!missing(item_level) && !missing(meta_data) &&
+      !identical(item_level, meta_data)) {
+    util_error(c("You cannot provide both, %s as well as %s",
+                 "these arguments are synonyms and must be",
+                 "used mutually exclusively"),
+               sQuote("item_level"),
+               sQuote("meta_data"))
+    # see prep_prepare_dataframes
+  }
+
+  util_maybe_load_meta_data_v2()
   util_expect_data_frame(meta_data)
 
   # This is not needed, since labels have not significantly changed

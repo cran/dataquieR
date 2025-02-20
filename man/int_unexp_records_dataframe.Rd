@@ -4,12 +4,29 @@
 \alias{int_unexp_records_dataframe}
 \title{Check for unexpected data record count at the data frame level}
 \usage{
-int_unexp_records_dataframe(identifier_name_list, data_record_count)
+int_unexp_records_dataframe(
+  identifier_name_list,
+  data_record_count,
+  meta_data_dataframe = "dataframe_level",
+  meta_data_v2,
+  dataframe_level
+)
 }
 \arguments{
 \item{identifier_name_list}{\link{character} a character vector indicating the name of each study data frame, mandatory.}
 
 \item{data_record_count}{\link{integer}  an integer vector with the number of expected data records per study data frame, mandatory.}
+
+\item{meta_data_dataframe}{\link{data.frame} the data frame that contains the
+metadata for the data frame level}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{dataframe_level}{\link{data.frame} alias for \code{meta_data_dataframe}}
 }
 \value{
 a \link{list} with

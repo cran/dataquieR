@@ -13,37 +13,12 @@
 #' @param study_data [data.frame] the data frame that contains the measurements, mandatory.
 #' @param meta_data [data.frame] the data frame that contains metadata attributes of the study data, mandatory.
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @return a [list] with
 #'   - `SegmentData`: data frame with the results of the quality check for unexpected data elements
 #'   - `SegmentTable`: data frame with selected unexpected data elements check results, used for the data quality report.
 #'   - `UnexpectedRecords`: vector with row indices of duplicated records, if any, otherwise NULL.
-#'
-#' @examples
-#' \dontrun{
-#' study_data <- readRDS(system.file("extdata", "ship.RDS",
-#'   package = "dataquieR"
-#' ))
-#' meta_data <- readRDS(system.file("extdata", "ship_meta.RDS",
-#'   package = "dataquieR"
-#' ))
-#' md1_segment <- readRDS(system.file("extdata", "meta_data_segment.RDS",
-#'   package = "dataquieR"
-#' ))
-#' ids_segment <- readRDS(system.file("extdata", "meta_data_ids_segment.RDS",
-#'   package = "dataquieR"
-#' ))
-#'
-#' # TODO: update examples
-#' int_unexp_records_set(
-#'   level = "segment",
-#'   identifier_name_list = c("INTERVIEW", "LABORATORY"),
-#'   valid_id_table_list = ids_segment,
-#'   meta_data_record_check = md1_segment[,
-#'     c("STUDY_SEGMENT", "SEGMENT_RECORD_CHECK")],
-#'   study_data = study_data,
-#'   meta_data = meta_data
-#' )
-#' }
 #'
 #' @family integrity_indicator_functions
 #' @concept integrity_indicator
@@ -53,14 +28,102 @@ util_int_unexp_records_set_segment <- function(level = c("segment"),
                                   identifier_name_list,
                                   valid_id_table_list,
                                   meta_data_record_check_list,
-                                  study_data, meta_data) {
+                                  study_data,
+                                  label_col,
+                                  meta_data, item_level,
+                                  meta_data_segment = "segment_level",
+                                  segment_level) {
 
-
+  util_ck_arg_aliases()
 
   # 1. Segment level check ----
 
   # Checks arguments ----
   level <- util_match_arg(level)
+
+  if (missing(id_vars_list) &&
+      missing(identifier_name_list) &&
+      missing(valid_id_table_list) &&
+      missing(meta_data_record_check_list) &&
+      missing(meta_data_segment) &&
+      formals()$meta_data_segment %in% prep_list_dataframes()) {
+    meta_data_segment <- force(meta_data_segment)
+  }
+
+  if (missing(id_vars_list) &&
+      missing(identifier_name_list) &&
+      missing(valid_id_table_list) &&
+      missing(meta_data_record_check_list) &&
+      !missing(meta_data_segment)) {
+    meta_data_segment <- prep_check_meta_data_segment(meta_data_segment)
+
+    meta_data_segment <-
+      meta_data_segment[!util_empty(
+        meta_data_segment[[SEGMENT_RECORD_CHECK]]), , drop = FALSE]
+    # TODO: if nothing left
+    id_vars_list <- lapply(setNames(meta_data_segment[[SEGMENT_ID_VARS]],
+                                    nm = meta_data_segment[[STUDY_SEGMENT]]),
+                           util_parse_assignments,
+                           multi_variate_text = TRUE );
+    id_vars_list <- lapply(id_vars_list, unlist, recursive = TRUE)
+    id_vars_list <- lapply(setNames(meta_data_segment[[SEGMENT_ID_VARS]], # TODO: use the constants everywhere: meta_data_segment[[SEGMENT_ID_VARS]], not ...$SEGMENT_ID_VARS
+                                    nm = meta_data_segment[[STUDY_SEGMENT]]),
+                           util_parse_assignments,
+                           multi_variate_text = TRUE
+    )
+    id_vars_list <- lapply(id_vars_list, unlist, recursive = TRUE)
+
+    id_vars_list <- lapply(id_vars_list,
+                                  util_map_labels,
+                                  meta_data = meta_data,
+                                  to = label_col)
+
+    identifier_name_list <- meta_data_segment[[STUDY_SEGMENT]];
+    valid_id_table_list <- meta_data_segment[[SEGMENT_ID_REF_TABLE]];
+    meta_data_record_check_list <- meta_data_segment[[SEGMENT_RECORD_CHECK]];
+  } else if (!missing(meta_data_segment)) {
+    util_error(c("I have %s and one of the following: %s.",
+                 "This is not supported, please provide",
+                 "either %s or all of %s."),
+               sQuote("meta_data_segment"),
+               util_pretty_vector_string(
+                 c("id_vars_list",
+                   "identifier_name_list",
+                   "valid_id_table_list",
+                   "meta_data_record_check_list"
+                 )),
+               sQuote("meta_data_segment"),
+               util_pretty_vector_string(
+                 c("id_vars_list",
+                   "identifier_name_list",
+                   "valid_id_table_list",
+                   "meta_data_record_check_list"
+                 )))
+  } else if (missing(meta_data_segment) && (
+    missing(id_vars_list) ||
+    missing(identifier_name_list) ||
+    missing(valid_id_table_list) ||
+    missing(meta_data_record_check_list)
+  )) {
+    util_error(c("I don't have %s and also miss at least",
+                 "one of the following: %s.",
+                 "This is not supported, please provide",
+                 "either %s or all of %s."),
+               sQuote("meta_data_segment"),
+               util_pretty_vector_string(
+                 c("id_vars_list",
+                   "identifier_name_list",
+                   "valid_id_table_list",
+                   "meta_data_record_check_list"
+                 )),
+               sQuote("meta_data_segment"),
+               util_pretty_vector_string(
+                 c("id_vars_list",
+                   "identifier_name_list",
+                   "valid_id_table_list",
+                   "meta_data_record_check_list"
+                 )))
+  }
 
   .nrw <- length(identifier_name_list)
 
@@ -165,12 +228,19 @@ util_int_unexp_records_set_segment <- function(level = c("segment"),
     data_ids_1 <- ds1[, c(id_vars, vars_in_current_segment)]
     data_ids <- util_remove_empty_rows(data_ids_1, id_vars = id_vars)
 
-    metadata_ids <- valid_id_table[, current_segment] # TODO: check if valid_id_table has a column named current_segment, else take id column, if there is no id then take the first column. If the table is empty, set metadata IDs to character(0)
+    if (current_segment %in% colnames(valid_id_table)) {
+      metadata_ids <- valid_id_table[, current_segment]
+    } else if ("ID" %in% colnames(valid_id_table)) {
+      metadata_ids <- valid_id_table[, "ID"]
+    } else {
+      metadata_ids <- character(0)
+    }
     metadata_ids <- metadata_ids[!util_empty(metadata_ids)]
 
-    # TODO: fix
+    # TODO: implement
     if (length(id_vars) > 1) {
-      util_warning("Check for multiple IDs is not currently supported",
+      util_warning(c("Check for multiple IDs is not currently supported,",
+                     "but you could assign value labels to the each variable"),
                    applicability_problem = TRUE,
                    intrinsic_applicability_problem = TRUE)
       return(
@@ -187,13 +257,22 @@ util_int_unexp_records_set_segment <- function(level = c("segment"),
     }
 
     # Check membership of the id vectors
-    unex_records_tmp <- setdiff(data_ids[id_vars], metadata_ids)
+    unex_records_tmp <- data_ids[[id_vars]][!(data_ids[[id_vars]] %in%
+                                                metadata_ids)]
+
+    miss_records_tmp <- metadata_ids[!(metadata_ids %in%
+                                                data_ids[[id_vars]])]
 
     # TODO: check definition of exact and subset
-    if (length(unex_records_tmp) == 0) {
+    if (all(data_ids[[id_vars]] %in% metadata_ids) &&
+        all(metadata_ids %in% data_ids[[id_vars]])) {
       match_actual <- "exact"
-    } else if (length(unex_records_tmp) > 0) {
+    } else if (all(data_ids[[id_vars]] %in% metadata_ids)) {
       match_actual <- "subset"
+    } else if (all(metadata_ids %in% data_ids[[id_vars]])) {
+      match_actual <- "superset"
+    } else {
+      match_actual <- "mismatch"
     }
     match_expected <- meta_data_record_check_list[[current_segment]]
 
@@ -201,11 +280,10 @@ util_int_unexp_records_set_segment <- function(level = c("segment"),
       check.names = FALSE,
       "Check" = "Record set",
       "Segment" = current_segment,
-      "Unexpected records in set" = !(length(unex_records_tmp) == 0),
-      "Number of records in data" = length(data_ids$id),
+      "Unexpected records in set?" = !(length(unex_records_tmp) == 0),
+      "Number of records in data" = length(data_ids[[id_vars]]),
       "Number of records in metadata" = length(metadata_ids),
-      "Number of mismatches" =
-        length(unex_records_tmp),
+      "Number of mismatches" = length(unex_records_tmp),
       "Percentage of mismatches" =
         abs(round(100 * length(unex_records_tmp) / length(metadata_ids), 3)),
       "Expected match type" = match_expected,
@@ -221,7 +299,13 @@ util_int_unexp_records_set_segment <- function(level = c("segment"),
       vec_unex_records <- NULL
     }
 
-    return(list(res_tmp, vec_unex_records))
+    mism_lin <- as.character(which(!(data_ids[[id_vars]] %in%
+                                       metadata_ids)))
+
+    return(list(res_tmp, data.frame(Segment = rep(current_segment,
+                                            length(vec_unex_records)),
+                                    UnexpectedID = vec_unex_records,
+                                    Line = mism_lin)))
   })
 
   res_df <- do.call(rbind.data.frame, lapply(result, `[[`, 1))
@@ -238,7 +322,7 @@ util_int_unexp_records_set_segment <- function(level = c("segment"),
   return(list(
     SegmentData = res_df,
     SegmentTable = res_pipeline,
-    UnexpectedRecords = unex_records_df
+    Other = unex_records_df
   ))
 
 }

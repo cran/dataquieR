@@ -7,11 +7,11 @@
 #'
 #' @return [data.frame] modified study data
 #' @keywords internal
-util_adjust_data_type <- function(study_data,
+util_adjust_data_type <- function(study_data, # TODO: Use maybe readr::type_convert
                                   meta_data,
                                   relevant_vars_for_warnings) {
   # prevent repeated data type checks if adjusted previously
-  if (!("Data_type_matches" %in% names(attributes(study_data)))) {
+  if (!isTRUE(attr(study_data, "Data_type_matches"))) {
     check_type <- util_compare_meta_with_study(
       sdf = study_data,
       mdf = meta_data,

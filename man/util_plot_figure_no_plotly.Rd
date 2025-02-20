@@ -4,10 +4,12 @@
 \alias{util_plot_figure_no_plotly}
 \title{Plot a \code{ggplot2} figure without \code{plotly}}
 \usage{
-util_plot_figure_no_plotly(x)
+util_plot_figure_no_plotly(x, sizing_hints = NULL)
 }
 \arguments{
-\item{x}{\link{ggplot2} object}
+\item{x}{\link[ggplot2:ggplot2-package]{ggplot2::ggplot2} object}
+
+\item{sizing_hints}{\code{object} additional metadata about the natural figure size}
 }
 \value{
 \code{htmltools} compatible object

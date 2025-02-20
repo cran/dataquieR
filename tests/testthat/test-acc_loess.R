@@ -1,4 +1,4 @@
-test_that("acc_loess works without label_col", {
+test_that("acc_loess works without label_col and catches wrong inputs", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
   # testthat::local_reproducible_output()
@@ -16,8 +16,9 @@ test_that("acc_loess works without label_col", {
   }
   skip_on_cran() # slow test
   skip_if_translated()
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -53,16 +54,37 @@ test_that("acc_loess works without label_col", {
   sd1[["v00017"]][1:1000] <- NA
   expect_message(
     res1 <-
-      acc_loess(resp_vars = "v00014", study_data = sd1,
+      acc_loess(resp_vars = "v00014", study_data = sd1, # continuous variable
                 meta_data = meta_data, group_vars = "v00016",
-                time_vars = "v00017") # ===> "LAB_DT_0"
+                time_vars = "v00017")
     ,
     regexp = "Due to missing values in v00016 or v00017, N = 1243 observations were excluded. Due to missing values in v00014, N = 82 observations were excluded"
+  )
+
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "v00008", # categorical variable
+                study_data = study_data,
+                meta_data = meta_data,
+                group_vars = "v00011",
+                time_vars = "v00013")
+    ,
+    regexp = sprintf("(%s|%s|%s)",
+                     paste("Due to missing values in v00011 or v00013,",
+                           "N = 218 observations were excluded. Due to missing",
+                           "values in v00008, N = 270 observations were",
+                           "excluded additionally."),
+                     "Recoded 1 variable.s.",
+                     paste("Levels of the group_var with too few observations",
+                           "were discarded .level USR_599..")
+    )
   )
 
   sd1 <- study_data
   sd1[["v00017"]] <- as.character(sd1[["v00017"]])
   sd1[["v00017"]][1:1000] <- "2001-02-29"
+  sd1[["v00013"]] <- as.character(sd1[["v00013"]])
+  sd1[["v00013"]][1:1000] <- "2001-02-29"
   expect_message(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = sd1,
@@ -75,8 +97,25 @@ test_that("acc_loess works without label_col", {
                            "N = 1243 observations were excluded. Due to",
                            "missing values in v00014, N = 82 observations",
                            "were excluded")),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
+  )
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "v00008", study_data = sd1,
+                meta_data = meta_data, group_vars = "v00011",
+                time_vars = "v00013")
+    ,
+    regexp = sprintf("(%s|%s|%s|%s)",
+                     paste("Data type transformation of .v00013. introduced",
+                           "1000 additional missing values"),
+                     paste("Due to missing values in v00011 or v00013,",
+                           "N = 1150 observations were excluded. Due to missing",
+                           "values in v00008, N = 211 observations were",
+                           "excluded additionally."),
+                     "Recoded 1 variable.s.",
+                     paste("Levels of the group_var with too few observations",
+                           "were discarded .level USR_599..")
+    )
   )
 
   expect_error(
@@ -246,8 +285,9 @@ test_that("acc_loess works with label_col", {
   if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
     withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
   }
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -302,11 +342,102 @@ test_that("acc_loess works with label_col", {
       as.matrix(res1$SummaryPlotList$Loess_fits_combined$data)),
       na.rm = TRUE) - 21.82126)), 50
   )
+
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "VO2_CAPCAT_0", # categorical variable
+                study_data = study_data,
+                meta_data = meta_data,
+                group_vars = "USR_VO2_0",
+                time_vars = "EXAM_DT_0",
+                label_col = LABEL)
+    ,
+    regexp = sprintf("(%s|%s|%s)",
+                     paste("Due to missing values in USR_VO2_0 or EXAM_DT_0,",
+                           "N = 218 observations were excluded. Due to missing",
+                           "values in VO2_CAPCAT_0, N = 270 observations were",
+                           "excluded additionally."),
+                     "Recoded 1 variable.s.",
+                     paste("Levels of the group_var with too few observations",
+                           "were discarded .level USR_599..")
+    )
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$VO2_CAPCAT_0)), "try-error"))
+
+  sd0 <- study_data
+  sd0[["v00007"]][which(sd0[["v00011"]] == "USR_211")] <- 0 # one subgroup has constant values
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "ASTHMA_0", # categorical variable
+                study_data = sd0,
+                meta_data = meta_data,
+                group_vars = "USR_VO2_0",
+                time_vars = "EXAM_DT_0",
+                label_col = LABEL)
+    ,
+    regexp = sprintf("(%s|%s|%s)",
+                     paste("Due to missing values in USR_VO2_0 or EXAM_DT_0,",
+                           "N = 218 observations were excluded. Due to missing",
+                           "values in ASTHMA_0, N = 259 observations were",
+                           "excluded additionally."),
+                     "Recoded 1 variable.s.",
+                     paste("Levels of the group_var with too few observations",
+                           "were discarded .level USR_599..")
+    )
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$ASTHMA_0)), "try-error"))
+
+  md0 <- meta_data
+  md0[[SCALE_LEVEL]][md0[[LABEL]] == "VO2_CAPCAT_0"] <- SCALE_LEVELS$ORDINAL
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "VO2_CAPCAT_0", # categorical variable
+                study_data = study_data,
+                meta_data = md0,
+                group_vars = "USR_VO2_0",
+                time_vars = "EXAM_DT_0",
+                label_col = LABEL)
+    ,
+    regexp = sprintf("(%s|%s|%s)",
+                     paste("Due to missing values in USR_VO2_0 or EXAM_DT_0,",
+                           "N = 218 observations were excluded. Due to missing",
+                           "values in VO2_CAPCAT_0, N = 270 observations were",
+                           "excluded additionally."),
+                     "Recoded 1 variable.s.",
+                     paste("Levels of the group_var with too few observations",
+                           "were discarded .level USR_599..")
+    )
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$VO2_CAPCAT_0)), "try-error"))
+
+  sd0 <- study_data
+  sd0[["v00014"]][which(sd0[["v00016"]] == 4)] <- 2.5 # one subgroup has constant values
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "CRP_0",
+                study_data = sd0,
+                meta_data = meta_data,
+                group_vars = "DEV_NO_0",
+                time_vars = "LAB_DT_0",
+                label_col = LABEL)
+    ,
+    regexp = "Due to missing values in DEV_NO_0 or LAB_DT_0, N = 308 observations were excluded. Due to missing values in CRP_0, N = 121 observations were excluded"
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$CRP_0)), "try-error"))
 })
 
 test_that("acc_loess output matches", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -320,8 +451,8 @@ test_that("acc_loess output matches", {
   if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
     withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
   }
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -343,15 +474,53 @@ test_that("acc_loess output matches", {
   # TODO: skip_if_not(capabilities()["long.double"])
   # skip_on_travis() # vdiffr fails
   skip_if_not_installed("vdiffr")
-  vdiffr::expect_doppelganger("loess facets plot for CRP_0 ok",
+  expect_doppelganger2("loess facets plot for CRP_0 ok",
                               res1$SummaryPlotList$Loess_fits_facets)
-  vdiffr::expect_doppelganger("loess combined plot for CRP_0 ok",
+  expect_doppelganger2("loess combined plot for CRP_0 ok",
                               res1$SummaryPlotList$Loess_fits_combined)
+
+  set.seed(32)
+  nt <- 1000 # = nrow(study_data)/3
+  p1 <- 0.3 # baseline probability
+  p2 <- 0.7 # probability for the deviating examiner (at the end of the observation period or for a subset of observations)
+  sd0 <- study_data
+  sd0[["v00011"]] <- rep(c("USR_321", "USR_590", "USR_213"), 1000)
+  set.seed(32)
+  sd0[["v00007"]][which(sd0[["v00011"]] == "USR_321")] <-
+    rbinom(n = nt, size = 1, prob = p1) # only noise
+  sd0[["v00007"]][which(sd0[["v00011"]] == "USR_590")] <-
+    rbinom(n = nt, size = 1,
+           prob = (p2 - p1)/(nt - 1) * 1:nt + (p1 * nt - p2)/(nt - 1))
+  # increase over time
+  sd0[["v00007"]][which(sd0[["v00011"]] == "USR_213")] <-
+    c(rbinom(n = floor(1/3 * nt), size = 1, prob = p1),
+      rbinom(n = floor(1/3 * nt), size = 1, prob = p2),
+      rbinom(n = nt - 2 * floor(1/3 * nt), size = 1, prob = p1))
+  # switch between p1 and p2
+  md0 <- meta_data
+  md0[["RECODE_CASES"]] <- ""
+  md0[["RECODE_CONTROL"]] <- ""
+  md0[["RECODE_CASES"]][md0$VAR_NAMES == "v00007"] <- "yes"
+  md0[["RECODE_CONTROL"]][md0$VAR_NAMES == "v00007"] <- "no"
+
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "ASTHMA_0", # categorical variable
+                study_data = sd0,
+                meta_data = md0,
+                group_vars = "USR_VO2_0",
+                time_vars = "EXAM_DT_0",
+                label_col = LABEL)
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$ASTHMA_0)), "try-error"))
 })
 
 test_that("acc_loess min_obs_in_subgroups with label_col", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -365,8 +534,8 @@ test_that("acc_loess min_obs_in_subgroups with label_col", {
   if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
     withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
   }
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -388,14 +557,14 @@ test_that("acc_loess min_obs_in_subgroups with label_col", {
         paste("Levels of the group_var with too few observations",
               "were discarded .levels 1, 2, 3, 4, 5.+")
       ),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
 })
 
 test_that("acc_loess with co-vars output matches", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -409,8 +578,8 @@ test_that("acc_loess with co-vars output matches", {
   if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
     withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
   }
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -449,15 +618,69 @@ test_that("acc_loess with co-vars output matches", {
   # TODO: skip_if_not(capabilities()["long.double"])
   # skip_on_travis() # vdiffr fails
   skip_if_not_installed("vdiffr")
-  vdiffr::expect_doppelganger("loess facets plot for CRP_0 with Covars ok",
+  expect_doppelganger2("loess facets plot for CRP_0 with Covars ok",
                               res1$SummaryPlotList$Loess_fits_facets)
-  vdiffr::expect_doppelganger("loess combined plot for CRP_0 with Covars ok",
+  expect_doppelganger2("loess combined plot for CRP_0 with Covars ok",
                               res1$SummaryPlotList$Loess_fits_combined)
+
+  nt <- 1000 # = nrow(study_data)/3
+  p1 <- 0.3 # baseline probability
+  p2 <- 0.7 # probability for the deviating examiner (at the end of the observation period or for a subset of observations)
+  p3 <- 0.5 # deviation due to the co_var (categorical)
+  sd0 <- study_data
+  sd0[["v00011"]] <- rep(c("USR_321", "USR_590", "USR_213"), 1000)
+  sd0[["v00002"]] <- rep(c(0,1), 1500)
+  set.seed(32)
+  sd0[["v00007"]][which(sd0[["v00011"]] == "USR_321" & sd0[["v00002"]] == 0)] <-
+    rbinom(n = nt/2, size = 1, prob = p1) # only noise
+  sd0[["v00007"]][which(sd0[["v00011"]] == "USR_321" & sd0[["v00002"]] == 1)] <-
+    rbinom(n = nt/2, size = 1, prob = p1 * p3) # only noise, with co-var effect
+  sd0[["v00007"]][which(sd0[["v00011"]] == "USR_590")] <-
+    rbinom(n = nt, size = 1,
+           prob = ((p2 - p1)/(nt - 1) * 1:nt + (p1 * nt - p2)/(nt - 1)) *
+             (1 - sd0[["v00002"]][which(sd0[["v00011"]] == "USR_590")] * (1 - p3)))
+  # increase over time
+  sd0[["v00007"]][which(sd0[["v00011"]] == "USR_213" & sd0[["v00002"]] == 0)] <-
+    c(rbinom(n = floor(1/3 * nt/2), size = 1, prob = p1),
+      rbinom(n = floor(1/3 * nt/2), size = 1, prob = p2),
+      rbinom(n = nt/2 - 2 * floor(1/3 * nt/2), size = 1, prob = p1))
+  # switch between p1 and p2
+  sd0[["v00007"]][which(sd0[["v00011"]] == "USR_213" & sd0[["v00002"]] == 1)] <-
+    c(rbinom(n = floor(1/3 * nt/2), size = 1, prob = p1 * p3),
+      rbinom(n = floor(1/3 * nt/2), size = 1, prob = p2 * p3),
+      rbinom(n = nt/2 - 2 * floor(1/3 * nt/2), size = 1, prob = p1 * p3))
+  md0 <- meta_data
+  md0[["RECODE_CASES"]] <- ""
+  md0[["RECODE_CONTROL"]] <- ""
+  md0[["RECODE_CASES"]][md0$VAR_NAMES == "v00007"] <- "yes"
+  md0[["RECODE_CONTROL"]][md0$VAR_NAMES == "v00007"] <- "no"
+
+#   plot_sex0 <- util_plot_categorical_vars(
+#     resp_vars = "ASTHMA_0", time_vars = "EXAM_DT_0", group_vars = "USR_VO2_0",
+#     study_data = sd0[which(sd0[["v00002"]] == 0), ], meta_data = md0)
+#   plot_sex1 <- util_plot_categorical_vars(
+#     resp_vars = "ASTHMA_0", time_vars = "EXAM_DT_0", group_vars = "USR_VO2_0",
+#     study_data = sd0[which(sd0[["v00002"]] == 1), ], meta_data = md0)
+
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "ASTHMA_0", # categorical variable
+                study_data = sd0,
+                meta_data = md0,
+                group_vars = "USR_VO2_0",
+                time_vars = "EXAM_DT_0",
+                co_vars = "SEX_0",
+                label_col = LABEL)
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$ASTHMA_0)), "try-error"))
 })
 
-test_that("acc_loess works for all time span ranges", {
+test_that("acc_loess works for all time ranges", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -472,8 +695,8 @@ test_that("acc_loess works for all time span ranges", {
     withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
   }
   skip_on_cran() # slow test
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -505,6 +728,48 @@ test_that("acc_loess works for all time span ranges", {
   )
 
   sd0 <- study_data
+  sd0[["v00017"]][1:3] <- sd0[["v00017"]][1:3] - 2000 * 60 * 60 * 24 * 365
+  # extreme gap, unnoticed typo in year (inspired from real-world data case)
+  md0 <- meta_data
+  md0[["HARD_LIMITS"]][md0[["VAR_NAMES"]] == "v00017"] <- NA
+  sd0[["v00013"]][1:3] <- sd0[["v00013"]][1:3] - 2000 * 60 * 60 * 24 * 365
+  md0[["HARD_LIMITS"]][md0[["VAR_NAMES"]] == "v00013"] <- NA
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "CRP_0", study_data = sd0,
+                meta_data = md0, group_vars = "DEV_NO_0",
+                time_vars = "LAB_DT_0",
+                label_col = LABEL,
+                comparison_lines = list(type = "quartiles",
+                                        color = "red",
+                                        linetype = 3)),
+    regexp = "Due to missing values in DEV_NO_0 or LAB_DT_0, N = 308 observations were excluded. Due to missing values in CRP_0, N = 131 observations were excluded"
+  )
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$CRP_0)), "try-error"))
+
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "v00008", # categorical variable
+                study_data = sd0, meta_data = md0,
+                group_vars = "v00011",
+                time_vars = "v00013")
+    ,
+    regexp = sprintf("(%s|%s|%s)",
+                     paste("Due to missing values in v00011 or v00013,",
+                           "N = 218 observations were excluded. Due to missing",
+                           "values in v00008, N = 270 observations were",
+                           "excluded additionally."),
+                     "Recoded 1 variable.s.",
+                     paste("Levels of the group_var with too few observations",
+                           "were discarded .level USR_599..")
+    )
+  )
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$v00008)), "try-error"))
+
+
+  sd0 <- study_data
   expect_message(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
@@ -516,8 +781,7 @@ test_that("acc_loess works for all time span ranges", {
       "(%s|%s)",
       "Argument resolution is not specified correctly and is set to 80 instead",
       "Due to missing values in DEV_NO_0 or LAB_DT_0, N = 308 observations were excluded. Due to missing values in CRP_0, N = 131 observations were excluded"
-    ),
-  all = TRUE
+    )
   )
 
   expect_silent(
@@ -567,8 +831,7 @@ test_that("acc_loess works for all time span ranges", {
       paste("Levels of the group_var with too few observations were",
             "discarded .levels 3, 4.+")
     ),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
   expect_true("SummaryPlotList" %in% names(acc_test))
   expect_lt(
@@ -622,6 +885,7 @@ test_that("acc_loess works for all time span ranges", {
 test_that("acc_loess output matches plot_format=auto", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -635,8 +899,8 @@ test_that("acc_loess output matches plot_format=auto", {
   if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
     withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
   }
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -675,15 +939,16 @@ test_that("acc_loess output matches plot_format=auto", {
   # skip_on_travis() # vdiffr fails
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
-  vdiffr::expect_doppelganger("loess plot for CRP_0 AUTO1 ok",
+  expect_doppelganger2("loess plot for CRP_0 AUTO1 ok",
                               res1$SummaryPlotList$CRP_0)
-  vdiffr::expect_doppelganger("loess plot for CRP_0 AUTO2 ok",
+  expect_doppelganger2("loess plot for CRP_0 AUTO2 ok",
                               res2$SummaryPlotList$CRP_0)
 })
 
 test_that("acc_loess output matches plot_format=combined", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -697,8 +962,8 @@ test_that("acc_loess output matches plot_format=combined", {
   if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
     withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
   }
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -720,13 +985,14 @@ test_that("acc_loess output matches plot_format=combined", {
   # skip_on_travis() # vdiffr fails
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
-  vdiffr::expect_doppelganger("loess combined plot for CRP_0 COMBINED ok",
+  expect_doppelganger2("loess combined plot for CRP_0 COMBINED ok",
                               res1$SummaryPlotList$CRP_0)
 })
 
 test_that("acc_loess output matches plot_format=facets", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -740,8 +1006,8 @@ test_that("acc_loess output matches plot_format=facets", {
   if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
     withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
   }
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -763,13 +1029,14 @@ test_that("acc_loess output matches plot_format=facets", {
   # skip_on_travis() # vdiffr fails
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
-  vdiffr::expect_doppelganger("loess facets plot for CRP_0 FACETS ok",
+  expect_doppelganger2("loess facets plot for CRP_0 FACETS ok",
                               res1$SummaryPlotList$CRP_0)
 })
 
 test_that("acc_loess output matches plot_format=both", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -783,8 +1050,8 @@ test_that("acc_loess output matches plot_format=both", {
   if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
     withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
   }
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -806,15 +1073,16 @@ test_that("acc_loess output matches plot_format=both", {
   # skip_on_travis() # vdiffr fails
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
-  vdiffr::expect_doppelganger("loess facets plot for CRP_0 BOTH ok",
+  expect_doppelganger2("loess facets plot for CRP_0 BOTH ok",
                               res1$SummaryPlotList$Loess_fits_facets)
-  vdiffr::expect_doppelganger("loess combined plot for CRP_0 BOTH ok",
+  expect_doppelganger2("loess combined plot for CRP_0 BOTH ok",
                               res1$SummaryPlotList$Loess_fits_combined)
 })
 
 test_that("acc_loess output matches plot_format=invalid1", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -828,8 +1096,8 @@ test_that("acc_loess output matches plot_format=invalid1", {
   if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
     withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
   }
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -847,6 +1115,7 @@ test_that("acc_loess output matches plot_format=invalid1", {
 test_that("acc_loess output matches plot_format=invalid2", {
   skip_on_cran() # slow
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -860,8 +1129,8 @@ test_that("acc_loess output matches plot_format=invalid2", {
   if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
     withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
   }
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -874,4 +1143,185 @@ test_that("acc_loess output matches plot_format=invalid2", {
     ,
     regexp = "Need exactly one element in argument plot_format, got 10"
   )
+})
+
+test_that("acc_loess works without a grouping variable", {
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                       dataquieR.ERRORS_WITH_CALLER = TRUE,
+                       dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                       dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
+  skip_if_translated()
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  meta_data <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "v00014", # continuous variable
+                study_data = study_data,
+                meta_data = meta_data,
+                time_vars = "v00017",
+                label_col = LABEL)
+    ,
+    regexp = "Due to missing values in LAB_DT_0, N = 60 observations were excluded. Due to missing values in CRP_0, N = 241 observations were excluded"
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$CRP_0)), "try-error"))
+
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "v00008", # categorical variable
+                study_data = study_data,
+                meta_data = meta_data,
+                time_vars = "v00013",
+                label_col = LABEL)
+    ,
+    regexp = sprintf("(%s|%s)",
+                     paste("Due to missing values in EXAM_DT_0,",
+                           "N = 60 observations were excluded. Due to missing",
+                           "values in VO2_CAPCAT_0, N = 345 observations were",
+                           "excluded additionally."),
+                     "Recoded 1 variable.s."
+    )
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$VO2_CAPCAT_0)), "try-error"))
+})
+
+test_that("optional features for acc_loess work as expected", {
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  # testthat::local_reproducible_output()
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                       dataquieR.ERRORS_WITH_CALLER = TRUE,
+                       dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                       dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  for (i in 1:2) {
+    # This command failed in the first try, but worked in the second try for me.
+    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
+    # Linux, macOS
+  }
+  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
+    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
+  }
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  meta_data <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "CRP_0", study_data = study_data,
+                meta_data = meta_data, group_vars = "DEV_NO_0",
+                time_vars = "LAB_DT_0", co_vars = c("AGE_0", "SEX_0"),
+                label_col = LABEL, mark_time_points = TRUE,
+                plot_observations = TRUE)
+    ,
+    regexp = "Due to missing values in DEV_NO_0, AGE_0, SEX_0 or LAB_DT_0, N = 308 observations were excluded. Due to missing values in CRP_0, N = 131 observations were excluded"
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$CRP_0)), "try-error"))
+
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "CRP_0", study_data = study_data,
+                meta_data = meta_data, group_vars = "DEV_NO_0",
+                time_vars = "LAB_DT_0", co_vars = c("AGE_0", "SEX_0"),
+                label_col = LABEL, enable_GAM = TRUE)
+    ,
+    regexp = "Due to missing values in DEV_NO_0, AGE_0, SEX_0 or LAB_DT_0, N = 308 observations were excluded. Due to missing values in CRP_0, N = 131 observations were excluded"
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$CRP_0)), "try-error"))
+
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "v00008", # categorical variable
+                study_data = study_data,
+                meta_data = meta_data,
+                time_vars = "v00013",
+                label_col = LABEL, enable_GAM = TRUE)
+    ,
+    regexp = sprintf("(%s|%s)",
+                     paste("Due to missing values in EXAM_DT_0,",
+                           "N = 60 observations were excluded. Due to missing",
+                           "values in VO2_CAPCAT_0, N = 345 observations were",
+                           "excluded additionally."),
+                     "Recoded 1 variable.s."
+    )
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$VO2_CAPCAT_0)), "try-error"))
+
+  sd0 <- study_data
+  sd0[["v00007"]][which(sd0[["v00011"]] == "USR_211")] <- 0 # one subgroup has constant values
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "ASTHMA_0", # categorical variable
+                study_data = sd0,
+                meta_data = meta_data,
+                group_vars = "USR_VO2_0",
+                time_vars = "EXAM_DT_0",
+                label_col = LABEL,
+                exclude_constant_subgroups = TRUE)
+    ,
+    regexp = sprintf("(%s|%s|%s|%s)",
+                     paste("Due to missing values in USR_VO2_0 or EXAM_DT_0,",
+                           "N = 218 observations were excluded. Due to missing",
+                           "values in ASTHMA_0, N = 259 observations were",
+                           "excluded additionally."),
+                     "Recoded 1 variable.s.",
+                     paste("Levels of the group_var with too few observations",
+                           "were discarded .level USR_599.."),
+                     paste("Levels of the group_var with constant values",
+                           "were discarded .level USR_211..")
+    )
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$ASTHMA_0)), "try-error"))
+
+  sd0 <- study_data
+  sd0[["v00014"]][which(sd0[["v00016"]] == 4)] <- 2.5 # one subgroup has constant values
+  expect_message(
+    res1 <-
+      acc_loess(resp_vars = "CRP_0",
+                study_data = sd0,
+                meta_data = meta_data,
+                group_vars = "DEV_NO_0",
+                time_vars = "LAB_DT_0",
+                label_col = LABEL,
+                exclude_constant_subgroups = TRUE)
+    ,
+    regexp = sprintf("(%s|%s)",
+                     paste("Due to missing values in DEV_NO_0 or LAB_DT_0,",
+                           "N = 308 observations were excluded.",
+                           "Due to missing values in CRP_0, N = 121",
+                           "observations were excluded additionally"),
+                     paste("Levels of the group_var with constant values",
+                           "were discarded .level 4..")
+    )
+  )
+  expect_true("SummaryPlotList" %in% names(res1))
+  expect_false(
+    inherits(try(ggplot_build(res1$SummaryPlotList$CRP_0)), "try-error"))
 })

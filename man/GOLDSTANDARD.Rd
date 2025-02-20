@@ -27,10 +27,12 @@ Other meta_data_cross:
 \code{\link{CONTRADICTION_TERM}},
 \code{\link{CONTRADICTION_TYPE}},
 \code{\link{DATA_PREPARATION}},
+\code{\link{MULTIVARIATE_OUTLIER_CHECK}},
 \code{\link{MULTIVARIATE_OUTLIER_CHECKTYPE}},
 \code{\link{N_RULES}},
 \code{\link{REL_VAL}},
 \code{\link{VARIABLE_LIST}},
+\code{\link{meta_data_cross}},
 \code{\link{util_normalize_cross_item}()}
 }
 \concept{meta_data_cross}

@@ -1,16 +1,15 @@
 #' Estimate marginal means, see [emmeans::emmeans]
 #'
 #' @description
-#' margins does calculations for quality indicator
-#' Unexpected distribution wrt location (link). Therefore we pursue a combined
-#' approach of descriptive and model-based statistics to investigate differences
-#' across the levels of an auxiliary variable.
+#' This function examines the impact of so-called process variables on a
+#' measurement variable. This implementation combines a descriptive and a
+#' model-based approach. Process variables that can be considered in this
+#' implementation must be categorical. It is currently not possible to
+#' consider more than one process variable within one function call.
+#' The measurement variable can be adjusted for (multiple) covariables, such as
+#' age or sex, for example.
 #'
-#' CAT: Unexpected distribution w.r.t. location
-#'
-#' Marginal means
-#'
-#' Marginal means rests on model based results, i.e. a significantly different
+#' Marginal means rests on model-based results, i.e. a significantly different
 #' marginal mean depends on sample size. Particularly in large studies, small
 #' and irrelevant differences may become significant. The contrary holds if
 #' sample size is low.
@@ -23,96 +22,136 @@
 #' Selecting the appropriate distribution is complex. Dozens of continuous,
 #' discrete or mixed distributions are conceivable in the context of
 #' epidemiological data. Their exact exploration is beyond the scope of this
-#' data quality approach. The function above uses the help function
-#' \link{util_dist_selection}
-#' which discriminates four cases:
+#' data quality approach. The present function uses the help function
+#' \link{util_dist_selection}, the assigned `SCALE_LEVEL` and the `DATA_TYPE`
+#' to discriminate the following cases:
 #' \itemize{
 #'   \item continuous data
 #'   \item binary data
-#'   \item count data with <= 20 categories
-#'   \item count data with > 20 categories
+#'   \item count data with <= 20 distinct values
+#'   \item count data with > 20 distinct values (treated as continuous)
+#'   \item nominal data
+#'   \item ordinal data
 #'  }
-#'  Nonetheless, only three different plot types are generated. The fourth case
-#'  is treated as continuous data. This is in fact a coarsening of the original
-#'  data but for the purpose of clarity this approach is chosen.
+#' Continuous data and count data with more than 20 distinct values are analyzed
+#' by linear models. Count data with up to 20 distinct values are modeled by a
+#' Poisson regression. For binary data, the implementation uses logistic
+#' regression.
+#' Nominal response variables will either be transformed to binary variables or
+#' analyzed by multinomial logistic regression models. The latter option is only
+#' available if the argument `dichotomize_categorical_resp` is set to `FALSE`
+#' and if the package `nnet` is installed. The transformation to a binary
+#' variable can be user-specified using the metadata columns `RECODE_CASES`
+#' and/or `RECODE_CONTROL`. Otherwise, the most frequent category will be
+#' assigned to cases and the remaining categories to control.
+#' For ordinal response variables, the argument `cut_off_linear_model_for_ord`
+#' controls whether the data is analyzed in the same way as continuous data:
+#' If every level of the variable has at least as many observations as specified
+#' in the argument, the data will be analyzed by a linear model. Otherwise,
+#' the data will be modeled by a ordered regression, if the package `ordinal`
+#' is installed.
 #'
 #' @keywords accuracy
 #'
-#' @param resp_vars [variable] the name of the continuous measurement variable
-#' @param group_vars [variable list] len=1-1. the name of the observer, device or
-#'                                   reader variable
+#' @inheritParams .template_function_indicator
+#'
+#' @param resp_vars  [variable] the name of the measurement variable
+#' @param group_vars [variable list] len=1-1. the name of the observer, device
+#'                                   or reader variable
 #' @param co_vars [variable list] a vector of covariables, e.g. age and sex for
-#'                                adjustment
-#' @param threshold_type [enum] empirical | user | none. In case empirical is
-#'                       chosen a multiplier of the scale measure is used,
-#'                       in case of user a value of the mean or probability
-#'                       (binary data) has to be defined see Implementation
-#'                       and use of thresholds. In case of none, no thresholds
-#'                       are displayed and no flagging of
-#'                       unusual group levels is applied.
-#' @param threshold_value [numeric] a multiplier or absolute value see
-#'                                  Implementation and use of thresholds
-#' @param min_obs_in_subgroup [integer] from=0. optional argument if a
-#'                                      "group_var" is used.
-#'                                      This argument specifies the
-#'                                      minimum no. of observations that is
-#'                                      required to include a subgroup (level)
-#'                                      of the "group_var" in
-#'                                      the analysis. Subgroups with less
-#'                                      observations are excluded. The
-#'                                      default is 5.
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
+#'                              adjustment
+#' @param threshold_type [enum] empirical | user | none. In case `empirical` is
+#'                       chosen, a multiplier of the scale measure is used.
+#'                       In case of `user`, a value of the mean or probability
+#'                       (binary data) has to be defined
+#'                       see [`Implementation and use of thresholds`](https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_margins.html#Implementation_and_use_of_thresholds) in the  online documentation).
+#'                       In case of `none`, no thresholds are displayed and no
+#'                       flagging of unusual group levels is applied.
+#' @param threshold_value [numeric] a multiplier or absolute value (see
+#'                       [`Implementation and use of thresholds`](https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_margins.html#Implementation_and_use_of_thresholds) in the
+#'                       online documentation).
+#' @param min_obs_in_subgroup [integer] from=0. This optional argument specifies
+#'                       the minimum number of observations that is required to
+#'                       include a subgroup (level) of the `group_var` in the
+#'                       analysis. Subgroups with less observations are
+#'                       excluded.
+#' @param min_obs_in_cat [integer] This optional argument specifies the minimum
+#'                        number of observations that is required to include
+#'                        a category (level) of the outcome (`resp_vars`) in
+#'                        the analysis. Categories with less observations are
+#'                        combined into one group. If the collapsed category
+#'                        contains less observations than required, it will be
+#'                        excluded from the analysis.
+#' @param dichotomize_categorical_resp [logical] Should nominal response
+#'                        variables always be transformed to binary variables?
+#' @param cut_off_linear_model_for_ord [integer] from=0. This optional argument
+#'                        specifies the minimum number of observations for
+#'                        individual levels of an ordinal outcome (`resp_var`)
+#'                        that is required to run a linear model instead of an
+#'                        ordered regression (i.e., a cut-off value above which
+#'                        linear models are considered a good approximation).
+#'                        The argument can be set to `NULL` if ordered
+#'                        regression models are preferred for ordinal data in
+#'                        any case.
+#' @param sort_group_var_levels [logical] Should the levels of the grouping
+#'                        variable be sorted descending by the number of
+#'                        observations? Note that ordinal grouping variables
+#'                        will not be reordered.
+#' @param include_numbers_in_figures [logical] Should the figure report the
+#'                        number of observations for each level of the grouping
+#'                        variable?
+#' @param n_violin_max [integer] from=0. This optional argument specifies
+#'                       the maximum number of levels of the `group_var` for
+#'                       which violin plots will be shown in the figure.
 #'
 #' @return a list with:
-#'   - SummaryTable: data frame underlying the plot
-#'   - SummaryData: data frame
-#'   - SummaryPlot: ggplot2 margins plot
+#'   - `SummaryTable`: [data.frame] underlying the plot
+#'   - `ResultData`: [data.frame]
+#'   - `SummaryPlot`: [ggplot2::ggplot()] margins plot
+#'
 #' @export
-#' @importFrom ggplot2 ggplot geom_violin geom_boxplot geom_pointrange
-#'                     element_blank element_text element_text
-#'                     geom_pointrange geom_density coord_flip annotate
-#'                     ggplot_build theme_minimal labs theme scale_colour_manual
-#'                     geom_count aes geom_vline theme_set
-#' @import patchwork
+
 #' @importFrom utils tail head
 #'
-#' @examples
-#' \dontrun{
-#' # runs spuriously slow on rhub
-#' load(system.file("extdata/study_data.RData", package = "dataquieR"))
-#' load(system.file("extdata/meta_data.RData", package = "dataquieR"))
-#' acc_margins(resp_vars = "DBP_0",
-#'             study_data = study_data,
-#'             meta_data = meta_data,
-#'             group_vars = "USR_BP_0",
-#'             label_col = LABEL,
-#'             co_vars = "AGE_0")
-#' }
 #' @seealso
 #' [Online Documentation](
 #' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_margins.html
 #' )
-acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
-                        threshold_type = NULL, threshold_value,
+acc_margins <- function(resp_vars = NULL,
+                        group_vars = NULL,
+                        co_vars = NULL,
+                        study_data,
+                        label_col,
+                        item_level = "item_level",
+                        threshold_type = "empirical",
+                        threshold_value,
                         min_obs_in_subgroup = 5,
-                        study_data, meta_data, label_col
-                        # TODO: flip_mode =
-) {
+                        min_obs_in_cat = 5,
+                        dichotomize_categorical_resp = TRUE,
+                        cut_off_linear_model_for_ord = 10,
+                        meta_data = item_level,
+                        meta_data_v2,
+                        sort_group_var_levels =
+                          getOption("dataquieR.acc_margins_sort",
+                                    dataquieR.acc_margins_sort_default),
+                        include_numbers_in_figures =
+                          getOption("dataquieR.acc_margins_num",
+                                    dataquieR.acc_margins_num_default),
+                        n_violin_max =
+                          getOption("dataquieR.max_group_var_levels_with_violins",
+                                    dataquieR.max_group_var_levels_with_violins_default)) { # TODO: flip_mode =
+  #prep for meta_data_v2
+  util_maybe_load_meta_data_v2()
 
   # to avoid "no visible binding for global variable ‘sample_size’"
   sample_size <- NULL
-
   # preps ----------------------------------------------------------------------
   # map metadata to study data
-  prep_prepare_dataframes(.replace_hard_limits = TRUE)
+  prep_prepare_dataframes(.replace_hard_limits = TRUE,
+                          .apply_factor_metadata = TRUE)
 
   util_correct_variable_use("resp_vars",
-                            need_type = "integer|float",
-                            need_scale = "!na | !nominal | !ordinal",
+                            need_scale = "!na",
                             min_distinct_values = 2)
 
   util_correct_variable_use("group_vars",
@@ -124,7 +163,8 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
                             allow_more_than_one = TRUE,
                             allow_all_obs_na = FALSE,
                             allow_null = TRUE,
-                            allow_na = TRUE)
+                            allow_na = TRUE,
+                            allow_any_obs_na = TRUE)
 
   co_vars <- na.omit(co_vars)
   if (is.null(co_vars)) {
@@ -142,9 +182,39 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
                  dQuote(dollar), applicability_problem = TRUE,
                  intrinsic_applicability_problem = FALSE)
   }
+  original_resp_vars <- resp_vars
+  original_group_vars <- group_vars
+  original_co_vars <- co_vars
   resp_vars <- gsub("$", dollar, fixed = TRUE, resp_vars)
   group_vars <- gsub("$", dollar, fixed = TRUE, group_vars)
   co_vars <- gsub("$", dollar, fixed = TRUE, co_vars)
+
+  if (length(setdiff(co_vars, "1")) > 0) {
+    lb <- prep_get_labels(original_co_vars,
+                          item_level = meta_data,
+                          label_col = label_col,
+                          label_class = "LONG",
+                          resp_vars_match_label_col_only = TRUE)
+    if (length(lb) < 4) {
+      adjusted_hint <- sprintf("adjusted for %s", paste0(lb, collapse = ", "))
+    } else {
+      adjusted_hint <- sprintf("adjusted for %d variables", length(lb))
+    }
+  } else {
+    adjusted_hint <- ""
+  }
+
+  title <- paste(prep_get_labels(original_group_vars,
+                                 item_level = meta_data,
+                                 label_col = label_col,
+                                 label_class = "LONG",
+                                 resp_vars_match_label_col_only = TRUE),
+                 "margins in",
+                 prep_get_labels(original_resp_vars,
+                                 item_level = meta_data,
+                                 label_col = label_col,
+                                 label_class = "LONG",
+                                 resp_vars_match_label_col_only = TRUE))
 
   util_expect_scalar(min_obs_in_subgroup,
                      check_type = util_is_numeric_in(min = 5,
@@ -164,27 +234,19 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
                        x1
                      })
 
-  # Label assignment
-  if (!is.null(group_vars)) {
-    # all labelled variables
-    levlabs <- meta_data$VALUE_LABELS[meta_data[[label_col]] %in% group_vars]
+  util_expect_scalar(min_obs_in_cat,
+                     check_type = util_is_numeric_in(min = 1,
+                                                     whole_num = TRUE,
+                                                     finite = TRUE))
 
-    # only variables with labels
-
-    if (!all(is.na(levlabs))) {
-      gvs_ll <- group_vars
-      # assign labels only if assignment operator is found and the variable has
-      # labels
-      if (grepl("=", levlabs)) {
-        ds1[[gvs_ll]] <- util_assign_levlabs(
-          variable = ds1[[gvs_ll]],
-          string_of_levlabs = levlabs,
-          splitchar = SPLIT_CHAR,
-          assignchar = " = "
-        )
-      }
-    }
+  util_expect_scalar(sort_group_var_levels, check_type = is.logical)
+  if (meta_data[[SCALE_LEVEL]][
+    meta_data[[label_col]] == original_group_vars] %in% SCALE_LEVELS$ORDINAL) {
+    sort_group_var_levels <- FALSE
   }
+  util_expect_scalar(include_numbers_in_figures, check_type = is.logical)
+  util_expect_scalar(n_violin_max,
+                     check_type = util_is_numeric_in(min = 0))
 
   # omit missing values and unnecessary variables
   n_prior <- nrow(ds1)
@@ -211,17 +273,37 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
       n_prior - n_post, " observations were excluded",
       ifelse(nchar(msg) > 0, " additionally.", "."))
   }
-  if (nchar(msg) > 0) {
+
+  if (length(msg) > 0 && nchar(msg) > 0) {
     util_message(trimws(msg),
                  applicability_problem = FALSE)
   }
 
-  # convert group_vars to factor
-  ds1[[group_vars]] <- factor(ds1[[group_vars]])
+  if (!(prod(dim(ds1)))) {
+    util_error("No data left after data preparation.")
+  }
 
-  # resp_vars should not be coded as factor
-  if (is.factor(ds1[[resp_vars]])) {
-    ds1[[resp_vars]] <- as.numeric(ds1[[resp_vars]])
+  # ensure that included levels of the grouping variable have the specified
+  # minimum number of observations
+  check_df <- util_table_of_vct(ds1[[group_vars]])
+  critical_levels <- levels(check_df$Var1)[check_df$Freq <
+                                             min_obs_in_subgroup]
+  if (length(critical_levels) > 0) {
+    util_message("Levels %s were excluded due to less than %d observations.",
+                 paste0(c(vapply(head(critical_levels, 10), dQuote, ""),
+                          if (length(critical_levels) <= 10)
+                            character(0) else "..."),
+                        collapse = ", "),
+                 min_obs_in_subgroup,
+                 applicability_problem = FALSE)
+    # exclude levels with too few observations
+    ds1 <- ds1[!(ds1[[group_vars]] %in% critical_levels), ]
+    levels(ds1[[group_vars]])[
+      which(levels(ds1[[group_vars]]) %in% critical_levels)] <- NA
+  }
+  ds1 <- ds1[complete.cases(ds1), , drop = FALSE]
+  if (nrow(ds1) == 0) {
+    util_error("No data left after data preparation.")
   }
 
   if (!missing(threshold_value)) {
@@ -272,359 +354,411 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     threshold_value <- 1
   }
 
-  # summary data frame of observations by level of random effect and non-missing
-  # values in resp_vars
-  check_df <- util_table_of_vct(ds1[[group_vars]])
-
-  # Consider remaining obs/level after na.rm() ---------------------------------
-  # too few observations in >1 level of group_vars
-  if (min(check_df[, 2]) < min_obs_in_subgroup) {
-    critical_levels <- levels(check_df$Var1)[check_df$Freq <
-                                               min_obs_in_subgroup]
-    util_message(paste0(c(
-      "The following levels:", head(critical_levels, 100),
-      if (length(critical_levels) > 100)  {", ..." }, "have <",
-      min_obs_in_subgroup, " observations and will be removed."
-    ),
-    collapse = " "
-    ), applicability_problem = FALSE)
-
-    ds1 <- ds1[!(ds1[[group_vars]] %in% critical_levels), ]
+  # check first if there is a user-specified recoding
+  if (("RECODE_CASES" %in% colnames(meta_data) &&
+       !util_empty(meta_data[meta_data[[label_col]] == resp_vars, RECODE_CASES])) ||
+      ("RECODE_CONTROL" %in% colnames(meta_data) &&
+       !util_empty(meta_data[meta_data[[label_col]] == resp_vars, RECODE_CONTROL]))) {
+    rvs_bin <- util_dichotomize(
+      study_data = ds1[, resp_vars, drop = FALSE],
+      meta_data = meta_data,
+      label_col = label_col)
+    rvs_bin_note <- attr(rvs_bin, "Dichotomization")[[resp_vars]]
+    ds1[[resp_vars]] <- unlist(rvs_bin)
+    ds1 <- ds1[complete.cases(ds1), , drop = FALSE]
   }
 
-  if (!(prod(dim(ds1)))) {
-    util_error("No data left after data preparation.")
-  }
-
-  # Modelling ------------------------------------------------------------------
-  # if no co_vars are defined for adjustment only the intercept is modelled
-  if (length(co_vars) == 0) {
-    co_vars <- "1"
-  } else {
-    co_vars <- util_bQuote(co_vars)
-  }
-
-  # build model formula
-  fmla <- as.formula(paste0(
-    paste0(util_bQuote(resp_vars), "~"),
-    paste0(
-      paste0(co_vars, collapse = " + "),
-      " + ",
-      util_bQuote(group_vars)
-    )
-  ))
-
-  # choose a suitable modeling approach
-  var_prop <- util_dist_selection(ds1[[resp_vars]])
+  var_prop <- util_dist_selection(ds1[, resp_vars, drop = FALSE])
   if (var_prop$NDistinct < 2) {
     util_error("The response variable is constant after data preparation.",
                applicability_problem = TRUE,
                intrinsic_applicability_problem = TRUE)
   }
+
+  # call utility functions based on scale and data properties ------------------
   var_scale <- meta_data[[SCALE_LEVEL]][meta_data[[label_col]] == resp_vars]
   var_dtype <- meta_data[[DATA_TYPE]][meta_data[[label_col]] == resp_vars]
-  if (var_dtype == DATA_TYPES$INTEGER &
-      var_prop$NCategory > 2 & var_prop$NCategory <= 20 &
-      # TODO: Count data can exceed 20, of course! How do we identify count
-      # data here? Maybe include a pre-test to choose between poisson and
-      # linear regression? Or also consider negative binomial regression here?
-      !var_prop$AnyNegative) {
-    method <- "poisson"
-  } else if (!is.na(var_prop$NCategory) && var_prop$NCategory == 2) {
-    method <- "logistic"
-  } else if (var_scale %in% c(SCALE_LEVELS$RATIO, SCALE_LEVELS$INTERVAL)) {
-    method <- "linear"
-  } else {
-    util_error("No suitable method implemented yet, sorry.")
-  }
 
-  if (method == "linear") {
-    # call linear model
-    model <- lm(fmla, data = ds1)
-  } else if (method == "poisson") {
-    # call poisson model
-    model <- glm(fmla, data = ds1, family = poisson(link = "log"))
-  } else {
+  ###1st CASE: there are only 2 distinct values
+  if (var_prop$NDistinct == 2) {
+    if (nrow(ds1) < 2 * min_obs_in_cat) {
+      util_error("Not enough data (after data preparation).",
+                 applicability_problem = TRUE,
+                 intrinsic_applicability_problem = TRUE)
+    }
     # recode binary variable to 0/1, if needed
     if (!all(unique(ds1[[resp_vars]]) %in% c(0, 1))) {
       bin_codes <- names(sort(table(ds1[[resp_vars]])))
-      mf <- as.numeric(tail(bin_codes, 1))
+      mf <- tail(bin_codes, 1)
+      lf <- head(bin_codes, 1)
       # https://stackoverflow.com/questions/12187187/
       #     how-to-retrieve-the-most-repeated-value-in-a-
       #                                         column-present-in-a-data-frame
-      ds1[[resp_vars]][ds1[[resp_vars]] == mf] <- 0
-      # could be other than 1
-      lf <- as.numeric(head(bin_codes, 1))
-      ds1[[resp_vars]][ds1[[resp_vars]] == lf] <- 1
-    }
-    # call logistic regression
-    model <- glm(fmla, data = ds1, family = binomial(link = "logit"))
-  }
-
-  # TODO: check whether the following problem still occurs:
-  # emmeans::emmeans appears not working correctly for the overall mean. Somehow
-  # the package assumes an interaction term although there isn't.
-  # browser()
-  # call emmeans::emmeans
-  res_df <- data.frame(emmeans::emmeans(model, group_vars, type = "response"),
-                       check.names = FALSE)
-  summary_ds <- as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
-                                                                 unname(group_vars)), sample_size = dplyr::n()))
-
-  res_df<- merge(res_df, summary_ds, by = group_vars, all.x = TRUE)
-
-
-
-  if (method == "linear") {
-    res_df <- dplyr::rename(res_df, c("margins" = "emmean", "LCL" = "lower.CL",
-                                      "UCL" = "upper.CL"))
-  } else if (method == "poisson") {
-    res_df <- dplyr::rename(res_df, c("margins" = "rate", "LCL" = "asymp.LCL",
-                                      "UCL" = "asymp.UCL"))
-  } else {
-    res_df <- dplyr::rename(res_df, c("margins" = "prob", "LCL" = "asymp.LCL",
-                                      "UCL" = "asymp.UCL"))
-  }
-
-  # adjusted overall mean
-  omv <- data.frame(emmeans::emmeans(model, "1", type = "response"))
-  if (method == "linear") {
-    omv <- dplyr::rename(omv, c("margins" = "emmean", "LCL" = "lower.CL",
-                                "UCL" = "upper.CL"))
-  } else if (method == "poisson") {
-    omv <- dplyr::rename(omv, c("margins" = "rate", "LCL" = "asymp.LCL",
-                                "UCL" = "asymp.UCL"))
-  } else {
-    omv <- dplyr::rename(omv, c("margins" = "prob", "LCL" = "asymp.LCL",
-                                "UCL" = "asymp.UCL"))
-  }
-
-  res_df$overall <- omv$margins
-
-  # Thresholds -----------------------------------------------------------------
-  if (threshold_type %in% c("empirical", "none")) {
-    if (method == "linear") {
-      th <- sd(ds1[[resp_vars]])
-      parn <- c(
-        paste("-", threshold_value, "TH", sep = ""), "Mean",
-        paste("+", threshold_value, "TH", sep = "")
-      )
-    } else if (method == "poisson") {
-      # th <- exp(as.numeric(coefficients(glm(v101 ~ 1,
-      #    family = poisson(link="log"), data = expl_df))))
-      th <- 1
-      parn <- c(
-        paste("-", threshold_value, "TH", sep = ""), "Mean",
-        paste("+", threshold_value, "TH", sep = "")
-      )
+      col <- NA
+      col[ds1[[resp_vars]] == mf] <- 0
+      col[ds1[[resp_vars]] == lf] <- 1
+      ds1[[resp_vars]] <- col
+      rvs_bin_note <- paste(
+        paste("Cases (1):", lf),
+        paste("Control (0):", mf),
+        sep = ". ")
     } else {
-      th <- mean(ds1[[resp_vars]])
-      th <- th * (1 - th)
-      parn <- c(
-        paste("-", threshold_value, "TH", sep = ""), "Prob.",
-        paste("+", threshold_value, "TH", sep = "")
-      )
+      rvs_bin_note <- "Cases (1): 1. Control (0): 0"
+    }
+    # run margins function for binary response
+    mar_out <- util_margins_bin(resp_vars = resp_vars,
+                                group_vars = group_vars,
+                                co_vars = co_vars,
+                                threshold_type = threshold_type,
+                                threshold_value = threshold_value,
+                                min_obs_in_subgroup = min_obs_in_subgroup,
+                                min_obs_in_cat = min_obs_in_cat,
+                                caption = rvs_bin_note,
+                                ds1 = ds1,
+                                label_col = label_col,
+                                adjusted_hint = adjusted_hint,
+                                title = title,
+                                sort_group_var_levels = sort_group_var_levels)
+    obj1<- ggplot2::ggplot_build(mar_out$plot)
+    obj1_data <- util_rbind(data_frames_list = obj1$data)
+    min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+    max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+    range_values <- max_value - min_value
+
+ #   if (exists("mf")) {
+#      no_char_y <- max(nchar(c(mf, lf)))
+#    } else {
+ #     no_char_y <- 1
+#    }
+    no_char_y <- nchar(range_values)
+    rm(obj1, obj1_data)
+    type_plot <- "count_plot"
+
+
+    ###2nd CASE: NOMINAL (2 possible results)
+  } else if (var_scale == SCALE_LEVELS$NOMINAL) {
+    if (nrow(ds1) < 2 * min_obs_in_cat) {
+      util_error("Not enough data (after data preparation).",
+                 applicability_problem = TRUE,
+                 intrinsic_applicability_problem = TRUE)
+    }
+    # Nominal response variables will either be transformed to binary variables
+    # or analyzed by multinomial logistic regression models.
+    count_nom <- util_table_of_vct(ds1[[resp_vars]])
+    count_nom <- count_nom[which(count_nom[, 2] > 0), ]
+    count_nom <- count_nom[order(count_nom[, 2], decreasing = TRUE), ]
+    count_nom$below_thresh <- count_nom[, 2] < min_obs_in_cat
+    # catch cases were the nominal response variable has to be analyzed as a
+    # binary variable:
+    if (nrow(count_nom) == 2 | # i.e., there are only two categories
+        length(which(count_nom$below_thresh)) >= nrow(count_nom) - 1 |
+        # i.e., (almost) all categories have too few observations to be
+        # analyzed individually
+        (sum(count_nom[which(count_nom$below_thresh), 2]) < min_obs_in_cat &
+         length(which(!count_nom$below_thresh)) == 2)
+        # If we would collapse all rare categories, they would still have too
+        # few observations to form a third category. Thus, we can only analyse
+        # two categories individually.
+    ) {
+      dichotomize_categorical_resp <- TRUE
     }
 
-    pars <- as.vector(c(
-      omv$margins - threshold_value * th, omv$margins,
-      omv$margins + threshold_value * th
-    ))
+    if (dichotomize_categorical_resp) {
+      # Dichotomized nominal variables will be analyzed by logistic models.
+      # The dichotomization can be user-defined in the metadata (RECODE_CASES
+      # and/or RECODE_CONTROL). If not, dichotomization will be performed
+      # automatically (if 'dichotomize_categorical_resp' is TRUE).
+      if (!("RECODE_CASES" %in% colnames(meta_data))) {
+        meta_data[[RECODE_CASES]] <- ""
+      }
+      if (!("RECODE_CONTROL" %in% colnames(meta_data))) {
+        meta_data[[RECODE_CONTROL]] <- ""
+      }
+      if (util_empty(meta_data[[RECODE_CASES]][meta_data[[label_col]] == resp_vars]) &
+          util_empty(meta_data[[RECODE_CONTROL]][meta_data[[label_col]] == resp_vars])) {
+        # If the recoding is not defined in the metadata, dataquieR will use the
+        # most frequent category as 'cases', the remaining categories as
+        # 'control'. If there were too few observations in the most frequent
+        # category for the 'cases', we will include further categories until we
+        # reach the lower limit specified by 'min_obs_in_cat' (but we stop it
+        # before all categories are being combined into one group).
+        ind_cases <- 1
+        n_cases <- count_nom[1, 2]
+        while (n_cases < min_obs_in_cat & max(ind_cases) < nrow(count_nom) - 1) {
+          ind_cases <- seq_len(max(ind_cases) + 1)
+          n_cases <- sum(count_nom[ind_cases, 2])
+        }
+        meta_data[[RECODE_CASES]][meta_data[[label_col]] == resp_vars] <-
+          paste(count_nom[ind_cases, 1], collapse = " | ")
+      }
+      rvs_bin <- util_dichotomize(
+        study_data = ds1[, resp_vars, drop = FALSE],
+        meta_data = meta_data,
+        label_col = label_col)
+      rvs_bin_note <- attr(rvs_bin, "Dichotomization")[[resp_vars]]
+      ds1[[resp_vars]] <- unlist(rvs_bin)
+      ds1 <- ds1[complete.cases(ds1), ]
+      # run margins function for binary response
+      mar_out <- util_margins_bin(resp_vars = resp_vars,
+                                  group_vars = group_vars,
+                                  co_vars = co_vars,
+                                  threshold_type = threshold_type,
+                                  threshold_value = threshold_value,
+                                  min_obs_in_subgroup = min_obs_in_subgroup,
+                                  min_obs_in_cat = min_obs_in_cat,
+                                  caption = rvs_bin_note,
+                                  ds1 = ds1,
+                                  label_col = label_col,
+                                  adjusted_hint = adjusted_hint,
+                                  title = title,
+                                  sort_group_var_levels = sort_group_var_levels)
+      obj1<- ggplot2::ggplot_build(mar_out$plot)
+      obj1_data <- util_rbind(data_frames_list = obj1$data)
+      min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+      max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+      range_values <- max_value - min_value
+      no_char_y <- nchar(range_values)
+      rm(obj1, obj1_data)
+      type_plot <- "count_plot"
 
-    # store threshold
-    res_df$threshold <- threshold_value
+    } else { # more than two categories to be considered in the analysis
+      # Rare categories will either be collapsed or discarded.
+      if (any(count_nom$below_thresh)) {
+        crit_lev_ind <- which(count_nom[, 2] < min_obs_in_cat)
+        critical_levels <- count_nom[crit_lev_ind, 1]
+        if (sum(count_nom[crit_lev_ind, 2]) < min_obs_in_cat) {
+          util_message(paste0(c(
+            "The following levels:", head(critical_levels, 100),
+            if (length(critical_levels) > 100)  {", ..." }, "have <",
+            min_obs_in_cat, " observations and will be discarded."
+          ),
+          collapse = " "
+          ), applicability_problem = FALSE)
+          levels(ds1[[resp_vars]])[
+            which(levels(ds1[[resp_vars]]) %in% critical_levels)] <- NA
+          ds1 <- ds1[!is.na(ds1[[resp_vars]]), ]
+        } else {
+          util_message(paste0(c(
+            "The following levels:", head(critical_levels, 100),
+            if (length(critical_levels) > 100)  {", ..." }, "have <",
+            min_obs_in_cat, " observations and will be collapsed."
+          ),
+          collapse = " "
+          ), applicability_problem = FALSE)
+          new_lev <- "other"
+          # ensure that the new category is not yet present
+          if (new_lev %in% levels(ds1[[resp_vars]])) {
+            new_lev <- "other (collapsed)"
+          }
+          while (new_lev %in% levels(ds1[[resp_vars]])) {
+            new_lev <- paste0(
+              "other collapsed_",
+              paste0(sample(c(letters, LETTERS), replace = TRUE,
+                            size = length(levels(ds1[[resp_vars]])) + 1),
+                     collapse = ""))
+          }
+          levels(ds1[[resp_vars]])[
+            which(levels(ds1[[resp_vars]]) %in% critical_levels)] <- new_lev
+        }
+      }
+      # run margins function for response with more than two categories
+      mar_out <- util_margins_nom(resp_vars = resp_vars,
+                                  group_vars = group_vars,
+                                  co_vars = co_vars,
+                                  min_obs_in_subgroup = min_obs_in_subgroup,
+                                  min_obs_in_cat = min_obs_in_cat,
+                                  ds1 = ds1,
+                                  label_col = label_col,
+                                  adjusted_hint = adjusted_hint,
+                                  title = title,
+                                  sort_group_var_levels = sort_group_var_levels)
+      obj1<- ggplot2::ggplot_build(mar_out$plot)
+      n_groups <- max(obj1$data[[2]]$group) * nrow(count_nom)
+      min_value <- min(c(obj1$data[[1]]$xmin, obj1$data[[1]]$xmax),  na.rm = TRUE)
+      max_value <- max(c(obj1$data[[1]]$xmin, obj1$data[[1]]$xmax),  na.rm = TRUE)
+      range_values <- max_value - min_value
+      no_char_y <- nchar(round(range_values, digits = 2 ))
+      rm(obj1)
+      type_plot <- "rotated_plot"
+    }
+    ###3rd CASE: ORDINAL (2 possible results)
+  } else if (var_scale == SCALE_LEVELS$ORDINAL) {
+    # Ordinal response variables will either be analyzed by a linear model
+    # or by mixed effects ordered logistic models.
+    count_ord <- util_table_of_vct(ds1[[resp_vars]])
+    if (!is.null(cut_off_linear_model_for_ord) &&
+        all(count_ord[, 2] >= cut_off_linear_model_for_ord)) {
+      orig_levels <- levels(ds1[[resp_vars]])
+      names(orig_levels) <- seq_along(orig_levels) - 1
+      ds1[[resp_vars]] <- as.numeric(ds1[[resp_vars]]) - 1
 
-    # select abnormalities
-    res_df$GRADING <- ifelse(res_df$margins < pars[1] |
-                               res_df$margins > pars[3], 1, 0)
+      mar_out <- util_margins_lm(resp_vars = resp_vars,
+                                 group_vars = group_vars,
+                                 co_vars = co_vars,
+                                 threshold_type = threshold_type,
+                                 threshold_value = threshold_value,
+                                 min_obs_in_subgroup = min_obs_in_subgroup,
+                                 ds1 = ds1,
+                                 label_col = label_col,
+                                 levels = orig_levels,
+                                 adjusted_hint = adjusted_hint,
+                                 title = title,
+                                 sort_group_var_levels = sort_group_var_levels,
+                                 include_numbers_in_figures =
+                                   include_numbers_in_figures,
+                                 n_violin_max = n_violin_max)
 
-  } else if (threshold_type == "user") {
-    th <- threshold_value
-    # store threshold
-    res_df$threshold <- th
+      obj1<- ggplot2::ggplot_build(mar_out$plot)
+      obj1_data <- util_rbind(data_frames_list = obj1$data)
+      min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+      max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+      range_values <- max_value - min_value
+      a<- orig_levels
+      names(a) <- NULL
+      no_char_y <- max(nchar(a))
+      rm(a)
+      rm(obj1, obj1_data)
+      type_plot <- "violin_plot"
 
-    pars <- as.vector(c(th, th, th))
-    if (method == "logistic") {
-      parn <- c("", paste0("Prob.=", threshold_value, sep = ""), "")
     } else {
-      parn <- c("", paste0("Mean=", threshold_value, sep = ""), "")
-    }
+      title <- paste("Conditional modes of",
+                     prep_get_labels(original_group_vars,
+                                     item_level = meta_data,
+                                     label_col = label_col,
+                                     label_class = "LONG",
+                                     resp_vars_match_label_col_only = TRUE),
+                     "levels for",
+                     prep_get_labels(original_resp_vars,
+                                     item_level = meta_data,
+                                     label_col = label_col,
+                                     label_class = "LONG",
+                                     resp_vars_match_label_col_only = TRUE))
 
-    # select abnormalities
-    res_df$GRADING <- mapply(
-      function(th, l, u) {
-        ifelse(th >= l & th <= u, 0, 1)
-      },
-      res_df$threshold, res_df$LCL, res_df$UCL
-    )
+      mar_out <- util_margins_ord(resp_vars = resp_vars,
+                                  group_vars = group_vars,
+                                  co_vars = co_vars,
+                                  min_obs_in_subgroup = min_obs_in_subgroup,
+                                  min_subgroups = 4, # specific requirement from 'ordinal'
+                                  ds1 = ds1,
+                                  label_col = label_col,
+                                  adjusted_hint = adjusted_hint,
+                                  title = title,
+                                  sort_group_var_levels = sort_group_var_levels)
+
+      n_groups <- length(mar_out$plot_data$group)
+      no_char_x <- max(nchar(as.character(mar_out$plot_data$group)))
+      min_value <- min(mar_out$plot_data$LCL,  na.rm = TRUE)
+      max_value <- max(mar_out$plot_data$UCL,  na.rm = TRUE)
+      range_values <- max_value - min_value
+      no_char_y <- nchar(round(range_values, digits = 3))
+      type_plot <- "rotated_plot"
+    }
+    ###4th CASE: INTEGER categories 2 to 20 -- count data
+  } else if (var_dtype == DATA_TYPES$INTEGER &
+             var_prop$NCategory > 2 & var_prop$NCategory <= 20 &
+             # TODO: Count data can exceed 20, of course! How do we identify count
+             # data here? Maybe include a pre-test to choose between poisson and
+             # linear regression? Or also consider negative binomial regression here?
+             !var_prop$AnyNegative) {
+    # TODO: The website states 15 as cut-off, instead of 20. Which one is the
+    # preferred value??
+    mar_out <- util_margins_poi(resp_vars = resp_vars,
+                                group_vars = group_vars,
+                                co_vars = co_vars,
+                                threshold_type = threshold_type,
+                                threshold_value = threshold_value,
+                                min_obs_in_subgroup = min_obs_in_subgroup,
+                                ds1 = ds1,
+                                label_col = label_col,
+                                adjusted_hint = adjusted_hint,
+                                title = title,
+                                sort_group_var_levels = sort_group_var_levels,
+                                include_numbers_in_figures = include_numbers_in_figures)
+    obj1<- ggplot2::ggplot_build(mar_out$plot)
+    obj1_data <- util_rbind(data_frames_list = obj1$data)
+    min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+    max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+    range_values <- max_value - min_value
+    no_char_y <- nchar(range_values)
+    rm(obj1, obj1_data)
+    type_plot <- "count_plot"
+
+  } else if (var_scale %in% c(SCALE_LEVELS$RATIO, SCALE_LEVELS$INTERVAL)) {
+    mar_out <- util_margins_lm(resp_vars = resp_vars,
+                               group_vars = group_vars,
+                               co_vars = co_vars,
+                               threshold_type = threshold_type,
+                               threshold_value = threshold_value,
+                               min_obs_in_subgroup = min_obs_in_subgroup,
+                               ds1 = ds1,
+                               label_col = label_col,
+                               adjusted_hint = adjusted_hint,
+                               title = title,
+                               sort_group_var_levels = sort_group_var_levels,
+                               include_numbers_in_figures =
+                                 include_numbers_in_figures,
+                               n_violin_max = n_violin_max)
+    obj1<- ggplot2::ggplot_build(mar_out$plot)
+    obj1_data <- util_rbind(data_frames_list = obj1$data)
+    min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+    max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+    range_values <- max_value - min_value
+    no_char_y <- nchar(range_values)
+    rm(obj1, obj1_data)
+    type_plot <- "violin_plot"
+  } else  {
+    util_error("No suitable method implemented yet, sorry.")
   }
 
-  if (length(setdiff(co_vars, "1")) > 0) {
-    if (length(co_vars) < 10) {
-      subtitle <- sprintf("adjusted for %s", paste0(co_vars, collapse = ", "))
-    } else {
-      subtitle <- sprintf("adjusted for %d variables", length(co_vars))
-    }
-  } else {
-    subtitle <- ""
+
+  # finalize output ------------------------------------------------------------
+  res_df <- mar_out$plot_data
+  res_plot <- mar_out$plot
+
+  SummaryTable <- data.frame(
+    Variables = resp_vars,
+    FLG_acc_ud_loc = as.numeric(any(res_df$GRADING > 0)),
+    PCT_acc_ud_loc = round(sum(res_df$GRADING == 1)/nrow(res_df)*100,
+                           digits = 2))
+
+  SummaryData <- cbind.data.frame(
+    Variables = resp_vars,
+    res_df
+  )
+
+  #modify number of decimal places
+
+  if ("sample_size" %in% colnames(SummaryData)) {
+    SummaryData$sample_size <-
+      util_round_to_decimal_places(SummaryData$sample_size)
   }
 
-  # Graphics -------------------------------------------------------------------
-  # use offset for annotation depending on variable scale
-  offs <- ifelse(th <= 50, th / 10, th / 20)
-
-  if (method == "linear") {
-    #calculate sample size per group
-    #    summary_ds<- as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
-    #                                                                   group_vars), samplesize = dplyr::n()))
-
-    # Plot 1: hybrid density/boxplot graph
-    warn_code <- c("1" = "#B2182B", "0" = "#2166AC")
-
-    p1 <- ggplot(data = ds1[, c(resp_vars, group_vars), drop = FALSE],
-                 aes(x = .data[[group_vars]], y = .data[[resp_vars]])) +
-      geom_violin(alpha = 0.9, draw_quantiles = TRUE, fill = "gray99") +
-      geom_boxplot(width = 0.1, fill = "white", color = "gray", alpha = 0.5) +
-      geom_pointrange(
-        data = res_df, aes(
-          x = factor(.data[[group_vars]]),
-          y = margins,
-          ymin = LCL,
-          ymax = UCL,
-          color = as.factor(GRADING)
-          # n = sample_size
-        ),
-        shape = 18, linewidth = 1,
-        inherit.aes = FALSE,
-        fatten = 5
-      ) +
-      theme_minimal() +
-      labs(x = "", y = "") +
-      theme(
-        legend.position = "None", legend.title = element_blank(),
-        text = element_text(size = 16),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
-      ) +
-      scale_colour_manual(values = warn_code)+
-      geom_text(data = summary_ds, aes(x = summary_ds[, group_vars],
-                                       y = max(ds1[, c(resp_vars), drop = FALSE])+1.2,
-                                       label =  sample_size), hjust = 0.5, angle = 90)+
-      annotate("text", x=0.50, y=max(ds1[, c(resp_vars), drop = FALSE])+1.2, label= "N")
-
-    if (threshold_type != "none") {
-      p1 <- p1 +
-        geom_hline(yintercept = pars[2], color = "red") +
-        geom_hline(yintercept = pars[-2], color = "red", linetype = 2)
-    } else {
-      p1 <- p1 +
-        geom_hline(yintercept = pars[2], color = "red")
-    }
-  } else {
-    warn_code <- c("1" = "#B2182B", "0" = "#2166AC")
-
-    #calculate sample size per group
-    #    summary_ds<- as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
-    #                                                                   group_vars), samplesize = dplyr::n()))
-
-    p1 <- ggplot(data = ds1[, c(resp_vars, group_vars), drop = FALSE],
-                 aes(x =  .data[[group_vars]], y =  .data[[resp_vars]])) +
-      geom_count(aes(alpha = 0.9), color = "gray") +
-      geom_pointrange(
-        data = res_df, aes(
-          x = .data[[group_vars]],
-          y = margins,
-          ymin = LCL,
-          ymax = UCL,
-          color = as.factor(GRADING),
-          # n = sample_size
-        ),
-        shape = 18, linewidth = 1,
-        inherit.aes = FALSE,
-        fatten = 5
-      ) +
-      theme_minimal() +
-      labs(x = "", y = "") +
-      theme(
-        legend.position = "None", legend.title = element_blank(),
-        text = element_text(size = 16),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
-      ) +
-      scale_colour_manual(values = warn_code)+
-      geom_text(data = summary_ds, aes(x = summary_ds[, group_vars],
-                                       y = max(ds1[, c(resp_vars), drop = FALSE])+1.2,
-                                       label =  sample_size), hjust = 0.5, angle = 90)+
-      annotate("text", x=0.50, y=max(ds1[, c(resp_vars), drop = FALSE])+1.2, label= "N")
-
-    if (threshold_type != "none") {
-      p1 <-
-        p1 +
-        geom_hline(yintercept = pars[2], color = "red") +
-        geom_hline(yintercept = pars[-2], color = "red", linetype = 2)
-    } else {
-      p1 <-
-        p1 +
-        geom_hline(yintercept = pars[2], color = "red")
-    }
-  }
-
-  # Plot 2: overall distributional plot flipped on y-axis of plot 1
-  get_y_scale <- ggplot(ds1[, resp_vars, drop = FALSE], aes(x = .data[[resp_vars]])) +
-    geom_density(alpha = 0.35)
-  aty <- mean(range(ggplot_build(get_y_scale)$data[[1]]$y))
-
-  p2 <- ggplot(ds1[, resp_vars, drop = FALSE], aes(.data[[resp_vars]])) +
-    geom_density(alpha = 0.35) +
-    coord_flip() +
-    theme_minimal() +
-    #    coord_flip() +
-    labs(x = NULL, y = NULL) +
-    theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-          text = element_text(size = 16))
-  if (threshold_type != "none") {
-    p2 <-
-      p2 +
-      annotate(geom = "text", x = pars + offs, y = aty, label = parn) +
-      geom_vline(xintercept = pars[2], color = "red") +
-      geom_vline(xintercept = pars[-2], color = "red", linetype = 2)
-  } else {
-    p2 <-
-      p2 +
-      annotate(geom = "text", x = pars + offs, y = aty,
-               label = c("", parn[2], "")) +
-      geom_vline(xintercept = pars[2], color = "red")
-  }
-
-
-  # combine plots
-  # and add the title
-  res_plot <- # TODO: For all patchwork-calls, add information to reproduce the layout in plot.ly
-    p1 +
-    p2 +
-    plot_layout(nrow = 1,
-                widths = c(5, 1)
-    ) +
-    plot_annotation(title = paste(group_vars, "margins in", resp_vars),
-                    subtitle = subtitle)
-
-  SummaryTable <- data.frame(Variables = resp_vars, FLG_acc_ud_loc =
-                               as.numeric(any(res_df$GRADING > 0)),
-                             PCT_acc_ud_loc = round(sum(res_df$GRADING == 1)/nrow(res_df)*100, digits = 2))
-
-  SummaryData <- res_df
   SummaryData$df <- NULL
   SummaryData$threshold <- NULL
   SummaryData$overall <- NULL
   SummaryData$GRADING <- NULL
+
+  SummaryData$margins <- util_round_to_decimal_places(SummaryData$margins)
+  SummaryData$LCL <- util_round_to_decimal_places(SummaryData$LCL)
+  SummaryData$UCL <- util_round_to_decimal_places(SummaryData$UCL)
   SummaryData$CL <- paste0("[", format(SummaryData$LCL), "; ",
                            format(SummaryData$UCL), "]")
   SummaryData$LCL <- NULL
   SummaryData$UCL <- NULL
+  if ("SE" %in% colnames(SummaryData)) {
+    SummaryData$SE <- util_round_to_decimal_places(SummaryData$SE)
+  }
 
-  colnames(SummaryData)[[4]] <- "n"
+  colnames(SummaryData)[which(colnames(SummaryData) == "sample_size")] <- "n"
 
   attr(SummaryData, "description") <- character(0)
   attr(SummaryData, "description")[[group_vars]] <- "Group: Observer/Device/..."
-  attr(SummaryData, "description")[["margins"]] <- "Mean for the Group"
+  if (resp_vars %in% colnames(SummaryData)) { # for nominal variables
+    attr(SummaryData, "description")[[resp_vars]] <- "Categories of the Outcome"
+    attr(SummaryData, "description")[["margins"]] <- "Probability for the Group"
+  } else {
+    attr(SummaryData, "description")[["margins"]] <- "Mean for the Group"
+  }
   attr(SummaryData, "description")[["SE"]] <- "Standard error for the Group"
   attr(SummaryData, "description")[["n"]] <-
     "Number of Observations of the Group"
@@ -632,16 +766,46 @@ acc_margins <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     "Confidence Interval for the Group"
 
 
+  SummaryPlot <- util_set_size(res_plot, width_em = 25 +
+                  1.2 * length(unique(ds1[[group_vars]])),
+                height_em = 25)
 
-  # length(unique(fit_df$GROUP)))
-  # output
+  #Information for sizing
+#  obj1 <- ggplot2::ggplot_build(res_plot)
+#  obj1_data <- util_rbind(data_frames_list = obj1$data)
+
+  if(!exists("n_groups")) {
+    n_groups <- nrow(SummaryData)
+  }
+
+
+
+#  min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+#  max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+#  range_values <- max_value - min_value
+#  if ((max(obj1_data$x,na.rm = TRUE) - min(obj1_data$x,na.rm = TRUE)) < 2 ) {
+#    type_plot <- "count_plot"
+#  } else {
+#    type_plot <- "violin_plot"
+#  }
+#  rm(obj1, obj1_data)
+
+if(!exists("no_char_x")){
+  no_char_x <- max(nchar(as.character(SummaryData[[group_vars]])))
+}
+
+
   return(util_attach_attr(list(
-    SummaryData = SummaryData,
+    ResultData = SummaryData,
     SummaryTable = SummaryTable,
-    SummaryPlot = util_set_size(res_plot, width_em = 25 +
-                                  1.2 * length(unique(ds1[[group_vars]])),
-                                height_em = 25)
-  ), as_plotly = "util_as_plotly_acc_margins"))
+    SummaryPlot = SummaryPlot),
+    sizing_hints = list(figure_type_id = "marg_plot",
+                       n_groups = n_groups,
+                       no_char_x = no_char_x,
+                       no_char_y = no_char_y,
+                       type_plot = type_plot
+                       ),
+    as_plotly = "util_as_plotly_acc_margins"))
 }
 
 
@@ -654,73 +818,119 @@ util_as_plotly_acc_margins <- function(res, ...) {
   # use res$SummaryPlot, not res_plot to avoid depending on the enclosure
   # of the result, that may contain study data.
   util_ensure_suggested("plotly")
-  util_stop_if_not(inherits(res$SummaryPlot, "patchwork"))
-  # extract estimates on size of the plot from the patchwork object
-  # obtain relative width of the single elements of the plot
-  rel_w <- res$SummaryPlot$patches$layout$widths /
-    sum(res$SummaryPlot$patches$layout$widths, na.rm = TRUE)
-  # extract the violin plots
-  py1 <- try(plotly::ggplotly(res$SummaryPlot[[1]],
-                              ...), silent = TRUE)
-
-  py1$x$data[[2]]$mode <- NULL # suppress a warning on print (https://github.com/plotly/plotly.R/issues/2242)
-  # extract the overall distribution plot
-  py2 <- try(plotly::ggplotly(res$SummaryPlot[[2]],
-                              ...), silent = TRUE)
-  # check if both are plotly objects
-  util_stop_if_not(!inherits(py1, "try-error"))
-  util_stop_if_not(!inherits(py2, "try-error"))
-  # https://plotly.com/r/subplots/#subplots-with-shared-yaxes
-
-
-  #  summary_ds<-as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
-  #                                                               group_vars), samplesize = dplyr::n()))
-
-
-  # py1<- plotly::ggplotly(py1, tooltip = paste("Sample size:",
-  #                                            as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
-  #                                                                                                             group_vars), samplesize = dplyr::n()))[,2]))
-  #py2<- plotly::layout(py2)
-
-  target_layers <-
-    which(lapply(lapply(py1$x$data, `[[`, "marker"), `[[`, "symbol") == "diamond")
-
-  hovertexts <- lapply(py1$x$data, `[[`, "hovertext")
-  hovertexts_matching_sample_size <- lapply(hovertexts, grepl, pattern = "sample_size: ", fixed = TRUE)
-  hovertexts_matching_sample_size_with_length_nr_groups <-
-    vapply(hovertexts_matching_sample_size, function(x) length(x) == length(unique(res$SummaryPlot[[1]]$data[[2]])) && all(x, na.rm = TRUE), FUN.VALUE = logical(1))
-  layer_with_sample_size <- which(hovertexts_matching_sample_size_with_length_nr_groups)
-  if (length(layer_with_sample_size) != 1) {
-    util_warning(c("Internal error: unexpected number of",
-                   "layer_with_sample_size. Sorry, please report to us"))
-  } else {
-    hovertexts_with_hovertexts <- py1$x$data[[layer_with_sample_size]]$hovertext
-
-    xpositions_with_hovertexts <- py1$x$data[[layer_with_sample_size]]$x
-
-    for (tl in target_layers) {
-      # amend texts for hover-texts, matching by x position.
-
-      py1$x$data[[tl]]$text <- paste0(
-        py1$x$data[[tl]]$text,
-        "<br />",
-        hovertexts_with_hovertexts[match(py1$x$data[[tl]]$x,
-                                         xpositions_with_hovertexts)]
-      )
+  if (inherits(res$SummaryPlot, "patchwork")) {
+    # extract estimates on size of the plot from the patchwork object
+    # obtain relative width of the single elements of the plot
+    rel_w <- res$SummaryPlot$patches$layout$widths /
+      sum(res$SummaryPlot$patches$layout$widths, na.rm = TRUE)
+    # extract the violin plots
+    py1 <- try(plotly::ggplotly(res$SummaryPlot[[1]],
+                                ...), silent = TRUE)
+    if (identical(py1$x$data[[2]]$mode, "lines+markers")) { # no violins were created because of too many observers, see dataquieR.max_group_var_levels_with_violins
+      py1$x$data[[1]]$mode <- NULL # suppress a warning on print (https://github.com/plotly/plotly.R/issues/2242)
+    } else {
+      py1$x$data[[2]]$mode <- NULL # suppress a warning on print (https://github.com/plotly/plotly.R/issues/2242)
     }
+
+    # extract the overall distribution plot
+    py2 <- try(plotly::ggplotly(res$SummaryPlot[[2]],
+                                ...), silent = TRUE)
+    # check if both are plotly objects
+    util_stop_if_not(!inherits(py1, "try-error"))
+    util_stop_if_not(!inherits(py2, "try-error"))
+    # https://plotly.com/r/subplots/#subplots-with-shared-yaxes
+
+
+    #  summary_ds<-as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
+    #                                                               group_vars), samplesize = dplyr::n()))
+
+
+    # py1<- plotly::ggplotly(py1, tooltip = paste("Sample size:",
+    #                                            as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
+    #                                                                                                             group_vars), samplesize = dplyr::n()))[,2]))
+    #py2<- plotly::layout(py2)
+
+    target_layers <-
+      which(lapply(lapply(py1$x$data, `[[`, "marker"), `[[`, "symbol") == "diamond")
+
+    hovertexts <- lapply(py1$x$data, `[[`, "hovertext")
+    if (!all(vapply(hovertexts, is.null, logical(1)))) {
+      hovertexts_matching_sample_size <- lapply(hovertexts, grepl, pattern = "sample_size: ", fixed = TRUE)
+      hovertexts_matching_sample_size_with_length_nr_groups <-
+        vapply(hovertexts_matching_sample_size, function(x) length(x) == length(unique(res$SummaryPlot[[1]]$data[[2]])) && all(x, na.rm = TRUE), FUN.VALUE = logical(1))
+      layer_with_sample_size <- which(hovertexts_matching_sample_size_with_length_nr_groups)
+      if (length(layer_with_sample_size) != 1) {
+        util_warning(c("Internal error: unexpected number of",
+                       "layer_with_sample_size. Sorry, please report to us"))
+      } else {
+        hovertexts_with_hovertexts <- py1$x$data[[layer_with_sample_size]]$hovertext
+
+        xpositions_with_hovertexts <- py1$x$data[[layer_with_sample_size]]$x
+
+        for (tl in target_layers) {
+          # amend texts for hover-texts, matching by x position.
+
+          py1$x$data[[tl]]$text <- paste0(
+            py1$x$data[[tl]]$text,
+            "<br />",
+            hovertexts_with_hovertexts[match(py1$x$data[[tl]]$x,
+                                             xpositions_with_hovertexts)]
+          )
+        }
+      }
+    }
+
+    target_layer_outliers <- which(!(unlist(lapply(lapply(lapply(py1$x$data, `[[`, "marker"), `[[`, "outliercolor"), is.null))))
+    if (length(target_layer_outliers) == 1) {
+      # https://github.com/plotly/plotly.R/issues/1114
+      py1$x$data[[target_layer_outliers]]$marker$outliercolor <-
+        py1$x$data[[target_layer_outliers]]$line$color
+      py1$x$data[[target_layer_outliers]]$marker$line$color <-
+        py1$x$data[[target_layer_outliers]]$line$color
+      py1$x$data[[target_layer_outliers]]$marker$opacity <- 0.5
+    }
+
+    note <- ""
+    try(note <- res$SummaryPlot$patches$annotation$caption, silent = TRUE)
+    if (length(note) != 1) {
+      note <- ""
+    }
+
+    # recombine plots
+    suppressMessages(force(plotly::layout(plotly::subplot(py1,
+                                                          py2,
+                                                          nrows =
+                                                            res$SummaryPlot$patches$layout$nrow,
+                                                          shareY = TRUE, #all plots use the same y axes
+                                                          widths = #define relative width
+                                                            rel_w),
+                                          title = list(text = #get the overall title from patch
+                                                         paste0(
+                                                           res$SummaryPlot$patches$annotation$title,
+                                                           "<br /><sub>",
+                                                           res$SummaryPlot$patches$annotation$subtitle,
+                                                           "</sub>"
+                                                         )),
+                                          font = list(size = 12),
+                                          margin = 0.01,
+                                          annotations = list(
+                                            list(
+                                              x = 1,
+                                              y = 1,
+                                              yshift = 24, # px
+                                              text = note,
+                                              align = 'right',
+                                              valign = 'top',
+                                              xref = 'paper',
+                                              yref = 'paper',
+                                              xanchor = 'right',
+                                              yanchor = 'top',
+                                              showarrow = FALSE,
+                                              font = list(size = 8)
+                                            )
+                                          ))))
+
+  } else {
+    util_plot_figure_plotly(res$SummaryPlot, attr(res, "sizing_hints"))
   }
-
-
-  # recombine plots
-  suppressMessages(force(plotly::layout(plotly::subplot(py1,
-                                 py2,
-                                 nrows =
-                                   res$SummaryPlot$patches$layout$nrow,
-                                 shareY = TRUE, #all plots use the same y axes
-                                 widths = #define relative width
-                                   rel_w),
-                 title = list(text = #get the overall title from patch
-                                res$SummaryPlot$patches$annotation$title),
-                 font = list(size = 12),
-                 margin = 0.01)))
 }

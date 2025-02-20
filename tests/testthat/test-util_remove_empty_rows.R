@@ -4,7 +4,7 @@ test_that("util_remove_empty_rows works", {
   result <- util_remove_empty_rows(cars)
 
   # Check that the result has the correct structure
-  expect_is(result, "data.frame")
+  expect_s3_class(result, "data.frame")
 
   # Check that the result has the correct values when there are no empty rows
   expect_identical(result, cars)

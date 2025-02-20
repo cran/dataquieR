@@ -35,7 +35,6 @@ Other reporting_functions:
 \code{\link{util_generate_calls_for_function}()},
 \code{\link{util_load_manual}()},
 \code{\link{util_make_data_slot_from_table_slot}()},
-\code{\link{util_make_function}()},
 \code{\link{util_set_size}()}
 }
 \concept{reporting_functions}

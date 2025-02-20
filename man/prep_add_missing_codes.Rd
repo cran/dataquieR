@@ -7,11 +7,13 @@
 prep_add_missing_codes(
   resp_vars,
   study_data,
-  meta_data,
+  meta_data_v2,
+  item_level = "item_level",
   label_col,
   rules,
   use_value_labels,
-  overwrite = FALSE
+  overwrite = FALSE,
+  meta_data = item_level
 )
 }
 \arguments{
@@ -20,7 +22,13 @@ modified, all from \code{rules}, if omitted}
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
@@ -46,6 +54,9 @@ not the codes. Defaults to \code{TRUE}, if any
 
 \item{overwrite}{\link{logical} Also insert missing codes, if the values are not
 \code{NA}}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}
+attributes of study data}
 }
 \value{
 a \code{list} with the entries:
@@ -57,55 +68,4 @@ a \code{list} with the entries:
 }
 \description{
 Insert missing codes for \code{NA}s based on rules
-}
-\examples{
-\dontrun{
-load(system.file("extdata", "study_data.RData", package = "dataquieR"))
-load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
-vn <- subset(r$ModifiedMetaData, LABEL == "PREGNANT_0", VAR_NAMES)[[1]]
-rules <- tibble::tribble(
-  ~resp_vars, ~CODE_CLASS, ~CODE_LABEL, ~CODE_VALUE, ~RULE,
-  "PREGNANT_0", "JUMP", "No pregnancies in males", "9999", '[SEX_0]=1',
- )
- r <- prep_add_missing_codes(NA, study_data, meta_data,
-   label_col = "LABEL", rules, use_value_labels = FALSE)
- subset(r$ModifiedMetaData, LABEL == "PREGNANT_0", JUMP_LIST)
- subset(meta_data, LABEL == "PREGNANT_0", JUMP_LIST)
- table(study_data[[vn]])
- table(r$ModifiedStudyData[[vn]])
- r <- prep_add_missing_codes(NA, study_data, meta_data,
-   label_col = "LABEL", rules, use_value_labels = FALSE, overwrite = TRUE)
- table(study_data[[vn]])
- table(r$ModifiedStudyData[[vn]])
-
-rules <- tibble::tribble(
-  ~resp_vars, ~CODE_CLASS, ~CODE_LABEL, ~CODE_VALUE, ~RULE,
-  "PREGNANT_0", "JUMP", "No pregnancies in males", "9999", '[SEX_0]="males"',
- )
- r <- prep_add_missing_codes(NA, study_data, meta_data,
-   label_col = "LABEL", rules, use_value_labels = TRUE, overwrite = FALSE)
- table(study_data[[vn]])
- table(r$ModifiedStudyData[[vn]])
-
-rules <- tibble::tribble(
-  ~resp_vars, ~CODE_CLASS, ~CODE_LABEL, ~CODE_VALUE, ~RULE,
-  "PREGNANT_0", "JUMP", "No pregs in males", "9999", '[v00002]="males"',
- )
- r <- prep_add_missing_codes(NA, study_data, meta_data,
-   label_col = "LABEL", rules, use_value_labels = TRUE, overwrite = FALSE)
- table(study_data[[vn]])
- table(r$ModifiedStudyData[[vn]])
- devtools::load_all(".")
-
-study_data$v00002 <- ifelse(study_data$v00002 == "0", "females", "males")
-meta_data[meta_data$LABEL == "SEX_0", "VALUE_LABELS"] <- "females|males"
-rules <- tibble::tribble(
-  ~resp_vars, ~CODE_CLASS, ~CODE_LABEL, ~CODE_VALUE, ~RULE,
-  "PREGNANT_0", "JUMP", "No pregnancies in males", "9999", '[v00002]="males"',
-)
-r <- prep_add_missing_codes(NA, study_data, meta_data,
-                            label_col = "LABEL", rules, use_value_labels = TRUE, overwrite = FALSE)
-table(study_data[[vn]])
-table(r$ModifiedStudyData[[vn]])
-}
 }

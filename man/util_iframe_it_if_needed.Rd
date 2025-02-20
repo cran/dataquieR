@@ -4,17 +4,22 @@
 \alias{util_iframe_it_if_needed}
 \title{Make \code{it} scalable, if it is a figure}
 \usage{
-util_iframe_it_if_needed(it, dir, nm, fkt)
+util_iframe_it_if_needed(it, dir, nm, fkt, sizing_hints, ggthumb)
 }
 \arguments{
 \item{it}{\code{\link[htmltools:builder]{htmltools::tag()}} compatible object}
 
-\item{dir}{\link{character} output directory for potential \code{iframes}.}
+\item{dir}{\link{character} output directory for potential \code{iframe}.}
 
 \item{nm}{\link{character} name for the \code{iframe}d file, if one is created}
 
 \item{fkt}{\link{character} function name of the indicator function that created
 \code{ìt}.}
+
+\item{sizing_hints}{\code{object} additional metadata about the natural figure size}
+
+\item{ggthumb}{\code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} optional, underlying \code{ggplot2} object
+for a preview}
 }
 \value{
 \code{\link[htmltools:builder]{htmltools::tag()}} compatible object, maybe now in an \code{iframe}

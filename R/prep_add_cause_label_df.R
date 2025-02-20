@@ -10,8 +10,9 @@
 #' If a column `resp_vars` exists, then rows with a value in `resp_vars` will
 #' only be used for the corresponding variable.
 #'
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data.
+#' @param item_level [data.frame] the data frame that contains metadata
+#'                               attributes of study data
+#' @param meta_data [data.frame] old name for `item_level`
 #' @param cause_label_df [data.frame] missing code table. If missing codes have
 #'                                    labels the respective data frame can be
 #'                                    specified here, see [cause_label_df]
@@ -27,22 +28,35 @@
 #'                                    data from the `cause_label_df`. Otherwise,
 #'                                    copy the labels from `cause_label_df` to
 #'                                    the existing code columns.
+#' @param meta_data_v2 [character] path to workbook like metadata file, see
+#'                                 [`prep_load_workbook_like_file`] for details.
+#'                                 **ALL LOADED DATAFRAMES WILL BE PURGED**,
+#'                                 using [`prep_purge_data_frame_cache`],
+#'                                 if you specify `meta_data_v2`.
 #' @return [data.frame] updated metadata including all the code labels in
 #'                      missing/jump lists
 #' @seealso [prep_extract_cause_label_df]
 #'
 #' @export
 #'
-prep_add_cause_label_df <- function(meta_data = "item_level",
+prep_add_cause_label_df <- function(item_level = "item_level",
                                     cause_label_df,
                                     label_col = VAR_NAMES,
                                     assume_consistent_codes = TRUE,
                                     replace_meta_data =
                                       ("resp_vars" %in%
-                                         colnames(cause_label_df))) {
+                                         colnames(cause_label_df)),
+                                    meta_data = item_level,
+                                    meta_data_v2) {
+
+  util_maybe_load_meta_data_v2()
 
   util_expect_data_frame(meta_data, c(DATA_TYPE))
-  util_expect_data_frame(cause_label_df, c("CODE_VALUE", "CODE_LABEL"))
+  util_expect_data_frame(cause_label_df, c(CODE_VALUE, CODE_LABEL))
+  if (CODE_CLASS %in% colnames(cause_label_df)) {
+    cause_label_df[[CODE_CLASS]][is.na(cause_label_df[[CODE_CLASS]])] <-
+      ""
+  }
   if (length(label_col) != 1 ||
       is.na(label_col) ||
       !is.character(label_col)) {
@@ -77,9 +91,9 @@ prep_add_cause_label_df <- function(meta_data = "item_level",
     if (any(is.na(cl)) && !replace_meta_data) {
       NA_character_
     } else {
-      if ("CODE_CLASS" %in% colnames(cause_label_df)) {
-        cause_label_df <- subset(cause_label_df,
-                                 get("CODE_CLASS") == lst)
+      if (CODE_CLASS %in% colnames(cause_label_df)) {
+        cause_label_df <- cause_label_df[
+                                 cause_label_df[[CODE_CLASS]] == lst, , FALSE]
       } else if (replace_meta_data && lst != "MISSING") {
         cause_label_df <- subset(cause_label_df, FALSE)
       }
@@ -98,10 +112,11 @@ prep_add_cause_label_df <- function(meta_data = "item_level",
           cls <- as.integer(names(util_parse_assignments(cl)))
         }
       }
-      cldf <- subset(cause_label_df,
-                     as.character(get("CODE_VALUE")) %in% as.character(cls))
+      cldf <- cause_label_df[
+                     as.character(cause_label_df[[CODE_VALUE]]) %in% as.character(cls),
+                     , FALSE]
       miss <- cls[!(as.character(cls) %in%
-                      as.character(cause_label_df$CODE_VALUE))]
+                      as.character(cause_label_df[[CODE_VALUE]]))]
       if (length(miss) > 0) {
         if (assume_consistent_codes) {
           cldf1 <- data.frame(CODE_VALUE = miss,

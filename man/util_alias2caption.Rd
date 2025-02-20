@@ -9,7 +9,8 @@ util_alias2caption(alias, long = FALSE)
 \arguments{
 \item{alias}{alias name}
 
-\item{long}{not for menu entry}
+\item{long}{return result based on \code{menu_title_report},
+\code{matrix_column_title_report} otherwise}
 }
 \value{
 caption
@@ -32,7 +33,6 @@ Other reporting_functions:
 \code{\link{util_generate_calls_for_function}()},
 \code{\link{util_load_manual}()},
 \code{\link{util_make_data_slot_from_table_slot}()},
-\code{\link{util_make_function}()},
 \code{\link{util_order_by_order}()},
 \code{\link{util_set_size}()}
 }

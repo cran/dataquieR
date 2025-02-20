@@ -57,7 +57,7 @@ util_ensure_suggested <- function(pkg, goal =
     }
     if (rlang::is_installed("cli")) {
       install_all <-
-        cli::cli_text(
+        cli::format_inline(
           sprintf("Call {.run [%s](%s)} to install all suggested packages",
                   "prep_check_for_dataquieR_updates()",
                   "dataquieR::prep_check_for_dataquieR_updates()")

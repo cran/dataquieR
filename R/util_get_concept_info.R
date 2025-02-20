@@ -24,9 +24,13 @@ util_get_concept_info <- function(filename, ...) {
   cl[[1]] <- as.symbol("subset")
   cl[[2]] <- NULL
   cl$x <- dfr
-  r <- eval(cl,
+  r <- try(eval(cl,
        envir = parent.frame(),
-       enclos = environment())
+       enclos = environment()))
+  if (util_is_try_error(r)) {
+    util_warning(r)
+    r <- NULL
+  }
   r
 }
 .concept_chache <- new.env(parent = emptyenv())

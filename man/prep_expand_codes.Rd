@@ -5,13 +5,15 @@
 \title{Expand code labels across variables}
 \usage{
 prep_expand_codes(
-  meta_data = "item_level",
+  item_level = "item_level",
   suppressWarnings = FALSE,
-  mix_jumps_and_missings = FALSE
+  mix_jumps_and_missings = FALSE,
+  meta_data_v2,
+  meta_data = item_level
 )
 }
 \arguments{
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
 \item{suppressWarnings}{\link{logical} show warnings, if labels are expanded}
@@ -20,6 +22,14 @@ attributes of study data}
 label expansion, i.e., use missing code labels
 as jump code labels, if the values are the
 same.}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
 }
 \value{
 \link{data.frame} an updated metadata data frame.
@@ -31,7 +41,7 @@ label is set only for some variables
 }
 \examples{
 \dontrun{
-load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
+meta_data <- prep_get_data_frame("meta_data")
 meta_data$JUMP_LIST[meta_data$VAR_NAMES == "v00003"] <- "99980 = NOOP"
 md <- prep_expand_codes(meta_data)
 md$JUMP_LIST
@@ -39,7 +49,7 @@ md$MISSING_LIST
 md <- prep_expand_codes(meta_data, mix_jumps_and_missings = TRUE)
 md$JUMP_LIST
 md$MISSING_LIST
-load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
+meta_data <- prep_get_data_frame("meta_data")
 meta_data$MISSING_LIST[meta_data$VAR_NAMES == "v00003"] <- "99980 = NOOP"
 md <- prep_expand_codes(meta_data)
 md$JUMP_LIST

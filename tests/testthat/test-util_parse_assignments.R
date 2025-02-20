@@ -16,8 +16,8 @@ test_that("util_parse_assignments works", {
 test_that(paste("util_parse_assignments equivalent with an old independent",
                 "development from con inadmissible categories"), {
   skip_on_cran()
-
-  meta_data <- prep_get_data_frame("meta_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
 
   got <- lapply(lapply(setNames(meta_data[[VALUE_LABELS]], nm =
                                   meta_data$VAR_NAMES),

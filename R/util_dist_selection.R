@@ -4,8 +4,7 @@
 #'
 #' @param study_data study data, pre-processed with `prep_prepare_dataframes`
 #'                   to replace missing value codes by `NA`
-#' @param val_lab    matching metadata column containing the `VALUE_LABELS`
-#'                   as vector (if available)
+#' @param val_lab    deprecated
 #'
 #' @return data frame with one row for each variable in the study data and the
 #'         following columns:
@@ -26,9 +25,14 @@
 #' @family metadata_management
 #' @concept process
 #' @keywords internal
-
-
-util_dist_selection <- function(study_data, val_lab = NULL) {
+util_dist_selection <- function(study_data, val_lab = lifecycle::deprecated()) {
+  if (lifecycle::is_present(val_lab)) {
+    # Signal the deprecation to the user
+    lifecycle::deprecate_warn(
+      "2.5.0",
+      "dataquieR::util_dist_selection(val_lab = )")
+  }
+  # TODO EK: Is this function maybe deprecated?
   # TODO: discuss function name (does not select a distance), could be named 'util_vars_properties' instead
   .x <- as.data.frame(study_data)
   .r <- data.frame(
@@ -68,28 +72,6 @@ util_dist_selection <- function(study_data, val_lab = NULL) {
                           function(.y)
                             length(which(.y == 0)) /
                             length(.y[which(!util_empty(.y))]))
-
-  # # check whether the variable has (matching) value labels
-  # if (!is.null(val_lab)) {
-  #   .r$HasValueLabels <-
-  #     vapply(FUN.VALUE = logical(1), seq_len(ncol(.x)),
-  #            function(i) {
-  #                if (all(util_empty(.x[, i]))) {
-  #                  !util_empty(val_lab[i]) &&
-  #                    length(util_parse_assignments(val_lab[i]),
-  #         split_on_any_split_char = TRUE, split_char = c(SPLIT_CHAR, '<')) > 0
-  #                } else {
-  #                  # return TRUE only if there is at least one matching
-  #                  # value label
-  #                  !util_empty(val_lab[i]) &&
-  #                    length(intersect(
-  #                      unique(.x[, i]),
-  #                      names(util_parse_assignments(val_lab[i],
-  #           split_on_any_split_char = TRUE, split_char = c(SPLIT_CHAR, '<')))
-  #                    )) > 0
-  #                }
-  #            })
-  #   }
 
   is_char <- vapply(FUN.VALUE = logical(1), .x,
                     function(.y)

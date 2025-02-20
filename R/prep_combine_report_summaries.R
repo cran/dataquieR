@@ -12,6 +12,11 @@
 prep_combine_report_summaries <- function(...,
                                           summaries_list,
                                           amend_segment_names = FALSE) {
+  te <- topenv(parent.frame(1)) # see https://stackoverflow.com/a/27870803
+  if (!(isNamespace(te) && getNamespaceName(te) == "dataquieR")) {
+    lifecycle::deprecate_soft("2.1.0.9007",
+                              "prep_combine_report_summaries()")
+  }
   if (missing(summaries_list)) summaries_list <- list()
   if (!is.list(summaries_list)) {
     util_error("%s needs to be a list, if passed", sQuote("summaries_list"))
@@ -102,7 +107,10 @@ prep_combine_report_summaries <- function(...,
   if (any(vapply(lapply(lapply(combined, `[[`, VAR_NAMES), duplicated),
          any,
          FUN.VALUE = logical(1)))) {
-    util_warning(
+    util_warning( # FIXME: This warning is shown, even, if it is possible
+      # FIXME: Allow to combine such reports, if the results are distinct,
+      # still, i.e., one report with ICC, the other with item
+      # missingness
       # by definiion, a message, but the effects are too big, so here a warning
       c("Some of the summaries comprise overlapping variables, will",
         "pick the first summary for each"),

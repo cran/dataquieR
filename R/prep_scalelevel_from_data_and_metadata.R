@@ -2,12 +2,19 @@
 #'
 #' ...if missing
 #'
-#' @param resp_vars [variable list] the names of the measurement variables
+#' @param resp_vars [variable list] deprecated, the function always addresses
+#'                                  all variables.
 #' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
+#' @param item_level [data.frame] the data frame that contains metadata
 #'                               attributes of study data
+#' @param meta_data [data.frame] old name for `item_level`
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
+#' @param meta_data_v2 [character] path to workbook like metadata file, see
+#'                                 [`prep_load_workbook_like_file`] for details.
+#'                                 **ALL LOADED DATAFRAMES WILL BE PURGED**,
+#'                                 using [`prep_purge_data_frame_cache`],
+#'                                 if you specify `meta_data_v2`.
 #'
 #' @return [data.frame] modified metadata
 #'
@@ -18,10 +25,21 @@
 #'   prep_load_workbook_like_file("meta_data_v2")
 #'   prep_scalelevel_from_data_and_metadata(study_data = "study_data")
 #' }
-prep_scalelevel_from_data_and_metadata <- function(resp_vars = NULL,
+prep_scalelevel_from_data_and_metadata <- function(resp_vars =
+                                                     lifecycle::deprecated(),
                                                    study_data,
-                                                   meta_data = "item_level",
-                                                   label_col = LABEL) {
+                                                   item_level = "item_level",
+                                                   label_col = LABEL,
+                                                   meta_data = item_level,
+                                                   meta_data_v2) {
+  if (lifecycle::is_present(resp_vars)) {
+    # Signal the deprecation to the user
+    lifecycle::deprecate_warn(
+      "2.5.0",
+      "dataquieR::prep_scalelevel_from_data_and_metadata(resp_vars = )")
+  }
+  resp_vars <- NULL
+  util_maybe_load_meta_data_v2()
   # TODO: shorten function name, e.g., 'prep_amend_scale_level'
   if (
     inherits(
@@ -52,13 +70,13 @@ prep_scalelevel_from_data_and_metadata <- function(resp_vars = NULL,
                             overwrite = TRUE,
                             remove_not_found = TRUE)
 
-  if (is.null(resp_vars)) { # FIXME EK: Crashes, if set to e.g. one variable only
+  if (is.null(resp_vars)) {
     resp_vars <- colnames(ds1)
   }
 
   md <- meta_data[meta_data[[label_col]] %in% resp_vars,
                   intersect(c(label_col, SCALE_LEVEL, DATA_TYPE, UNIT,
-                              VALUE_LABELS),
+                              VALUE_LABELS, VALUE_LABEL_TABLE),
                             colnames(meta_data)), FALSE]
   distsel <- util_dist_selection(ds1)
   # TODO: What about missing codes like ".A" in metadata? They are considered
@@ -68,7 +86,7 @@ prep_scalelevel_from_data_and_metadata <- function(resp_vars = NULL,
   meta_info <-
     merge(md, distsel, by.x = label_col, by.y = "Variables", all = TRUE)
 
-  for (cl in c(SCALE_LEVEL, DATA_TYPE, UNIT, VALUE_LABELS)) {
+  for (cl in c(SCALE_LEVEL, DATA_TYPE, UNIT, VALUE_LABELS, VALUE_LABEL_TABLE)) {
     if (!(cl %in% colnames(meta_info))) {
       meta_info[[cl]] <- NA_character_
     }
@@ -78,14 +96,15 @@ prep_scalelevel_from_data_and_metadata <- function(resp_vars = NULL,
                          intersect(
                            c(
                              label_col,
-                             "DATA_TYPE",
-                             "VALUE_LABELS",
+                             DATA_TYPE,
+                             VALUE_LABELS,
+                             VALUE_LABEL_TABLE,
                              "IsInteger",
                              "IsMultCat",
                              "NCategory",
                              "AnyNegative",
-                             "SCALE_LEVEL",
-                             "UNIT"
+                             SCALE_LEVEL,
+                             UNIT
                            ),
                            colnames(meta_info)
                          ), drop = FALSE]
@@ -95,9 +114,43 @@ prep_scalelevel_from_data_and_metadata <- function(resp_vars = NULL,
   # 1. Variables with value labels ---------------------------------------------
   # - the value labels indicate an order: ordinal scale
   # - the value labels are separated by `|`: nominal scale
-  assignments <- util_parse_assignments(meta_info$VALUE_LABELS,
-                                        split_char = c(SPLIT_CHAR, "<"),
-                                        multi_variate_text = TRUE)
+  # assignments <- util_parse_assignments(meta_info[[VALUE_LABELS]],
+  #                                       split_char = c(SPLIT_CHAR, "<"),
+  #                                       multi_variate_text = TRUE)
+  #
+  assignments <- lapply(meta_info[[VALUE_LABEL_TABLE]],
+                        function(vltnm) {
+                          if (vltnm %in% prep_list_dataframes()) {
+                            rdf <- prep_get_data_frame(vltnm)
+                            if (!(CODE_VALUE %in% colnames(rdf))) {
+                              util_warning(
+                            "Missing at least a column %s in %s %s. Ignoring.",
+                                sQuote(CODE_VALUE),
+                                VALUE_LABEL_TABLE,
+                                dQuote(vltnm),
+                                applicability_problem = TRUE
+                              )
+                              r <- setNames(nm = character(0))
+                              split_char <- SPLIT_CHAR
+                              util_attach_attr(r, split_char = split_char)
+                            }
+                            if (!(CODE_LABEL %in% colnames(rdf))) {
+                              rdf[[CODE_LABEL]] <- rdf[[CODE_VALUE]]
+                            }
+                            r <- setNames(rdf[[CODE_LABEL]],
+                                          nm = rdf[[CODE_VALUE]])
+                            split_char <- ifelse(
+                              CODE_ORDER %in% colnames(rdf),
+                              "<",
+                              SPLIT_CHAR
+                            )
+                            util_attach_attr(r, split_char = split_char)
+                          } else {
+                            r <- setNames(nm = character(0))
+                            split_char <- SPLIT_CHAR
+                            util_attach_attr(r, split_char = split_char)
+                          }
+                        })
 
   meta_info$is_ordered <- vapply(assignments, attr, "split_char",
                                  FUN.VALUE = character(1)) == "<"
@@ -110,8 +163,9 @@ prep_scalelevel_from_data_and_metadata <- function(resp_vars = NULL,
               is.na(names(a))) &&  # integer codes
           !all(diff(as.integer(names(a))) > 0)
       ) {
-        util_message("Found counter-intuitive %s: %s",
+        util_message("Found counter-intuitive %s/%s: %s",
                      VALUE_LABELS,
+                     VALUE_LABEL_TABLE,
                      prep_deparse_assignments(labels = vapply(a, identity,
                                                               FUN.VALUE = character(1)),
                                               codes = names(a),
@@ -123,18 +177,18 @@ prep_scalelevel_from_data_and_metadata <- function(resp_vars = NULL,
   meta_info[
     util_empty(meta_info$SCALE_LEVEL) &
       meta_info$DATA_TYPE %in% c(DATA_TYPES$STRING, DATA_TYPES$INTEGER) &
-      !util_empty(meta_info$VALUE_LABELS), SCALE_LEVEL] <-
+      (!util_empty(meta_info$VALUE_LABELS) | !util_empty(meta_info$VALUE_LABEL_TABLE)), SCALE_LEVEL] <-
     ifelse(meta_info$is_ordered[util_empty(meta_info$SCALE_LEVEL) &
                                   meta_info$DATA_TYPE %in%
                                     c(DATA_TYPES$STRING,
                                     DATA_TYPES$INTEGER) &
-                                  !util_empty(meta_info$VALUE_LABELS)],
+                                  (!util_empty(meta_info$VALUE_LABELS) | !util_empty(meta_info$VALUE_LABEL_TABLE))],
            SCALE_LEVELS$ORDINAL,
            SCALE_LEVELS$NOMINAL)
 
   # identical(attr(util_parse_assignments("a < 2", split_char = c(SPLIT_CHAR, "<")), "split_char"), "<")
 
-  # TODO: also consider STANDARDIZED_VOCABULARY (once it is implemented)
+  # FIXME: also consider STANDARDIZED_VOCABULARY (once it is implemented)
 
   # 2. Variables used as grouping variables: nominal scale ---------------------
   # for example examiners and devices
@@ -182,7 +236,7 @@ prep_scalelevel_from_data_and_metadata <- function(resp_vars = NULL,
   # 4. Variables of type 'datetime': interval scale ----------------------------
   meta_info[
     util_empty(meta_info$SCALE_LEVEL) &
-      meta_info$DATA_TYPE == DATA_TYPES$DATETIME, SCALE_LEVEL] <-
+      meta_info$DATA_TYPE %in% DATA_TYPES$DATETIME, SCALE_LEVEL] <-
     SCALE_LEVELS$INTERVAL
 
   # 5. Variables of type 'string': nominal scale or 'na' -----------------------

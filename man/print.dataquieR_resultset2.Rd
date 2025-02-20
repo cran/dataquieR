@@ -4,7 +4,16 @@
 \alias{print.dataquieR_resultset2}
 \title{Generate a HTML-based report from a \link{dataquieR} report}
 \usage{
-\method{print}{dataquieR_resultset2}(x, dir, view = TRUE, disable_plotly = FALSE, block_load_factor = 4, ...)
+\method{print}{dataquieR_resultset2}(
+  x,
+  dir,
+  view = TRUE,
+  disable_plotly = FALSE,
+  block_load_factor = 4,
+  advanced_options = list(),
+  dashboard = NA,
+  ...
+)
 }
 \arguments{
 \item{x}{\link[=dq_report2]{dataquieR report v2}.}
@@ -20,6 +29,14 @@ overwritten inside that directory}
 
 \item{block_load_factor}{\link{numeric} multiply size of parallel compute blocks
 by this factor.}
+
+\item{advanced_options}{\link{list} options to set during report computation,
+see \code{\link[=options]{options()}}}
+
+\item{dashboard}{\link{logical} dashboard mode: \code{TRUE}: create a dashboard only,
+\code{FALSE}: don't create a dashboard at all,
+\code{NA} or missing: create a "normal" report with
+a dashboard included.}
 
 \item{...}{additional arguments:}
 }

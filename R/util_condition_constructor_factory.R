@@ -18,9 +18,9 @@ util_condition_constructor_factory <- function(
 
   .cond_constructor <-
     switch (.condition_type,
-            error = simpleError,
-            warning = simpleWarning,
-            message = simpleMessage)
+            error = rlang::error_cnd,
+            warning = rlang::warning_cnd,
+            message = rlang::message_cnd)
 
   .caller_control_att <- paste0("dataquieR.",
                                 toupper(.condition_type),
@@ -29,7 +29,8 @@ util_condition_constructor_factory <- function(
 
   function(m, ..., applicability_problem = NA,
            intrinsic_applicability_problem = NA,
-           integrity_indicator = "none", level = 0, immediate) {
+           integrity_indicator = "none", level = 0, immediate, title = "",
+           additional_classes = c()) {
     if (identical(getOption("dataquieR.debug", FALSE), TRUE)) {
       browser()
     }
@@ -66,7 +67,7 @@ util_condition_constructor_factory <- function(
     start_from_call <- length(sys.calls()) - start_from_call # refers to reverted sys.calls, so mirror the number
     caller. <- sys.call(1)
     calling <- character(0)
-    if (!is.na(start_from_call)) {
+    if (FALSE) { # (!is.na(start_from_call)) {
       try(silent = TRUE, {
         caller. <- sys.call(start_from_call)
         calling <- util_deparse1(sys.call(start_from_call + 1))
@@ -82,12 +83,12 @@ util_condition_constructor_factory <- function(
                     paste0(deparse(sc, nlines = 2),
                            collapse = "\n"))[
                              -seq_len(start_from_call)]
-    if (!!length(str)) {
-      stacktrace <- (paste0(paste0("> ", str),
-                            collapse = "\n"))
-    } else {
+    # if (!!length(str)) {
+    #   stacktrace <- (paste0(paste0("> ", str),
+    #                         collapse = "\n"))
+    # } else {
       stacktrace <- character(0)
-    }
+    # }
 
     if (identical(as.logical(getOption("dataquieR.CONDITIONS_WITH_STACKTRACE", FALSE)), FALSE)) {
       stacktrace <- ""
@@ -99,13 +100,29 @@ util_condition_constructor_factory <- function(
     if (identical(as.logical(getOption(.caller_control_att, .caller_control_att_default)), FALSE)) {
       caller. <- NULL
     }
+    if (inherits(m, "try-error")) {
+      m <- attr(m, "condition")
+    }
     if (inherits(m, "condition")) {
-      m <- conditionMessage(m)
+      .m <- m
+      m <- paste0(title, conditionMessage(m))
       if (m == "") {
-        m <- "Error"
+        if (inherits(.m, "error")) {
+          m <- "Error"
+        } else if (inherits(.m, "warning")) {
+          m <- "Warning"
+        } else if (inherits(.m, "message")) {
+          m <- "Message"
+        } else {
+          m <- "Condition -- should not be displayed, sorry. Please report."
+        }
       }
       ec <-
-        .cond_constructor(paste(c(m, calling, stacktrace), collapse = "\n"), call = caller.)
+        .cond_constructor(message = paste(c(m, calling, stacktrace),
+                                          collapse = "\n"),
+                          trace = rlang::trace_back(bottom = 2),
+                          use_cli_format = !.called_in_pipeline,
+                          call = caller.)
 
     } else {
       mm <- paste0(m,
@@ -116,8 +133,10 @@ util_condition_constructor_factory <- function(
         mm <- sub("(%[^%]$)", "\\1", mm, perl = TRUE)
       }
       ec <-
-        .cond_constructor(paste0(c(do.call("sprintf", c(
-          list(fmt = mm),
+        .cond_constructor(trace = rlang::trace_back(bottom = 2),
+                          use_cli_format = !.called_in_pipeline,
+                          message = paste0(c(do.call("sprintf", c(
+          list(fmt = paste0(title, mm)),
           m_args)),
                                    calling, stacktrace), collapse = "\n"),
                     call = caller.)
@@ -125,6 +144,7 @@ util_condition_constructor_factory <- function(
     attr(ec, "applicability_problem") <- applicability_problem
     attr(ec, "intrinsic_applicability_problem") <- intrinsic_applicability_problem
     attr(ec, "integrity_indicator") <- integrity_indicator
+    class(ec) <- unique(c(additional_classes, class(ec)))
     if (level >= getOption("dataquieR.CONDITIONS_LEVEL_TRHESHOLD",
                   dataquieR.CONDITIONS_LEVEL_TRHESHOLD_default) ||
         inherits(ec, "error")) {
@@ -134,9 +154,24 @@ util_condition_constructor_factory <- function(
             as.character(conditionCall(ec)),
             ":\n",
             conditionMessage(ec),
+            "\n",
             file = stderr()) # rlang currently only calls warning
       }
-      rlang::cnd_signal(ec)
+      if (inherits(ec, "error")) {
+        rlang::cnd_signal(ec)
+      } else {
+        if (inherits(ec, "warning")) {
+          rlang::cnd_signal(ec)
+        } else {
+          x <- capture.output(rlang::cnd_signal(ec), file = NULL, type = "message")
+          if (length(x)) {
+            cat(sep = "\n", x, file = stderr())
+            if (!endsWith(x[length(x)], "\n")) {
+              cat("\n", file = stderr())
+            }
+          }
+        }
+      }
     }
     invisible(ec)
   }

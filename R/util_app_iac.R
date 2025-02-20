@@ -23,6 +23,14 @@ util_app_iac <- function(x, dta) {
     c1 <- rep(0, times = dim(x)[1])
   }
 
+  if (VALUE_LABEL_TABLE %in% names(x)) {
+    c1 <- c1 | ifelse(!is.na(x[[VALUE_LABEL_TABLE]]), 1, 0)
+  }
+
+  if (STANDARDIZED_VOCABULARY_TABLE %in% names(x)) {
+    c1 <- c1 | ifelse(!is.na(x[[STANDARDIZED_VOCABULARY_TABLE]]), 1, 0)
+  }
+
   if (DATA_TYPE %in% names(x)) {
     c2 <- ifelse(!is.na(x[[DATA_TYPE]]) &
                    (x[[DATA_TYPE]] %in% c(DATA_TYPES$INTEGER,
@@ -33,7 +41,7 @@ util_app_iac <- function(x, dta) {
   }
 
 
-  aa <- paste0(dta, c1)
+  aa <- paste0(dta, as.integer(c1))
   score <- as.numeric(recode(as.factor(aa), "00" = 0, "01" = 1,
                              "10" = 2, "11" = 3))
   score[c2 == 0] <- 4

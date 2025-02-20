@@ -8,32 +8,8 @@
 #'
 #' @return a modified `ggplot`
 #'
-#' @examples
-#' \dontrun{
-#' load(system.file("extdata", "study_data.RData", package = "dataquieR"))
-#' load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
-#' ggplot(study_data, aes(x = v00013, y = v00004)) + geom_point() +
-#'   util_gg_var_label()
-#' m <- acc_margins(study_data = study_data, meta_data = meta_data,
-#'   resp_vars = "v00004",
-#'   group_vars = "v00012", label_col = VAR_NAMES)
-#' m$SummaryPlot + util_gg_var_label()
-#' l <- acc_loess(study_data = study_data, meta_data = meta_data,
-#'   time_vars = "v00013",
-#'   resp_vars = "v00004",
-#'   group_vars = "v00012", label_col = VAR_NAMES)
-#' l$SummaryPlotList$v00004 + util_gg_var_label()
-#'
-#' d <- acc_distributions("v00004", study_data = study_data,
-#'   meta_data = meta_data,
-#'   label_col = VAR_NAMES)
-#'
-#' d$SummaryPlotList$v00004 + util_gg_var_label()
-#' }
-#'
 #' @concept process
 #' @keywords internal
-
 util_gg_var_label <- function(...,
                               meta_data = get("meta_data", parent.frame()),
                               label_col = get("label_col", parent.frame())) { # nocov start

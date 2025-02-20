@@ -7,7 +7,7 @@
 </h3>
 
 <p>
-  A data frame containing information to classify results.
+  A table containing information to classify results.
   For each indicator metric listed in the ruleset, the corresponding result
   is classified using the range of values separated in a maximum
   of 5 categories (dqi_cat_1 to dqi_cat_5). The default
@@ -17,13 +17,13 @@
   </p>
  <p>
   A customized ruleset can be specified by the user providing a new data frame
-  "grading_rulesets" using <i>prep_add_dataframes()</i> before
+  "grading_rulesets" using <i>prep_add_data_frames()</i> before
   rendering the report, for example:
   <pre>
-prep_add_dataframes(grading_rulesets = "~/Documents/my_grading_rulesets.xlsx")
+prep_add_data_frames(grading_rulesets = "~/Documents/my_grading_rulesets.xlsx")
   </pre>
-  This new data frame should have
-  the same columns as the default ruleset and the code "GRADING_RULESET" = 0.
+  This new table should have
+  the same columns as the default ruleset and "GRADING_RULESET" = 0.
   </p>
  <p>
   Additionally, in case it is needed, a user can assign different
@@ -34,8 +34,8 @@ prep_add_dataframes(grading_rulesets = "~/Documents/my_grading_rulesets.xlsx")
   data frame "grading_rulesets";
   </li>
   <li>
-  add a new column "GRADING_RULESET" in the item-level metadata, in which
-  associate each variable to the number of the relevant ruleset.
+  add a new column "GRADING_RULESET" in the item-level metadata, associating
+  each variable to the number of the relevant ruleset.
   </li>
   </ul>
   If no customized ruleset is provided, the ruleset shipped with dataquieR

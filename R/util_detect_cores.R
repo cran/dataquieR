@@ -17,7 +17,11 @@ util_detect_cores <- function() {
     cpus <- rJava::.jcall(rt, "I", "availableProcessors")
     return(cpus)
   } else if (requireNamespace("parallel", quietly = TRUE)) {
-    return(parallel::detectCores())
+    r <- parallel::detectCores()
+    if (length(r) != 1 || is.na(r) || !util_is_integer(r) || r < 1) {
+      r <- 1
+    }
+    return(r)
   } else{
     util_warning(c("None of the suggested packages %s are found,",
                    "autodetection of CPU cores disabled --",

@@ -7,11 +7,11 @@ test_that("prep_save_report correctly saves a report with correct parameters", {
   # Not a dq_report2 object
   df <- data.frame(a =  1:5, b = letters[1:5])
   expect_error(prep_save_report(df, tmp_file))
-
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # Create example report
-  prep_load_workbook_like_file("meta_data_v2")
+  prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx")
 
-  study_data <- prep_get_data_frame("study_data")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <- prep_get_data_frame("item_level")
 
   sd0 <- study_data[, 1:5]
@@ -30,7 +30,7 @@ test_that("prep_save_report correctly saves a report with correct parameters", {
                            "^acc_varcomp$"),
                        filter_result_slots =
                          c("^SummaryTable$"),
-                       cores = 1,
+                       cores = NULL,
                        dimensions = # for speed, omit Accuracy
                          c("Integrity",
                            "Completeness",

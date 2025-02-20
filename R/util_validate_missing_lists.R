@@ -111,11 +111,11 @@ util_validate_missing_lists <-
     }
 
     if (!is.data.frame(cause_label_df) ||
-        !(all(c("CODE_VALUE", "CODE_LABEL") %in% colnames(cause_label_df)))) {
+        !(all(c(CODE_VALUE, CODE_LABEL) %in% colnames(cause_label_df)))) {
       util_message(
         c("Need columns %s in %s, which must be a data frame if given.",
           "Will ignore this argument"),
-        paste(dQuote(c("CODE_VALUE", "CODE_LABEL")), collapse = ", "),
+        paste(dQuote(c(CODE_VALUE, CODE_LABEL)), collapse = ", "),
         dQuote("cause_label_df"),
         applicability_problem = TRUE)
       cause_label_df <- data.frame(
@@ -125,13 +125,13 @@ util_validate_missing_lists <-
       )[FALSE, , FALSE]
     }
 
-    if ("CODE_CLASS" %in% colnames(cause_label_df)) {
+    if (CODE_CLASS %in% colnames(cause_label_df)) {
       if (!suppressWarnings &&
           !all(cause_label_df$CODE_CLASS %in% c("MISSING", "JUMP", NA))) {
         util_error("Only %s and %s are valid values for the column %s in %s.",
                    dQuote("MISSING"),
                    dQuote("JUMP"),
-                   dQuote("CODE_CLASS"),
+                   dQuote(CODE_CLASS),
                    dQuote("cause_label_df"),
                    applicability_problem = TRUE)
       }
@@ -219,7 +219,7 @@ util_validate_missing_lists <-
       }
     }
 
-    if (!"CODE_CLASS" %in% colnames(cause_label_df)) {
+    if (!CODE_CLASS %in% colnames(cause_label_df)) {
       cause_label_df$CODE_CLASS <- rep("MISSING", nrow(cause_label_df))
     }
 
@@ -258,11 +258,11 @@ util_validate_missing_lists <-
 
     if (assume_consistent_codes) {
       cld <-
-        cause_label_df[, c("CODE_VALUE", "CODE_LABEL", "CODE_CLASS"), FALSE]
+        cause_label_df[, c(CODE_VALUE, CODE_LABEL, CODE_CLASS), FALSE]
       cld <- cld[!duplicated(cld), , FALSE]
       d <- duplicated(cld$CODE_VALUE)
       if (any(d)) {
-        dd <- unique(cld[d, "CODE_VALUE", TRUE])
+        dd <- unique(cld[d, CODE_VALUE, TRUE])
         if (!suppressWarnings) {
           util_warning(
             "Found missing code(s) with more than one meaning:\n%s",
@@ -287,7 +287,7 @@ util_validate_missing_lists <-
       s_cause_label_df <- split(cause_label_df,
             list(cause_label_df$CODE_VALUE)) # , cause_label_df$CODE_CLASS
       warn_expand <- function(cldf) {
-        my_labels <- cldf[!cldf$AUTO, "CODE_LABEL", TRUE]
+        my_labels <- cldf[!cldf$AUTO, CODE_LABEL, TRUE]
         my_labels <- my_labels[!is.na(my_labels)]
         if (!suppressWarnings && length(unique(my_labels)) == 1) {
           util_message("Would use label %s for all values coded with %s",

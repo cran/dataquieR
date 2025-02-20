@@ -19,6 +19,17 @@ summary.dataquieR_resultset2 <- function(object, aspect = c("applicability", "er
                                    FUN,
                                    collapse = "\n<br />\n",
                                    ...) {
+  my_storr_object <- util_get_storr_object_from_report(object)
+  # FIXME: Go only once ofer all results
+  # TODO: depending on the back-end, do not access the single results but load from the summary namespace
+  if (!is.null(attr(object, "repsum")) &&
+      identical(rlang::call_args_names(rlang::call_match()), "object") &&
+      identical(attr(attr(object, "repsum"), "rule_digest"),
+                rlang::hash(list(util_get_rule_sets(),
+                                 util_get_ruleset_formats())))
+      ) {
+    return(attr(object, "repsum"))
+  }
   if (missing(FUN)) {# TODO: I need this long-format overall dq summary data frame also elsewhere
     util_stop_if_not("aspect is only supported for specific FUN values" =
                        missing(aspect))
@@ -71,38 +82,17 @@ summary.dataquieR_resultset2 <- function(object, aspect = c("applicability", "er
                               util_as_cat(names(colors)))), nm = names(colors)))
 
     filter_of <- labels
-    all_matrices <-
-      lapply(setNames(nm = c("applicability", "error", "anamat", "indicator_or_descriptor")),
-             function(aspect) {
-               catsum <- util_melt_summary(object, aspect = aspect,
-                                           FUN = function(...) {
-                                             rs <- util_get_category_for_result(...)
-                                             as.character(as.numeric(util_as_cat(rs)))
-                                           })
-               msgsum <- util_melt_summary(object, aspect = aspect,
-                                           FUN = util_get_message_for_result)
-               list(
-                 cat =
-                   cbind.data.frame(catsum,
-                         indicator_metric = rep(paste0("CAT_", aspect),
-                                                nrow(catsum))),
-                 msg = cbind.data.frame(msgsum,
-                             indicator_metric = rep(paste0("MSG_", aspect),
-                                                    nrow(msgsum)))
-               )
-             })
-    issue <-
-      prep_summary_to_classes(
-        prep_extract_summary(object))
-    issue$function_name <- # TODO: This should be done by prep_extract_summary.
-      vapply(FUN.VALUE = character(1),
-             setNames(nm = issue$call_names),
-             util_cll_nm2fkt_nm,
-             report = object)
 
-    result <-
-      util_rbind(data_frames_list = c(list(issue = issue),
-                                    unlist(all_matrices, recursive = FALSE)))
+    if (!is.null(my_storr_object)) {
+      namespace = util_get_storr_summ_namespace(my_storr_object)
+      all_sums <- my_storr_object$mget(my_storr_object$list(
+        namespace = namespace),
+                          namespace = namespace)
+    } else {
+      all_sums <- lapply(object, attr, "r_summary")
+    }
+
+    result <- util_rbind(data_frames_list = all_sums)
 
     if (any(is.na(result$n_classes))) {
       result[is.na(result$n_classes), "n_classes"] <- 5
@@ -146,6 +136,16 @@ summary.dataquieR_resultset2 <- function(object, aspect = c("applicability", "er
         as.data.frame(setNames(rep(list(character(0)), length(cls)), nm = cls))
     }
 
+    if (!"class" %in% colnames(result)) {
+      result$class <- rep(NA, nrow(result))
+    }
+
+#    result$class <- 1 # fixme: this needs to be replaced by the interval code R/prep_summary_to_classes.R
+#    result$class[is.na(result$class)] <- "NA"
+    result$class <- util_as_cat(result$class)
+
+    result <- result[!is.na(result[[VAR_NAMES]]), , FALSE] # remove all non-variable-related stuff, not yet supported, here.
+
     result %>% dplyr::filter(!startsWith(as.character(indicator_metric), "CAT_") &
                                !startsWith(as.character(indicator_metric), "MSG_")) %>%
       dplyr::group_by(VAR_NAMES) %>%
@@ -168,6 +168,8 @@ summary.dataquieR_resultset2 <- function(object, aspect = c("applicability", "er
                              FUN.VALUE = character(1))
 
     get_cell_text <- function(lb, cl, o, f, vn) {
+      # util_message("lb = %s, cl = %s, o = %s, f = %s, vn = %s",
+      #              sQuote(lb), sQuote(cl), sQuote(o), sQuote(f), sQuote(vn))
       link <- util_generate_anchor_link(labels_of_var_names_in_report[[vn]],
                                         "",
                                         title =
@@ -228,6 +230,10 @@ summary.dataquieR_resultset2 <- function(object, aspect = c("applicability", "er
     function_alias_map <- unique(function_alias_map[ , c("name", "alias"), drop = FALSE])
     alias_names <- setNames(function_alias_map$name, nm = function_alias_map$alias)
 
+    # FIXME: avoid to do this already once, before
+    result <- util_metrics_to_classes(result,
+                                      attr(object, "meta_data")) # re-classify
+
     this <- new.env(parent = emptyenv())
 
     for (prop in c("result", # long format of the summary, column indicator_metric contains CAT_ and MSG_, which are special process classes
@@ -262,7 +268,9 @@ summary.dataquieR_resultset2 <- function(object, aspect = c("applicability", "er
     this[["colnames_of_report"]] <- colnames(object)
 
     attr(spreaded_result_df, "this") <- this
-
+    attr(spreaded_result_df, "rule_digest") <-
+              rlang::hash(list(util_get_rule_sets(),
+                               util_get_ruleset_formats()))
     spreaded_result_df
 
   } else {
@@ -322,7 +330,6 @@ summary.dataquieR_resultset2 <- function(object, aspect = c("applicability", "er
                                      #            cn = cn)
                                      # }
                                      # if (!is.character(r) || length(r) != 1)
-                                     #   browser()
                                      r
                                    },
                                    aspect = aspect,
@@ -331,3 +338,26 @@ summary.dataquieR_resultset2 <- function(object, aspect = c("applicability", "er
     )) # TOOD: "Any-Issue" Column
   }
 }
+
+
+util_reclassify_dataquieR_summary <- function(x) {
+  util_stop_if_not(inherits(x, "dataquieR_summary"))
+
+  if (identical(attr(x, "rule_digest"),
+            rlang::hash(list(util_get_rule_sets(),
+                             util_get_ruleset_formats()))))
+    return(x)
+
+  rs_table_long <- attr(x, "this")$result
+  meta_data <- attr(x, "this")$meta_data
+
+  attr(x, "this")$result <-
+    util_metrics_to_classes(rs_table_long, meta_data)
+
+  attr(x, "rule_digest") <-
+    rlang::hash(list(util_get_rule_sets(),
+                     util_get_ruleset_formats()))
+
+  x
+}
+

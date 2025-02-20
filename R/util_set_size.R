@@ -1,7 +1,7 @@
 #' Attaches attributes about the recommended minimum
 #' absolute sizes to the plot p
 #'
-#' @param p [ggplot] the plot
+#' @param p [ggplot2::ggplot] the plot
 #' @param width_em [numeric] len=1. the minimum width hint in `em`
 #' @param height_em [numeric] len=1. the minimum height in `em`
 #'

@@ -111,7 +111,7 @@ util_map_all <- function(label_col = VAR_NAMES,
   }
 
   if (lost > 0 && !getOption("dataquieR.ELEMENT_MISSMATCH_CHECKTYPE",
-                             "exact") %in%
+                             dataquieR.ELEMENT_MISSMATCH_CHECKTYPE_default) %in%
       c("none", "subset_m")) {
     util_warning(
       "Lost %g%% of the study data because of missing/not assignable metadata",
@@ -138,7 +138,7 @@ util_map_all <- function(label_col = VAR_NAMES,
   }
 
   if (unlost > 0 && !getOption("dataquieR.ELEMENT_MISSMATCH_CHECKTYPE",
-                               "exact") %in%
+                               dataquieR.ELEMENT_MISSMATCH_CHECKTYPE_default) %in%
       c("none", "subset_u")) {
     util_warning(
       "Lost %g%% of the metadata because of missing/not assignable study data",

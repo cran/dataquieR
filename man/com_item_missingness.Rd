@@ -5,10 +5,10 @@
 \title{Summarize missingness columnwise (in variable)}
 \usage{
 com_item_missingness(
-  study_data,
-  meta_data,
   resp_vars = NULL,
+  study_data,
   label_col,
+  item_level = "item_level",
   show_causes = TRUE,
   cause_label_df,
   include_sysmiss = TRUE,
@@ -16,21 +16,23 @@ com_item_missingness(
   suppressWarnings = FALSE,
   assume_consistent_codes = TRUE,
   expand_codes = assume_consistent_codes,
-  drop_levels = TRUE,
+  drop_levels = FALSE,
   expected_observations = c("HIERARCHY", "ALL", "SEGMENT"),
-  pretty_print = lifecycle::deprecated()
+  pretty_print = lifecycle::deprecated(),
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
-\item{study_data}{\link{data.frame} the data frame that contains the measurements}
-
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
-
 \item{resp_vars}{\link{variable list} the name of the measurement variables}
+
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
 
 \item{show_causes}{\link{logical} if TRUE, then the distribution of missing codes
 is shown}
@@ -83,6 +85,14 @@ expected, if both segment variables are
 \item{pretty_print}{\link{logical} deprecated. If you want to have a human
 readable output, use \code{SummaryData} instead
 of \code{SummaryTable}}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 a list with:

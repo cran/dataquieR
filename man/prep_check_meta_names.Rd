@@ -4,10 +4,16 @@
 \alias{prep_check_meta_names}
 \title{Checks the validity of metadata w.r.t. the provided column names}
 \usage{
-prep_check_meta_names(meta_data = "item_level", level, character.only = FALSE)
+prep_check_meta_names(
+  item_level = "item_level",
+  level,
+  character.only = FALSE,
+  meta_data = item_level,
+  meta_data_v2
+)
 }
 \arguments{
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
 \item{level}{\link{enum} level of requirement (see also \link{VARATT_REQUIRE_LEVELS}).
@@ -15,6 +21,14 @@ set to \code{NULL} to deactivate the check of richness.}
 
 \item{character.only}{\link{logical} a logical indicating whether level can be
 assumed to be character strings.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 a logical with:

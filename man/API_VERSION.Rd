@@ -5,7 +5,7 @@
 \alias{API_VERSION}
 \title{Version of the API}
 \format{
-An object of class \code{character} of length 1.
+An object of class \code{package_version} (inherits from \code{numeric_version}) of length 1.
 }
 \usage{
 API_VERSION

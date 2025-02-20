@@ -6,18 +6,22 @@
 \usage{
 con_contradictions_redcap(
   study_data,
-  meta_data,
+  item_level = "item_level",
   label_col,
   threshold_value,
   meta_data_cross_item = "cross-item_level",
   use_value_labels,
-  summarize_categories = FALSE
+  summarize_categories = FALSE,
+  meta_data = item_level,
+  cross_item_level,
+  `cross-item_level`,
+  meta_data_v2
 )
 }
 \arguments{
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
@@ -27,8 +31,9 @@ with labels of variables}
 ranging from 0-100}
 
 \item{meta_data_cross_item}{\link{data.frame} contradiction rules table.  Table
-defining contradictions. See details for
-its required structure.}
+defining contradictions. See
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_Cross_Item_Level_Metadata.html}{online documentation}
+for its required structure.}
 
 \item{use_value_labels}{\link{logical} Deprecated in favor of \link{DATA_PREPARATION}.
 If set to \code{TRUE}, labels can be used in the
@@ -38,15 +43,25 @@ contractions have to be specified using the coded
 values. In case that this argument is not set in
 the function call, it will be set to \code{TRUE} if
 the metadata contains a column \code{VALUE_LABELS}
-which is not empty.
+which is not empty.}
 
-\code{inheritParams} \code{acc_distributions}}
-
-\item{summarize_categories}{\link{logical} Needs a column 'CONTRADICTION_TYPE' in
+\item{summarize_categories}{\link{logical} Needs a column \code{CONTRADICTION_TYPE} in
 the \code{meta_data_cross_item}.
 If set, a summary output is generated for the
 defined categories plus one plot per
 category. TODO: Not yet controllable by metadata.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{cross_item_level}{\link{data.frame} alias for \code{meta_data_cross_item}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{`cross-item_level`}{\link{data.frame} alias for \code{meta_data_cross_item}}
 }
 \value{
 If \code{summarize_categories} is \code{FALSE}:
@@ -58,20 +73,24 @@ of observations in the study data. In addition, for
 each applied check on the variables an additional
 column is added which flags observations with a
 contradiction given the applied check.
-\item \code{SummaryData}: The second output summarizes this information into one
+\item \code{VariableGroupData}: The second output summarizes this information
+into one
 data frame. This output can be used to provide an
 executive overview on the amount of contradictions.
-\item \code{VariableGroupTable}: A subset of \code{SummaryData} used within the pipeline.
+\item \code{VariableGroupTable}: A subset of \code{VariableGroupData} used within the
+pipeline.
 \item \code{SummaryPlot}: The third output visualizes summarized information
 of \code{SummaryData}.
 }
 
 If \code{summarize_categories} is \code{TRUE}, other objects are returned:
+A list with one element \code{Other}, a list with the following entries:
 One per category named by that category (e.g. "Empirical") containing a
 result for contradiction checks within that category only. Additionally, in the
 slot \code{all_checks}, a result as it would have been returned with
-\code{summarize_categories} set to \code{FALSE}. Finally, a slot \code{SummaryData} is
-returned containing sums per Category and an according \link{ggplot} in
+\code{summarize_categories} set to \code{FALSE}. Finally, in
+the top-level list, a slot \code{SummaryData} is
+returned containing sums per Category and an according \link[ggplot2:ggplot]{ggplot2::ggplot} in
 \code{SummaryPlot}.
 }
 \description{
@@ -108,24 +127,8 @@ combination, and
 List function.
 }
 }
-\examples{
-\dontrun{ # slow
-load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
-load(system.file("extdata", "study_data.RData", package = "dataquieR"))
-meta_data_cross_item <- prep_get_data_frame("meta_data_v2|cross-item_level")
-label_col <- "LABEL"
-threshold_value <- 1
-con_contradictions_redcap(
-  study_data = study_data, meta_data = meta_data, label_col = label_col,
-  threshold_value = threshold_value, meta_data_cross_item = meta_data_cross_item
-)
-con_contradictions_redcap(
-  study_data = study_data, meta_data = meta_data, label_col = label_col,
-  threshold_value = threshold_value, meta_data_cross_item = meta_data_cross_item,
-  summarize_categories = TRUE
-)
-}
-}
 \seealso{
-\href{https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html}{Online Documentation}
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions_redcap.html}{Online Documentation for the function}
+\link{meta_data_cross}
+\href{https://dataquality.qihs.uni-greifswald.de/Cross_Item_Level_Metadata.html}{Online Documentation for the required cross-item-level metadata}
 }

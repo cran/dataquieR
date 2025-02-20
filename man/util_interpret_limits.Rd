@@ -20,7 +20,6 @@ Utility function to split limit definitions into interpretable elements
 \link{util_validate_known_meta}
 
 Other parser_functions: 
-\code{\link{util_interpret_range}()},
 \code{\link{util_parse_assignments}()},
 \code{\link{util_parse_interval}()},
 \code{\link{util_parse_redcap_rule}()}

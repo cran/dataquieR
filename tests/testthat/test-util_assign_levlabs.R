@@ -1,7 +1,8 @@
 test_that("util_assign_levlabs works", {
   skip_on_cran()
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   vname <- "v50000"
      labelled_var <-
        dataquieR:::util_assign_levlabs(
@@ -74,11 +75,10 @@ test_that("util_assign_levlabs works", {
              )),
              regexp =
                      "use levels as labels",
-             all = TRUE,
              fixed = TRUE
      )
      string_of_levlabs_now <- "no = no = no"
-     expect_warning(invisible(
+     expect_warning(expect_warning(invisible(
              util_assign_levlabs(
                      variable = non_num_labs,
                      string_of_levlabs = string_of_levlabs_now,
@@ -89,7 +89,8 @@ test_that("util_assign_levlabs works", {
           "Number of levels in variable greater than in character string.",
           "use levels as labels"
              ),
-             all = TRUE,
              perl = TRUE
-     )
+     ),
+     "Inadmissible categorical values found, use levels as labels",
+     perl = TRUE)
 })

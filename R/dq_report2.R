@@ -1,10 +1,7 @@
 #' Generate a full DQ report, v2
 #'
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
+#' @inheritParams .template_function_indicator
+#'
 #' @param ... arguments to be passed to all called indicator functions if
 #'            applicable.
 #' @param cores [integer] number of cpu cores to use or a named list with
@@ -70,11 +67,6 @@
 #'                         the default is 15, which gives on most of the tested
 #'                         systems a good balance between synchronization
 #'                         overhead and idling workers.
-#' @param meta_data_v2 [character] path to workbook like metadata file, see
-#'                                 [`prep_load_workbook_like_file`] for details.
-#'                                 **ALL LOADED DATAFRAMES WILL BE PURGED**,
-#'                                 using [`prep_purge_data_frame_cache`],
-#'                                 if you specify `meta_data_v2`.
 #' @param notes_from_wrapper [list] a list containing notes about changed labels
 #'                                  by `dq_report_by` (otherwise NULL)
 #' @param title [character] optional argument to specify the title for
@@ -83,6 +75,25 @@
 #'                             the data quality report
 #' @param advanced_options [list] options to set during report computation,
 #'                                see [options()]
+#' @param meta_data_item_computation [data.frame] optional. computation rules
+#'                                              for computed variables.
+#' @param storr_factory [function] `NULL`, or
+#'                        a function returning a `storr` object as
+#'                        back-end for the report's results. If used with
+#'                        `cores > 1`, the storage must be accessible from all
+#'                        cores and capable of concurrent writing according
+#'                        to `storr`. Hint: `dataquieR` currently only supports
+#'                        `storr::storr_rds()`, officially, while other back-
+#'                        ends may nevertheless work, yet, they are not tested.
+#' @param amend [logical] if there is already data in.`storr_factory`,
+#'                        use it anyways -- unsupported, so far!
+#' @param cross_item_level [data.frame] alias for `meta_data_cross_item`
+#' @param `cross-item_level` [data.frame] alias for `meta_data_cross_item`
+#' @param segment_level [data.frame] alias for `meta_data_segment`
+#' @param dataframe_level [data.frame] alias for `meta_data_dataframe`
+#' @param item_computation_level [data.frame] alias for
+#'                               `meta_data_item_computation`
+#' @param .internal [logical] internal use, only.
 #'
 #' @return a [dataquieR_resultset2] that can be
 #' [printed][print.dataquieR_resultset2] creating a `HTML`-report.
@@ -110,13 +121,27 @@
 #' cat(vapply(x, deparse1, FUN.VALUE = character(1)), sep = "\n", file = "all_calls.txt")
 #' rstudioapi::navigateToFile("all_calls.txt")
 #' eval(x$`acc_multivariate_outlier.Blood pressure checks`)
-#'}
+#'
+#' prep_load_workbook_like_file("meta_data_v2")
+#' rules <- tibble::tribble(
+#'   ~resp_vars,  ~RULE,
+#'   "BMI", '[BODY_WEIGHT_0]/(([BODY_HEIGHT_0]/100)^2)',
+#'   "R", '[WAIST_CIRC_0]/2/[pi]', # in m^3
+#'   "VOL_EST", '[pi]*([WAIST_CIRC_0]/2/[pi])^2*[BODY_HEIGHT_0] / 1000', # in l
+#'  )
+#' prep_load_workbook_like_file("ship_meta_v2")
+#' prep_add_data_frames(computed_items = rules)
+#' r <- dq_report2("ship", dimensions = NULL, label_col = "LABEL")
+#' }
 dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
-                       meta_data = "item_level",
+                       item_level = "item_level",
                        label_col = LABEL,
                        meta_data_segment = "segment_level",
                        meta_data_dataframe = "dataframe_level",
                        meta_data_cross_item = "cross-item_level",
+                       meta_data_item_computation =
+                         "item_computation_level",
+                       meta_data = item_level,
                        meta_data_v2,
                        ...,
                        dimensions = c("Completeness", "Consistency"),
@@ -144,7 +169,68 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                        ),
                        mode = c("default", "futures", "queue", "parallel"),
                        mode_args = list(),
-                       notes_from_wrapper = list()) {
+                       notes_from_wrapper = list(),
+                       storr_factory = NULL,
+                       amend = FALSE,
+                       cross_item_level,
+                       `cross-item_level`,
+                       segment_level,
+                       dataframe_level,
+                       item_computation_level,
+                       .internal =
+                         rlang::env_inherits(
+                           rlang::caller_env(),
+                           parent.env(environment()))) { # TODO: on.exit(rstudioapi::executeCommand("activateConsole")), and also in the print()-method
+  util_stop_if_not(is.list(advanced_options))
+
+  old_O <- options(
+    c(
+      list(
+        dataquieR.CONDITIONS_WITH_STACKTRACE = FALSE,
+        dataquieR.ERRORS_WITH_CALLER = FALSE,
+        dataquieR.MESSAGES_WITH_CALLER = FALSE,
+        dataquieR.WARNINGS_WITH_CALLER = FALSE
+      ),
+      advanced_options
+    )
+  )
+  on.exit(options(old_O))
+
+  my_storr_object <- util_storr_object(storr_factory)
+
+  util_expect_scalar(amend, check_type = is.logical)
+
+  if (!is.null(my_storr_object) && (
+    length(my_storr_object$list()) > 0 ||
+    length(my_storr_object$list(
+      util_get_storr_att_namespace(my_storr_object))) > 0 ||
+    length(my_storr_object$list(
+      util_get_storr_summ_namespace(my_storr_object))) > 0
+  )) {
+    if (amend) {
+      util_message(c("Your storr-object is not empty, but %s was set %s,",
+                     "so I'll amend the storage object. This is unsupported,",
+                     "yet, so expect strange behavior."),
+                   dQuote("amend"), sQuote(TRUE))
+    } else {
+      util_error(c("Your storr-object is not empty, and %s was set %s,",
+                   "so I won't amend the storage object, which would",
+                   "still be unsupported, so could cause strange behavior.",
+                   "We strongly recommend to use clear storr objects (or",
+                   "at least the default namespace (%s in your case)",
+                   "and its sister namespaces (the default namespace suffixed",
+                   "with %s and %s, should be empty. In case of %s, just",
+                   "delete the folder that backs the storr."),
+                 dQuote("amend"),
+                 sQuote(FALSE),
+                 sQuote(my_storr_object$default_namespace),
+                 sQuote(".attributes"),
+                 sQuote(".summary"),
+                 sQuote("driver_rds")
+                 )
+    }
+  }
+
   mode <- util_match_arg(mode)
 
   if (missing(title)) {
@@ -179,23 +265,25 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
     } else {
       mode <- "parallel"
     }
-  } else { # carefully consider https://github.com/r-lib/covr/pull/471 and https://github.com/r-lib/covr/issues/315
-    mode <- "parallel"
+  } else if (mode == "default") {
+      mode <- "parallel"
   }
 
   if (suppressWarnings(util_ensure_suggested("testthat", err = FALSE))) {
     if (testthat::is_testing()) {
-      if (mode != "parallel") {
+      if (!(mode %in% c("parallel", "queue"))) {
         util_warning(
-          "Internal problem: %s should be %s or %s in the context of %s",
-                     sQuote("mode"), dQuote("parallel"), dQuote("default"),
+          "Internal problem: %s should be %s, %s or %s in the context of %s",
+                     sQuote("mode"), dQuote("queue"), dQuote("parallel"),
+          dQuote("default"),
           sQuote("testthat"))
       }
-      if (!identical(cores, 1) &&
-          !identical(cores, 1L)) {
-        util_warning(
-          "Internal problem: %s should be %s or %s in the context of %s",
-          sQuote("cores"), dQuote("1"), sQuote("NULL"), sQuote("testthat"))
+      if (!rlang::is_scalar_integerish(cores) ||
+          cores > 1L) {
+        if (!is.null(cores))
+          util_warning(
+            "Internal problem: %s should be an integer below %s in the context of %s",
+            sQuote("cores"), dQuote("2"), sQuote("testthat"))
       }
     }
   }
@@ -205,7 +293,7 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                  sQuote("meta_data_v2"))
     prep_purge_data_frame_cache()
     prep_load_workbook_like_file(meta_data_v2)
-    if (!exists("item_level", .dataframe_environment)) {
+    if (!exists("item_level", .dataframe_environment())) {
       w <- paste("Did not find any sheet named %s in %s, is this",
              "really dataquieR version 2 metadata?")
       if (requireNamespace("cli", quietly = TRUE)) {
@@ -215,6 +303,10 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                    immediate = TRUE)
     }
   }
+
+  # checks and fixes the function arguments
+  util_ck_arg_aliases()
+
   if (is.data.frame(study_data)) {
     name_of_study_data <- head(as.character(substitute(study_data)), 1)
   } else if (length(study_data) == 1 && is.character(study_data)) {
@@ -230,6 +322,16 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                                                   nm = name_of_study_data))
   prep_add_data_frames(data_frame_list = setNames(list(study_data),
                                                   nm = "study_data"))
+
+  util_handle_val_tab()
+
+  # checks the data frame names in the dataframe cache
+  if (!.internal) {
+    util_verify_names(name_of_study_data = name_of_study_data)
+  }
+
+  # try, meta_data my still be missing
+  # note: we had the following twice, first w/o try, then w/ try. likely a bug
   try(meta_data <- prep_meta_data_v1_to_item_level_meta_data(meta_data),
                    silent = TRUE)
   warning_pred_meta <- NULL
@@ -265,7 +367,7 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
   }
   try(util_expect_data_frame(meta_data_dataframe), silent = TRUE)
   if (!is.data.frame(meta_data_dataframe)) {
-    util_message("No dataframe level metadata %s found",
+    util_message("No dataframe level metadata %s found.",
                  dQuote(meta_data_dataframe))
     meta_data_dataframe <- data.frame(DF_NAME =
                                         name_of_study_data)
@@ -283,6 +385,7 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
     # strip rownames from metadata to prevent confusing the html_table function
     rownames(meta_data_cross_item) <- NULL
   }
+
   suppressWarnings(util_ensure_in(VAR_NAMES, names(meta_data), error = TRUE,
                  err_msg =
                    sprintf("Did not find the mandatory column %%s in the %s.",
@@ -317,14 +420,57 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                 sQuote("label_col"),
                     sQuote("meta_data")))
 
+  try(util_expect_data_frame(meta_data_item_computation), silent = TRUE)
+  if (is.data.frame(meta_data_item_computation)) {
+    util_message("Computed items metadata defined. Computing them...")
+    # strip rownames from metadata to prevent confusing the html_table function
+    rownames(meta_data_item_computation) <- NULL
+    function_e <- environment()
+    status <- try(local({
+      res <- prep_add_computed_variables(
+        study_data = study_data,
+        meta_data = meta_data,
+        label_col = label_col,
+        rules = meta_data_item_computation
+      )
+      msd <- res$ModifiedStudyData[, meta_data_item_computation$VAR_NAMES,
+                                   drop = FALSE]
+      mapped <- identical(attr(res$ModifiedStudyData, "MAPPED"), TRUE)
+      if (mapped) {
+        mapped_lc <- attr(res$ModifiedStudyData, "label_col")
+        colnames(msd) <- prep_map_labels(colnames(msd),
+                               meta_data = meta_data,
+                               to = VAR_NAMES,
+                               from = mapped_lc,
+                               ifnotfound = colnames(msd),
+                               warn_ambiguous = FALSE)
+      }
+      function_e$study_data[,
+                            setdiff(colnames(msd),
+                                    colnames(function_e$study_data))] <-
+        msd[, setdiff(colnames(msd),
+                      colnames(function_e$study_data))]
+      invisible(NULL)
+    }), silent = TRUE)
+    if (inherits(status, "try-error")) {
+      util_warning(status)
+    } else {
+      prep_add_data_frames(data_frame_list = setNames(list(study_data),
+                                                      nm = name_of_study_data))
+      prep_add_data_frames(data_frame_list = setNames(list(study_data),
+                                                      nm = "study_data"))
+    }
+  } else {
+    meta_data_item_computation <- NULL
+  }
+
   # ensure that VAR_NAMES and labels exist, are unique and not too long
-  mod_label <- util_ensure_label(study_data = study_data,
-                                 meta_data = meta_data,
+  mod_label <- util_ensure_label(meta_data = meta_data,
                                  label_col = label_col)
   if (!is.null(mod_label$label_modification_text)) {
     # There were changes in the metadata.
-    study_data <- mod_label$study_data
     meta_data <- mod_label$meta_data
+    label_col <- mod_label$label_col
   }
   # Since we may also map to other metadata label columns, we have to ensure
   # that none of them contains empty fields to prevent errors.
@@ -344,15 +490,20 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
   util_expect_scalar(dimensions,
                      allow_more_than_one = TRUE,
                      allow_null = TRUE,
-                     check_type = is.character)
+                     check_type = is.character,
+                     error_message =
+                       sprintf("The argument %s must be character or NULL",
+                               sQuote("dimensions")))
   if (length(dimensions) == 0) {
-    dimensions <- c("Completeness", "Consistency", "Accuracy")
+    dimensions <- c("completeness", "consistency", "accuracy")
+  } else {
+    dimensions <- tolower(dimensions)
   }
-  dimensions[dimensions == "acc"] <- "Accuracy"
-  dimensions[dimensions == "con"] <- "Consistency"
-  dimensions[dimensions == "com"] <- "Completeness"
-  dimensions[dimensions == "int"] <- "Integrity"
-  dimensions[dimensions == "des"] <- "Descriptors"
+  dimensions[dimensions %in% c("acc", "accuracy")] <- "Accuracy"
+  dimensions[dimensions %in% c("con", "consistency")] <- "Consistency"
+  dimensions[dimensions %in% c("com", "completeness")] <- "Completeness"
+  dimensions[dimensions %in% c("int", "integrity")] <- "Integrity"
+  dimensions[dimensions %in% c("des", "descriptors")] <- "Descriptors"
   .dimensions <-
     util_ensure_in(dimensions,
                    c("Completeness", "Consistency", "Accuracy", "Integrity",
@@ -368,7 +519,8 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
 
   md100 <- meta_data # metadata with study data
 
-  miss_from_study <- (!(md100[[VAR_NAMES]] %in% colnames(study_data)))
+  miss_from_study <- (!(md100[[VAR_NAMES]] %in% (c(colnames(study_data),
+                                                   meta_data_item_computation$VAR_NAMES))))
 
   if (any(miss_from_study)) {
     vars_not_found <- paste0(
@@ -439,7 +591,8 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
       prep_prepare_dataframes(.replace_hard_limits = FALSE,
                               .replace_missings = FALSE,
                               .adjust_data_type = TRUE,
-                              .amend_scale_level = TRUE)
+                              .amend_scale_level = TRUE,
+                              .meta_data = meta_data)
       vec_sl <- setNames(meta_data[[SCALE_LEVEL]],
                          nm = meta_data[[VAR_NAMES]])
       function_e$meta_data[[SCALE_LEVEL]] <-
@@ -460,22 +613,6 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                                      filter_indicator_functions,
                                    resp_vars = resp_vars)
 
-  util_stop_if_not(is.list(advanced_options))
-
-  old_O <- options(
-    c(
-      list(
-        dataquieR.CONDITIONS_WITH_STACKTRACE = FALSE,
-        dataquieR.ERRORS_WITH_CALLER = FALSE,
-        dataquieR.MESSAGES_WITH_CALLER = FALSE,
-        dataquieR.WARNINGS_WITH_CALLER = FALSE,
-        dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "none"
-      ),
-      advanced_options
-    )
-  )
-  on.exit(options(old_O))
-
   tm <- system.time(
     r <- util_evaluate_calls(
       cores = cores,
@@ -490,7 +627,8 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
       resp_vars = resp_vars,
       filter_result_slots = filter_result_slots,
       mode = mode,
-      mode_args = mode_args
+      mode_args = mode_args,
+      my_storr_object = my_storr_object
     )
   )
 
@@ -503,11 +641,20 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
     cl <- sys.call(start_from_call)
   }, silent = TRUE)
 
+  # get call for dq_report_by
+  get_call <- try(deparse(sys.call(-10)), silent= TRUE)
+  if (!inherits(get_call , "try-error")) {
+    if (startsWith(paste(deparse(sys.call(-10)), collapse = ""),
+                   "dq_report_by")) {
+      cl <- eval.parent(quote({call_report_by}))
+    }
+  }
+
   p <- list( # TODO: add this also in Square2
     author = author,
     date = Sys.time(),
     call = cl, # TODO: Why does this not yet work?
-    version = paste(packageName(), packageVersion(packageName())),
+    version = paste(packageName(), util_dataquieR_version()),
     R = R.version.string,
     os = osVersion,
     machine = paste(Sys.info()[["nodename"]],
@@ -536,7 +683,7 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
 
   # TODO: Do we need this if we run prep_prepare_dataframes above?
   suppressWarnings(suppressMessages(
-    try(withCallingHandlers(util_validate_known_meta(meta_data),
+    try(withCallingHandlers(meta_data <- util_validate_known_meta(meta_data),
                            error = capture,
                            warning = capture,
                            message = capture), silent = TRUE)))
@@ -544,7 +691,8 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
 
   if (scale_level_predicted) { # TODO: sort all the hints and have only one metadata integrity hints object?
     suppressWarnings(suppressMessages(
-      try(withCallingHandlers(util_message(c("Did not find any %s column in item-level %s. Predicting",
+      try(withCallingHandlers(util_message(c(
+        "Missing some or all entries in %s column in item-level %s. Predicting",
                    "it from the data -- please verify these predictions, they",
                    "may be wrong and lead to functions claiming not to be",
                    "reasonably applicable to a variable."),
@@ -560,7 +708,20 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
     rstudioapi::executeCommand("activateConsole")
   }
 
-  util_attach_attr(r,
+  if (!is.null(my_storr_object) &&
+      inherits(my_storr_object, "storr") &&
+      !util_is_try_error(try(my_storr_object$list(), silent = TRUE))) {
+    # to make summary work
+    atts_r <- attributes(r)
+    atts_r[["my_storr_object"]] <- NULL # dont save this ever
+    my_storr_object$mset(key = names(atts_r), value = atts_r, namespace =
+                           util_get_storr_att_namespace(my_storr_object))
+  }
+
+#  repsum <- summary(r) FIXME: Dead slow!!
+repsum <- NA
+
+  r <- util_attach_attr(r,
                    properties = p,
                    min_render_version = as.numeric_version("1.0.0"),
                    warning_pred_meta = warning_pred_meta,
@@ -571,8 +732,28 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                      notes_from_wrapper[["label_modification_table"]],
                      mod_label$label_modification_table),
                    label_meta_data_hints = meta_data_hints,
+                   meta_data_item_computation = meta_data_item_computation,
+                   repsum = repsum,
                    title = title,
                    subtitle = subtitle)
+
+  if (!is.null(my_storr_object) &&
+      inherits(my_storr_object, "storr") &&
+      !util_is_try_error(try(my_storr_object$list(), silent = TRUE))) {
+
+    # to make summary work
+    atts_r <- attributes(r)
+    atts_r[["my_storr_object"]] <- NULL # dont save this ever
+    my_storr_object$mset(key = names(atts_r), value = atts_r, namespace =
+                           util_get_storr_att_namespace(my_storr_object))
+
+#    my_storr_object$mset(key = names(r), value = r)
+
+    attr(r, "my_storr_object") <- my_storr_object
+
+  }
+
+  r
 }
 
 .study_data_cache <- new.env(parent = emptyenv())
@@ -657,7 +838,9 @@ util_populate_study_data_cache <- function(study_data, meta_data, label_col, qui
   .replace_hard_limits = FALSE,
   .replace_missings = FALSE,
   .adjust_data_type = FALSE,
-  .amend_scale_level = FALSE
+  .amend_scale_level = FALSE,
+  .apply_factor_metadata = FALSE,
+  .apply_factor_metadata_inadm = FALSE
 ))
 .to_combine <- setdiff(names(.call_template),
                       c("", ".study_data", ".meta_data", ".label_col"))

@@ -4,7 +4,22 @@
 \alias{util_load_manual}
 \title{being called by the active binding function for .manual}
 \usage{
-util_load_manual()
+util_load_manual(
+  rebuild = FALSE,
+  target = "inst/manual.RData",
+  target2 = "inst/indicator_or_descriptor.RData",
+  man_hash = ""
+)
+}
+\arguments{
+\item{rebuild}{rebuild the cache}
+
+\item{target}{file for \code{..manual}}
+
+\item{target2}{file for \code{..indicator_or_descriptor}}
+
+\item{man_hash}{internal use: hash-sum over the manual to prevent rebuild
+if not changed.}
 }
 \description{
 being called by the active binding function for .manual
@@ -22,7 +37,6 @@ Other reporting_functions:
 \code{\link{util_generate_calls}()},
 \code{\link{util_generate_calls_for_function}()},
 \code{\link{util_make_data_slot_from_table_slot}()},
-\code{\link{util_make_function}()},
 \code{\link{util_order_by_order}()},
 \code{\link{util_set_size}()}
 }

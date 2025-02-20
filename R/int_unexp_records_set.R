@@ -12,47 +12,48 @@
 #'            [util_int_unexp_records_set_segment] or
 #'            [util_int_unexp_records_set_dataframe]
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @return a [list]. Depending on `level`, see
 #'   [util_int_unexp_records_set_segment] or
 #'   [util_int_unexp_records_set_dataframe] for a description of the outputs.
 #'
 #' @export
 #'
-#' @examples
-#' \dontrun{
-#' study_data <- readRDS(system.file("extdata", "ship.RDS",
-#'   package = "dataquieR"
-#' ))
-#' meta_data <- readRDS(system.file("extdata", "ship_meta.RDS",
-#'   package = "dataquieR"
-#' ))
-#' md1_segment <- readRDS(system.file("extdata", "meta_data_segment.RDS",
-#'   package = "dataquieR"
-#' ))
-#' ids_segment <- readRDS(system.file("extdata", "meta_data_ids_segment.RDS",
-#'   package = "dataquieR"
-#' ))
-#'
-#' # TODO: update examples
-#' int_unexp_records_set(
-#'   level = "segment",
-#'   identifier_name_list = c("INTERVIEW", "LABORATORY"),
-#'   valid_id_table_list = ids_segment,
-#'   meta_data_record_check = md1_segment[,
-#'     c("STUDY_SEGMENT", "SEGMENT_RECORD_CHECK")],
-#'   study_data = study_data,
-#'   meta_data = meta_data,
-#'   meta_data_level = md1_segment
-#' )
-#' }
 int_unexp_records_set <- function(level = c("dataframe", "segment"),
+                                  study_data,
+                                  item_level = "item_level",
+                                  label_col,
+                                  meta_data = item_level,
+                                  meta_data_v2,
                                   ...) {
+  util_maybe_load_meta_data_v2()
 
   level <- util_match_arg(level)
-  cl <- sys.call()
-  fname <- paste("util", util_deparse1(cl[[1]]), level, sep = "_")
+  fname <- rlang::call_name(rlang::frame_call())
+  fname <- paste("util", fname, level, sep = "_")
+  miss_label_col <- missing(label_col)
+  if (miss_label_col) {
+    label_col <- NULL
+  }
+  if (missing(study_data)) {
+    cl_l <- list(fname, level = level, item_level = item_level,
+                 meta_data = meta_data,
+                 label_col = label_col, ...)
+  } else {
+    cl_l <- list(fname, level = level, item_level = item_level,
+                 meta_data = meta_data, study_data = study_data,
+                 label_col = label_col, ...)
+  }
+  if (missing(item_level) && !missing(meta_data)) {
+    cl_l$item_level <- NULL
+  }
+  if (miss_label_col) {
+    cl_l$label_col <- NULL
+  }
+  cl_l <- cl_l[names(cl_l) %in% c("", names(formals(fname)))]
   cl2 <- do.call("call",
-                 list(fname, level = level, ...))
+                 cl_l)
   eval(cl2)
 
 }

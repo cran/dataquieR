@@ -8,8 +8,9 @@
 #' @param study_data [study_data] must have all relevant `PART_VARS` to avoid
 #'                                false-positives on `PART_VARS` missing from
 #'                                `study_data`
-#' @param meta_data [meta_data] must be complete to avoid false positives on
+#' @param item_level [meta_data] must be complete to avoid false positives on
 #'                              non-existing `PART_VARS`
+#' @param meta_data [data.frame] old name for `item_level`
 #' @param label_col [character] mapping attribute `colnames(study_data)` vs.
 #'                              `meta_data[label_col]`
 #' @param expected_observations [enum] HIERARCHY | SEGMENT. How should
@@ -23,15 +24,24 @@
 #'                                       expected.
 #' @param disclose_problem_paprt_var_data [logical] show the problematic data
 #'                                        (`PART_VAR` only)
+#' @param meta_data_v2 [character] path to workbook like metadata file, see
+#'                                 [`prep_load_workbook_like_file`] for details.
+#'                                 **ALL LOADED DATAFRAMES WILL BE PURGED**,
+#'                                 using [`prep_purge_data_frame_cache`],
+#'                                 if you specify `meta_data_v2`.
 #'
 #' @return empty list, so far -- the function only warns.
 #' @export
 int_part_vars_structure <- # TODO: Support segment level metadata links to SEGMENT_PART_VARS
-  function(study_data, meta_data, label_col = LABEL,
-           expected_observations =
-             c("HIERARCHY",
-               "SEGMENT"),
-           disclose_problem_paprt_var_data = FALSE) {
+  function(label_col,
+           study_data,
+           item_level = "item_level",
+           expected_observations = c("HIERARCHY",
+                                     "SEGMENT"),
+           disclose_problem_paprt_var_data = FALSE,
+           meta_data = item_level,
+           meta_data_v2) {
+  util_maybe_load_meta_data_v2()
   util_expect_scalar(disclose_problem_paprt_var_data, check_type = is.logical)
 
   util_expect_scalar(expected_observations, allow_more_than_one = TRUE)

@@ -7,7 +7,7 @@
 #' @export
 prep_dq_data_type_of <- function(x) {
   r <- head(unique(intersect(names(DATA_TYPES_OF_R_TYPE), class(x))), 1)
-
+# FIXME: for strings, try readr::guess_parser(as.character(1:10), guess_integer = TRUE)
   if (length(r) != 1) {
     NULL
   } else {

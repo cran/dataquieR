@@ -2,7 +2,8 @@
 % Please edit documentation in R/acc_loess.R
 \name{acc_loess}
 \alias{acc_loess}
-\title{Smoothes and plots adjusted longitudinal measurements}
+\title{Smoothes and plots adjusted longitudinal measurements and longitudinal trends
+from logistic regression models}
 \usage{
 acc_loess(
   resp_vars,
@@ -10,15 +11,26 @@ acc_loess(
   time_vars,
   co_vars = NULL,
   study_data,
-  meta_data,
-  label_col = NULL,
+  label_col = VAR_NAMES,
+  item_level = "item_level",
   min_obs_in_subgroup = 30,
   resolution = 80,
   comparison_lines = list(type = c("mean/sd", "quartiles"), color = "grey30", linetype =
     2, sd_factor = 0.5),
-  mark_time_points = getOption("dataquieR.acc_loess.mark_time_points", FALSE),
-  plot_observations = getOption("dataquieR.acc_loess.plot_observations", TRUE),
-  plot_format = "AUTO"
+  mark_time_points = getOption("dataquieR.acc_loess.mark_time_points",
+    dataquieR.acc_loess.mark_time_points_default),
+  plot_observations = getOption("dataquieR.acc_loess.plot_observations",
+    dataquieR.acc_loess.plot_observations_default),
+  plot_format = getOption("dataquieR.acc_loess.plot_format",
+    dataquieR.acc_loess.plot_format_default),
+  meta_data = item_level,
+  meta_data_v2,
+  n_group_max = getOption("dataquieR.max_group_var_levels_in_plot",
+    dataquieR.max_group_var_levels_in_plot_default),
+  enable_GAM = getOption("dataquieR.GAM_for_LOESS", dataquieR.GAM_for_LOESS.default),
+  exclude_constant_subgroups =
+    getOption("dataquieR.acc_loess.exclude_constant_subgroups",
+    dataquieR.acc_loess.exclude_constant_subgroups.default)
 )
 }
 \arguments{
@@ -36,11 +48,11 @@ adjustment.}
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
-
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
 
 \item{min_obs_in_subgroup}{\link{integer} (optional argument) If \code{group_vars} is
 specified, this argument can be used to specify
@@ -72,6 +84,25 @@ as one combined plot for all groups or as
 facet plots (one figure per group). \code{BOTH} will
 return both variants, \code{AUTO} will decide based
 on the number of observers.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{n_group_max}{\link{integer} maximum number of categories to be displayed
+individually for the grouping variable (\code{group_vars},
+devices / examiners)}
+
+\item{enable_GAM}{\link{logical} Can LOESS computations be replaced by general
+additive models to reduce memory consumption  for large
+datasets?}
+
+\item{exclude_constant_subgroups}{\link{logical} Should subgroups with constant
+values be excluded?}
 }
 \value{
 a \link{list} with:

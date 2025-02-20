@@ -9,12 +9,18 @@
 #' Note, that only the given level is checked despite, levels are somehow
 #' hierarchical.
 #'
-#' @param meta_data [data.frame] the data frame that contains metadata
+#' @param item_level [data.frame] the data frame that contains metadata
 #'                               attributes of study data
+#' @param meta_data [data.frame] old name for `item_level`
 #' @param level [enum] level of requirement (see also [VARATT_REQUIRE_LEVELS]).
 #'                     set to `NULL` to deactivate the check of richness.
 #' @param character.only [logical] a logical indicating whether level can be
 #'                                 assumed to be character strings.
+#' @param meta_data_v2 [character] path to workbook like metadata file, see
+#'                                 [`prep_load_workbook_like_file`] for details.
+#'                                 **ALL LOADED DATAFRAMES WILL BE PURGED**,
+#'                                 using [`prep_purge_data_frame_cache`],
+#'                                 if you specify `meta_data_v2`.
 #'
 #' @return a logical with:
 #'   - invisible(TRUE). In case of problems with the metadata, a condition is
@@ -78,8 +84,12 @@
 #'     MISSING_LIST = 3), TECHNICAL)
 #' )
 #' }
-prep_check_meta_names <- function(meta_data = "item_level", level,
-                                  character.only = FALSE) {
+prep_check_meta_names <- function(
+    item_level = "item_level", level,
+                                  character.only = FALSE,
+                                  meta_data = item_level,
+    meta_data_v2) {
+  util_maybe_load_meta_data_v2()
   util_expect_data_frame(meta_data)
   if (missing(level)) {
     level <- VARATT_REQUIRE_LEVELS$REQUIRED

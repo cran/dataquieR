@@ -8,7 +8,8 @@
   x,
   ...,
   grouped_by = c("call_names", "indicator_metric"),
-  dont_print = FALSE
+  dont_print = FALSE,
+  folder_of_report = NULL
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ or both c("call_names", "indicator_metric"). The last combination is the default
 
 \item{dont_print}{suppress the actual printing, just return a printable
 object derived from \code{x}}
+
+\item{folder_of_report}{a named vector with the location of variable and call_names}
 }
 \value{
 invisible html object

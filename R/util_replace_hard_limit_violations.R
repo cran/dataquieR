@@ -14,7 +14,7 @@
                                                 meta_data,
                                                 label_col) {
 
-   if (!("Codes_to_NA" %in% names(attributes(study_data)))) {
+   if (!isTRUE(attr(study_data, "Codes_to_NA"))) {
      util_error(
        c("Missing codes have to have been replaced already by NA, before %s",
          "violations can be replaced by NA. This is an internal error.",

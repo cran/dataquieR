@@ -5,10 +5,11 @@
 #'
 #' @param x [character] haystack
 #' @param prefix [character] needle
+#' @param sep [character] separation string
 #'
 #' @return [logical] if entries in x start with prefix-DOT/equal to prefix
 #'
 #' @keywords internal
-util_startsWith_prefix._or_equals_prefix <- function(x, prefix) { # TOOD: Deprecate
-  startsWith(x, paste0(prefix, ".")) || x == prefix
+util_startsWith_prefix._or_equals_prefix <- function(x, prefix, sep = ".") {
+  startsWith(x, paste0(prefix, sep)) || x == prefix
 }

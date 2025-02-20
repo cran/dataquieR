@@ -7,9 +7,11 @@
 com_qualified_item_missingness(
   resp_vars,
   study_data,
-  meta_data,
   label_col = NULL,
-  expected_observations = c("HIERARCHY", "ALL", "SEGMENT")
+  item_level = "item_level",
+  expected_observations = c("HIERARCHY", "ALL", "SEGMENT"),
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
@@ -17,20 +19,37 @@ com_qualified_item_missingness(
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
-
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
 
 \item{expected_observations}{\link{enum} HIERARCHY | ALL | SEGMENT. Report the
 number of observations expected using
 the old \code{PART_VAR} concept. See
 \link{com_item_missingness} for an
 explanation.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
-\link{list} list with entries:
+A \link{list} with:
+\itemize{
+\item \code{SummaryTable}: \link{data.frame} containing data quality checks for
+"Non-response rate" (\code{PCT_com_qum_nonresp}) and
+"Refusal rate" (\code{PCT_com_qum_refusal}) for each response
+variable in \code{resp_vars}.
+\item \code{SummaryData}: a \link{data.frame} containing data quality checks for
+“Non-response rate” and "Refusal rate"
+for a report
+}
 }
 \description{
 \link{Indicator}
@@ -58,7 +77,7 @@ number_of_mis <- ceiling(nrow(ship) / 20)
 resp_vars <- sample(colnames(ship), ceiling(ncol(ship) / 20), FALSE)
 mistab <- prep_get_data_frame("missing_matchtable1")
 valid_replacement_codes <-
-  mistab[mistab$CODE_INTERPRET != "I", "CODE_VALUE",
+  mistab[mistab$CODE_INTERPRET != "I", CODE_VALUE,
     drop =
     TRUE] # sample only replacement codes on item level. I uses the actual
           # values

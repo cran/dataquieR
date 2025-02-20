@@ -37,6 +37,8 @@ util_map_labels <- function(x, meta_data = "item_level",
 
   nm[isempty] <- replnm
 
+  x[!nzchar(as.character(x))] <- NA_character_
+
   unlist(mget(as.character(x),
               as.environment(as.list(
                 setNames(as.character(meta_data[[to]]),

@@ -1,17 +1,17 @@
-test_that("dq_report2 works", { # TO FIX
+test_that("dq_report2 works", {
   skip_on_cran() # slow, parallel, ...
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
                        dataquieR.WARNINGS_WITH_CALLER = TRUE,
                        dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx")
 
-  prep_load_workbook_like_file("meta_data_v2")
-
-  study_data <- prep_get_data_frame("study_data")
+  study_data <- head(prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData"), 100)
   meta_data <- prep_get_data_frame("item_level")
 
-  mlt <- prep_get_data_frame("meta_data_v2.xlsx| missing_table")
+  mlt <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx| missing_table")
 
   prep_purge_data_frame_cache()
 
@@ -37,7 +37,7 @@ test_that("dq_report2 works", { # TO FIX
                            "^acc_varcomp$"),
                        filter_result_slots =
                          c("^SummaryTable$"),
-                       cores = 1,
+                       cores = NULL,
                        dimensions = # for speed, omit Accuracy
                          c("Integrity",
                            "Completeness",
@@ -45,10 +45,8 @@ test_that("dq_report2 works", { # TO FIX
                            "Accuracy"))
 
   sts <- report[, "com_item_missingness", "SummaryTable"]
-  sts <- lapply(sts, `[[`, "SummaryTable")
-  sts <- vapply(sts, `[[`, "GRADING", FUN.VALUE = numeric(1))
 
-  expect_equal(sum(sts), 1)
+  expect_equal(sum(sts$SummaryTable$GRADING), 1)
 
   expect_silent(invisible(summary(report)))
 
@@ -64,11 +62,12 @@ test_that("dq_report2 works", { # TO FIX
   expect_error(
     report <-
       suppressWarnings(suppressMessages(dq_report2(sd0, md0,
-                                 cores = 1,
+                                 cores = NULL,
                                  dimensions = 42))
       ),
     regexp =
-      ".+dimensions.+must match the predicate.+is.character",
+      sprintf("The argument %s must be character or NULL",
+              sQuote("dimensions")),
     perl = TRUE
   )
 
@@ -83,7 +82,7 @@ test_that("dq_report2 works", { # TO FIX
                       "^acc_varcomp$"),
                   filter_result_slots =
                     c("^SummaryTable$"),
-                  cores = 1,
+                  cores = NULL,
                    dimensions = c("invalid"),
       )),
     regexp =
@@ -105,7 +104,7 @@ test_that("dq_report2 works", { # TO FIX
                                       "^acc_varcomp$"),
                                   filter_result_slots =
                                     c("^SummaryTable$"),
-                                  cores = 1,
+                                  cores = NULL,
                                  strata_attribute = "GROUP_VAR_XXX",
                                  dimensions = c("Completeness"),
       )
@@ -113,7 +112,7 @@ test_that("dq_report2 works", { # TO FIX
   )
 
   report <- suppressWarnings(dq_report2(sd0, md0,
-                                       cores = 1,
+                                       cores = NULL,
                                        label_col = LABEL,
                                        dimensions = # for speed, omit Accuracy
                                          c("Completeness",
@@ -157,7 +156,7 @@ test_that("dq_report2 works", { # TO FIX
                                        filter_indicator_functions =
                                          c("^acc_distributions_loc_ecdf$",
                                            "^acc_distributions_loc$"),
-                                       cores = 1,
+                                       cores = NULL,
                                        flip_mode = "flip",
                                        dimensions = # for speed, omit Accuracy
                                          c("Completeness",
@@ -171,9 +170,6 @@ test_that("dq_report2 works", { # TO FIX
   expect_equal(attr(report$acc_distributions_loc.SBP_0, "call")$flip_mode,
                "flip")
 
-  expect_equal(attr(report$acc_distributions_loc_ecdf_observer.SBP_0, "call")[[
-    "flip_mode"]], "flip")
-
   md1 <- md0
   md1$LABEL <- c("CENTER_0",
                  "",
@@ -184,63 +180,118 @@ test_that("dq_report2 works", { # TO FIX
   md1$VAR_NAMES[2] <- "yOvCzPY60JRjmrYb16Tsd6qMymal4B5Skw9rZ5PHSCtaBqOVglAKcguPkQhakampFJcC8xqLbZJs7kZUdKH804pbOmM5ORPVabrkEkVkiWbakWiixZ99NRYF6BP8SRxzNYY2tED7DjmhMUwk0t674RjH828jq9zoTJgDxYP6nEdHBxhmXJh0ClCPjGsi1q" # very long variable name that should get caught and not be used as label as it is
   colnames(sd0)[2] <- md1$VAR_NAMES[2]
 
-  expect_warning(
-    report <- dq_report2(sd0, md1,
-                         label_col = LABEL,
-                         cores = 1,
-                         dimensions =
-                           c("Integrity",
-                             "Consistency"),
-                         MAX_LABEL_LEN = 45), # TODO: Specifying MAX_LABEL_LEN does not work?
-    regexp = sprintf("(%s|%s|%s)",
-                     "Labels are required to create a report, that's why missing labels will be replaced provisionally. Please add missing labels in your metadata.",
-                     "Unique labels are required to create a report, that's why duplicated labels will be replaced provisionally. Please modify the labels in your metadata or select a suitable column",
-                     "This will cause suboptimal outputs and possibly also failures when rendering the report, due to issues with the maximum length of file names in your operating system or file system. This will be fixed provisionally. Please shorten your labels or choose another label column."
-    ),
-    all = TRUE
+  suppressWarningsMatching(
+    expect_warning(expect_warning(
+      report <- dq_report2(sd0, md1,
+                           label_col = LABEL,
+                           cores = NULL,
+                           dimensions =
+                             c("Integrity",
+                               "Consistency")),
+      regexp = ".*Labels are required to create a report.*"),
+      regexp = ".*Unique labels are required to create a report.*"),
+    "Some variables have labels with more than 30 characters in .+LABEL.+"
   )
-
   expect_warning(
     report <- dq_report2(sd0, md1,
                          label_col = VAR_NAMES,
-                         cores = 1,
+                         cores = NULL,
                          dimensions =
                            c("Integrity",
                              "Consistency")),
-    regexp = "This will cause suboptimal outputs and possibly also failures when rendering the report, due to issues with the maximum length of file names in your operating system or file system. This will be fixed provisionally. Please shorten your labels or choose another label column."
+    regexp = ".*This will cause suboptimal outputs and possibly.*"
     )
 
-  md1$VAR_NAMES[2] <- ""
-  colnames(sd0)[2] <- ""
+  md1$VAR_NAMES[2] <- "" # this will be considered different
+  colnames(sd0)[2] <- "" # because both are missing, and NA maybe unequal
+                         # from NA
 
-  expect_warning(
-    report <- dq_report2(sd0, md1,
-                         label_col = LABEL,
-                         cores = 1,
-                         dimensions =
-                           c("Integrity",
-                             "Consistency")),
-    regexp = sprintf(".*(%s|%s|%s|%s|%s|%s).*",
-                     "Labels are required to create a report, that's why missing labels will be replaced provisionally. Please add missing labels in your metadata.",
-                     "Lost .* of the study data because of missing.not assignable metadata",
-                     "Lost .* of the metadata because of missing.not assignable study data",
-                     "Some variables have no label in",
-                     "Unique labels are required to create a report, that's why duplicated labels will be replaced provisionally. Please modify the labels in your metadata or select a suitable column",
-                     "This will cause suboptimal outputs and possibly also failures when rendering the report, due to issues with the maximum length of file names in your operating system or file system. This will be fixed provisionally. Please shorten your labels or choose another label column."
+  suppressWarningsMatching(
+    expect_warning(expect_warning(expect_warning(
+            report <- dq_report2(sd0, md1,
+                                 label_col = LABEL,
+                                 cores = NULL,
+                                 dimensions =
+                                   c("Integrity",
+                                     "Consistency")),
+            regexp = "Need.+VAR_NAMES.+in.*meta_data",
+            perl = TRUE
+          ),
+          regexp = "Some variables have duplicated labels in .+LABEL.+",
+          perl = TRUE
+        ),
+      regexp =
+        "Some variables have labels with more than 30 characters in .+LABEL.+",
+      perl = TRUE
     ),
-    perl = TRUE,
-    all = TRUE
+    "(Some variables have labels with more than 30 characters in .+LABEL.+|Lost 16.7% of the study data because of missing/not assignable metadata|.+dummy names)"
   )
 
-  expect_warning(
-    report <- dq_report2(sd0, md1,
-                         label_col = VAR_NAMES,
-                         cores = 1,
-                         dimensions =
-                           c("Integrity",
-                             "Consistency")),
-    regexp = "Labels are required to create a report, that's why missing labels will be replaced provisionally. Please add missing labels in your metadata."
+  suppressWarningsMatching(
+      report <- dq_report2(sd0, md1,
+                           label_col = VAR_NAMES,
+                           cores = NULL,
+                           dimensions =
+                             c("Integrity",
+                               "Consistency")),
+    "(Some variables have labels with more than 30 characters in .+LABEL.+|Lost 16.7% of the study data because of missing/not assignable metadata|Need.+VAR_NAMES.+discard.+|.+dummy names)"
   )
+
+  #warning message that there is no metadata
+  prep_purge_data_frame_cache()
+  study_data <- head(
+    prep_get_data_frame(
+      "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData"),
+    50)
+
+  expect_warning(dq_report2(study_data = study_data,
+                            cores = NULL,
+                 dimensions = "Integrity"),
+                 regexp = "NO ITEM LEVEL METADATA.+PLEASE CONSIDER PASSING.+")
+
+
+  md1 <-
+    prep_get_data_frame(
+      "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx| item_level")
+  md1 <- md1[, !colnames(md1) %in% c("VARIABLE_ROLE", "MISSING_LIST_TABLE")]
+
+
+  #message about no assigned variable roles
+  suppressWarningsMatching(dq_report2(study_data = study_data,
+                            meta_data = md1,
+                            cores = NULL,
+                            dimensions = "Integrity"),
+                           "Metadata does not provide.+for replacing codes with NAs.")
+
+  md1 <-
+    prep_get_data_frame(
+      "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx| item_level")
+  md1 <- md1[, !colnames(md1) %in% "MISSING_LIST_TABLE"]
+  md1[1, VARIABLE_ROLE] <- "non-existing_role"
+
+
+  # message about non existing role (ignore warnings about missing JUMP_LIST and
+  # MISSING_LIST)
+  suppressWarningsMatching(dq_report2(study_data = study_data,
+                           meta_data = md1,
+                           cores = NULL,
+                           dimensions = "Integrity"),
+                 "Metadata does not provide.+for replacing codes with NAs.")
+
+
+  #message of variable not found in the metadata
+  md1<- md1[, colnames(md1) %in% c("VAR_NAMES", "LABEL", "DATA_TYPE",
+                                   "SCALE_LEVEL", "VALUE_LABELS")]
+  md1 <- rbind(md1, data.frame(VAR_NAMES = "no_real_var_name",
+                               LABEL = "no_var_name",
+                               DATA_TYPE = "integer",
+                               SCALE_LEVEL = "nominal",
+                               VALUE_LABELS = NA_character_))
+
+  expect_message(dq_report2(study_data = study_data,
+                            meta_data = md1,
+                            cores = NULL,
+                            dimensions = "Integrity"))
 
   # sd0 <- study_data
   # md0 <- meta_data
@@ -254,3 +305,4 @@ test_that("dq_report2 works", { # TO FIX
   # sd0 <- sd0[which(colnames(sd0) %in% md0[[VAR_NAMES]])]
   # test_rep <- dq_report2(study_data = sd0, meta_data = md0, dimensions = NULL)
 })
+

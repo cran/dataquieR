@@ -36,7 +36,7 @@ test_that("util_app_hl works", {
   result1 <- util_app_hl(meta_data, dta = c(1,1))
 
   # Check that the result is a factor
-  expect_is(result1, "factor")
+  expect_s3_class(result1, "factor")
 
   # Check that the result is as expected
   expect_equal(result1, as.factor(c(2, 2)))

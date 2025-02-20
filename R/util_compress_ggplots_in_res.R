@@ -28,9 +28,32 @@ util_compress_ggplots_in_res <- function(r) {
     })))
     mv <- unique(c(mv,
                    unlist(lapply(r$layers,
-                                 function(ll)  {
-                                   lapply(ll$mapping, all.vars)
+                                 function(lly)  {
+                                   lapply(lly$mapping, function(ll) {
+                                     quo_ll_map <- NULL
+                                     try(quo_ll_map <- rlang::quo_get_expr(ll),
+                                         silent = TRUE)
+                                     if (".data" %in% as.character(quo_ll_map)) { #TODO: also handle the data in the geoms layers
+                                       colnames(r$data)[which(colnames(r$data) %in%
+                                                                as.character(quo_ll_map))]
+                                     } else {
+                                       all.vars(ll)
+                                     }
+                                   })
                                  }))))
+    mv <- c(mv, "facet") # keep column facet as used in util_margins_nom
+
+    if ("facet" %in% names(r)) {
+      facet_v <- NULL
+      try({
+        facet_v <- r$facet$vars()
+      }, silent = TRUE)
+      if (is.character(facet_v) && length(facet_v) > 0) {
+        mv <- c(mv, facet_v)
+      }
+    }
+
+
     r$data <- r$data[, intersect(colnames(r$data), mv), drop = FALSE]
   } else if (is.list(r)) {
     r[] <- lapply(r, util_compress_ggplots_in_res)

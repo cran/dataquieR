@@ -3,7 +3,9 @@
 #' @param resp_vars [variable list] the name of the measurement variables to be
 #'   modified, all from `rules`, if omitted
 #' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
+#' @param item_level [data.frame] the data frame that contains metadata
+#'                               attributes of study data
+#' @param meta_data [data.frame] old name for `item_level`
 #'                               attributes of study data
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
@@ -23,6 +25,11 @@
 #' @param use_value_labels [logical] In rules for factors, use the value labels,
 #'                                   not the codes. Defaults to `TRUE`, if any
 #'                                   `VALUE_LABELS` are given in the metadata.
+#' @param meta_data_v2 [character] path to workbook like metadata file, see
+#'                                 [`prep_load_workbook_like_file`] for details.
+#'                                 **ALL LOADED DATAFRAMES WILL BE PURGED**,
+#'                                 using [`prep_purge_data_frame_cache`],
+#'                                 if you specify `meta_data_v2`.
 #'
 #' @return a `list` with the entries:
 #'   - `ModifiedStudyData`: Study data with `NA`s replaced by the `CODE_VALUE`
@@ -30,64 +37,16 @@
 #'                         `JUMP_LIST` or `MISSING_LIST`, respectively
 #' @export
 #'
-#' @examples
-#' \dontrun{
-#' load(system.file("extdata", "study_data.RData", package = "dataquieR"))
-#' load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
-#' vn <- subset(r$ModifiedMetaData, LABEL == "PREGNANT_0", VAR_NAMES)[[1]]
-#' rules <- tibble::tribble(
-#'   ~resp_vars, ~CODE_CLASS, ~CODE_LABEL, ~CODE_VALUE, ~RULE,
-#'   "PREGNANT_0", "JUMP", "No pregnancies in males", "9999", '[SEX_0]=1',
-#'  )
-#'  r <- prep_add_missing_codes(NA, study_data, meta_data,
-#'    label_col = "LABEL", rules, use_value_labels = FALSE)
-#'  subset(r$ModifiedMetaData, LABEL == "PREGNANT_0", JUMP_LIST)
-#'  subset(meta_data, LABEL == "PREGNANT_0", JUMP_LIST)
-#'  table(study_data[[vn]])
-#'  table(r$ModifiedStudyData[[vn]])
-#'  r <- prep_add_missing_codes(NA, study_data, meta_data,
-#'    label_col = "LABEL", rules, use_value_labels = FALSE, overwrite = TRUE)
-#'  table(study_data[[vn]])
-#'  table(r$ModifiedStudyData[[vn]])
-#'
-#' rules <- tibble::tribble(
-#'   ~resp_vars, ~CODE_CLASS, ~CODE_LABEL, ~CODE_VALUE, ~RULE,
-#'   "PREGNANT_0", "JUMP", "No pregnancies in males", "9999", '[SEX_0]="males"',
-#'  )
-#'  r <- prep_add_missing_codes(NA, study_data, meta_data,
-#'    label_col = "LABEL", rules, use_value_labels = TRUE, overwrite = FALSE)
-#'  table(study_data[[vn]])
-#'  table(r$ModifiedStudyData[[vn]])
-#'
-#' rules <- tibble::tribble(
-#'   ~resp_vars, ~CODE_CLASS, ~CODE_LABEL, ~CODE_VALUE, ~RULE,
-#'   "PREGNANT_0", "JUMP", "No pregs in males", "9999", '[v00002]="males"',
-#'  )
-#'  r <- prep_add_missing_codes(NA, study_data, meta_data,
-#'    label_col = "LABEL", rules, use_value_labels = TRUE, overwrite = FALSE)
-#'  table(study_data[[vn]])
-#'  table(r$ModifiedStudyData[[vn]])
-#'  devtools::load_all(".")
-#'
-#' study_data$v00002 <- ifelse(study_data$v00002 == "0", "females", "males")
-#' meta_data[meta_data$LABEL == "SEX_0", "VALUE_LABELS"] <- "females|males"
-#' rules <- tibble::tribble(
-#'   ~resp_vars, ~CODE_CLASS, ~CODE_LABEL, ~CODE_VALUE, ~RULE,
-#'   "PREGNANT_0", "JUMP", "No pregnancies in males", "9999", '[v00002]="males"',
-#' )
-#' r <- prep_add_missing_codes(NA, study_data, meta_data,
-#'                             label_col = "LABEL", rules, use_value_labels = TRUE, overwrite = FALSE)
-#' table(study_data[[vn]])
-#' table(r$ModifiedStudyData[[vn]])
-#' }
 prep_add_missing_codes <- function(resp_vars,
                                    study_data,
-                                   meta_data,
+                                   meta_data_v2,
+                                   item_level = "item_level",
                                    label_col,
                                    rules,
                                    use_value_labels,
-                                   overwrite = FALSE) {
-
+                                   overwrite = FALSE,
+                                   meta_data = item_level) {
+  util_maybe_load_meta_data_v2()
   util_expect_scalar(overwrite, check_type = is.logical)
 
   prep_prepare_dataframes(.replace_missings = FALSE,
@@ -96,21 +55,43 @@ prep_add_missing_codes <- function(resp_vars,
                           .amend_scale_level = FALSE)
 
   if (missing(use_value_labels)) {
-    use_value_labels <- VALUE_LABELS %in% colnames(meta_data) &&
-      any(!util_empty(meta_data[[VALUE_LABELS]]))
+    use_value_labels <-
+      (VALUE_LABELS %in% colnames(meta_data) &&
+        any(!util_empty(meta_data[[VALUE_LABELS]]))) ||
+      (VALUE_LABEL_TABLE %in% colnames(meta_data) &&
+         any(!util_empty(meta_data[[VALUE_LABEL_TABLE]]))) ||
+      (STANDARDIZED_VOCABULARY_TABLE %in% colnames(meta_data) &&
+         any(!util_empty(meta_data[[STANDARDIZED_VOCABULARY_TABLE]])))
   }
 
   util_expect_scalar(use_value_labels, check_type = is.logical)
 
-  util_expect_data_frame(rules, list("resp_vars" = function(x) {
+  util_expect_data_frame(rules, c("resp_vars", CODE_CLASS,
+                                  CODE_LABEL, CODE_VALUE, RULE))
+
+  rules_var_in_meta <- rules$resp_vars %in% meta_data[[label_col]]
+  if (!all(rules_var_in_meta)) {
+    util_message(
+      c("Found the following %s in %s,",
+        "which are not in the %s.",
+        "Ignoring these rules."),
+      sQuote("resp_vars"),
+      sQuote("rules"),
+      sQuote("meta_data")
+    )
+    rules <- rules[rules_var_in_meta, , FALSE]
+  }
+
+
+  util_expect_data_frame(rules, list(resp_vars = function(x) {
                                         all(x %in% colnames(ds1))
                                       },
-                                     "CODE_CLASS" = function(x) {
+                                     CODE_CLASS = function(x) {
                                        all(x %in% c("MISSING", "JUMP"))
                                      },
-                                     "CODE_LABEL" = is.character,
-                                     "CODE_VALUE" = util_is_valid_missing_codes,
-                                     "RULE" = is.character))
+                                     CODE_LABEL = is.character,
+                                     CODE_VALUE = util_is_valid_missing_codes,
+                                     RULE = is.character))
 
   if (missing(resp_vars) || identical(resp_vars, NA)) {
     resp_vars <- rules$resp_vars
@@ -118,11 +99,11 @@ prep_add_missing_codes <- function(resp_vars,
 
   util_correct_variable_use(resp_vars, allow_more_than_one = TRUE)
 
-  rules <- rules[rules[["resp_vars"]] %in% resp_vars]
+  rules <- rules[rules[["resp_vars"]] %in% resp_vars, , FALSE]
 
-  rules$CODE_VALUE <- util_as_valid_missing_codes(rules$CODE_VALUE)
+  rules[[CODE_VALUE]] <- util_as_valid_missing_codes(rules[[CODE_VALUE]])
 
-  compiled_rules <- lapply(setNames(nm = rules$RULE), util_parse_redcap_rule)
+  compiled_rules <- lapply(setNames(nm = rules[[RULE]]), util_parse_redcap_rule)
 
   rule_match <- lapply(compiled_rules, function(rule) {
     util_eval_rule(rule = rule,
@@ -131,8 +112,8 @@ prep_add_missing_codes <- function(resp_vars,
                    use_value_labels = use_value_labels)
   })
 
-  na <- lapply(setNames(rules$resp_vars, nm = rules$RULE), function(rule) {
-    r <- util_empty(ds1[[rules$resp_vars]])
+  na <- lapply(setNames(rules$resp_vars, nm = rules$RULE), function(rv) {
+    r <- util_empty(ds1[[rv]])
     if (overwrite) {
       r[] <- TRUE
     }
@@ -143,8 +124,11 @@ prep_add_missing_codes <- function(resp_vars,
 
   add_miss <- lapply(setNames(nm = rules$RULE),
                      function(rl) {
-                       util_stop_if_not(length(na[[rl]]) == length(rule_match[[rl]]))
-                       na[[rl]] & rule_match[[rl]]
+                       util_stop_if_not(length(na[[rl]]) ==
+                                          length(rule_match[[rl]]))
+                       rm <- as.logical(rule_match[[rl]])
+                       rm[is.na(rm)] <- FALSE
+                       na[[rl]] & rm
                       })
 
   workload <- as.data.frame(add_miss,
@@ -156,12 +140,15 @@ prep_add_missing_codes <- function(resp_vars,
   }
 
   target_code <- function(nm) {
-    rules[rules$RULE == nm, "CODE_VALUE", TRUE]
+    rules[rules$RULE == nm, CODE_VALUE, TRUE]
   }
 
   for (rulenm in rules$RULE) {
-    ds1[[target_variable(rulenm)]][workload[[rulenm]]] <-
-      target_code(rulenm)
+    tv <- target_variable(rulenm)
+    for (tv0 in tv) {
+      ds1[[tv0]][workload[[rulenm]]] <-
+        rep(target_code(rulenm), sum(workload[[rulenm]]))
+    }
   }
 
   cause_label_df_list <- prep_extract_cause_label_df(meta_data = meta_data,
@@ -173,12 +160,20 @@ prep_add_missing_codes <- function(resp_vars,
   cause_label_df <- rbind(cause_label_df,
                           rules[, colnames(cause_label_df)])
 
+  if (!CODE_LABEL %in% colnames(cause_label_df)) {
+    cause_label_df[[CODE_LABEL]] <-
+      paste(cause_label_df[[CODE_CLASS]], cause_label_df[[CODE_VALUE]])
+  }
+
   meta_data <-
     prep_add_cause_label_df(meta_data = meta_data,
                             cause_label_df = cause_label_df,
                             label_col = label_col)
 
   ModifiedStudyData <- ds1
+
+  ModifiedStudyData[] <- lapply(ModifiedStudyData, unlist)
+
   colnames(ModifiedStudyData) <-
     prep_map_labels( colnames(ds1),
                      to = VAR_NAMES,

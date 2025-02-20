@@ -7,9 +7,11 @@
 acc_distributions_only(
   resp_vars = NULL,
   study_data,
-  meta_data,
-  label_col,
-  flip_mode = "noflip"
+  label_col = VAR_NAMES,
+  item_level = "item_level",
+  flip_mode = "noflip",
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
@@ -17,11 +19,11 @@ acc_distributions_only(
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
-
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
 
 \item{flip_mode}{\link{enum} default | flip | noflip | auto. Should the plot be
 in default orientation, flipped, not flipped or
@@ -31,6 +33,14 @@ setting the \code{roptions(dataquieR.flip_mode = ...)}. If
 called from \code{dq_report}, you can also pass
 \code{flip_mode} to all function calls or set them
 specifically using \code{specific_args}.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 A \link{list} with:
@@ -42,7 +52,7 @@ variable in \code{resp_vars}.
 \item \code{SummaryData}: a \link{data.frame} containing data quality checks for
 "Unexpected location" and / or "Unexpected proportion"
 for a report
-\item \code{SummaryPlotList}: \link{list} of \link{ggplot}s for each response variable in
+\item \code{SummaryPlotList}: \link{list} of \link[ggplot2:ggplot]{ggplot2::ggplot}s for each response variable in
 \code{resp_vars}.
 }
 }
@@ -65,8 +75,6 @@ for the mean and median, respectively)).
 PROPORTION_RANGE (range of expected values for the proportions of the
 categories)).
 \item Plot histogram(s).
-\item If group_vars is specified by the user, distributions within group-wise
-ecdf are presented.
 }
 }
 

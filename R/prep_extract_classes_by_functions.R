@@ -7,6 +7,11 @@
 #'
 #' @family summary_functions
 prep_extract_classes_by_functions <- function(r) {
+  te <- topenv(parent.frame(1)) # see https://stackoverflow.com/a/27870803
+  if (!(isNamespace(te) && getNamespaceName(te) == "dataquieR")) {
+    lifecycle::deprecate_soft("2.1.0.9007",
+                              "prep_combine_report_summaries()")
+  }
 
   res <-
     prep_summary_to_classes(

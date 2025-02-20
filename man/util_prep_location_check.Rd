@@ -7,7 +7,8 @@
 util_prep_location_check(
   resp_vars,
   meta_data,
-  report_problems = c("error", "warning", "message")
+  report_problems = c("error", "warning", "message"),
+  label_col = VAR_NAMES
 )
 }
 \arguments{

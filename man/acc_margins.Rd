@@ -8,71 +8,120 @@ acc_margins(
   resp_vars = NULL,
   group_vars = NULL,
   co_vars = NULL,
-  threshold_type = NULL,
+  study_data,
+  label_col,
+  item_level = "item_level",
+  threshold_type = "empirical",
   threshold_value,
   min_obs_in_subgroup = 5,
-  study_data,
-  meta_data,
-  label_col
+  min_obs_in_cat = 5,
+  dichotomize_categorical_resp = TRUE,
+  cut_off_linear_model_for_ord = 10,
+  meta_data = item_level,
+  meta_data_v2,
+  sort_group_var_levels = getOption("dataquieR.acc_margins_sort",
+    dataquieR.acc_margins_sort_default),
+  include_numbers_in_figures = getOption("dataquieR.acc_margins_num",
+    dataquieR.acc_margins_num_default),
+  n_violin_max = getOption("dataquieR.max_group_var_levels_with_violins",
+    dataquieR.max_group_var_levels_with_violins_default)
 )
 }
 \arguments{
-\item{resp_vars}{\link{variable} the name of the continuous measurement variable}
+\item{resp_vars}{\link{variable} the name of the measurement variable}
 
-\item{group_vars}{\link{variable list} len=1-1. the name of the observer, device or
-reader variable}
+\item{group_vars}{\link{variable list} len=1-1. the name of the observer, device
+or reader variable}
 
 \item{co_vars}{\link{variable list} a vector of covariables, e.g. age and sex for
 adjustment}
 
-\item{threshold_type}{\link{enum} empirical | user | none. In case empirical is
-chosen a multiplier of the scale measure is used,
-in case of user a value of the mean or probability
-(binary data) has to be defined see Implementation
-and use of thresholds. In case of none, no thresholds
-are displayed and no flagging of
-unusual group levels is applied.}
-
-\item{threshold_value}{\link{numeric} a multiplier or absolute value see
-Implementation and use of thresholds}
-
-\item{min_obs_in_subgroup}{\link{integer} from=0. optional argument if a
-"group_var" is used.
-This argument specifies the
-minimum no. of observations that is
-required to include a subgroup (level)
-of the "group_var" in
-the analysis. Subgroups with less
-observations are excluded. The
-default is 5.}
-
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
-
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
+
+\item{threshold_type}{\link{enum} empirical | user | none. In case \code{empirical} is
+chosen, a multiplier of the scale measure is used.
+In case of \code{user}, a value of the mean or probability
+(binary data) has to be defined
+see \href{https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_margins.html#Implementation_and_use_of_thresholds}{\verb{Implementation and use of thresholds}} in the  online documentation).
+In case of \code{none}, no thresholds are displayed and no
+flagging of unusual group levels is applied.}
+
+\item{threshold_value}{\link{numeric} a multiplier or absolute value (see
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_margins.html#Implementation_and_use_of_thresholds}{\verb{Implementation and use of thresholds}} in the
+online documentation).}
+
+\item{min_obs_in_subgroup}{\link{integer} from=0. This optional argument specifies
+the minimum number of observations that is required to
+include a subgroup (level) of the \code{group_var} in the
+analysis. Subgroups with less observations are
+excluded.}
+
+\item{min_obs_in_cat}{\link{integer} This optional argument specifies the minimum
+number of observations that is required to include
+a category (level) of the outcome (\code{resp_vars}) in
+the analysis. Categories with less observations are
+combined into one group. If the collapsed category
+contains less observations than required, it will be
+excluded from the analysis.}
+
+\item{dichotomize_categorical_resp}{\link{logical} Should nominal response
+variables always be transformed to binary variables?}
+
+\item{cut_off_linear_model_for_ord}{\link{integer} from=0. This optional argument
+specifies the minimum number of observations for
+individual levels of an ordinal outcome (\code{resp_var})
+that is required to run a linear model instead of an
+ordered regression (i.e., a cut-off value above which
+linear models are considered a good approximation).
+The argument can be set to \code{NULL} if ordered
+regression models are preferred for ordinal data in
+any case.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{sort_group_var_levels}{\link{logical} Should the levels of the grouping
+variable be sorted descending by the number of
+observations? Note that ordinal grouping variables
+will not be reordered.}
+
+\item{include_numbers_in_figures}{\link{logical} Should the figure report the
+number of observations for each level of the grouping
+variable?}
+
+\item{n_violin_max}{\link{integer} from=0. This optional argument specifies
+the maximum number of levels of the \code{group_var} for
+which violin plots will be shown in the figure.}
 }
 \value{
 a list with:
 \itemize{
-\item SummaryTable: data frame underlying the plot
-\item SummaryData: data frame
-\item SummaryPlot: ggplot2 margins plot
+\item \code{SummaryTable}: \link{data.frame} underlying the plot
+\item \code{ResultData}: \link{data.frame}
+\item \code{SummaryPlot}: \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} margins plot
 }
 }
 \description{
-margins does calculations for quality indicator
-Unexpected distribution wrt location (link). Therefore we pursue a combined
-approach of descriptive and model-based statistics to investigate differences
-across the levels of an auxiliary variable.
+This function examines the impact of so-called process variables on a
+measurement variable. This implementation combines a descriptive and a
+model-based approach. Process variables that can be considered in this
+implementation must be categorical. It is currently not possible to
+consider more than one process variable within one function call.
+The measurement variable can be adjusted for (multiple) covariables, such as
+age or sex, for example.
 
-CAT: Unexpected distribution w.r.t. location
-
-Marginal means
-
-Marginal means rests on model based results, i.e. a significantly different
+Marginal means rests on model-based results, i.e. a significantly different
 marginal mean depends on sample size. Particularly in large studies, small
 and irrelevant differences may become significant. The contrary holds if
 sample size is low.
@@ -85,31 +134,34 @@ Limitations
 Selecting the appropriate distribution is complex. Dozens of continuous,
 discrete or mixed distributions are conceivable in the context of
 epidemiological data. Their exact exploration is beyond the scope of this
-data quality approach. The function above uses the help function
-\link{util_dist_selection}
-which discriminates four cases:
+data quality approach. The present function uses the help function
+\link{util_dist_selection}, the assigned \code{SCALE_LEVEL} and the \code{DATA_TYPE}
+to discriminate the following cases:
 \itemize{
 \item continuous data
 \item binary data
-\item count data with <= 20 categories
-\item count data with > 20 categories
+\item count data with <= 20 distinct values
+\item count data with > 20 distinct values (treated as continuous)
+\item nominal data
+\item ordinal data
 }
-Nonetheless, only three different plot types are generated. The fourth case
-is treated as continuous data. This is in fact a coarsening of the original
-data but for the purpose of clarity this approach is chosen.
-}
-\examples{
-\dontrun{
-# runs spuriously slow on rhub
-load(system.file("extdata/study_data.RData", package = "dataquieR"))
-load(system.file("extdata/meta_data.RData", package = "dataquieR"))
-acc_margins(resp_vars = "DBP_0",
-            study_data = study_data,
-            meta_data = meta_data,
-            group_vars = "USR_BP_0",
-            label_col = LABEL,
-            co_vars = "AGE_0")
-}
+Continuous data and count data with more than 20 distinct values are analyzed
+by linear models. Count data with up to 20 distinct values are modeled by a
+Poisson regression. For binary data, the implementation uses logistic
+regression.
+Nominal response variables will either be transformed to binary variables or
+analyzed by multinomial logistic regression models. The latter option is only
+available if the argument \code{dichotomize_categorical_resp} is set to \code{FALSE}
+and if the package \code{nnet} is installed. The transformation to a binary
+variable can be user-specified using the metadata columns \code{RECODE_CASES}
+and/or \code{RECODE_CONTROL}. Otherwise, the most frequent category will be
+assigned to cases and the remaining categories to control.
+For ordinal response variables, the argument \code{cut_off_linear_model_for_ord}
+controls whether the data is analyzed in the same way as continuous data:
+If every level of the variable has at least as many observations as specified
+in the argument, the data will be analyzed by a linear model. Otherwise,
+the data will be modeled by a ordered regression, if the package \code{ordinal}
+is installed.
 }
 \seealso{
 \href{https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_margins.html}{Online Documentation}

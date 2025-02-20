@@ -15,6 +15,9 @@ util_pretty_vector_string <- function(v, quote = dQuote, n_max = length(v)) {
     allow_more_than_one = TRUE,
     allow_null = TRUE,
     allow_na = TRUE)
+  if (length(v) == 0) {
+    return("")
+  }
   util_expect_scalar(n_max, check_type = util_is_numeric_in(min = 1,
                                                             finite = TRUE,
                                                             whole_num = TRUE))

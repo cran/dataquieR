@@ -5,22 +5,33 @@
 \title{Heuristics to amend a SCALE_LEVEL column and a UNIT column in the metadata}
 \usage{
 prep_scalelevel_from_data_and_metadata(
-  resp_vars = NULL,
+  resp_vars = lifecycle::deprecated(),
   study_data,
-  meta_data = "item_level",
-  label_col = LABEL
+  item_level = "item_level",
+  label_col = LABEL,
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
-\item{resp_vars}{\link{variable list} the names of the measurement variables}
+\item{resp_vars}{\link{variable list} deprecated, the function always addresses
+all variables.}
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 \link{data.frame} modified metadata

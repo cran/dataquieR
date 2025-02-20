@@ -11,7 +11,7 @@ util_validate_known_meta(meta_data)
 attributes of study data}
 }
 \value{
-invisible(NULL)
+\link{data.frame} possibly modified \code{meta_data}, \code{invisible()}
 }
 \description{
 This function goes through metadata columns, \code{dataquieR} supports
@@ -19,7 +19,6 @@ and verifies for these, that they follow its metadata conventions.
 }
 \seealso{
 Other metadata_management: 
-\code{\link{CAN_THIS_BE_REMOVED_util_combine_missing_lists}()},
 \code{\link{util_dist_selection}()},
 \code{\link{util_find_free_missing_code}()},
 \code{\link{util_find_var_by_meta}()},

@@ -25,15 +25,6 @@ e.g., spreadsheet-workbooks or \code{RData}-files.
 Note, that this function in contrast to \link{prep_get_data_frame} does neither
 support selecting specific sheets/columns from a file.
 }
-\examples{
-\dontrun{
-folder_name <-
-  system.file("extdata", package = "dataquieR")
-prep_load_folder_with_metadata(folder_name)
-prep_get_data_frame(
-  "dataframe_level") # dataframe_level is a sheet in the file
-}
-}
 \seealso{
 \link{prep_add_data_frames}
 
@@ -44,6 +35,7 @@ Other data-frame-cache:
 \code{\link{prep_get_data_frame}()},
 \code{\link{prep_list_dataframes}()},
 \code{\link{prep_load_workbook_like_file}()},
-\code{\link{prep_purge_data_frame_cache}()}
+\code{\link{prep_purge_data_frame_cache}()},
+\code{\link{prep_remove_from_cache}()}
 }
 \concept{data-frame-cache}

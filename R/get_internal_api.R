@@ -1,7 +1,6 @@
 #' Get Access to Utility Functions
 #'
 #' `r lifecycle::badge("experimental")`
-#' TODO: more life-cycle stuff, also for deprecation
 #'
 #' @param fkt function name
 #' @param version version number to get
@@ -10,8 +9,19 @@
 #' @export
 #'
 #' @keywords internal
-.get_internal_api <- function(fkt, version = API_VERSION) {
-  util_stop_if_not(version == API_VERSION)
+.get_internal_api <- function(fkt, version = API_VERSION, or_newer = TRUE) {
+  # TODO: more life-cycle stuff, also for deprecation
+  version <- try(as.package_version(version), silent = TRUE)
+  if (util_is_try_error(version)) {
+    util_error("You need to pass a version number in argument %s",
+               sQuote("version"))
+  }
+  util_expect_scalar(or_newer, check_type = is.logical)
+  if (!or_newer) {
+    util_stop_if_not(version == API_VERSION)
+  } else {
+    util_stop_if_not(version <= API_VERSION)
+  }
   f <- substitute(fkt)
   if (is.symbol(f)) {
     fkt <- as.character(f)
@@ -37,4 +47,4 @@
 #'
 #' @export
 #' @keywords internal
-API_VERSION <- "0.0.1"
+API_VERSION <- as.package_version("0.0.2")

@@ -1,9 +1,8 @@
 #' Produce a warning message with a useful short stack trace.
 #'
+#' @inheritParams util_error
 #' @param m warning message or a [condition]
 #' @param ... arguments for [sprintf] on m, if m is a character
-#' @param applicability_problem [logical] error indicates missing metadata
-#' @param intrinsic_applicability_problem [logical] error unsuitable resp_vars
 #' @param integrity_indicator [character] the warning is an integrity problem,
 #'                                        here is the indicator abbreviation..
 #'

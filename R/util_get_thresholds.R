@@ -30,6 +30,7 @@ util_get_thresholds <- function(indicator_metric, meta_data) {
     meta_data[[GRADING_RULESET]][!availab_rulesets] <- "0"
   }
   trs <- lapply(setNames(nm = vars), function(vn) {
+
     rs <-
       as.character(
         meta_data[meta_data[[VAR_NAMES]] == vn, GRADING_RULESET, TRUE]
@@ -45,7 +46,12 @@ util_get_thresholds <- function(indicator_metric, meta_data) {
     } else if (nrow(rst) == 0) {
       return(setNames(nm = character(0)))
     }
-    cats <- seq_len(as.integer(rst[["dqi_catnum"]]))
+    if(is.null(rst[["dqi_catnum"]])) { #TODO: make it robust
+      cats <- seq_len(5)
+    } else {
+      cats <- seq_len(as.integer(rst[["dqi_catnum"]]))
+    }
+
     cat_names <- as.character(cats)
     breaks <- paste0("dqi_cat_", cats)
     breaks <- unlist(rst[, breaks])

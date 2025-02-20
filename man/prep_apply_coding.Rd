@@ -4,13 +4,26 @@
 \alias{prep_apply_coding}
 \title{Re-Code labels with their respective codes according to the \code{meta_data}}
 \usage{
-prep_apply_coding(study_data, meta_data = "item_level")
+prep_apply_coding(
+  study_data,
+  meta_data_v2,
+  item_level = "item_level",
+  meta_data = item_level
+)
 }
 \arguments{
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
 }
 \value{
 \link{data.frame} modified study data with labels replaced by the codes

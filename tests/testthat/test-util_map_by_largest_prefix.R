@@ -4,7 +4,7 @@ test_that("util_map_by_largest_prefix works", {
   expect_equal(util_map_by_largest_prefix(
     "acc_distributions_loc_ecdf_observer_time",
     names(dataquieR:::.manual$titles)
-  ), "acc_distributions_loc_ecdf")
+  ), "acc_distributions_loc")
 
   expect_equal(
     util_map_by_largest_prefix(
@@ -19,7 +19,7 @@ test_that("util_map_by_largest_prefix works", {
       "acc_distributions_loc_ecdf",
       names(dataquieR:::.manual$titles)
     ),
-    "acc_distributions_loc_ecdf"
+    "acc_distributions_loc"
   )
 
   expect_equal(

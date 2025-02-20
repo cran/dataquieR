@@ -9,7 +9,9 @@ util_int_duplicate_ids_dataframe(
   id_vars_list,
   identifier_name_list,
   repetitions,
-  meta_data = NULL
+  meta_data_dataframe = "dataframe_level",
+  ...,
+  dataframe_level
 )
 }
 \arguments{
@@ -19,16 +21,23 @@ util_int_duplicate_ids_dataframe(
 
 \item{identifier_name_list}{\link{vector} the segments or data frame names being assessed}
 
-\item{repetitions}{\link{vector} an integer vector indicating the number of allowed repetitions in the id_vars. Currently, no repetitions are supported. # TODO}
+\item{repetitions}{\link{vector} an integer vector indicating the number of allowed repetitions in the \code{id_vars}.}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata attributes of the study data, mandatory.}
+\item{meta_data_dataframe}{\link{data.frame} the data frame that contains the
+metadata for the data frame level}
+
+\item{...}{not used.}
+
+\item{dataframe_level}{\link{data.frame} alias for \code{meta_data_dataframe}}
 }
 \value{
 a \link{list} with
 \itemize{
 \item \code{DataframeData}: data frame with the results of the quality check for duplicated identifiers
 \item \code{DataframeTable}: data frame with selected duplicated identifiers check results, used for the data quality report.
-\item \code{Duplicates}: vector with row indices of duplicated identifiers, if any, otherwise NULL.
+\item \code{Other}: named list with inner lists of unique cases containing each the
+row indices of duplicated identifiers separated by "|" , if any.
+outer names are names of the data frames
 }
 }
 \description{

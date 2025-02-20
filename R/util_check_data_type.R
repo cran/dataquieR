@@ -49,7 +49,7 @@ util_check_data_type <- function(x, type, check_convertible = FALSE,
                 threshold_value,
                 robust_na,
                 return_percentages))
-  # HINT: if dep on dataframe env: as.list(.dataframe_environment), also remind
+  # HINT: if dep on dataframe env: as.list(.dataframe_environment()), also remind
   # global options(). Also remind possible side effects
   if (exists(hash_id, .cache[[".cache"]])) {
     return(get(hash_id, .cache[[".cache"]]))
@@ -88,6 +88,7 @@ util_check_data_type <- function(x, type, check_convertible = FALSE,
     pct_mismatches <- 0
   } else {
     pct_mismatches <- sum(mismatches) / length(mismatches) * 100
+    attr(pct_mismatches, "which") <- mismatches
   }
 
 
@@ -113,10 +114,14 @@ util_check_data_type <- function(x, type, check_convertible = FALSE,
     pct_convertible_mismatch_stable <-
       sum(convertible_mismatch_stable) /
       length(convertible_mismatch_stable) * 100
+    attr(pct_convertible_mismatch_stable, "which") <-
+      convertible_mismatch_stable
 
     pct_convertible_mismatch_unstable <-
       sum(convertible_mismatch_unstable) /
       length(convertible_mismatch_unstable) * 100
+    attr(pct_convertible_mismatch_unstable, "which") <-
+      convertible_mismatch_unstable
 
     nonconvertible_mismatch <-
       vapply(x, empty, FUN.VALUE = logical(1)) !=
@@ -128,6 +133,9 @@ util_check_data_type <- function(x, type, check_convertible = FALSE,
         sum(nonconvertible_mismatch) /
         length(nonconvertible_mismatch) * 100
     }
+    attr(pct_nonconvertible_mismatch, "which") <-
+      nonconvertible_mismatch
+
     if (return_percentages) {
       result <- c(
         match = 100 - pct_mismatches,
@@ -135,6 +143,13 @@ util_check_data_type <- function(x, type, check_convertible = FALSE,
         convertible_mismatch_unstable = pct_convertible_mismatch_unstable,
         nonconvertible_mismatch = pct_nonconvertible_mismatch
       )
+      attr(result, "which") <-
+        list(
+          match = attr(pct_mismatches, "which"),
+          convertible_mismatch_stable = attr(pct_convertible_mismatch_stable, "which"),
+          convertible_mismatch_unstable = attr(pct_convertible_mismatch_unstable, "which"),
+          nonconvertible_mismatch = attr(pct_nonconvertible_mismatch, "which")
+        )
     } else {
       if (pct_nonconvertible_mismatch > threshold_value)
         { # NB: Order does matter

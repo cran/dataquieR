@@ -6,7 +6,7 @@
 \usage{
 \method{print}{ReportSummaryTable}(
   x,
-  relative,
+  relative = lifecycle::deprecated(),
   dt = FALSE,
   fillContainer = FALSE,
   displayValues = FALSE,
@@ -18,8 +18,7 @@
 \arguments{
 \item{x}{\code{ReportSummaryTable} objects to print}
 
-\item{relative}{\link{logical} normalize the values in each column by
-division by the \code{N} column.}
+\item{relative}{deprecated}
 
 \item{dt}{\link{logical} use \code{DT::datatables}, if installed}
 

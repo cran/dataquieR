@@ -14,7 +14,6 @@
 #' @keywords internal
 util_html_for_dims <- function(report, use_plot_ly, template,
                                block_load_factor, repsum, dir) {
-
   util_setup_rstudio_job("Page generation: Indicator View")
 
   meta_data <- attr(report, "meta_data")
@@ -87,7 +86,7 @@ util_html_for_dims <- function(report, use_plot_ly, template,
         if (length(resn) > 0) { # we have additional summaries to append
           resn <- head(resn, 1) # take the top-prio slot from the remainng ones
           all_of_f1 <- util_combine_res(report[, cll, res = resn])
-          all_of_f[[cll]][[resn]] <- all_of_f1[[cll]][[resn]]
+          all_of_f[[cll]][[resn]] <- all_of_f1[[resn]]
         }
 
         # create a page by iterating over all_of_f entries and their respective names
@@ -183,7 +182,7 @@ util_html_for_dims <- function(report, use_plot_ly, template,
             fname <- paste0("dim_", cur_dm, ".html") # define the file name, one file per dimension if not in accuracy
           }
           list( drop_down,
-                util_alias2caption(cll),
+                util_alias2caption(cll, long = TRUE),
                 fname,
                 page)
         }

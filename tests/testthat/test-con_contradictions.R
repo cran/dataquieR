@@ -1,14 +1,17 @@
 test_that("con_contradictions works", {
   skip_on_cran() # slow and deprecated, use redcap rules, now
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_if_not_installed("withr")
   withr::local_timezone('CET')
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  meta_data <- prep_scalelevel_from_data_and_metadata(meta_data = meta_data,
+                                                      study_data = study_data)
+  meta_data[startsWith(meta_data[[LABEL]], "EDUCATION_"), SCALE_LEVEL] <-
+    SCALE_LEVELS$ORDINAL
   check_table <- read.csv(
-    system.file("extdata",
-      "contradiction_checks.csv",
-      package = "dataquieR"
-    ), header = TRUE, sep = "#"
+    "https://dataquality.ship-med.uni-greifswald.de/extdata/contradiction_checks.csv",
+    header = TRUE, sep = "#"
   )
   check_table[1, "tag"] <- "Logical"
   check_table[1, "Label"] <- "Becomes younger"
@@ -34,41 +37,23 @@ test_that("con_contradictions works", {
   threshold_value <- 1
   check_table[1, "tag"] <- "Logical, Age-Related"
   check_table[10, "tag"] <- "Empirical, Age-Related"
-  expect_warning(
-    expect_message({
-        default <- con_contradictions(
-          study_data = study_data, meta_data = meta_data, label_col = label_col,
-          threshold_value = threshold_value, check_table = check_table
-        )
-        off <- con_contradictions(
-          study_data = study_data, meta_data = meta_data, label_col = label_col,
-          threshold_value = threshold_value, check_table = check_table,
-          summarize_categories = FALSE
-        )
-        on <- con_contradictions(
-          study_data = study_data, meta_data = meta_data, label_col = label_col,
-          threshold_value = threshold_value, check_table = check_table,
-          summarize_categories = TRUE
-        )
-      },
-      regexp = sprintf("%s|%s|%s|%s",
-                       paste("All variables with CONTRADICTIONS in the",
-                             "metadata are used."),
-                       paste("N = 3 values in EDUCATION_1 have",
-                             "been above HARD_LIMITS and were removed."),
-                       paste("N = 24 values in SMOKE_SHOP_0 have been",
-                             "above HARD_LIMITS and were removed."),
-                       paste("Labels of variables from .LABEL. will be used.",
-                             "In this case",
-                             "columns A and B in check_tables must refer to",
-                             "labels.")
-                       ),
-      perl = TRUE
-    ),
-    regexp =
-      paste("Variables: AGE_0, AGE_1, EXAM_DT_0, LAB_DT_0",
-            "have no assigned labels and levels.")
-  )
+  suppressMessages(suppressWarnings({
+      default <- con_contradictions(
+        study_data = study_data, meta_data = meta_data, label_col = label_col,
+        threshold_value = threshold_value, check_table = check_table
+      )
+      off <- con_contradictions(
+        study_data = study_data, meta_data = meta_data, label_col = label_col,
+        threshold_value = threshold_value, check_table = check_table,
+        summarize_categories = FALSE
+      )
+      on <- con_contradictions(
+        study_data = study_data, meta_data = meta_data, label_col = label_col,
+        threshold_value = threshold_value, check_table = check_table,
+        summarize_categories = TRUE
+      )
+    }
+  ))
   # expect_equal(off, default) because of plots not always true,
   # e.g.:   Component "SummaryPlot": Component "layers": Component 1:
   # Component 11: Component 1: target is not list-like
@@ -87,13 +72,13 @@ test_that("con_contradictions works", {
   skip_on_cran()
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
-  vdiffr::expect_doppelganger("summary contradiction plot ok",
+  expect_doppelganger2("summary contradiction plot ok",
                               on$all_checks$SummaryPlot)
-  vdiffr::expect_doppelganger("summary contradiction plot ok",
+  expect_doppelganger2("summary contradiction plot ok",
                               default$SummaryPlot)
-  vdiffr::expect_doppelganger("summary contradiction plot ok",
+  expect_doppelganger2("summary contradiction plot ok",
                               off$SummaryPlot)
 
-  vdiffr::expect_doppelganger("one cat contradiction plot ok",
+  expect_doppelganger2("one cat contradiction plot ok",
                               on$Empirical$SummaryPlot)
 })

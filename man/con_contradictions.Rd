@@ -7,11 +7,13 @@
 con_contradictions(
   resp_vars = NULL,
   study_data,
-  meta_data,
   label_col,
+  item_level = "item_level",
   threshold_value,
   check_table,
-  summarize_categories = FALSE
+  summarize_categories = FALSE,
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
@@ -19,11 +21,11 @@ con_contradictions(
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
-
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
 
 \item{threshold_value}{\link{numeric} from=0 to=100. a numerical value
 ranging from 0-100}
@@ -36,8 +38,15 @@ its required structure.}
 \code{check_table}.
 If set, a summary output is generated for the
 defined categories plus one plot per
-category.
-\code{inheritParams} \code{acc_distributions}}
+category.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 If \code{summarize_categories} is \code{FALSE}:
@@ -64,7 +73,7 @@ one per category named by that category (e.g. "Empirical") containing a
 result for contradictions within that category only. Additionally, in the
 slot \code{all_checks} a result as it would have been returned with
 \code{summarize_categories} set to \code{FALSE}. Finally, a slot \code{SummaryData} is
-returned containing sums per Category and an according \link{ggplot} in
+returned containing sums per Category and an according \link[ggplot2:ggplot]{ggplot2::ggplot} in
 \code{SummaryPlot}.
 }
 \description{
@@ -100,55 +109,6 @@ combination, and
 }
 
 List function.
-}
-}
-\examples{
-\dontrun{
-load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
-load(system.file("extdata", "study_data.RData", package = "dataquieR"))
-check_table <- read.csv(system.file("extdata",
-  "contradiction_checks.csv",
-  package = "dataquieR"
-),
-header = TRUE, sep = "#"
-)
-check_table[1, "tag"] <- "Logical"
-check_table[1, "Label"] <- "Becomes younger"
-check_table[2, "tag"] <- "Empirical"
-check_table[2, "Label"] <- "sex transformation"
-check_table[3, "tag"] <- "Empirical"
-check_table[3, "Label"] <- "looses academic degree"
-check_table[4, "tag"] <- "Logical"
-check_table[4, "Label"] <- "vegetarian eats meat"
-check_table[5, "tag"] <- "Logical"
-check_table[5, "Label"] <- "vegan eats meat"
-check_table[6, "tag"] <- "Empirical"
-check_table[6, "Label"] <- "non-veg* eats meat"
-check_table[7, "tag"] <- "Empirical"
-check_table[7, "Label"] <- "Non-smoker buys cigarettes"
-check_table[8, "tag"] <- "Empirical"
-check_table[8, "Label"] <- "Smoker always scrounges"
-check_table[9, "tag"] <- "Logical"
-check_table[9, "Label"] <- "Cuff didn't fit arm"
-check_table[10, "tag"] <- "Empirical"
-check_table[10, "Label"] <- "Very mature pregnant woman"
-label_col <- "LABEL"
-threshold_value <- 1
-con_contradictions(
-  study_data = study_data, meta_data = meta_data, label_col = label_col,
-  threshold_value = threshold_value, check_table = check_table
-)
-check_table[1, "tag"] <- "Logical, Age-Related"
-check_table[10, "tag"] <- "Empirical, Age-Related"
-con_contradictions(
-  study_data = study_data, meta_data = meta_data, label_col = label_col,
-  threshold_value = threshold_value, check_table = check_table
-)
-con_contradictions(
-  study_data = study_data, meta_data = meta_data, label_col = label_col,
-  threshold_value = threshold_value, check_table = check_table,
-  summarize_categories = TRUE
-)
 }
 }
 \seealso{

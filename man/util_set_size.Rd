@@ -8,7 +8,7 @@ absolute sizes to the plot p}
 util_set_size(p, width_em = NA_integer_, height_em = NA_integer_)
 }
 \arguments{
-\item{p}{\link{ggplot} the plot}
+\item{p}{\link[ggplot2:ggplot]{ggplot2::ggplot} the plot}
 
 \item{width_em}{\link{numeric} len=1. the minimum width hint in \code{em}}
 
@@ -35,7 +35,6 @@ Other reporting_functions:
 \code{\link{util_generate_calls_for_function}()},
 \code{\link{util_load_manual}()},
 \code{\link{util_make_data_slot_from_table_slot}()},
-\code{\link{util_make_function}()},
 \code{\link{util_order_by_order}()}
 }
 \concept{figure}

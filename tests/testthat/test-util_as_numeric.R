@@ -8,8 +8,8 @@ test_that("util_as_numeric works", {
                                      levels = 10:1,
                                      labels = as.character(1:10)),
                               warn = TRUE)
-  d <- expect_warning(
-       dataquieR:::util_as_numeric(factor(1:10,
+  expect_warning(
+       d <- dataquieR:::util_as_numeric(factor(1:10,
                                      levels = 10:1,
                                      labels =
                                        paste("Grade", as.character(1:10))),

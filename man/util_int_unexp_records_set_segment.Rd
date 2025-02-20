@@ -11,7 +11,11 @@ util_int_unexp_records_set_segment(
   valid_id_table_list,
   meta_data_record_check_list,
   study_data,
-  meta_data
+  label_col,
+  meta_data,
+  item_level,
+  meta_data_segment = "segment_level",
+  segment_level
 )
 }
 \arguments{
@@ -27,7 +31,17 @@ util_int_unexp_records_set_segment(
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements, mandatory.}
 
+\item{label_col}{\link{variable attribute} the name of the column in the metadata
+with labels of variables}
+
 \item{meta_data}{\link{data.frame} the data frame that contains metadata attributes of the study data, mandatory.}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
+
+\item{meta_data_segment}{\link{data.frame} -- optional: Segment level metadata}
+
+\item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
 }
 \value{
 a \link{list} with
@@ -41,34 +55,6 @@ a \link{list} with
 This function tests that the identifiers match a provided record set. It is possible to
 check for unexpected data record sets by study segments or to consider only selected
 segments.
-}
-\examples{
-\dontrun{
-study_data <- readRDS(system.file("extdata", "ship.RDS",
-  package = "dataquieR"
-))
-meta_data <- readRDS(system.file("extdata", "ship_meta.RDS",
-  package = "dataquieR"
-))
-md1_segment <- readRDS(system.file("extdata", "meta_data_segment.RDS",
-  package = "dataquieR"
-))
-ids_segment <- readRDS(system.file("extdata", "meta_data_ids_segment.RDS",
-  package = "dataquieR"
-))
-
-# TODO: update examples
-int_unexp_records_set(
-  level = "segment",
-  identifier_name_list = c("INTERVIEW", "LABORATORY"),
-  valid_id_table_list = ids_segment,
-  meta_data_record_check = md1_segment[,
-    c("STUDY_SEGMENT", "SEGMENT_RECORD_CHECK")],
-  study_data = study_data,
-  meta_data = meta_data
-)
-}
-
 }
 \seealso{
 Other integrity_indicator_functions: 

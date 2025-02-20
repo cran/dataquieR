@@ -9,32 +9,80 @@
 #' @param data_element_count [integer]  an integer vector with the number of expected data elements, mandatory.
 #' @param identifier_name_list [character] a character vector indicating the name of each study data frame, mandatory.
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @return a [list] with
 #'   - `DataframeData`: data frame with the results of the quality check for unexpected data elements
 #'   - `DataframeTable`: data frame with selected unexpected data elements check results, used for the data quality report.
 #'
 #' @export
-#'
-#' @examples
-#' \dontrun{
-#' study_tables <- list(
-#' "sd1" = readRDS(system.file("extdata", "ship_subset1.RDS",
-#'                      package = "dataquieR")),
-#' "sd2" = readRDS(system.file("extdata", "ship_subset2.RDS",
-#'                      package = "dataquieR"))
-#' )
-#'
-#' prep_add_data_frames(data_frame_list = study_tables)
-#'
-#' int_unexp_elements(
-#'  identifier_name_list = c("sd1", "sd2"),
-#'  data_element_count = c(30, 29)
-#' )
-#' }
-int_unexp_elements <- function(identifier_name_list, # TODO: Don't pass an assignments as two separate vectors.
-                               data_element_count) {
+int_unexp_elements <- function(identifier_name_list,
+                               data_element_count,
+                               meta_data_dataframe = "dataframe_level",
+                               meta_data_v2,
+                               dataframe_level) {
 
   # Checks arguments ------------------------------------------------------------
+  util_maybe_load_meta_data_v2()
+
+  util_ck_arg_aliases()
+
+  if (missing(identifier_name_list) &&
+      missing(data_element_count) &&
+      missing(meta_data_dataframe) &&
+      formals()$meta_data_dataframe %in% prep_list_dataframes()) {
+    meta_data_dataframe <- force(meta_data_dataframe)
+  }
+
+  if (missing(identifier_name_list) &&
+      missing(data_element_count) &&
+      !missing(meta_data_dataframe)) {
+    meta_data_dataframe <- prep_check_meta_data_dataframe(meta_data_dataframe)
+    meta_data_dataframe <- meta_data_dataframe[
+      vapply(meta_data_dataframe[[DF_NAME]],
+             function(x) { !util_is_try_error(try(prep_get_data_frame(data_frame_name = x,
+                                                                      keep_types = TRUE), silent = TRUE)) },
+             FUN.VALUE = logical(1))
+      , , drop = FALSE]
+    meta_data_dataframe <- meta_data_dataframe[
+      !util_empty(meta_data_dataframe[[DF_ELEMENT_COUNT]])
+      , , drop = FALSE]
+    # TODO: if nothing left
+    identifier_name_list <- meta_data_dataframe[[DF_NAME]];
+    data_element_count <- meta_data_dataframe[[DF_ELEMENT_COUNT]]
+  } else if (!missing(meta_data_dataframe)) {
+    util_error(c("I have %s and one of the following: %s.",
+                 "This is not supported, please provide",
+                 "either %s or all of %s."),
+               sQuote("meta_data_dataframe"),
+               util_pretty_vector_string(
+                 c("identifier_name_list",
+                   "data_element_count"
+                 )),
+               sQuote("meta_data_dataframe"),
+               util_pretty_vector_string(
+                 c("identifier_name_list",
+                   "data_element_count"
+                 )))
+  } else if (missing(meta_data_dataframe) && (
+    missing(identifier_name_list) ||
+    missing(data_element_count)
+  )) {
+    util_error(c("I don't have %s and also miss at least",
+                 "one of the following: %s.",
+                 "This is not supported, please provide",
+                 "either %s or all of %s."),
+               sQuote("meta_data_dataframe"),
+               util_pretty_vector_string(
+                 c("identifier_name_list",
+                   "data_element_count"
+                 )),
+               sQuote("meta_data_dataframe"),
+               util_pretty_vector_string(
+                 c("identifier_name_list",
+                   "data_element_count"
+                 )))
+  }
 
   util_expect_scalar(identifier_name_list,
                      allow_more_than_one = TRUE,

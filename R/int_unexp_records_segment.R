@@ -5,10 +5,10 @@
 #'
 #' [Indicator]
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @param data_record_count [integer]  an integer vector with the number of expected data records, mandatory.
 #' @param study_segment [character] a character vector indicating the name of each study data frame, mandatory.
-#' @param study_data [data.frame] the data frame that contains the measurements, mandatory.
-#' @param meta_data [data.frame] the data frame that contains metadata attributes of the study data, mandatory.
 #'
 #' @return a [list] with
 #'   - `SegmentData`: data frame with the results of the quality check for unexpected data elements
@@ -18,26 +18,72 @@
 #' The current implementation does not take into account jump or missing codes, the function is rather based on checking whether NAs are present in the study data
 #'
 #' @export
-#'
-#' @examples
-#' \dontrun{
-#' study_data <- readRDS(system.file("extdata", "ship.RDS", package = "dataquieR"))
-#' meta_data <- readRDS(system.file("extdata", "ship_meta.RDS", package = "dataquieR"))
-#'
-#' int_unexp_records_segment(
-#'   study_segment = c("PART_STUDY", "PART_INTERVIEW"),
-#'   data_record_count = c(3000, 1100),
-#'   study_data = study_data,
-#'   meta_data = meta_data
-#' )
-#' }
-#'
 int_unexp_records_segment <- function(study_segment,
-                                      data_record_count, # TODO: DONT PASS 2 VECTORS FOR ASSINGMENTS
                                       study_data,
-                                      meta_data) {
+                                      label_col,
+                                      item_level = "item_level",
+                                      data_record_count, # TODO: DONT PASS 2 VECTORS FOR ASSINGMENTS
+                                      meta_data = item_level,
+                                      meta_data_segment = "segment_level",
+                                      meta_data_v2,
+                                      segment_level
+                                      ) {
 
   # Preps and checks ----
+  util_maybe_load_meta_data_v2()
+
+  util_ck_arg_aliases()
+
+  if (missing(study_segment) &&
+      missing(data_record_count) &&
+      missing(meta_data_segment) &&
+      formals()$meta_data_segment %in% prep_list_dataframes()) {
+    meta_data_segment <- force(meta_data_segment)
+  }
+
+  if (missing(study_segment) &&
+      missing(data_record_count) &&
+      !missing(meta_data_segment)) {
+    meta_data_segment <- prep_check_meta_data_segment(meta_data_segment)
+    meta_data_segment <- meta_data_segment[
+      !util_empty(meta_data_segment[[SEGMENT_RECORD_COUNT]])
+      , , drop = FALSE]
+    # TODO: if nothing left
+    study_segment <- meta_data_segment[[STUDY_SEGMENT]];
+    data_record_count <- meta_data_segment[[SEGMENT_RECORD_COUNT]]
+  } else if (!missing(meta_data_segment)) {
+    util_error(c("I have %s and one of the following: %s.",
+                 "This is not supported, please provide",
+                 "either %s or all of %s."),
+               sQuote("meta_data_segment"),
+               util_pretty_vector_string(
+                 c("study_segment",
+                   "data_record_count"
+                 )),
+               sQuote("meta_data_segment"),
+               util_pretty_vector_string(
+                 c("study_segment",
+                   "data_record_count"
+                 )))
+  } else if (missing(meta_data_segment) && (
+    missing(study_segment) ||
+    missing(data_record_count)
+  )) {
+    util_error(c("I don't have %s and also miss at least",
+                 "one of the following: %s.",
+                 "This is not supported, please provide",
+                 "either %s or all of %s."),
+               sQuote("meta_data_segment"),
+               util_pretty_vector_string(
+                 c("study_segment",
+                   "data_record_count"
+                 )),
+               sQuote("meta_data_segment"),
+               util_pretty_vector_string(
+                 c("study_segment",
+                   "data_record_count"
+                 )))
+  }
   prep_prepare_dataframes(.allow_empty = TRUE)
 
   # meta_data$STUDY_SEGMENT <-

@@ -14,8 +14,7 @@ test_that("prep_create_meta works", {
     regexp = sprintf("(%s)",
       "The following variable attributes are NULL, will ignore these: .+XYZ.+"
     ),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
 
   meta_data <- prep_create_meta(

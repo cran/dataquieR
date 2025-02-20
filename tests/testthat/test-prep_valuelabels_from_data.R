@@ -7,7 +7,6 @@ test_that("prep_datatype_from_data works", {
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
   expect_message(
     prep_valuelabels_from_data(c("Species", "xzy", "Sepal.Width"), iris),
-    all = TRUE,
     regexp =
       paste("The following.+resp_vars.+are missing from the",
             ".+study_data.+Won.t return a type for them:.+xzy.+")

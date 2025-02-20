@@ -75,7 +75,7 @@ prep_add_data_frames <- function(..., data_frame_list = list()) {
     assign(
       n,
       data_frame_list[[n]],
-      envir = .dataframe_environment)
+      envir = .dataframe_environment())
   }
-  invisible(.dataframe_environment)
+  invisible(.dataframe_environment())
 }

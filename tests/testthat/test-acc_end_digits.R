@@ -1,7 +1,8 @@
 test_that("acc_end_digits works with 2 args", {
   skip_on_cran() # slow, errors obvious
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -21,8 +22,7 @@ test_that("acc_end_digits works with 2 args", {
         paste("Due to missing values in v00014 301",
               "observations were deleted.")
       ),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
 
   expect_true(all(c("SummaryTable", "SummaryPlot") %in% names(res1)))
@@ -43,8 +43,9 @@ test_that("acc_end_digits works with 2 args", {
 
 test_that("acc_end_digits works with label_col", {
   skip_on_cran() # slow, errors obvious
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -58,8 +59,7 @@ test_that("acc_end_digits works with label_col", {
         paste("Due to missing values in CRP_0",
               "301 observations were deleted.")
       ),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
   expect_true(all(c("SummaryTable", "SummaryPlot") %in% names(res1)))
   expect_equal(
@@ -79,10 +79,11 @@ test_that("acc_end_digits works with label_col", {
 
 test_that("acc_end_digits works image check", {
   skip_on_cran()
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # TODO: skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -97,18 +98,18 @@ test_that("acc_end_digits works image check", {
         paste("Due to missing values in CRP_0",
               "301 observations were deleted.")
       ),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
   skip_on_cran()
-  vdiffr::expect_doppelganger("enddigits plot for CRP_0 ok",
+  expect_doppelganger2("enddigits plot for CRP_0 ok",
                               res1$SummaryPlot)
 })
 
 test_that("acc_end_digits is robust", {
   skip_on_cran() # slow, errors obvious
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)

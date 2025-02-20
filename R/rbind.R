@@ -59,13 +59,15 @@ rbind.ReportSummaryTable <- function(...) {
     )
     class(r) <- union("ReportSummaryTable", class(r))
     attr(r, "higher_means") <- attr(x, "higher_means")
+    attr(r, "flip_mode") <- attr(x, "flip_mode")
     attr(r, "continuous") <- attr(x, "continuous")
     attr(r, "colscale") <- attr(x, "colscale")
     attr(r, "colcode") <- attr(x, "colcode")
     attr(r, "level_names") <- attr(x, "level_names")
     attr(r, "relative") <- attr(x, "relative")
+    attr(r, "VAR_NAMES") <- c(attr(x, "VAR_NAMES"), attr(y, "VAR_NAMES"))
     r
-  } else {
+  } else { # recursive call to bind ReportSummaryTables for more than two variables
     x <-
       do.call(Recall,
             c(list(

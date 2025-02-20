@@ -54,7 +54,6 @@ View(with_sl[, union(SCALE_LEVEL, colnames(with_sl))])
 \seealso{
 Other parser_functions: 
 \code{\link{util_interpret_limits}()},
-\code{\link{util_interpret_range}()},
 \code{\link{util_parse_interval}()},
 \code{\link{util_parse_redcap_rule}()}
 }

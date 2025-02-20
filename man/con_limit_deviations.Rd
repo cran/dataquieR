@@ -6,23 +6,27 @@
 \usage{
 con_limit_deviations(
   resp_vars = NULL,
-  label_col,
   study_data,
-  meta_data,
+  label_col,
+  item_level = "item_level",
   limits = NULL,
   flip_mode = "noflip",
-  return_flagged_study_data = FALSE
+  return_flagged_study_data = FALSE,
+  return_limit_categorical = TRUE,
+  meta_data = item_level,
+  meta_data_v2,
+  show_obs = TRUE
 )
 }
 \arguments{
 \item{resp_vars}{\link{variable list} the name of the measurement variables}
 
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
+
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
 
-\item{study_data}{\link{data.frame} the data frame that contains the measurements}
-
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
 
 \item{limits}{\link{enum} HARD_LIMITS | SOFT_LIMITS | DETECTION_LIMITS. what
@@ -39,6 +43,20 @@ specifically using \code{specific_args}.}
 
 \item{return_flagged_study_data}{\link{logical} return \code{FlaggedStudyData} in the
 result}
+
+\item{return_limit_categorical}{\link{logical} if TRUE return limit deviations also
+for categorical variables}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{show_obs}{\link{logical} Should (selected) individual observations be marked
+in the figure for continuous variables?}
 }
 \value{
 a list with:
@@ -48,9 +66,11 @@ relationship, i.e. for each observation is
 checked whether the value is below or above
 the limits. Optional, see
 \code{return_flagged_study_data}.
-\item \code{SummaryTable} \link{data.frame} summarizes limit deviations for each
+\item \code{SummaryTable} \link{data.frame} summarizing limit deviations for each
 variable.
-\item \code{SummaryPlotList} \link{list} of \link{ggplot}s The plots for each variable are
+\item \code{SummaryData} \link{data.frame} summarizing limit deviations for each
+variable for a report.
+\item \code{SummaryPlotList} \link{list} of \link[ggplot2:ggplot]{ggplot2::ggplot}s The plots for each variable are
 either a histogram (continuous) or a
 barplot (discrete).
 \item \code{ReportSummaryTable}: heatmap-like data frame about limit violations

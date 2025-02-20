@@ -31,7 +31,13 @@ util_html_table(
   rotate_for_one_row = FALSE,
   title = dl_fn,
   messageTop = NULL,
-  messageBottom = NULL
+  messageBottom = NULL,
+  col_tags = NULL,
+  searchBuilder = FALSE,
+  initial_col_tag,
+  init_search,
+  additional_init_args,
+  additional_columnDefs
 )
 }
 \arguments{
@@ -107,6 +113,21 @@ be used in the output, for \code{HTML}, only \code{HTML} code is being generated
 
 \item{messageBottom}{\link{character} footer for download formats, see
 \url{https://datatables.net/extensions/buttons/examples/html5/titleMessage.html}}
+
+\item{col_tags}{\link{list} if not \code{NULL}, a named \code{list()}, names are names used
+to name a newly created  column-group hide/show
+button, elements are column names belonging to each
+column groups as defined by \code{colnames}}
+
+\item{searchBuilder}{\link{logical} if \code{TRUE}, display a \code{searchBuilder}-Button.}
+
+\item{initial_col_tag}{\link{character} \code{col_tags} entry to activate initially}
+
+\item{init_search}{\link{list} object to initialize \code{searchBuilder}, see \href{https://datatables.net/reference/type/SearchBuilder.Criteria}{\code{datatables.net}}}
+
+\item{additional_init_args}{\link{list} if not missing or \code{NULL}, arguments passed to \code{JavaScript}, if \code{searchBuilder == TRUE}}
+
+\item{additional_columnDefs}{\link{list} additional \code{columnDefs}, can be missing or \code{NULL}}
 }
 \value{
 the table to be added to an \code{rmd}/´\code{html} file as
@@ -128,16 +149,15 @@ Other summary_functions:
 \code{\link{prep_render_pie_chart_from_summaryclasses_plotly}()},
 \code{\link{prep_summary_to_classes}()},
 \code{\link{util_as_cat}()},
+\code{\link{util_as_integer_cat}()},
 \code{\link{util_extract_indicator_metrics}()},
 \code{\link{util_get_category_for_result}()},
 \code{\link{util_get_colors}()},
-\code{\link{util_get_html_cell_for_result}()},
 \code{\link{util_get_labels_grading_class}()},
 \code{\link{util_get_message_for_result}()},
 \code{\link{util_get_rule_sets}()},
 \code{\link{util_get_ruleset_formats}()},
 \code{\link{util_get_thresholds}()},
-\code{\link{util_melt_summary}()},
 \code{\link{util_sort_by_order}()}
 }
 \concept{html}

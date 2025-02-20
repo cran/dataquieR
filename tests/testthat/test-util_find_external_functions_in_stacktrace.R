@@ -13,7 +13,7 @@ test_that("util_find_external_functions_in_stacktrace works", {
   }
   a <- test2()
   expect_equal(
-    a[1:1], 3,
+    a[1:1], 3
   )
   environment(test2) <- asNamespace("dataquieR")
   b <- test2()
@@ -44,7 +44,7 @@ test_that("util_find_external_functions_in_stacktrace works from emptyenv", {
   }
   a <- test2()
   expect_equal(
-    a[1:1], 3,
+    a[1:1], 3
   )
   environment(test2) <- asNamespace("dataquieR")
   b <- test2()

@@ -53,9 +53,12 @@ util_create_page_file <- function(page_nr,
   if (by_report) {
     backlink <- htmltools::div(
       style = htmltools::css(
+        font.size = "18px",
+        font.weight = "bold",
         position = "fixed",
         right = "0",
-        bottom = "0"
+        top = "125px"#,
+        #border =  paste("6px", "solid", "#6495ED")
       ),
       htmltools::a(
         href = "#",

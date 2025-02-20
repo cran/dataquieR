@@ -22,7 +22,7 @@
 util_eval_rule <- function(rule, ds1, meta_data = "item_level",
                            use_value_labels,
                            replace_missing_by = "NA",
-                           replace_limits = TRUE) {
+                           replace_limits = TRUE) { # IDEA: Use the new .apply_factor_metadata options, somehow
   if (replace_limits && replace_missing_by != "NA") {
     util_message(
       c("Cannot replace hard limits, if missing codes are not deleted. I will",
@@ -49,13 +49,32 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
                                  resp_vars = all.vars(rule),
                                  target = "DATA_TYPE",
                                  meta_data = meta_data))
+    if (!VALUE_LABELS %in% colnames(meta_data)) {
+      meta_data[[VALUE_LABELS]] <- NA_character_
+    }
+    if (!VALUE_LABEL_TABLE %in% colnames(meta_data)) {
+      meta_data[[VALUE_LABEL_TABLE]] <- NA_character_
+    }
+
+    # TODO: Support:
+    # if (!STANDARDIZED_VOCABULARY_TABLE %in% colnames(meta_data)) {
+    #   meta_data[[STANDARDIZED_VOCABULARY_TABLE]] <- NA_character_
+    # }
     vars_value_labels <- setNames(nm = all.vars(rule),
                                   util_find_var_by_meta(
                                     resp_vars = all.vars(rule),
-                                    target = "VALUE_LABELS",
+                                    target = VALUE_LABELS,
+                                    meta_data = meta_data))
+    vars_value_label_tables <- setNames(nm = all.vars(rule),
+                                  util_find_var_by_meta(
+                                    resp_vars = all.vars(rule),
+                                    target = VALUE_LABEL_TABLE,
                                     meta_data = meta_data))
     not_yet_supported <- intersect(names(vars_data_type)[which(vars_data_type %in% c("float", "integer"))],
-                                   names(vars_value_labels)[which(util_empty(vars_value_labels))])
+                                   union(
+                                     names(vars_value_labels)[which(util_empty(vars_value_labels))], # TODO: STANDARDIZED_VOCABULARY_TABLE
+                                     names(vars_value_label_tables)[which(util_empty(vars_value_label_tables))]
+                                   ))
     if (length(not_yet_supported) > 0) {
       util_error(paste0("Replacement of missing value codes by labels or ",
                         "AAPOR codes is not yet supported for numerical ",
@@ -67,8 +86,8 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
   }
   if (!missing(ds1)) {
     problem <-
-      ("Codes_to_NA" %in% names(attributes(ds1)) &&
-         replace_missing_by != "NA") # then, an unsuitable ds1 has been passed
+      isTRUE(attr(ds1, ("Codes_to_NA"))) &&
+         replace_missing_by != "NA" # then, an unsuitable ds1 has been passed
     util_stop_if_not(!problem) # an unsuitable ds1 has been passed
     if (!!prod(dim(meta_data))) {
       prep_prepare_dataframes(.replace_hard_limits = replace_limits,
@@ -80,6 +99,10 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
   if (missing(use_value_labels)) {
     use_value_labels <- VALUE_LABELS %in% colnames(meta_data) &&
       any(!util_empty(meta_data[[VALUE_LABELS]]))
+    use_value_labels <- use_value_labels || (
+      VALUE_LABEL_TABLE %in% colnames(meta_data) &&
+      any(!util_empty(meta_data[[VALUE_LABEL_TABLE]])))
+    # TODO: STANDARDIZED_VOCABULARY_TABLE
   }
   if (missing(ds1)) {
     ds1 <- parent.frame()
@@ -96,11 +119,15 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
   if (use_value_labels || use_missing_labels) {
     util_stop_if_not(attr(ds1, "MAPPED"))
     util_stop_if_not(!util_empty(label_col))
+    if (!(VALUE_LABEL_TABLE %in% colnames(meta_data))) {
+      meta_data[[VALUE_LABEL_TABLE]] <- NA_character_
+    }
     if (!(VALUE_LABELS %in% colnames(meta_data))) {
       meta_data[[VALUE_LABELS]] <- NA_character_
     }
-    cols_with_valuelabels <- meta_data[!util_empty(meta_data[[VALUE_LABELS]]), # TODO: address VALUE_LABELS = c("m|f", "") ...
-                                       label_col, drop = TRUE]
+    cols_with_valuelabels <- meta_data[!util_empty(meta_data[[VALUE_LABELS]]) |
+                                    !util_empty(meta_data[[VALUE_LABEL_TABLE]]), # TODO: address VALUE_LABELS = c("m|f", "") ...
+                                       label_col, drop = TRUE] # TODO: STANDARDIZED_VOCABULARY_TABLE
     ds1_with_labels <- ds1
     if (!MISSING_LIST_TABLE %in% colnames(meta_data)) {
       meta_data[[MISSING_LIST_TABLE]] <- NA_character_
@@ -121,14 +148,14 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
               CODE_VALUE = character(0)
             )
           if (inherits(mltab, "try-error") ||
-              !("CODE_INTERPRET" %in% colnames(mltab)) ||
-              !("CODE_VALUE" %in% colnames(mltab))) {
+              !(CODE_INTERPRET %in% colnames(mltab)) ||
+              !(CODE_VALUE %in% colnames(mltab))) {
             util_warning(
               c("For %s, I have no %s assignments from %s, so I will",
                 "not replace missing codes."),
               dQuote(cn),
-              sQuote("CODE_INTERPRET"),
-              sQuote("CODE_VALUE")
+              sQuote(CODE_INTERPRET),
+              sQuote(CODE_VALUE)
             )
             CODE_INTERPRET <- NULL;
           } else {
@@ -144,15 +171,44 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
                                                       warn_ambiguous = FALSE
                                                     ))
             CODE_INTERPRET <-
-              setNames(mltab[["CODE_VALUE"]], nm = mltab[["CODE_INTERPRET"]])
+              setNames(mltab[[CODE_VALUE]], nm = mltab[[CODE_INTERPRET]])
           }
         }
 
-        labs <-
+        labs <- # TODO: discard, we have now VALUE_LABEL_TABLE, mostly always
           meta_data[
             meta_data[[label_col]] == cn,
             VALUE_LABELS,
             drop = TRUE]
+
+        util_stop_if_not(
+`Internal error, sorry, please report. VALUE_LABELS still in util_eval_rule()` =
+          length(labs) == 0 ||
+            all(util_empty(labs))
+        )
+
+        labtabs <- meta_data[
+          meta_data[[label_col]] == cn,
+          VALUE_LABEL_TABLE,
+          drop = TRUE]
+
+        labs <- vapply(labtabs, # FIXME: This is a slow and ugly work around.
+                       function(vlt) {
+                         vltdf <- try(prep_get_data_frame(vlt))
+                         if (is.data.frame(vltdf)) {
+                           if (CODE_VALUE %in% colnames(vltdf)) {
+                             if (!CODE_LABEL %in% colnames(vltdf)) {
+                               vltdf[[CODE_LABEL]] <- vltdf[[CODE_VALUE]]
+                             }
+                             return(prep_deparse_assignments(
+                               mode = "string_codes",
+                               codes = vltdf[[CODE_VALUE]],
+                               labels = vltdf[[CODE_LABEL]]))
+                           }
+                         }
+                         return(SPLIT_CHAR)
+                       }, FUN.VALUE = character(1))
+
 
         if (!use_value_labels) {
           labs <- paste(unique(ds1[[cn]]), # TODO: This can definitely be bad in terms of performance
@@ -200,8 +256,8 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
                                        labels = names(CODE_INTERPRET))
           } else { # keep the codes
             util_warning("I do not have a %s with %s to use them for rules",
-                         sQuote("MISSING_LIST_TABLE"),
-                         sQuote("CODE_INTERPRET"))
+                         sQuote(MISSING_LIST_TABLE),
+                         sQuote(CODE_INTERPRET))
             jl <-
               prep_deparse_assignments(codes = jcodes,
                                        labels = jcodes)
@@ -293,7 +349,11 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
   # intersect(colnames(ds2), all.vars(rule))
   # to reduce the number of warning messages (i.e., do not throw a warning for
   # variables which are not used in the rule)
-  eval(expr = rule,
-       envir = ds2,
-       enclos = redcap_rule_env)
+  res <- eval(expr = rule,
+              envir = ds2,
+              enclos = redcap_rule_env)
+  if (is.character(res)) {
+    res <- readr::parse_guess(res)
+  }
+  res
 }

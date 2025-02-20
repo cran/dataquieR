@@ -4,10 +4,34 @@
 \alias{int_duplicate_ids}
 \title{Check for duplicated IDs}
 \usage{
-int_duplicate_ids(level = c("dataframe", "segment"), ...)
+int_duplicate_ids(
+  level = c("dataframe", "segment"),
+  study_data,
+  item_level = "item_level",
+  label_col,
+  meta_data = item_level,
+  meta_data_v2,
+  ...
+)
 }
 \arguments{
 \item{level}{\link{character} a character vector indicating whether the assessment should be conducted at the study level (level = "dataframe") or at the segment level (level = "segment").}
+
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
+
+\item{label_col}{\link{variable attribute} the name of the column in the metadata
+with labels of variables}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 
 \item{...}{Depending on \code{level}, passed to either
 \link{util_int_duplicate_ids_segment} or

@@ -5,19 +5,24 @@
 #' @param colnames [character] the names to translate
 #' @param short [logical] include unit letter in output
 #' @param long [logical] include unit description in output
+#' @param ignore_unknown [logical] do not replace unknown indicator metrics
+#'                                 by `NA`, keep them
 #'
 #' @return translated names
 #'
 #' @keywords internal
 util_translate_indicator_metrics <- function(colnames, short = FALSE,
-                                             long = TRUE) {
+                                             long = TRUE,
+                                             ignore_unknown = FALSE) {
   util_expect_scalar(short, check_type = is.logical)
   util_expect_scalar(long, check_type = is.logical)
+  util_expect_scalar(ignore_unknown, check_type = is.logical)
   util_stop_if_not(`Cannot create short labels that are long` =
                      !(short && long))
   abbreviationMetrics <- util_get_concept_info("abbreviationMetrics")
   dqi <- util_get_concept_info("dqi")
-  vapply(colnames, FUN.VALUE = character(1), FUN = function(x) {
+  new_colnames <-
+    vapply(colnames, FUN.VALUE = character(1), FUN = function(x) {
     if (x %in% c("Variables", VAR_NAMES, STUDY_SEGMENT)) {
       return(x)
     }
@@ -64,4 +69,9 @@ util_translate_indicator_metrics <- function(colnames, short = FALSE,
       NA_character_
     }
   })
+  if (ignore_unknown) {
+    new_colnames[is.na(new_colnames)] <-
+      colnames[is.na(new_colnames)]
+  }
+  new_colnames
 }

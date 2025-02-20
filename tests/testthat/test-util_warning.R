@@ -102,13 +102,11 @@ test_that("util_warning works", {
   expect_warning(
     withCallingHandlers(x(""), warning = w),
     regexp = "Warning",
-    all = TRUE,
     fixed = TRUE
   )
   expect_warning(
     withCallingHandlers(x("CAVE CANEM"), warning = w),
     regexp = "CAVE CANEM",
-    all = TRUE,
     fixed = TRUE
   )
 

@@ -18,7 +18,7 @@ summarized by one column (currently, we support
 \item{meta_data}{\link{meta_data}}
 }
 \value{
-a \link{ggplot2} plot
+a \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} plot
 }
 \description{
 Create a \code{ggplot2} pie chart
@@ -33,17 +33,16 @@ Other summary_functions:
 \code{\link{prep_render_pie_chart_from_summaryclasses_plotly}()},
 \code{\link{prep_summary_to_classes}()},
 \code{\link{util_as_cat}()},
+\code{\link{util_as_integer_cat}()},
 \code{\link{util_extract_indicator_metrics}()},
 \code{\link{util_get_category_for_result}()},
 \code{\link{util_get_colors}()},
-\code{\link{util_get_html_cell_for_result}()},
 \code{\link{util_get_labels_grading_class}()},
 \code{\link{util_get_message_for_result}()},
 \code{\link{util_get_rule_sets}()},
 \code{\link{util_get_ruleset_formats}()},
 \code{\link{util_get_thresholds}()},
 \code{\link{util_html_table}()},
-\code{\link{util_melt_summary}()},
 \code{\link{util_sort_by_order}()}
 }
 \concept{summary_functions}

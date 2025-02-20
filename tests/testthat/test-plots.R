@@ -2,29 +2,27 @@ test_that("distribution plot works", { # acc_distributions.R ----
   skip_on_cran()
   skip_if_not_installed("vdiffr")
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
   ({
-    group_vars <- prep_map_labels("DBP_0", meta_data = "meta_data_v2|item_level", from = LABEL,
-                                  to = GROUP_VAR_OBSERVER)
     r <-
       acc_distributions(
         resp_vars = "DBP_0",
-        study_data = "study_data",
-        meta_data = "meta_data",
-        group_vars = group_vars,
+        study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+        meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData",
         label_col = LABEL)
 
-    vdiffr::expect_doppelganger("acc_distributions gr dbp0", r$SummaryPlotList$DBP_0)
+    expect_doppelganger2("acc_distributions gr dbp0", r$SummaryPlotList$DBP_0)
 
     r <-
       acc_distributions(
         resp_vars = "EDUCATION_0",
-        study_data = "study_data",
-        meta_data = "meta_data",
+        study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+        meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData",
         label_col = LABEL)
 
-    vdiffr::expect_doppelganger("acc_distributions def edu0", r$SummaryPlotList$EDUCATION_0)
+    expect_doppelganger2("acc_distributions def edu0", r$SummaryPlotList$EDUCATION_0)
 
   })
 })
@@ -33,6 +31,7 @@ test_that("loess plot works", { # acc_loess.R ----
   # testthat::local_reproducible_output()
   # skip_on_travis() # vdiffr fails
   skip_on_cran()
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_if_not_installed("withr")
   skip_if_not_installed("vdiffr")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
@@ -47,82 +46,83 @@ test_that("loess plot works", { # acc_loess.R ----
   }
 
   ({
-    time_vars <- prep_map_labels("DBP_0", meta_data = "meta_data_v2|item_level", from = LABEL,
+    time_vars <- prep_map_labels("DBP_0", meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx|item_level", from = LABEL,
                                  to = TIME_VAR)
-    group_vars <- prep_map_labels("DBP_0", meta_data = "meta_data_v2|item_level", from = LABEL,
+    group_vars <- prep_map_labels("DBP_0", meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx|item_level", from = LABEL,
                                   to = GROUP_VAR_OBSERVER)
     r <-
       acc_loess(  resp_vars = "DBP_0",
-                  study_data = "study_data",
-                  meta_data = "meta_data",
+                  study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+                  meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData",
                   group_vars = group_vars,
                   time_vars = time_vars,
                   label_col = LABEL,
                   co_vars = "AGE_0")
 
-    vdiffr::expect_doppelganger("loess def dbp0", r$SummaryPlotList$DBP_0)
+    expect_doppelganger2("loess def dbp0", r$SummaryPlotList$DBP_0)
 
-    # r <- # this test is pointless as long as acc_loess cannot handle ordinal variables
-    #   acc_loess(  resp_vars = "EDUCATION_0",
-    #               study_data = "study_data",
-    #               meta_data = "meta_data",
-    #               time_vars = time_vars,
-    #               group_vars = group_vars,
-    #               label_col = LABEL,
-    #               co_vars = "AGE_0")
-    #
-    # vdiffr::expect_doppelganger("loess def edu0", r$SummaryPlotList$EDUCATION_0)
+    r <- acc_loess(resp_vars = "EDUCATION_0",
+                   study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+                   meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData",
+                   time_vars = time_vars,
+                   group_vars = group_vars,
+                   label_col = LABEL,
+                   co_vars = "AGE_0")
+
+    expect_doppelganger2("loess def edu0", r$SummaryPlotList$EDUCATION_0)
 
     r <-
       acc_loess(  resp_vars = "DBP_0",
-                  study_data = "study_data",
-                  meta_data = "meta_data",
+                  study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+                  meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData",
                   group_vars = group_vars,
                   time_vars = time_vars,
                   plot_format = "FACETS",
                   label_col = LABEL,
                   co_vars = "AGE_0")
 
-    vdiffr::expect_doppelganger("loess fac dbp0", r$SummaryPlotList$DBP_0)
+    expect_doppelganger2("loess fac dbp0", r$SummaryPlotList$DBP_0)
 
-    # r <- # this test is pointless as long as acc_loess cannot handle ordinal variables
-    #   acc_loess(  resp_vars = "EDUCATION_0",
-    #               study_data = "study_data",
-    #               meta_data = "meta_data",
-    #               time_vars = time_vars,
-    #               group_vars = group_vars,
-    #               plot_format = "FACETS",
-    #               label_col = LABEL,
-    #               co_vars = "AGE_0")
-    #
-    # vdiffr::expect_doppelganger("loess fac edu0", r$SummaryPlotList$EDUCATION_0)
+    r <-
+      acc_loess(  resp_vars = "EDUCATION_0",
+                  study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+                  meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData",
+                  time_vars = time_vars,
+                  group_vars = group_vars,
+                  plot_format = "FACETS",
+                  label_col = LABEL,
+                  co_vars = "AGE_0")
+
+    expect_doppelganger2("loess fac edu0", r$SummaryPlotList$EDUCATION_0)
 
   })
 })
 
 test_that("margins plot works", { # acc_margins.R -----
   skip_on_cran()
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_if_not_installed("vdiffr")
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
   ({
     group_vars <- prep_map_labels("DBP_0",
-                                  meta_data = "meta_data_v2|item_level",
+                                  meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx|item_level",
                                   from = LABEL,
                                   to = GROUP_VAR_OBSERVER)
     r <-
       acc_margins(resp_vars = "DBP_0",
-                  study_data = "study_data",
-                  meta_data = "meta_data",
+                  study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+                  meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData",
                   group_vars = group_vars,
                   label_col = LABEL,
-                  co_vars = "AGE_0")
+                  co_vars = "AGE_0",
+                  sort_group_var_levels = FALSE)
 
-    vdiffr::expect_doppelganger("margins dbp0", r$SummaryPlot)
+    expect_doppelganger2("margins dbp0", r$SummaryPlot)
 
     prep_purge_data_frame_cache()
-
-    prep_load_workbook_like_file("meta_data_v2")
+    skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+    prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx")
     md <- prep_get_data_frame("item_level")
 
     # tweak metadata to enable the test
@@ -130,13 +130,13 @@ test_that("margins plot works", { # acc_margins.R -----
 
     r <-
       acc_margins(resp_vars = "EDUCATION_0",
-                  study_data = "study_data",
+                  study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
                   meta_data = md,
                   group_vars = group_vars,
                   label_col = LABEL,
                   co_vars = "AGE_0")
 
-    vdiffr::expect_doppelganger("margins edu0", r$SummaryPlot)
+    expect_doppelganger2("margins edu0", r$SummaryPlot)
   })
 })
 
@@ -144,6 +144,7 @@ test_that("multivariate outlier plot works", { # acc_multivariate_outlier.R ----
   skip_on_cran()
   skip_if_not_installed("withr")
   skip_if_not_installed("vdiffr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
   withr::with_seed(32245253, {
@@ -151,10 +152,11 @@ test_that("multivariate outlier plot works", { # acc_multivariate_outlier.R ----
       acc_multivariate_outlier(
         variable_group = c("DBP_0", "SBP_0", "AGE_0"),
         label_col = LABEL,
-        study_data = "study_data",
-        meta_data = "meta_data")
+        study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+        meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData",
+        scale = FALSE)
 
-    vdiffr::expect_doppelganger("acc_multivariate_outlier test 1",
+    expect_doppelganger2("acc_multivariate_outlier test 1",
                                 r$SummaryPlot)
 
   })
@@ -165,21 +167,23 @@ test_that("shape or scale plot works", { # acc_shape_or_scale.R -----
   skip_on_cran()
   skip_if_not_installed("withr")
   skip_if_not_installed("vdiffr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
   ({
     r <-
       acc_shape_or_scale(
         resp_vars = "DBP_0",
-        study_data = "study_data",
-        meta_data = "meta_data",
+        study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+        meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData",
         label_col = LABEL)
 
-    vdiffr::expect_doppelganger("shape or scale dbp0", r$SummaryPlot)
+    expect_doppelganger2("shape or scale dbp0", r$SummaryPlot)
   })
 })
 
 test_that("univariate outlier plot works", { # acc_univariate_outlier.R ----
   skip_on_cran()
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_if_not_installed("withr")
   skip_if_not_installed("vdiffr")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
@@ -188,10 +192,10 @@ test_that("univariate outlier plot works", { # acc_univariate_outlier.R ----
       acc_univariate_outlier(
         resp_vars = c("DBP_0", "DEV_NO_0"),
         label_col = LABEL,
-        study_data = "study_data",
-        meta_data = "meta_data")
+        study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+        meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
 
-    vdiffr::expect_doppelganger("acc_univariate_outlier.R DBP_0",
+    expect_doppelganger2("acc_univariate_outlier.R DBP_0",
                                 r$SummaryPlotList$DBP_0)
 
     # Argument “resp_vars”: Variable 'DEV_NO_0' (nominal) does not have an
@@ -204,15 +208,14 @@ test_that("univariate outlier plot works", { # acc_univariate_outlier.R ----
 
 test_that("old contradiction plots work", { # con_contradictions.R ----
   skip_on_cran()
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_if_not_installed("vdiffr")
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
   ({
-    check_table <- read.csv(system.file("extdata",
-        "contradiction_checks.csv",
-        package = "dataquieR"
-      ),
+    check_table <- read.csv(
+        "https://dataquality.ship-med.uni-greifswald.de/extdata/contradiction_checks.csv",
       header = TRUE, sep = "#"
     )
     check_table[1, "tag"] <- "Logical"
@@ -239,20 +242,26 @@ test_that("old contradiction plots work", { # con_contradictions.R ----
     check_table[10, "tag"] <- "Empirical, Age-Related"
     label_col <- "LABEL"
     threshold_value <- 1
+    study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+    meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+    meta_data <- prep_scalelevel_from_data_and_metadata(meta_data = meta_data,
+                                                        study_data = study_data)
+    meta_data[startsWith(meta_data[[LABEL]], "EDUCATION_"), SCALE_LEVEL] <-
+      SCALE_LEVELS$ORDINAL
     r <-
       con_contradictions(
-        study_data = "study_data", meta_data = "meta_data", label_col =
+        study_data = study_data, meta_data = meta_data, label_col =
           label_col,
         threshold_value = threshold_value, check_table = check_table,
         summarize_categories = TRUE
       )
-    vdiffr::expect_doppelganger("con_contradictions by tag",
+    expect_doppelganger2("con_contradictions by tag",
                                 r$SummaryPlot)
 
-    vdiffr::expect_doppelganger("con_contradictions logical age checks, only",
+    expect_doppelganger2("con_contradictions logical age checks, only",
                                 r$`Logical, Age-Related`$SummaryPlot)
 
-    vdiffr::expect_doppelganger("con_contradictions all checks",
+    expect_doppelganger2("con_contradictions all checks",
                                 r$all_checks$SummaryPlot)
 
   })
@@ -260,6 +269,7 @@ test_that("old contradiction plots work", { # con_contradictions.R ----
 
 test_that("redcap based contradiction plots work", { # con_contradictions_redcap.R ----
   skip_on_cran()
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_if_not_installed("vdiffr")
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
@@ -268,40 +278,43 @@ test_that("redcap based contradiction plots work", { # con_contradictions_redcap
     label_col <- "LABEL"
     threshold_value <- 1
     r <- con_contradictions_redcap(
-      study_data = "study_data", meta_data = "meta_data", label_col = label_col,
+      study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+      meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData", label_col = label_col,
       threshold_value = threshold_value, meta_data_cross_item =
-        "meta_data_v2|cross-item_level",
+        "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx|cross-item_level",
       summarize_categories = TRUE
     )
 
-    vdiffr::expect_doppelganger("con_contradictions rc by tag",
+    expect_doppelganger2("con_contradictions rc by tag",
                                 r$SummaryPlot)
 
-    vdiffr::expect_doppelganger("con_contradictions rc logical checks, only",
-                                r$LOGICAL$SummaryPlot)
+    expect_doppelganger2("con_contradictions rc logical checks, only",
+                                r$Other$LOGICAL$SummaryPlot)
 
-    vdiffr::expect_doppelganger("con_contradictions rc all checks",
-                                r$all_checks$SummaryPlot)
+    expect_doppelganger2("con_contradictions rc all checks",
+                                r$Other$all_checks$SummaryPlot)
 
   })
 })
 
 test_that("limit deviation plots work", { # con_limit_deviations.R ----
   skip_on_cran()
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_if_not_installed("vdiffr")
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
+  set.seed(2012) # randomly scattered points should stay in their position for testing
 
   ({
     label_col <- "LABEL"
     threshold_value <- 1
-    meta_data <- prep_get_data_frame("meta_data")
+    meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
     meta_data[meta_data$LABEL == "QUEST_DT_0", "HARD_LIMITS"] <-
       "[2018-01-01 00:00:00 CET; 2022-12-12 23:59:59 CET)"
 
     r1 <- con_limit_deviations( # all limits exist
       resp_vars = c("SBP_0", "ITEM_1_0", "QUEST_DT_0"),
-      study_data = "study_data", meta_data = meta_data,
+      study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", meta_data = meta_data,
       label_col = label_col,
       limits = "HARD"
     )
@@ -315,7 +328,7 @@ test_that("limit deviation plots work", { # con_limit_deviations.R ----
 
     r2 <- con_limit_deviations( # lower limits exist
       resp_vars = c("SBP_0", "ITEM_1_0", "QUEST_DT_0"),
-      study_data = "study_data", meta_data = meta_data,
+      study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", meta_data = meta_data,
       label_col = label_col,
       limits = "HARD"
     )
@@ -329,7 +342,8 @@ test_that("limit deviation plots work", { # con_limit_deviations.R ----
 
     r3 <- con_limit_deviations( # upper limits exist
       resp_vars = c("SBP_0", "ITEM_1_0", "QUEST_DT_0"),
-      study_data = "study_data", meta_data = meta_data,
+      study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+      meta_data = meta_data,
       label_col = label_col,
       limits = "HARD"
     )
@@ -350,31 +364,31 @@ test_that("limit deviation plots work", { # con_limit_deviations.R ----
 
     # > 20 < 20 obs, w/ and w/o limits (upper/lower), date vars .//. others
 
-    vdiffr::expect_doppelganger("con_limit_deviations all sbp_0",
+    expect_doppelganger2("con_limit_deviations all sbp_0",
                                 r1$SummaryPlotList$SBP_0)
 
-    vdiffr::expect_doppelganger("con_limit_deviations all item",
+    expect_doppelganger2("con_limit_deviations all item",
                                 r1$SummaryPlotList$ITEM_1_0)
 
-    vdiffr::expect_doppelganger("con_limit_deviations all quest_dt",
+    expect_doppelganger2("con_limit_deviations all quest_dt",
                                 r1$SummaryPlotList$QUEST_DT_0)
 
-    vdiffr::expect_doppelganger("con_limit_deviations low sbp_0",
+    expect_doppelganger2("con_limit_deviations low sbp_0",
                                 r2$SummaryPlotList$SBP_0)
 
-    vdiffr::expect_doppelganger("con_limit_deviations low item",
+    expect_doppelganger2("con_limit_deviations low item",
                                 r2$SummaryPlotList$ITEM_1_0)
 
-    vdiffr::expect_doppelganger("con_limit_deviations low quest_dt",
+    expect_doppelganger2("con_limit_deviations low quest_dt",
                                 r2$SummaryPlotList$QUEST_DT_0)
 
-    vdiffr::expect_doppelganger("con_limit_deviations upp sbp_0",
+    expect_doppelganger2("con_limit_deviations upp sbp_0",
                                 r3$SummaryPlotList$SBP_0)
 
-    vdiffr::expect_doppelganger("con_limit_deviations upp item",
+    expect_doppelganger2("con_limit_deviations upp item",
                                 r3$SummaryPlotList$ITEM_1_0)
 
-    vdiffr::expect_doppelganger("con_limit_deviations upp quest_dt",
+    expect_doppelganger2("con_limit_deviations upp quest_dt",
                                 r3$SummaryPlotList$QUEST_DT_0)
 
 
@@ -384,6 +398,7 @@ test_that("limit deviation plots work", { # con_limit_deviations.R ----
 test_that("data type matrix and print.ReportSummaryTable plots work", {
   # int_datatype_matrix.R and print.ReportSummaryTable.R ----
   skip_on_cran()
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_if_not_installed("vdiffr")
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
@@ -393,18 +408,19 @@ test_that("data type matrix and print.ReportSummaryTable plots work", {
 
     r <- int_datatype_matrix(
       resp_vars = c("SBP_0", "ITEM_1_0", "QUEST_DT_0"),
-      study_data = "study_data", meta_data = "meta_data",
+      study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+      meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData",
       label_col = label_col,
       split_segments = TRUE
     )
 
-    vdiffr::expect_doppelganger("int_datatype_matrix",
+    expect_doppelganger2("int_datatype_matrix",
                                 r$SummaryPlot)
 
-    vdiffr::expect_doppelganger("int_datatype_matrix segment v50000",
-                                r$DataTypePlotList$v50000)
+    expect_doppelganger2("int_datatype_matrix segment v50000",
+                                r$DataTypePlotList$PART_QUESTIONNAIRE)
 
-    vdiffr::expect_doppelganger("int_datatype_matrix ReportSummaryTable",
+    expect_doppelganger2("int_datatype_matrix ReportSummaryTable",
                                 print(r$ReportSummaryTable,
                                       view = FALSE,
                                       dt = FALSE))
@@ -413,7 +429,7 @@ test_that("data type matrix and print.ReportSummaryTable plots work", {
               row.names = c(NA,  -1L),
               class = c("ReportSummaryTable", "data.frame"))
 
-    vdiffr::expect_doppelganger("Empty ReportSummaryTable",
+    expect_doppelganger2("Empty ReportSummaryTable",
                                 print(e,
                                       view = FALSE,
                                       dt = FALSE))
@@ -425,7 +441,7 @@ test_that("data type matrix and print.ReportSummaryTable plots work", {
 
     class(cont) <- c("ReportSummaryTable", "data.frame")
 
-    vdiffr::expect_doppelganger("ReportSummaryTable cont",
+    expect_doppelganger2("ReportSummaryTable cont",
                                 print(cont,
                                       view = FALSE,
                                       dt = FALSE))
@@ -435,6 +451,7 @@ test_that("data type matrix and print.ReportSummaryTable plots work", {
 
 test_that("pro-applicability matrix plots work", { # pro_applicability_matrix.R ----
   skip_on_cran()
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_if_not_installed("vdiffr")
   skip_if_not_installed("withr")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
@@ -442,20 +459,20 @@ test_that("pro-applicability matrix plots work", { # pro_applicability_matrix.R 
   ({
 
     r <- pro_applicability_matrix(
-      study_data = "study_data",
-      meta_data = "meta_data",
+      study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+      meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData",
       split_segments = FALSE,
       label_col = LABEL,
-      meta_data_segment = "meta_data_v2|segment_level",
-      meta_data_dataframe = "meta_data_v2|dataframe_level")
+      meta_data_segment = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx|segment_level",
+      meta_data_dataframe = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx|dataframe_level")
 
-    vdiffr::expect_doppelganger("pro_applicability_matrix",
+    expect_doppelganger2("pro_applicability_matrix",
                                 r$ApplicabilityPlot)
 
-    vdiffr::expect_doppelganger("pro_applicability_matrix segment v50000",
-                                r$ApplicabilityPlotList$v50000)
+    expect_doppelganger2("pro_applicability_matrix segment v50000",
+                                r$ApplicabilityPlotList$PART_QUESTIONNAIRE)
 
-    vdiffr::expect_doppelganger("pro_applicability_matrix ReportSummaryTable",
+    expect_doppelganger2("pro_applicability_matrix ReportSummaryTable",
                                 print(r$ReportSummaryTable,
                                       view = FALSE,
                                       dt = FALSE))
@@ -466,6 +483,7 @@ test_that("heatmap with 1 threshold plots work", { # util_heatmap_1th.R ----
   skip_on_cran()
   skip_if_not_installed("vdiffr")
   skip_if_not_installed("withr")
+
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
   ({
@@ -496,13 +514,13 @@ test_that("heatmap with 1 threshold plots work", { # util_heatmap_1th.R ----
                            threshold = 0,
                            invert = FALSE)
 
-    vdiffr::expect_doppelganger("heatmap with 2 cat-vars but w/o strata vars",
+    expect_doppelganger2("heatmap with 2 cat-vars but w/o strata vars",
                                 p1)
 
-    vdiffr::expect_doppelganger("heatmap with 2 cat-vars but w/ strata vars",
+    expect_doppelganger2("heatmap with 2 cat-vars but w/ strata vars",
                                 p2)
 
-    vdiffr::expect_doppelganger("heatmap with 1 cat-var",
+    expect_doppelganger2("heatmap with 1 cat-var",
                                 p3)
   })
 })

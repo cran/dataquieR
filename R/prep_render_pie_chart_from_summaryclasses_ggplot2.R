@@ -5,12 +5,18 @@
 #'             `indicator_metric`, `STUDY_SEGMENT`, and `VAR_NAMES`)
 #' @param meta_data [meta_data]
 #'
-#' @return a [ggplot2] plot
+#' @return a [ggplot2::ggplot2] plot
 #'
 #' @family summary_functions
 #' @export
 prep_render_pie_chart_from_summaryclasses_ggplot2 <- function(data,
                                                       meta_data = "item_level") {
+  te <- topenv(parent.frame(1)) # see https://stackoverflow.com/a/27870803
+  if (!(isNamespace(te) && getNamespaceName(te) == "dataquieR")) {
+    lifecycle::deprecate_soft("2.1.0.9007",
+                              "prep_render_pie_chart_from_summaryclasses_ggplot2()",
+                              "plot.dataquieR_summary()")
+  }
 
   if (nrow(data) == 0) {
     x <- ggplot() +
@@ -51,6 +57,9 @@ prep_render_pie_chart_from_summaryclasses_ggplot2 <- function(data,
   gg_colors <- util_get_colors()
   names(gg_colors) <- util_get_labels_grading_class()[names(gg_colors)]
 
+  if (is.factor(data$class)) {
+    data$class <- as.integer(gsub("^cat", "", data$class))
+  }
   data$class <- factor(data$class,
                        levels = names(util_get_labels_grading_class()),
                        labels = util_get_labels_grading_class(),
@@ -85,33 +94,47 @@ prep_render_pie_chart_from_summaryclasses_ggplot2 <- function(data,
                    plot.background = ggplot2::element_blank())
 
   if (identical(grouped_by, "indicator_metric")) { # TODO: Hiearchical structure support
-    title <- util_translate_indicator_metrics(groups, short = TRUE)
-    subtitle <- groups
+    title <- util_translate_indicator_metrics(groups, short = FALSE,
+                                              long = FALSE)
+    subtitle <- "percentage of QA classes"
   } else if (identical(grouped_by, "call_names")) { # TODO: Hiearchical structure support
-    title <- util_map_labels(groups,
-                             util_get_concept_info("implementations"),
-                             to = "dq_report2_short_title",
-                             from = "function_R",
-                             ifnotfound = NA_character_)
-    subtitle <- groups
+    fnms <- util_cll_nm2fkt_nm(groups)
+    if (nchar(fnms) < nchar(groups)) {
+      suff <- gsub("^.*_", ": ", groups)
+      substr(suff, 3, 3) <- toupper(substr(suff, 3, 3))
+    } else {
+      suff <- ""
+    }
+    title <- paste0(util_map_labels(fnms,
+                                    util_get_concept_info("implementations"),
+                                    to = "dq_report2_short_title",
+                                    from = "function_R",
+                                    ifnotfound = NA_character_), suff)
+    subtitle <- "percentage of QA classes"
   } else if (identical(grouped_by, as.character(STUDY_SEGMENT))) { # TODO: Hiearchical structure support
     title <- groups
-    subtitle <- ""
+    subtitle <- "percentage of QA classes"
   } else if (identical(grouped_by, as.character(VAR_NAMES))) {
     util_expect_data_frame(meta_data)
     title <- prep_get_labels(groups,
                              meta_data = meta_data,
                              label_class = "LONG")
-    subtitle <- groups
+    subtitle <- "percentage of QA classes"
   } else if (identical(grouped_by, as.character("function_name"))) {
     title <- vapply(groups, util_alias2caption, long = TRUE,
                     FUN.VALUE = character(1))
     subtitle <- groups
   } else {
     title <- groups
-    subtitle <- NULL
-#    util_error("Unkown grouping by %s", sQuote(grouped_by))
+    subtitle <- "percentage of QA classes"
+    #subtitle <- NULL
+    #    util_error("Unkown grouping by %s", sQuote(grouped_by))
   }
+
+  subtitle <- paste(subtitle, sprintf(" -- %d of %d variables classified",
+                                      sum(data$value, na.rm = TRUE),
+                                      nrow(meta_data)
+  )) # TODO: Maybe, we should not compute this here, but earlier.
 
   p <- p + ggtitle(
     title, subtitle

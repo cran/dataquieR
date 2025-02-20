@@ -15,7 +15,7 @@ DISTRIBUTIONS
 \itemize{
 \item \code{uniform} For uniform distribution
 \item \code{normal} For Gaussian distribution
-\item \code{GAMMA} For a gamma distribution
+\item \code{gamma} For a gamma distribution
 }
 }
 \keyword{datasets}

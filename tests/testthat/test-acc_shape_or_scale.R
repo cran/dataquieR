@@ -1,7 +1,8 @@
 test_that("acc_shape_or_scale works with 3 args", {
   skip_on_cran() # slow
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -24,7 +25,6 @@ test_that("acc_shape_or_scale works with 3 args", {
             "Have more than one value, use the first one only"),
       paste("Due to missing values in v00014 301 observations were deleted.")
     ),
-    all = TRUE,
     perl = TRUE
   )
 
@@ -41,7 +41,6 @@ test_that("acc_shape_or_scale works with 3 args", {
             "Have more than one value, use the first one only"),
       paste("Due to missing values in v00014 301 observations were deleted.")
     ),
-    all = TRUE,
     perl = TRUE
   )
 
@@ -106,7 +105,7 @@ test_that("acc_shape_or_scale works with 3 args", {
                          guess = FALSE),
     regexp = "Due to missing values in v00006 382 observations were deleted."
   )
-  expect_equal(sum(1 == res1$SummaryData$GRADING), 8)
+  expect_equal(sum(1 == res1$ResultData$GRADING), 8)
   expect_error(
     suppressWarnings(
       res1 <-
@@ -154,7 +153,6 @@ expect_message(
             "use the first one only"),
       paste("Due to missing values in v00014 301 observations were deleted.")
     ),
-    all = TRUE,
     perl = TRUE
   )
 expect_message(
@@ -170,7 +168,6 @@ expect_message(
       paste("Since parameters were specified: .+guess.+ is set to false"),
       paste("Due to missing values in v00014 301 observations were deleted.")
     ),
-    all = TRUE,
     perl = TRUE
   )
 expect_message(
@@ -185,8 +182,7 @@ expect_message(
                            "use the first one only"),
                      paste("Due to missing values in v00014 301",
                            "observations were deleted.")),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
   md1 <- meta_data[, setdiff(colnames(meta_data), DISTRIBUTION)]
   expect_error(
@@ -211,8 +207,7 @@ expect_message(
         paste("Missing argument .+resp_vars.+ without default value.",
               "Setting to NULL. As a dataquieR developer,")
       ),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
 
   expect_message(
@@ -226,16 +221,15 @@ expect_message(
               "not been specified. Trying the default .+DISTRIBUTION.+."),
         paste("Due to missing values in v00014 301 observations were deleted.")
       ),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
 
-  expect_true(all(c("SummaryData",
+  expect_true(all(c("ResultData",
                   "SummaryPlot",
                   "SummaryTable") %in% names(res1)))
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
-      as.matrix(res1$SummaryData)),
+      as.matrix(res1$ResultData)),
       na.rm = TRUE) - 5484.87)), 0.5
   )
   expect_equal(
@@ -247,8 +241,9 @@ expect_message(
 
 test_that("acc_shape_or_scale works with label_col", {
   skip_on_cran() # slow
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -272,8 +267,7 @@ test_that("acc_shape_or_scale works with label_col", {
         paste("Missing argument .+resp_vars.+ without default value.",
               "Setting to NULL. As a dataquieR developer,")
       ),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
 
   expect_message(
@@ -288,16 +282,15 @@ test_that("acc_shape_or_scale works with label_col", {
               "not been specified. Trying the default .+DISTRIBUTION.+."),
         paste("Due to missing values in CRP_0 301 observations were deleted.")
       ),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
 
-  expect_true(all(c("SummaryData",
+  expect_true(all(c("ResultData",
                     "SummaryPlot",
                     "SummaryTable") %in% names(res1)))
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
-      as.matrix(res1$SummaryData)),
+      as.matrix(res1$ResultData)),
       na.rm = TRUE) - 5484.87)), 0.5
   )
   expect_equal(
@@ -308,6 +301,6 @@ test_that("acc_shape_or_scale works with label_col", {
   skip_on_cran()
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
-  vdiffr::expect_doppelganger("shape_or_scale plot for CRP_0 ok",
+  expect_doppelganger2("shape_or_scale plot for CRP_0 ok",
                               res1$SummaryPlot)
 })

@@ -70,7 +70,6 @@ util_replace_codes_by_NA <- function(study_data, meta_data = "item_level",
 
   replace <- function(x, l, sm_code) {
     # if (lubridate::is.timepoint(x) && length(sm_code) && is.numeric(sm_code))
-    #   browser()
     if ((length(l) == 0 && length(sm_code == 0)) || !length(x)) {
       return(x)
     }

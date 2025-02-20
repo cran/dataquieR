@@ -11,6 +11,7 @@
 #'                                       with labels of variables
 #' @param use_plot_ly [logical] use `plotly`
 #' @param dir [character] output directory for potential `iframes`.
+#' @param ... further arguments passed through, if applicable
 #'
 #' @return `htmltools` compatible object with rendered `dqr`
 #'
@@ -19,8 +20,11 @@ util_pretty_print <- function(dqr, nm, is_single_var,
                               meta_data,
                               label_col,
                               use_plot_ly,
-                              dir
+                              dir,
+                              ...
                               ) { # TODO: ensure that in square2 alias names do not have points
+  variable_name_context <- FALSE
+
   if (use_plot_ly) {
     plot_figure <- util_plot_figure_plotly
   } else {
@@ -36,7 +40,22 @@ util_pretty_print <- function(dqr, nm, is_single_var,
     outputs <- util_get_concept_info("implementations", get("function_R")
                                      == fkt, "Reportoutputs")[["Reportoutputs"]]
     if (length(outputs) == 1 && !util_empty(outputs)) {
-      outputs <- names(util_parse_assignments(outputs))
+      outputs <- names(util_parse_assignments(outputs)) ###
+      if (is_single_var) {
+        outputs <- grep("(I)",
+                        outputs,
+                        value = TRUE,
+                        invert = TRUE,
+                        fixed = TRUE)
+      } else {
+        outputs <- grep("(V)",
+                        outputs,
+                        value = TRUE,
+                        invert = TRUE,
+                        fixed = TRUE)
+      }
+      outputs <- gsub("(V)", "", outputs, fixed = TRUE)
+      outputs <- gsub("(I)", "", outputs, fixed = TRUE)
       remaining_slots <- intersect(outputs, names(dqr))
       if (length(remaining_slots) == 0) {
         util_message(
@@ -102,14 +121,37 @@ util_pretty_print <- function(dqr, nm, is_single_var,
 
       if (endsWith(slot, "PlotList")) {
         if (length(x) > 1) { # check and warn if there is more than one entry in PlotList
-          util_warning(
-            c("Internal error: %s with > 1 result should not be in a",
-              "v2.0 report"),
-            sQuote(slot))
+          # util_warning(
+          #   c("Internal error: %s with > 1 result should not be in a",
+          #     "v2.0 report"),
+          #   sQuote(slot))
           # TODO: Implement a work-around
           # x <- do.call(htmltools::div, x)
-          x <- htmltools::div("%s should not contain > 1 result",
-                              sQuote(slot))
+          # x <- htmltools::div(sprintf("%s should not contain > 1 result",
+          #                     sQuote(slot)))
+          x <- mapply(SIMPLIFY = FALSE, pl_i = x, pl_nm = names(x),
+                      function(pl_i, pl_nm) {
+                        if (all(grepl(".", nm, fixed = TRUE))) {
+                          .nm <- util_sub_string_left_from_.(nm)
+                        } else{
+                          .nm <- nm
+                        }
+                        util_pretty_print(list(SummaryPlot = pl_i),
+                                                      nm =
+                                            paste0(.nm, ".", pl_nm),
+                                            #paste0("", head(names(pl_nm), 1)), # avoid the same name, iframe FIG_.html won't work, if > 1
+                                                      is_single_var = TRUE,
+                                                      meta_data = data.frame(),
+                                                      label_col = VAR_NAMES,
+                                                      use_plot_ly = use_plot_ly,
+                                                      dir = dir, ...)
+                        })
+          x <- lapply(x, function(p) {
+            htmltools::span(style = "float:left;", p)
+          })
+          x <- htmltools::tagList(c(x,
+                                           list(htmltools::br(style =
+                                                                "clear: both;"))))
         } else {
           if (length(x) == 1) {
             x <- x[[1]] # take the single plot from PLotList
@@ -126,8 +168,10 @@ util_pretty_print <- function(dqr, nm, is_single_var,
         nvars <- length(vars)
         if (ncats == 0 && nvars == 0) {
           x <- NULL
+          slot <- "Plot" # fake, that we have a plot
         } else if (ncats == 0 || nvars == 0) {
           x <- NULL
+          slot <- "Plot" # fake, that we have a plot
         } else if (ncats == 1 && nvars == 1) {
           val <- x[x$Variables == vars, cats, drop = TRUE]
           level_names <- attr(x, "level_names")
@@ -140,18 +184,42 @@ util_pretty_print <- function(dqr, nm, is_single_var,
                             htmltools::strong(htmltools::em(val))
                             )
         } else {
-          x <- print.ReportSummaryTable(x, view = FALSE) # convert to ggplot
+          x <- util_validate_report_summary_table(x,
+                                                  meta_data = meta_data,
+                                                  label_col = label_col)
+          x <- print.ReportSummaryTable(x, view = FALSE, ...) # convert to ggplot
         }
       }
-      if (inherits(x, "ggplot") || inherits(x, "ggmatrix")) {
+      if (inherits(x, "ggplot") || inherits(x, "ggmatrix") ||
+          "PlotlyPlot" %in% names(dqr) ||
+          inherits(x, "ggplot_built")) {
+        if (inherits(x, "ggplot") || inherits(x, "ggmatrix") ||
+           inherits(x, "ggplot_built")) {
+          ggthumb <- x;
+        } else {
+          ggthumb <- NULL
+        }
         x_is_plot <- TRUE
-        as_plotly <- attr(dqr, "as_plotly")
+
+        # ensure, sizing hint sticks at the dqr, only
+        list2env(util_fix_sizing_hints(dqr = dqr, x = x), envir = environment())
+
+        if ("PlotlyPlot" %in% names(dqr)) {
+          as_plotly <- "util_as_plotly_from_res"
+        } else {
+          as_plotly <- attr(dqr, "as_plotly")
+        }
         if (!is.null(as_plotly) && exists(as_plotly, mode = "function"))
           as_plotly <- get(as_plotly, mode = "function")
-        if (use_plot_ly && is.function(as_plotly)) {
+        if (!inherits(x, "ggplot_built") &&
+            !util_is_svg_object(x) &&
+            use_plot_ly && is.function(as_plotly)) {
           withCallingHandlers({
             x <- as_plotly(dqr)#, height = 480, width = 1040)
-            x <- util_adjust_geom_text_for_plotly(x)
+            if (!identical(attr(dqr, "dont_util_adjust_geom_text_for_plotly"),
+                           TRUE)) {
+              x <- util_adjust_geom_text_for_plotly(x)
+            }
             x <- plotly::layout(x,
                                 autosize = !FALSE,
                                 margin = list(autoexpand = !FALSE,
@@ -165,9 +233,9 @@ util_pretty_print <- function(dqr, nm, is_single_var,
                                 modeBarButtonsToAdd =
                                   list(
                                     list(
-                                      name = "Limit by Window Size",
+                                      name = "Restore initial Size",
                                       icon =
-                                        htmlwidgets::JS("Plotly.Icons.drawrect"),
+                                        htmlwidgets::JS("PlotlyIconshomeRED()"),
                                       click =
                                         htmlwidgets::JS("togglePlotlyWindowZoom"))))
 
@@ -191,15 +259,17 @@ util_pretty_print <- function(dqr, nm, is_single_var,
             }
           })
         } else {
-          x <- plot_figure(x)
+          x <- plot_figure(x, sizing_hints = attr(dqr, "sizing_hints"))
         }
         # convert to plotly or base 64 plot image
 
         # to iframe?
-        x <- util_iframe_it_if_needed(x, dir = dir, nm = nm, fkt = fkt)
+        x <- util_iframe_it_if_needed(x, dir = dir, nm = nm, fkt = fkt,
+                                      sizing_hints = attr(dqr, "sizing_hints"),
+                                      ggthumb = ggthumb)
         # NOTE: If we have two figures in the same result, nm is not unique, because the two figures may be displayed, both., but we have currently only on figure per result, the other one can olny be a table or stuff (see this function, abobve)
       } else {
-        x_is_plot <- FALSE
+        x_is_plot <- grepl("Plot", slot)
       }
       if (is.data.frame(x)) {
         # check if dataframe is empty
@@ -207,7 +277,7 @@ util_pretty_print <- function(dqr, nm, is_single_var,
           x <- NULL
         } else {
           rownames(x) <- NULL # TODO: Check, if this is okay, always
-          x <- util_html_table(util_table_rotator(x),
+          x <- util_html_table(util_df_escape(util_table_rotator(x)),
                                meta_data = meta_data,
                                label_col = label_col,
                                output_format = "HTML",
@@ -246,7 +316,8 @@ util_pretty_print <- function(dqr, nm, is_single_var,
   } else {
     x <- NULL
   }
-  if (!is.null(x)) { # create and add tags and links
+
+  if (!is.null(x) || (exists("x_is_plot") && x_is_plot)) { # create and add tags and links
     if (all(grepl(".", nm, fixed = TRUE))) { # get the full name, which includes a dot
       anchor <- util_generate_anchor_tag(name = nm,
                                          order_context =
@@ -279,8 +350,19 @@ util_pretty_print <- function(dqr, nm, is_single_var,
       var_label <- sub("^[^\\.]*\\.", "", nm)
       caption <- var_label
       if (caption != "[ALL]") {
+        variable_name_context <- TRUE
         caption <- htmltools::h5(htmltools::tags$a(href = href, var_label))
         if (label_col != VAR_NAMES) {
+          if (label_col != LONG_LABEL && LONG_LABEL %in% colnames(meta_data)) {
+            long_label <- util_map_labels(
+              var_label,
+              meta_data,
+              LONG_LABEL,
+              label_col,
+              ifnotfound = "")
+          } else {
+            long_label <- ""
+          }
           title <- util_map_labels(
             var_label,
             meta_data,
@@ -292,7 +374,11 @@ util_pretty_print <- function(dqr, nm, is_single_var,
               !is.na(title)) {
             caption <- htmltools::h5(
               title = title,
-              htmltools::tags$a(href = href, var_label))
+              htmltools::tags$a(href = href, var_label),
+              htmltools::br(),
+              htmltools::tags$small(htmltools::tags$em(title)),
+              htmltools::tags$em(long_label)
+            )
           }
         }
       } else {
@@ -323,7 +409,12 @@ util_pretty_print <- function(dqr, nm, is_single_var,
             y <- util_make_data_slot_from_table_slot(y)
           }
           rownames(y) <- NULL # TODO: Check, if this is okay, always
-          y <- util_html_table(util_table_rotator(y),
+          if (nrow(y) > 1 && (variable_name_context || is_single_var)) {
+            if ("Variables" %in% colnames(y) && length(unique(y$Variables)) == 1) {
+              y$Variables <- NULL
+            }
+          }
+          y <- util_html_table(util_df_escape(util_table_rotator(y)),
                                meta_data = meta_data,
                                label_col = label_col,
                                output_format = "HTML",
@@ -368,18 +459,21 @@ util_pretty_print <- function(dqr, nm, is_single_var,
 
 # preferred order of the content of the report
 preferred_slots <- c("ReportSummaryTable",
+                     "PlotlyPlot",
                      "SummaryPlot", "SummaryPlotList", "SummaryData",
+                     "OtherData", "ResultData",
                      "SummaryTable",
                      "DataframeData", "DataframeTable", "SegmentData",
-                     "SegmentTable",
+                     "SegmentTable", "OtherTable",
                      "VariableGroupPlot", "VariableGroupPlotList",
                      "VariableGroupData", "VariableGroupTable")
 
 
 # preferred order of the content of the report
 preferred_summary_slots <- c("SummaryData",
+                             "OtherData", "ResultData",
                      "SummaryTable",
                      "DataframeData", "DataframeTable", "SegmentData",
-                     "SegmentTable",
+                     "SegmentTable", "OtherTable",
                      "VariableGroupData", "VariableGroupTable")
 

@@ -17,8 +17,6 @@
 #' @family metadata_management
 #' @concept metadata_management
 #' @keywords internal
-
-
 util_find_var_by_meta <- function(resp_vars,
                                   meta_data = "item_level",
                                   label_col = LABEL,
@@ -46,6 +44,10 @@ util_find_var_by_meta <- function(resp_vars,
     return(ifnotfound)
   }
   util_expect_data_frame(meta_data)
+  if (!any(allowed_sources %in% colnames(meta_data))) {
+    util_error(c("Did",
+                 "not find any mappable column in item-level metadata."))
+  }
 
   # This is not needed, since labels have not significantly changed
   # meta_data <- prep_meta_data_v1_to_item_level_meta_data(meta_data = meta_data,

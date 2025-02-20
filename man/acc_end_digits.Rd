@@ -5,7 +5,14 @@
 \title{Extension of \link{acc_shape_or_scale} to examine uniform distributions of
 end digits}
 \usage{
-acc_end_digits(resp_vars = NULL, study_data, meta_data, label_col = VAR_NAMES)
+acc_end_digits(
+  resp_vars = NULL,
+  study_data,
+  label_col,
+  item_level = "item_level",
+  meta_data = item_level,
+  meta_data_v2
+)
 }
 \arguments{
 \item{resp_vars}{\link{variable} the names of the measurement variables,
@@ -13,16 +20,24 @@ mandatory}
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
-
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 a \link{list} with:
 \itemize{
-\item \code{SummaryTable}: data frame underlying the plot
+\item \code{SummaryTable}: \link{data.frame} with the columns \code{Variables} and \code{FLG_acc_ud_shape}
 \item \code{SummaryPlot}: ggplot2 distribution plot comparing expected
 with observed distribution
 }

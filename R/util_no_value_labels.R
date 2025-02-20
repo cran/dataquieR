@@ -19,8 +19,6 @@
 #' @family metadata_management
 #' @concept metadata_management
 #' @keywords internal
-
-
 util_no_value_labels <- function(resp_vars, meta_data, label_col, warn = TRUE,
                                  stop = TRUE) {
   util_stop_if_not(ncol(meta_data) > 1)
@@ -28,11 +26,17 @@ util_no_value_labels <- function(resp_vars, meta_data, label_col, warn = TRUE,
                           FUN = function(rv) {
     row <- meta_data[meta_data[[label_col]] == rv, , TRUE]
     vl <- row[[VALUE_LABELS]]
+    vlt <- row[[VALUE_LABEL_TABLE]]
+    svt <- row[[STANDARDIZED_VOCABULARY_TABLE]]
     dt <- row[[DATA_TYPE]]
     if (dt == DATA_TYPES$FLOAT) {
       return(TRUE)
     } else if (dt == DATA_TYPES$INTEGER) {
-      return(length(vl) == 0 || is.na(vl) || trimws(vl) == "")
+      return(
+        (length(vl) == 0 || is.na(vl) || trimws(vl) == "") &&
+        (length(vlt) == 0 || is.na(vlt) || trimws(vlt) == "") && # TODO: check, if exists
+        (length(svt) == 0 || is.na(svt) || trimws(svt) == "") # TODO: check, if exists
+      )
     } else {
       return(FALSE)
     }

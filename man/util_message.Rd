@@ -11,7 +11,9 @@ util_message(
   intrinsic_applicability_problem = NA,
   integrity_indicator = "none",
   level = 0,
-  immediate
+  immediate,
+  title = "",
+  additional_classes = c()
 )
 }
 \arguments{
@@ -19,9 +21,30 @@ util_message(
 
 \item{...}{arguments for \link{sprintf} on m, if m is a character}
 
-\item{applicability_problem}{\link{logical} error indicates missing metadata}
+\item{applicability_problem}{\link{logical} \code{TRUE}, if an applicability issue,
+that is, the information for
+computation is missing
+(that is, an error that indicates
+missing metadata) or an error because
+the requirements of
+the stopped function were not met,
+e.g., a \code{barplot} was called for
+metric data. We can have logical
+or empirical applicability problems.
+empirical is the default, if the
+argument
+\code{intrinsic_applicability_problem} is
+left unset or set to \code{FALSE}.}
 
-\item{intrinsic_applicability_problem}{\link{logical} error unsuitable resp_vars}
+\item{intrinsic_applicability_problem}{\link{logical} \code{TRUE}, if this is a
+logical applicability issue, that is,
+the computation makes no sense
+(for example, an error of unsuitable
+\code{resp_vars}). Intrinsic/logical
+applicability problems are also
+applicability problems. Non-logical
+applicability problems are called
+empirical applicability problems.}
 
 \item{integrity_indicator}{\link{character} the message is an integrity problem,
 here is the indicator abbreviation..}
@@ -30,6 +53,10 @@ here is the indicator abbreviation..}
 levels are more severe.}
 
 \item{immediate}{\link{logical} not used.}
+
+\item{additional_classes}{\link{character} additional classes the
+thrown condition object should inherit
+from, first.}
 }
 \value{
 \link{condition} the condition object, if the execution is not stopped
@@ -45,6 +72,7 @@ Other condition_functions:
 \code{\link{util_find_external_functions_in_stacktrace}()},
 \code{\link{util_find_first_externally_called_functions_in_stacktrace}()},
 \code{\link{util_find_indicator_function_in_callers}()},
+\code{\link{util_suppress_warnings}()},
 \code{\link{util_warning}()}
 }
 \concept{condition_functions}

@@ -2,7 +2,8 @@
 util_queue_cluster_setup <- function(
                                 n_nodes,
                                 progress,
-                                debug_parallel) {
+                                debug_parallel,
+                                my_storr_object) {
   util_ensure_suggested(c("R6", "processx", "callr"))
   self <- NULL # https://github.com/r-lib/R6/issues/230#issuecomment-862462217
   private <- NULL # https://github.com/r-lib/R6/issues/230#issuecomment-862462217
@@ -32,19 +33,19 @@ util_queue_cluster_setup <- function(
         invisible(id)
       },
 
-      push2 = function(expr, id = NULL, work_fkt) {
-        self$push(id = id,
-          function(work_fkt, expr, id) {
-            r <- list(
-              try(work_fkt(expr, environment()))
-            )
-            names(r) <- id
-            r
-            },
-          list(id = id,
-               expr = expr,
-               work_fkt = work_fkt))
-      },
+#      push2 = function(expr, id = NULL, work_fkt) {
+#        self$push(id = id,
+#          function(work_fkt, expr, id) {
+#            r <- list(
+#              try(work_fkt(expr, environment()))
+#            )
+#            names(r) <- id
+#            r
+#            },
+#          list(id = id,
+#               expr = expr,
+#               work_fkt = work_fkt))
+#      },
 
       compute_report = function(all_calls, worker, step) {
         for (.rno in seq_len(1 + (length(all_calls) %/% step))) { # at least 1
@@ -54,31 +55,36 @@ util_queue_cluster_setup <- function(
           nms <- names(calls)
           id <- paste0(nms, collapse = "; ")
           self$push(id = id,
-                    function(work_fkt, expr, id, nms) {
-                      r <- lapply(setNames(expr, nm = nms),
-                        function(e) {
-                          try(work_fkt(e, environment()))
+                    function(work_fkt, expr, id, nms, my_storr_object) {
+                      r <- mapply(SIMPLIFY = FALSE,
+                                  e = setNames(expr, nm = nms),
+                                  nm = nms,
+                                  FUN =
+                        function(e, nm) {
+                          try(work_fkt(e, environment(), nm = nm,
+                                       my_storr_object = my_storr_object))
                       })
                       r
                     },
                     list(id = id,
                          expr = calls,
                          work_fkt = worker,
-                         nms = nms))
+                         nms = nms,
+                         my_storr_object = my_storr_object))
         }
         r <- self$results()
         r <- r[names(all_calls)]
         return(r)
       },
 
-      compute_report_old = function(all_calls, worker) {
-        for (rno in seq_len(length(all_calls))) {
-          call <- all_calls[[rno]]
-          nm <- names(all_calls)[[rno]]
-          self$push2(call, id = nm, work_fkt = worker)
-        }
-        self$results()[names(all_calls)]
-      },
+#      compute_report_old = function(all_calls, worker) {
+#        for (rno in seq_len(length(all_calls))) {
+#          call <- all_calls[[rno]]
+#          nm <- names(all_calls)[[rno]]
+#          self$push2(call, id = nm, work_fkt = worker)
+#        }
+#        self$results()[names(all_calls)]
+#      },
 
       poll = function(timeout = 0) {
         limit <- Sys.time() + timeout
@@ -164,7 +170,12 @@ util_queue_cluster_setup <- function(
           state = c("waiting", "running", "ready", "done")[NULL],
           fun = list(), args = list(), worker = list(), result = list())
         for (i in seq_len(concurrency)) {
+
           rs <- callr::r_session$new(wait = FALSE)
+          # https://github.com/r-lib/callr/issues/90#issuecomment-444278278
+          rs$poll_process(1000)
+          rs$read()
+
           private$tasks <- tibble::add_row(private$tasks,
                                            id = paste0(".idle-", i), idle = TRUE, state = "ready", # state = "running",
                                            fun = list(NULL), args = list(NULL), worker = list(rs),

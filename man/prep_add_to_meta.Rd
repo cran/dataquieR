@@ -9,7 +9,9 @@ prep_add_to_meta(
   DATA_TYPE,
   LABEL,
   VALUE_LABELS,
-  meta_data = "item_level",
+  item_level = "item_level",
+  meta_data = item_level,
+  meta_data_v2,
   ...
 )
 }
@@ -24,7 +26,15 @@ prep_add_to_meta(
 as usually pipe separated and assigned with
 \code{=}: \code{1 = male | 2 = female}}
 
-\item{meta_data}{\link{data.frame} the metadata to extend}
+\item{item_level}{\link{data.frame} the metadata to extend}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 
 \item{...}{Further defined variable attributes, see
 \link{prep_create_meta}}

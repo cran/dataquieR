@@ -7,12 +7,17 @@
 acc_multivariate_outlier(
   variable_group = NULL,
   id_vars = NULL,
-  label_col,
+  label_col = VAR_NAMES,
+  study_data,
+  item_level = "item_level",
   n_rules = 4,
   max_non_outliers_plot = 10000,
   criteria = c("tukey", "3sd", "hubert", "sigmagap"),
-  study_data,
-  meta_data
+  meta_data = item_level,
+  meta_data_v2,
+  scale = getOption("dataquieR.acc_multivariate_outlier.scale",
+    dataquieR.acc_multivariate_outlier.scale_default),
+  multivariate_outlier_check = TRUE
 )
 }
 \arguments{
@@ -27,6 +32,11 @@ the study data. If not specified row numbers are used.}
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
 
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
+
 \item{n_rules}{\link{numeric} from=1 to=4. the no. of rules that must be violated
 to classify as outlier}
 
@@ -39,16 +49,24 @@ sampling is not deterministic.}
 \item{criteria}{\link{set} tukey | 3SD | hubert | sigmagap. a vector with
 methods to be used for detecting outliers.}
 
-\item{study_data}{\link{data.frame} the data frame that contains the measurements}
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{scale}{\link{logical} Should min-max-scaling be applied per variable?}
+
+\item{multivariate_outlier_check}{\link{logical} really check, pipeline use,
+only.}
 }
 \value{
 a list with:
 \itemize{
 \item \code{SummaryTable}: \link{data.frame} underlying the plot
-\item \code{SummaryPlot}: \link{ggplot2} outlier plot
+\item \code{SummaryPlot}: \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} outlier plot
 \item \code{FlaggedStudyData} \link{data.frame} contains the original data frame with
 the additional columns \code{tukey},
 \verb{3SD},

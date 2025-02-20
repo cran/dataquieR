@@ -6,8 +6,16 @@
 #'
 #' [Indicator]
 #'
+#' @inheritParams .template_function_indicator
 #' @param study_data [data.frame] the data frame that contains the measurements, mandatory.
-#' @param meta_data [data.frame] the data frame that contains metadata attributes of the study data, mandatory.
+#' @param item_level [data.frame] the data frame that contains metadata
+#'                               attributes of study data
+#' @param meta_data [data.frame] old name for `item_level`
+#' @param meta_data_v2 [character] path to workbook like metadata file, see
+#'                                 [`prep_load_workbook_like_file`] for details.
+#'                                 **ALL LOADED DATAFRAMES WILL BE PURGED**,
+#'                                 using [`prep_purge_data_frame_cache`],
+#'                                 if you specify `meta_data_v2`.
 #'
 #' @return a [list] with
 #'   - `SegmentData`: data frame with the unexpected elements check results.
@@ -46,10 +54,23 @@
 #' options(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "exact")
 #' int_sts_element_segment(study_data, meta_data)
 #' }
-int_sts_element_segment <- function(study_data, meta_data = "item_level") {
+int_sts_element_segment <- function(study_data,
+                                    item_level = "item_level",
+                                    label_col,
+                                    meta_data = item_level,
+                                    meta_data_v2) {
+  util_maybe_load_meta_data_v2()
+  # prevent error that we have item_level and meta_data
+  # if prep_prepare_dataframes was not called but both objects
+  # are not missing any more, when prep_prepare_dataframes is called below.
+  invisible(prep_prepare_dataframes(.label_col = VAR_NAMES,
+                                    .allow_empty = TRUE))
   meta_data <- prep_meta_data_v1_to_item_level_meta_data(
     meta_data = meta_data, verbose = FALSE, label_col = VAR_NAMES)
-  util_expect_data_frame(meta_data, c(STUDY_SEGMENT, VAR_NAMES))
+  util_expect_data_frame(meta_data, c(VAR_NAMES))
+  if (!STUDY_SEGMENT %in% colnames(meta_data)) {
+    meta_data[[STUDY_SEGMENT]] <- "<NO SEGMENT>"
+  }
   if (any(meta_data$STUDY_SEGMENT == "ALL")) { # TODO: Use [[STUDY_SEGMENT]]
     util_message("No segment should be named %s, renaming it.",
                  dQuote("ALL"), applicability_problem = TRUE)
@@ -67,6 +88,8 @@ int_sts_element_segment <- function(study_data, meta_data = "item_level") {
     }
   }
 
+  util_purge_study_data_cache()
+
   suppressMessages(
     suppressWarnings(
       withCallingHandlers(
@@ -77,7 +100,7 @@ int_sts_element_segment <- function(study_data, meta_data = "item_level") {
     )
   )
 
-  msgs <- vapply(e$conds, inherits, "simpleMessage", FUN.VALUE = logical(1))
+  msgs <- vapply(e$conds, inherits, "message", FUN.VALUE = logical(1))
   wrns <- vapply(e$conds, inherits, "warning", FUN.VALUE = logical(1))
 
   pct <- data.frame(stringsAsFactors = FALSE,
@@ -91,10 +114,10 @@ int_sts_element_segment <- function(study_data, meta_data = "item_level") {
                               "metadata",
                               "study data"
                               ),
-             PCT_int_sts_element = as.numeric(gsub("^.*?([0-9,.]+)%.*$", "\\1",
+             PCT_int_sts_element = round(as.numeric(gsub("^.*?([0-9,.]+)%.*$", "\\1",
                                                    vapply(e$conds[wrns],
                conditionMessage,
-               FUN.VALUE = character(1)))))
+               FUN.VALUE = character(1)))), 2))
 
   abs <- data.frame(stringsAsFactors = FALSE,
                     Segment = rep("ALL", sum(msgs)), # TODO: If segment-wiese, how to tell the segemnt of an uexpected study variable
@@ -154,13 +177,34 @@ int_sts_element_segment <- function(study_data, meta_data = "item_level") {
     x$resp_vars <- x$y
     x$y <- NULL
 
+    if (a$MISSING == "study data") {
+      # prep_get_labels....... for known variables missing from the study data
+      rvs <- prep_get_labels(
+            resp_vars = x$resp_vars,
+            item_level = meta_data,
+            label_col = LABEL,
+            label_class = "SHORT",
+            resp_vars_are_var_names_only = TRUE
+        )
+    } else {
+      rvs <- x$resp_vars
+    }
+    rvs <- sort(rvs)
+    if (length(names(rvs)) == 0) {
+      rvs <- prep_deparse_assignments(mode = "string_codes",
+                                      rvs)
+    } else {
+      rvs <- prep_deparse_assignments(mode = "string_codes",
+                                      names(rvs),
+                                      rvs)
+    }
+
     if (all(x$Segment != "ALL")) {
       xl <- split(x, x$Segment)
       xl <- lapply(xl, function(x) {
         x$NUM_int_sts_element <- nrow(x)
         x$PCT_int_sts_element <- nrow(x) / segsizes[unique(x$Segment)]
-        x$resp_vars <- paste(sort(unique(x$resp_vars)),
-                             collapse = ", ")
+        x$resp_vars <- rvs
         x[!duplicated(x), , FALSE]
       })
       x <- do.call(rbind.data.frame, c(xl, list(
@@ -178,8 +222,7 @@ int_sts_element_segment <- function(study_data, meta_data = "item_level") {
                                           collapse = ", "),
                       NUM_int_sts_element = nrow(x),
                       PCT_int_sts_element = max(x$PCT_int_sts_element),
-                      resp_vars = paste(sort(unique(x$resp_vars)),
-                                        collapse = ", ")
+                      resp_vars = rvs
       )
     }
     x
@@ -208,8 +251,8 @@ int_sts_element_segment <- function(study_data, meta_data = "item_level") {
   SegmentData <- SegmentTable
   names(SegmentData) <- c("Segment",
                           "Missing",
-                          "Number of unexpected elements",
                           "Percentage of unexpected elements",
+                          "Number of unexpected elements",
                           "Response variables")
 
   list(SegmentData = SegmentData,

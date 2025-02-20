@@ -20,16 +20,13 @@
 #' - A histogram-like plot contrasts the empirical vs. the technical
 #'   distribution
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @param resp_vars [variable] the names of the measurement variables,
 #'                             mandatory
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
 #'
 #' @return a [list] with:
-#'   - `SummaryTable`: data frame underlying the plot
+#'   - `SummaryTable`: [data.frame] with the columns `Variables` and `FLG_acc_ud_shape`
 #'   - `SummaryPlot`: ggplot2 distribution plot comparing expected
 #'                    with observed distribution
 #'
@@ -40,11 +37,16 @@
 #' [Online Documentation](
 #' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_end_digits.html
 #' )
-acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
-                           label_col = VAR_NAMES) {
+acc_end_digits <- function(resp_vars = NULL,
+                           study_data,
+                           label_col,
+                           item_level = "item_level",
+                           meta_data = item_level,
+                           meta_data_v2) {
 
   # preps ----------------------------------------------------------------------
   # map metadata to study data
+  util_maybe_load_meta_data_v2()
   prep_prepare_dataframes(.replace_hard_limits = TRUE)
 
   # correct variable use?
@@ -118,13 +120,17 @@ acc_end_digits <- function(resp_vars = NULL, study_data, meta_data,
     label_col = label_col
   )
 
+  if (length(attr(res, "error")) > 0) {
+    util_error(attr(res, "error")[[1]])
+  }
+
   st <- res$SummaryTable
   st$Variables <- gsub("_x_last[\\s\\d]*$", "", st$Variables)
 
-  return(list(SummaryTable = st,
+  return(util_attach_attr(list(SummaryTable = st,
               SummaryPlot = util_set_size(
                 res$SummaryPlot,
                 width_em = 15
-              )
+              )), sizing_hints = attr(res, "sizing_hints")
   ))
 }

@@ -6,7 +6,8 @@
 #' `FALSE`) tells the system, to always fill in `res_vars` columns to the
 #' `MISSING_LIST_TABLE`, even, if the column already exists, but is empty.
 #'
-#' @param meta_data [data.frame] the old item-level-metadata
+#' @param item_level [data.frame] the old item-level-metadata
+#' @param meta_data [data.frame] old name for `item_level`
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
 #' @param verbose [logical] display all estimated decisions, defaults to `TRUE`,
@@ -17,10 +18,11 @@
 #'
 #' @return [data.frame] the updated metadata
 #' @export
-prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
+prep_meta_data_v1_to_item_level_meta_data <- function(item_level = "item_level",
                                                       verbose = TRUE,
                                                       label_col = LABEL,
-                                                      cause_label_df) {
+                                                      cause_label_df,
+                                                      meta_data = item_level) {
 
   # TODO: Rename, the function normalizes item_level metdata, not only in v1.0.
   # TOOD: Amend documentation: If you call it with v2 metadata, you can specify MISSING_LIST_TABLE; if so, then this table is searched using prep_get_dataframe, so it must have been loaded before,
@@ -276,7 +278,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
 
   if (!missing(cause_label_df)) {
     util_expect_data_frame(cause_label_df,
-                           c("CODE_VALUE", "CODE_LABEL"))
+                           c(CODE_VALUE, CODE_LABEL))
     meta_data[] <-
       prep_add_cause_label_df(meta_data = meta_data,
                               cause_label_df = cause_label_df,
@@ -305,7 +307,30 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
       "below v2.0"))
   }
 
+  if (VALUE_LABELS %in% names(meta_data)) {
+    # this should be checked outside  (!identical(attr(meta_data,
+    # "normalized"), TRUE)), because the user could have modified processed
+    # metadata adding a column VALUE_LABELS in between, so the data claims to
+    # be normalized, but it isn't any more. However, the existence of the
+    # column VALUE_LABELS will always tell us, if we have something to
+    # do, here. Maybe, we need to use check-sums for such attributes that
+    # express the grade of normalization of an object?
+    meta_data <- util_normalize_value_labels(meta_data = meta_data)
+  }
+
+  already_warned <- c()
+  already_warned_env <- environment()
+
   if (!identical(attr(meta_data, "normalized"), TRUE)) {
+
+    if (!N_RULES %in% names(meta_data)) {
+      meta_data[[N_RULES]] <- NA_integer_
+    }
+
+    if (!UNIVARIATE_OUTLIER_CHECKTYPE %in% names(meta_data)) {
+      meta_data[[UNIVARIATE_OUTLIER_CHECKTYPE]] <- NA_character_
+    }
+
     if (is.null(meta_data[[MISSING_LIST_TABLE]])) {
       meta_data[[MISSING_LIST_TABLE]] <- rep(NA_character_, nrow(meta_data))
     }
@@ -328,14 +353,14 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
                          CODE_INTERPRET = character(0))
         try({
           tb <- prep_get_data_frame(meta_data[r, MISSING_LIST_TABLE])
-          if (!"CODE_VALUE" %in% colnames(tb)) {
-            tb[["CODE_VALUE"]] <- NA
+          if (!CODE_VALUE %in% colnames(tb)) {
+            tb[[CODE_VALUE]] <- NA
           }
-          tb <- tb[!util_empty(tb[["CODE_VALUE"]]), ,
+          tb <- tb[!util_empty(tb[[CODE_VALUE]]), ,
                                  FALSE]
-          if ("CODE_INTERPRET" %in% colnames(tb) &&
-              !"CODE_CLASS" %in% colnames(tb)) {
-            tb[["CODE_CLASS"]] <- ifelse(tb[["CODE_INTERPRET"]] %in%
+          if (CODE_INTERPRET %in% colnames(tb) &&
+              !CODE_CLASS %in% colnames(tb)) {
+            tb[[CODE_CLASS]] <- ifelse(tb[[CODE_INTERPRET]] %in%
                                            c("NE"), "JUMP", "MISSING") # TODO: Verify, if, e.g., PL is also a JUMP
           }
         })
@@ -346,27 +371,28 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
             meta_data[r, , drop = FALSE], label_col = label_col)$cause_label_df
           util_stop_if_not(length(unique(legacy_tb$resp_vars)) < 2)
           legacy_tb$resp_vars <- NULL # is always only for the item in row r
-          if (!"CODE_VALUE" %in% colnames(legacy_tb)) {
-            legacy_tb[["CODE_VALUE"]] <- NA
+          if (!CODE_VALUE %in% colnames(legacy_tb)) {
+            legacy_tb[[CODE_VALUE]] <- NA
           }
-          legacy_tb <- legacy_tb[!util_empty(legacy_tb[["CODE_VALUE"]]), ,
+          legacy_tb <- legacy_tb[!util_empty(legacy_tb[[CODE_VALUE]]), ,
                                  FALSE]
         })
         cld_name <- paste0(meta_data[r, MISSING_LIST_TABLE], '_',
-                           meta_data[r, label_col])
+                           prep_link_escape(meta_data[r, label_col],
+                                            html = TRUE))
         if (exists( # find an available name for a new data frame
           cld_name,
-          envir = .dataframe_environment)) {
+          envir = .dataframe_environment())) {
           i <- 0
           while (exists( # find an available name for a new data frame
             paste0(cld_name, "_", i),
-            envir = .dataframe_environment)) i <- i + 1
+            envir = .dataframe_environment())) i <- i + 1
           cld_name <- paste0(cld_name, "_", i)
         }
         meta_data[r, MISSING_LIST] <- NA
         meta_data[r, JUMP_LIST] <- NA
         meta_data[r, MISSING_LIST_TABLE] <- NA
-        combined_table <- merge(legacy_tb, tb, by = "CODE_VALUE", all = TRUE)
+        combined_table <- merge(legacy_tb, tb, by = CODE_VALUE, all = TRUE)
         if (all(c("CODE_LABEL.x", "CODE_LABEL.y") %in%
                 colnames(combined_table))) {
           combined_table[util_empty(combined_table$CODE_LABEL.x) |
@@ -449,7 +475,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
       i <- 0
       while (exists( # find an available name for a new data frame
         paste0(MISSING_LIST_TABLE, "_", i),
-        envir = .dataframe_environment)) i <- i + 1
+        envir = .dataframe_environment())) i <- i + 1
       cld_name <- paste0(MISSING_LIST_TABLE, "_", i)
 
       # store in the internal data frame cache
@@ -472,7 +498,24 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
         if (all(is.na(cld))) {
           return(NULL)
         }
-        r <- prep_get_data_frame(cld)
+        r <- data.frame()
+        try(silent = TRUE,
+          withCallingHandlers(
+            r <- prep_get_data_frame(cld),
+          error = function(cnd) {
+            if (!isTRUE(already_warned_env$already_warned[cld])) {
+              already_warned_env$already_warned[cld] <- TRUE
+              my_cnd <- warningCondition(
+                sprintf(
+                  "Could not load table %s: %s",
+                  dQuote(cld),
+                  sQuote(sub("\nwhen calling .*$", "", conditionMessage(cnd)))
+                )
+              )
+              util_warning(my_cnd, immediate = TRUE) # TODO: Check for sheet names very close to standard names, warn in such cases.
+            }
+          })
+        )
         if (!prod(dim(r))) return(data.frame())
         if (!("resp_vars" %in% colnames(r))) {
           r$resp_vars <- vn
@@ -520,12 +563,12 @@ prep_meta_data_v1_to_item_level_meta_data <- function(meta_data = "item_level",
     )
 
     mlts <- lapply(mlts, function(mlt) { # avoid coerction of missing code values
-      if ("CODE_VALUE" %in% colnames(mlt))
-        mlt[["CODE_VALUE"]] <- as.character(mlt[["CODE_VALUE"]])
+      if (CODE_VALUE %in% colnames(mlt))
+        mlt[[CODE_VALUE]] <- as.character(mlt[[CODE_VALUE]])
       mlt
     })
 
-    mlts <- do.call(rbind.data.frame, c(mlts, list(stringsAsFactors = FALSE)))
+    mlts <- util_rbind(data_frames_list = mlts)
 
     # Ensure, that we now only have variable specific cause_label_df rows
     if (prod(dim(mlts))) {

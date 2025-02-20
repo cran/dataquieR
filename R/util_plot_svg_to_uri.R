@@ -3,10 +3,15 @@
 #' the function is specifically designed for fully scalable `SVG` figures.
 #'
 #' @param expr plot expression
+#' @param w width
+#' @param h height
+#'
+#' `w` and `h` are mostly used for the relation of fixed text sizes to
+#' the figure size.
 #'
 #' @return `htmltools` compatible object
 #' @keywords internal
-util_plot_svg_to_uri <- function(expr) {
+util_plot_svg_to_uri <- function(expr, w = 800, h = 600) {
   tmpfil <- NULL
   withr::with_tempfile("tmpfil", fileext = ".svg", {
     htmltools::capturePlot(expr = {
@@ -14,7 +19,8 @@ util_plot_svg_to_uri <- function(expr) {
     },
     filename = tmpfil,
     device = grDevices::svg,
-    width = 800 / 72, height = 600 / 72
+    width = w / 72, height = h / 72,
+#    pointsize = 12
 #    res = 1/72
     )
     .svg <- readLines(tmpfil)

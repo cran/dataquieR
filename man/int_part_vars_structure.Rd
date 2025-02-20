@@ -5,23 +5,25 @@
 \title{Detect Expected Observations}
 \usage{
 int_part_vars_structure(
+  label_col,
   study_data,
-  meta_data,
-  label_col = LABEL,
+  item_level = "item_level",
   expected_observations = c("HIERARCHY", "SEGMENT"),
-  disclose_problem_paprt_var_data = FALSE
+  disclose_problem_paprt_var_data = FALSE,
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
+\item{label_col}{\link{character} mapping attribute \code{colnames(study_data)} vs.
+\code{meta_data[label_col]}}
+
 \item{study_data}{\link{study_data} must have all relevant \code{PART_VARS} to avoid
 false-positives on \code{PART_VARS} missing from
 \code{study_data}}
 
-\item{meta_data}{\link{meta_data} must be complete to avoid false positives on
+\item{item_level}{\link{meta_data} must be complete to avoid false positives on
 non-existing \code{PART_VARS}}
-
-\item{label_col}{\link{character} mapping attribute \code{colnames(study_data)} vs.
-\code{meta_data[label_col]}}
 
 \item{expected_observations}{\link{enum} HIERARCHY | SEGMENT. How should
 \code{PART_VARS} be handled:
@@ -35,6 +37,14 @@ expected.}
 
 \item{disclose_problem_paprt_var_data}{\link{logical} show the problematic data
 (\code{PART_VAR} only)}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 empty list, so far -- the function only warns.

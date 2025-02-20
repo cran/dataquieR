@@ -12,7 +12,9 @@ util_formattable(
   max_color = c(255, 0, 0),
   soften = function(x) stats::plogis(x, location = 0.5, scale = 0.1),
   style_header = "font-weight: bold;",
-  text_color_mode = c("bw", "gs")
+  text_color_mode = c("bw", "gs"),
+  hover_texts = NULL,
+  escape_all_content = TRUE
 )
 }
 \arguments{
@@ -37,6 +39,14 @@ the table}
 \item{text_color_mode}{\link{enum} bw | gs. Should the text be displayed in black
 and white or using a grey scale? In both cases,
 the color will be adapted to the background.}
+
+\item{hover_texts}{\link{data.frame} if not \code{NULL}, this data frame contains html
+code displayed when the user's mouse pointer
+moves inside corresponding cells from
+\code{tb}. Can contain \code{HTML} code.}
+
+\item{escape_all_content}{\link{logical} if \code{TRUE}, treat \code{tb} and \code{hover_texts}
+using some \code{HTML} escaping function}
 }
 \value{
 \code{htmltools} compatible object

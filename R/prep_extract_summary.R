@@ -17,5 +17,11 @@
 #' @family summary_functions
 prep_extract_summary <- function(r,
                                  ...) {
+  te <- topenv(parent.frame(1)) # see https://stackoverflow.com/a/27870803
+  if (!(isNamespace(te) && getNamespaceName(te) == "dataquieR")) {
+    lifecycle::deprecate_soft("2.1.0.9007",
+                              "prep_extract_summary()",
+                              "summary()")
+  }
   UseMethod("prep_extract_summary")
 }

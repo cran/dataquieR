@@ -34,12 +34,23 @@ util_conversion_stable <- function(vector, data_type,
   util_match_arg(data_type, DATA_TYPES)
   if (data_type == DATA_TYPES$INTEGER) {
     as_target <- util_data_type_conversion(vector, data_type)
-    as_num <- util_data_type_conversion(vector, DATA_TYPES$FLOAT)
-    res <-
-      (
-        (util_empty(as_target) & util_empty(vector)) |
-        ((!util_empty(as_target) & !util_empty(vector) & as_target == as_num))
-      )
+    if (identical(attr(data_type, "orig_type"), "logical")) {
+      as_num <- util_data_type_conversion(as.logical(vector), DATA_TYPES$FLOAT)
+      res <-
+        (
+          (util_empty(as_target) & util_empty(vector)) |
+            ((!util_empty(as_target) & !util_empty(vector) &
+                as_target == as_num))
+        )
+    } else {
+      as_num <- util_data_type_conversion(vector, DATA_TYPES$FLOAT)
+      res <-
+        (
+          (util_empty(as_target) & util_empty(vector)) |
+            ((!util_empty(as_target) & !util_empty(vector) &
+                as_target == as_num))
+        )
+    }
   } else if (data_type == DATA_TYPES$FLOAT) { # scientific notation
     as_target <- util_data_type_conversion(vector, data_type)
     res <- util_empty(vector) == util_empty(as_target)
@@ -68,7 +79,7 @@ util_conversion_stable <- function(vector, data_type,
     x[subst] <-
       substr(x[subst], 1, nchar(x[subst]) - l)
   }
-  # TODO: can using this in favor of lubridate everywhere remove the dependency from lubridate?
+  # IDEA: can using this in favor of lubridate everywhere remove the dependency from lubridate: no, lubridate has also round_date and duration-related stuff?
   return(suppressWarnings(readr::parse_datetime(x,
                                                 locale =
                                                   readr::locale(

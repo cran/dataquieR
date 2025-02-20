@@ -15,6 +15,7 @@
 #' @param convert_factors [logical] convert factor columns to coded integers.
 #'                                  if selected, then also the study data will
 #'                                  be updated and returned.
+#' @param guess_missing_codes [logical] try to guess missing codes from the data
 #'
 #' @return a meta_data data frame or a list with study data and metadata, if
 #'         `convert_factors == TRUE`.
@@ -29,8 +30,14 @@ prep_study2meta <- function(study_data, level = c(
                               VARATT_REQUIRE_LEVELS$RECOMMENDED
                             ),
                             cumulative = TRUE,
-                            convert_factors = FALSE) {
-  util_expect_data_frame(study_data, keep_types = TRUE)
+                            convert_factors = FALSE,
+                            guess_missing_codes =
+                              getOption("dataquieR.guess_missing_codes",
+                                        dataquieR.guess_missing_codes_default)) {
+  withr::local_options(list(dataquieR.fix_column_type_on_read = TRUE))
+  with_dataframe_environment(
+    util_expect_data_frame(study_data, keep_types = TRUE) # prep_robust_guess_data_type
+  )
   if (missing(study_data) || !is.data.frame(study_data)) {
     util_error("Need study data as a data frame")
   }
@@ -38,6 +45,10 @@ prep_study2meta <- function(study_data, level = c(
   if (length(convert_factors) != 1 || !is.logical(convert_factors)) {
     util_error("Argument %s must be logical(1)", dQuote("convert_factors"))
   }
+
+  util_expect_scalar(guess_missing_codes, check_type = is.logical,
+                     error_message = sprintf("%s needs to be one logical value",
+                                             sQuote("guess_missing_codes")))
 
   study_data <- util_cast_off(study_data, "study_data")
 
@@ -54,20 +65,31 @@ prep_study2meta <- function(study_data, level = c(
                                          study_data)
 
   missing_list <-
-    mapply(function(x, dt) {
+    mapply(function(x, dt, cn) {
       if (dt %in% c(DATA_TYPES$INTEGER, DATA_TYPES$FLOAT)) {
-        r <- paste(unique(
-          sort(suppressWarnings(as.numeric(x[util_looks_like_missing(x)])))),
-          collapse = SPLIT_CHAR)
+        mcs <-
+          unique(sort(suppressWarnings(as.numeric(x[
+            util_looks_like_missing(x)]))))
+        r <- paste(mcs, collapse = SPLIT_CHAR)
+        if (length(mcs) > 0)
+          util_message(
+            "For %s, maybe, the following values are missing codes: %s",
+            sQuote(cn),
+            util_pretty_vector_string(mcs, n_max = 5)
+          )
       } else {
         r <- ""
       }
       if (length(r) == 1 && util_empty(r))
         r <- SPLIT_CHAR # missing on purpose
       r
-    }, study_data, datatypes)
+    }, study_data, datatypes, colnames(study_data))
 
-  if (convert_factors) {
+  if (!guess_missing_codes) {
+    missing_list <- SPLIT_CHAR
+  }
+
+  if (convert_factors) { # TODO: work with VALUE_LABEL_TABLE
     valuelabels <- prep_valuelabels_from_data(resp_vars = var_names,
                                               study_data = study_data)
   } else {
@@ -110,7 +132,7 @@ prep_study2meta <- function(study_data, level = c(
     .md <- res
     .md[[JUMP_LIST]] <- SPLIT_CHAR
     with_scale_level <-
-      prep_scalelevel_from_data_and_metadata(resp_vars = var_names,
+      prep_scalelevel_from_data_and_metadata(#resp_vars = var_names,
                                              study_data = study_data,
                                              meta_data = .md,
                                              label_col = VAR_NAMES)

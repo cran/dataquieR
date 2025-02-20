@@ -53,12 +53,14 @@ util_merge_data_frame_list <- function(data_frames, id_vars) {
   for (acn in ambiguous_column_names) {
     all_cns <- intersect(colnames(res), paste0(acn, ".", names(data_frames)))
 
-    all_equal <- function(cols) {
+    all_equal <- function(cols, .res = res) {
       if (length(cols) < 2) {
         TRUE
       } else {
-        all(res[, cols[[1]]] == res[, cols[[2]]], na.rm = TRUE) &&
-          Recall(tail(cols, -1))
+        .res[[cols[[2]]]][is.na(.res[[cols[[2]]]])] <- # na.rm doesn't work, if recursion cuts off head and tail had an NA but later some value different from the old head
+          .res[[cols[[1]]]][is.na(.res[[cols[[2]]]])]
+        all(.res[, cols[[1]]] == .res[, cols[[2]]], na.rm = TRUE) &&
+          Recall(tail(cols, -1), .res = .res)
       }
     }
     if (all_equal(all_cns)) {

@@ -13,5 +13,5 @@ test_that("util_user_hint works", {
   expect_silent(result)
 
   # Check that the result is a list
-  expect_is(result, "list")
+  expect_type(result, "list")
 })

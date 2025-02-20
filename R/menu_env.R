@@ -46,7 +46,7 @@
     "%s%s",
     hash_if_needed,
     id),
-    htmltools::htmlEscape(title),
+    title, # htmltools::htmlEscape(title),
     ...)
 }
 

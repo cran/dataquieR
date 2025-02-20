@@ -427,17 +427,48 @@ function dlResult(event) {
       }
     }
     Plotly.toImage(py, {format: 'svg'}).then(function(url){download(id + ".svg", url)})
+    return ;
   } catch(e) {
     console.log(e)
   }
   try {
-    $(currentContextMenu.reference).find("div.dt-buttons button.buttons-excel").click()
+    var el = $(currentContextMenu.reference).find("div.dt-buttons button.buttons-excel");
+    if (el.length > 0) {
+      el.click()
+      return ;
+    }
   } catch(e) {
     console.log(e)
   }
   try {
     var id = $(currentContextMenu.reference).find("img").parent().prevAll("a[id]")[0].id
     download(id + ".png", $(currentContextMenu.reference).find("img")[0].src)
+    return ;
+  } catch (e) {
+    console.log(e)
+  }
+  try {
+    var imgTag = $(currentContextMenu.reference).find("img");
+    if (imgTag.length == 0) return;
+    var downloadFromImg = function() {
+      var id = $(currentContextMenu.reference).attr("data-nm");
+      download(id + ".png", $(currentContextMenu.reference).find("img").attr("src"))
+    }
+    var downloadFromPlotly = function() {
+      tglePy(imgTag[0]);
+      setTimeout(function() {
+        dlResult()
+      }, 1000)
+    }
+    if (imgTag.data("iframe") !=
+        undefined) {
+          yesnoDialog("This is a thumbnail, so you'll get a PNG, do you want to activate interactive mode and download an SVG, instead?",
+            downloadFromPlotly,
+            downloadFromImg)
+        } else {
+          downloadFromImg()
+        }
+    return ;
   } catch (e) {
     console.log(e)
   }
@@ -575,6 +606,8 @@ $(function() {
 
 });
 
+var mh = null;
+
 function showTip(msg, delay = 10000) {
   if (messenger == null) {
     console.log("showTip called too early.");
@@ -582,7 +615,15 @@ function showTip(msg, delay = 10000) {
   }
   messenger.show();
   $("#messenger-msg").html(msg)
-  window.setTimeout(messenger.hide, delay);
+  mh = window.setTimeout(messenger.hide, delay);
+}
+
+function hideTip() {
+  if (mh != null) {
+    window.clearTimeout(mh);
+    mh = null;
+  }
+  messenger.hide()
 }
 
 // https://stackoverflow.com/a/34579496
@@ -614,7 +655,9 @@ $(function() {
 
 $(function() {
   if (!window.hasOwnProperty("dq_report2") || !window.dq_report2) {
-    $("a").attr("href", "javascript:alert(\"links work in dq_report2 reports, only.\")")
+    if (!window.hasOwnProperty("dq_report_by_overview") || !window.dq_report_by_overview) {
+      $("a").attr("href", "javascript:alert(\"links work in dq_report2 reports, only.\")")
+    }
   }
 })
 
@@ -624,7 +667,7 @@ function sizeIframes(forceSetSizeToInit = false) {
   // $("[data-nm='con_hard_limits.SBP_0'] iframe").parent().css({"resize": "both"})
   // $("[data-nm='con_hard_limits.SBP_0'] iframe").parent().css({"resize": ""})
   const all_iframe_plots_scalers =
-    $(document).find(".dataquieR_result[data-initialw][data-initialh] iframe").parent();
+    $(document).find(".scaler[data-initialw][data-initialh] iframe").parent();
   const all_iframe_plots_result = all_iframe_plots_scalers.parent();
   all_iframe_plots_result.each(function(i, result_div) {
     const scaler_div = all_iframe_plots_scalers[i];
@@ -635,14 +678,123 @@ function sizeIframes(forceSetSizeToInit = false) {
     }
     if ($(scaler_div).css("resize") != "both") { // auto sizing, now handle shown
       // set size only, if size has not been changed manually -- for resize calls
-      const ih = parseInt($(result_div).attr("data-initialh"))
-      const iw = parseInt($(result_div).attr("data-initialw"))
-//      const h = def_height_in_vh * $(window).height() / 100 - 45 ; // 45 for the scrollbar
-      const h = Infinity;
-//      const w = def_width_in_vh * $(window).width() / 100 - 45; // for the scrollbar
-      const w = Infinity;
-      $(scaler_div).width(Math.min(iw, w));
-      $(scaler_div).height(Math.min(ih, h));
+      const ih = $(scaler_div).attr("data-initialh").replace(/;+$/g, '');
+      const iw = $(scaler_div).attr("data-initialw").replace(/;+$/g, '');
+
+      $(scaler_div).css({"width": iw})
+      $(scaler_div).css({"height": ih})
+      $(scaler_div).height($(scaler_div).height()) // trigger resize events for potly
     }
   })
+}
+
+var highlight_timer = null;
+
+var highlight_menu = function(pattern) {
+  try {
+    var p = new RegExp(pattern, "i");
+    $(".navbar a").filter(function() {
+      return this.innerHTML.match(p);
+    }).parent().show()
+    $(".navbar a").filter(function() {
+      return this.innerHTML.match(p);
+    })[0].scrollIntoView()
+    $(".navbar a").filter(function() {
+      return this.innerHTML.match(p);
+    }).effect("highlight", {}, 4000);
+    var $this = $(this);
+    setTimeout(function() { // https://stackoverflow.com/a/30107066
+  //        $this.attr('disabled', false);
+  //        $this.val('Submit');
+      $(".navbar a").filter(function() {
+        return this.innerHTML.match(p);
+      }).parent().css("display", "");
+    }, 4000);
+  } catch(e) {
+    console.log(e)
+  }
+}
+
+var search_string = "";
+document.onkeyup = function(e) {
+  if (document.activeElement instanceof HTMLInputElement) {
+    return ; // no auto-serch, if user tries to fill an input field
+  }
+  highlight_timer = window.setTimeout(function() {
+    if (search_string.length > 2) {
+      highlight_menu(search_string);
+      hideTip()
+      if (highlight_timer != null) {
+        window.clearTimeout(highlight_timer);
+        highlight_timer = null;
+      }
+    }
+  }, 3000);
+  if (e.ctrlKey && e.which == 70) {
+//    console.log("Ctrl-F")
+      search_string = "";
+    hideTip();
+    showTip("Search: " + search_string);
+  } else if (e.which == 8) {
+    if (search_string.length > 0) {
+      search_string = search_string.substr(0, search_string.length - 1)
+      hideTip();
+      showTip("Search: " + search_string);
+    }
+  } else if (e.which == 27) {
+    search_string = "";
+    hideTip()
+  } else if (e.which == 13) {
+    if (highlight_timer != null) {
+      window.clearTimeout(highlight_timer);
+      highlight_timer = null;
+    }
+    highlight_menu(search_string);
+    search_string = "";
+    hideTip()
+  } else {
+    if (e.key.length == 1) {
+      search_string = search_string + e.key ;
+      hideTip();
+      showTip("Search: " + search_string);
+    }
+  }
+};
+
+function tglePy(et) {
+  var iframeHTML = $(et).data('iframe');
+  $(et).replaceWith(iframeHTML);
+}
+
+function tglePyHandler() {
+  if (event.which == 1) {
+    tglePy(event.target)
+    return false;
+  }
+}
+
+function resize_scaler_div(mutationList) { // if resize-handle was clicked, makt it an iframe
+  for (const mutation of mutationList) {
+    if (dataquieR.isReady()) { // not initial sizing
+      var scalerdiv = mutation.target;
+        var et = $(scalerdiv).find("img[data-iframe]")
+        if (et.length == 1) {
+          tglePy(et[0]);
+        }
+    }
+  }
+}
+
+$(function() {
+  // https://stackoverflow.com/a/66487907
+  let observer = new ResizeObserver(resize_scaler_div);
+  $("div.scaler").each(function(i, obj) {
+    observer.observe(obj);
+  });
+})
+
+dataquieR = {
+  isReady: function isDataquieReady() {
+    return !$('#loading-ani').is(":visible");
+  }
 }

@@ -81,7 +81,8 @@ util_cast_off <- function(df, symb, .dont_cast_off_cols = FALSE) {
 
   }
 
-  known_atts <- c("Codes_to_NA", "MAPPED", "label_col", "HL_viol_to_NA")
+  known_atts <- .ds1_attribute_names
+
   for (att in known_atts) attr(df, att) <- attr(orig, att)
 
   df

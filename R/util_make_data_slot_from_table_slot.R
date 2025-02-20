@@ -35,6 +35,7 @@ util_make_data_slot_from_table_slot <- function(Table) { # TODO: Use also in bot
                        DF_NAME = "Dataframe",
                        CHECK_LABEL = "Check",
                        Dataframe = "Dataframe",
+                       CONTRADICTION_TYPE = "Contradiction Type",
                        cols_for_output)
   cols_for_output <- cols_for_output[!is.na(cols_for_output)]
   cols_for_output <- cols_for_output[names(cols_for_output) %in%
@@ -50,8 +51,14 @@ util_make_data_slot_from_table_slot <- function(Table) { # TODO: Use also in bot
                  all(util_empty(cl))) {
                NA_character_
              } else {
-               paste0(round(cl, 2), "%")
+               util_paste0_with_na(round(cl, 2), "%")
              }
            })
+  if (inherits(Data, "TableSlot")) {
+    class(Data) <- setdiff(class(Data), "TableSlot")
+  }
+  if (!inherits(Data, "DataSlot")) {
+    class(Data) <- union("DataSlot", class(Data))
+  }
   Data
 }

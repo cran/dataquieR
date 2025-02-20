@@ -20,7 +20,7 @@
 #'                          used for stratification
 #' `inheritParams` `acc_distributions`
 #' @return a [list] with:
-#'   - `SummaryPlot`: [ggplot] object with the heatmap
+#'   - `SummaryPlot`: [ggplot2::ggplot] object with the heatmap
 #'
 #' @importFrom ggplot2 ggplot aes geom_bar geom_text scale_fill_manual
 #'                     scale_y_discrete coord_flip facet_grid theme_minimal

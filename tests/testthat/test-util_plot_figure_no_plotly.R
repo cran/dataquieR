@@ -5,6 +5,6 @@ test_that("util_plot_figure_no_plotly works", {
   result <- util_plot_figure_no_plotly(test_plot)
 
   # Check that the result is an HTML plot tag
-  expect_is(result, "shiny.tag")
+  expect_s3_class(result, "shiny.tag")
 
 })

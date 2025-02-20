@@ -4,11 +4,23 @@
 \alias{prep_check_meta_data_segment}
 \title{Verify and normalize metadata on segment level}
 \usage{
-prep_check_meta_data_segment(meta_data_segment = "segment_level")
+prep_check_meta_data_segment(
+  meta_data_segment = "segment_level",
+  meta_data_v2,
+  segment_level
+)
 }
 \arguments{
 \item{meta_data_segment}{\link{data.frame} data frame or path/url of a metadata
 sheet for the segment level}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
 }
 \value{
 standardized metadata sheet as data frame

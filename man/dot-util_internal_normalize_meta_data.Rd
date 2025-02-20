@@ -11,7 +11,7 @@
 )
 }
 \arguments{
-\item{meta_data}{\link{data.frame} the old item-level-metadata}
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}

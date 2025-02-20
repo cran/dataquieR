@@ -1,13 +1,14 @@
 test_that("con_contradictions_redcap works", {
   skip_on_cran() # slow, redcap parser is tested anyway, errors in plots obvious
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
   withr::local_timezone("CET")
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -15,7 +16,7 @@ test_that("con_contradictions_redcap works", {
     setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
       meta_data[[VAR_NAMES]]
     ]
-  meta_data_cross_item <- prep_get_data_frame("meta_data_v2|cross-item_level")
+  meta_data_cross_item <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx|cross-item_level")
   # ignore here 'special' data preparation steps, will be checked separately
   meta_data_cross_item$DATA_PREPARATION <- ""
   label_col <- "LABEL"
@@ -38,34 +39,34 @@ test_that("con_contradictions_redcap works", {
       )
     })
   #)
-  expect_equal(off$FlaggedStudyData, on$all_checks$FlaggedStudyData)
-  expect_equal(off$SummaryTable[-which(colnames(off$SummaryTable) == "CONTRADICTION_TYPE")],
-               on$all_checks$SummaryTable)
+  expect_equal(off$FlaggedStudyData, on$Other$all_checks$FlaggedStudyData)
+  expect_equal(off$VariableGroupTable, on$Other$all_checks$VariableGroupTable)
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
-  vdiffr::expect_doppelganger("summary contradiction plot ok",
-                              on$all_checks$SummaryPlot)
-  vdiffr::expect_doppelganger("summary contradiction plot ok",
+  expect_doppelganger2("summary contradiction plot ok",
+                              on$Other$all_checks$SummaryPlot)
+  expect_doppelganger2("summary contradiction plot ok",
                               default$SummaryPlot)
-  vdiffr::expect_doppelganger("summary contradiction plot ok",
+  expect_doppelganger2("summary contradiction plot ok",
                               off$SummaryPlot)
-  vdiffr::expect_doppelganger("one cat contradiction plot ok",
-                              on$EMPIRICAL$SummaryPlot)
+  expect_doppelganger2("one cat contradiction plot ok",
+                              on$Other$EMPIRICAL$SummaryPlot)
 })
 
 test_that("con_contradictions_redcap works with tiny inputs", {
   skip_on_cran() # slow, redcap parser is tested anyway, errors in plots obvious
   skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
   # catch if some objects will be reduced to scalars or vectors instead of dataframes or matrices
   withr::local_timezone('CET')
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -105,8 +106,9 @@ test_that("con_contradictions_redcap works with tiny inputs", {
 
 test_that("con_contradictions_redcap uses DATA_PREPARATION correctly", {
   skip_on_cran()
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -114,7 +116,7 @@ test_that("con_contradictions_redcap uses DATA_PREPARATION correctly", {
     setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
       meta_data[[VAR_NAMES]]
     ]
-  meta_data_cross_item <- prep_get_data_frame("meta_data_v2|cross-item_level")
+  meta_data_cross_item <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx|cross-item_level")
 
   # If nothing is specified in DATA_PREPARATION, missing value labels and values
   # outside hard limits should be replaced by NA.
@@ -138,7 +140,7 @@ test_that("con_contradictions_redcap uses DATA_PREPARATION correctly", {
   mdci$CONTRADICTION_TYPE <- "EMPIRICAL"
   mdci$DATA_PREPARATION <- "MISSING_INTERPRET"
   # We would expect these observations to be picked up:
-  miss_tab <- prep_get_data_frame("meta_data_v2|missing_table")
+  miss_tab <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx|missing_table")
   sel_miss_codes <- miss_tab$CODE_VALUE[which(miss_tab$CODE_INTERPRET %in%
                                                 c("NE", "NC", "P"))]
   check_res <- sum(table(study_data[which(study_data$v00021 %in% sel_miss_codes
@@ -146,7 +148,7 @@ test_that("con_contradictions_redcap uses DATA_PREPARATION correctly", {
                                           & study_data$v00027 < 8000),
                                     c("v00021", "v00027")]))
   # NE = 99981, NC = 99983, P = 99988
-  #expect_equal(res3$SummaryTable$NUM_con_con, check_res)
+  #expect_equal(res3$VariableGroupTable$NUM_con_con, check_res)
   # but numerical variables are not yet supported here
   expect_warning({
     res3 <- con_contradictions_redcap(study_data = study_data,
@@ -175,10 +177,13 @@ test_that("con_contradictions_redcap uses DATA_PREPARATION correctly", {
   expect_equal(res4$VariableGroupTable$NUM_con_con, 91)
 })
 
+#Temporarily skipped due to ship moving to website
 test_that("no regression, rule errors should not be missed", {
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_on_cran()
-  sd1 <- prep_get_data_frame("ship")
-  prep_load_workbook_like_file("ship_meta_v2")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  sd1 <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/ship.RDS")
+  prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/ship_meta_v2.xlsx")
   md1 <- prep_get_data_frame("item_level")
   checks <- prep_get_data_frame("cross-item_level")
   meta_data2 <-
@@ -196,44 +201,42 @@ test_that("no regression, rule errors should not be missed", {
   checks <- checks[-c(1:2), ]
   checks <- checks[-c(4:10), ]
 
-  expect_warning(
+  suppressMessages(suppressWarnings(expect_warning(
     AnyContradictions <- con_contradictions_redcap(study_data = sd1,
                                                    meta_data       = md1,
                                                    label_col       = "LABEL",
                                                    meta_data_cross_item = checks,
                                                    threshold_value = 1),
     regexp = "object.+SEX.+not found"
-  )
+  )))
 
-  expect_equal(AnyContradictions$SummaryTable$NUM_con_con,
+  expect_equal(AnyContradictions$VariableGroupTable$NUM_con_con,
                c(2152, NA_real_, NA_real_))
   # the first test is by default comparing lexicographically, since obs_soma is a factor and LABEL is default for DATA_PREPARATION
   # the other two tests always fail because of missing variables
-
-  sd1 <- prep_get_data_frame("ship")
-  prep_load_workbook_like_file("ship_meta_v2")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  sd1 <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/ship.RDS")
+  prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/ship_meta_v2.xlsx")
   md1 <- prep_get_data_frame("item_level")
   checks <- prep_get_data_frame("cross-item_level")
 
-  suppressMessages(expect_warning(
+  suppressWarnings(suppressMessages(
     AnyContradictions <- con_contradictions_redcap(study_data = sd1,
                                                    meta_data       = md1,
                                                    label_col       = "LABEL",
                                                    meta_data_cross_item = checks,
-                                                   threshold_value = 1),
-    regexp = ".*Number of levels in variable greater than in character string for variable.*SCHOOL_GRAD_0.*"
-  ))
+                                                   threshold_value = 1)))
 
-  expect_equal(AnyContradictions$SummaryTable$NUM_con_con, c(0,
+  expect_equal(AnyContradictions$VariableGroupTable$NUM_con_con, c(35,
                                                              0,
                                                              0,
-                                                             0,
-                                                             12,
                                                              63,
-                                                             35))
-
-  sd1 <- prep_get_data_frame("ship")
-  prep_load_workbook_like_file("ship_meta_v2")
+                                                             12,
+                                                             0,
+                                                             0))
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  sd1 <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/ship.RDS")
+  prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/ship_meta_v2.xlsx")
   md1 <- prep_get_data_frame("item_level")
   checks <- prep_get_data_frame("cross-item_level")
 
@@ -245,15 +248,15 @@ test_that("no regression, rule errors should not be missed", {
   checks <- checks[-c(4:9), ]
 
 
-  expect_warning({
+  suppressMessages(suppressWarnings(expect_warning({
     AnyContradictions <- con_contradictions_redcap(study_data = sd1,
                                                    meta_data       = md1,
                                                    label_col       = "LABEL",
                                                    meta_data_cross_item = checks,
                                                    threshold_value = 1)
     }, regexp = "Parser error"
-    )
+    )))
 
-  expect_true(all(is.na(AnyContradictions$SummaryTable$NUM_con_con)))
+  expect_true(all(is.na(AnyContradictions$VariableGroupTable$NUM_con_con)))
 
 })

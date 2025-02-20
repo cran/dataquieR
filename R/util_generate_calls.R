@@ -56,6 +56,7 @@ util_generate_calls <- function(dimensions,
   .dimensions <- sprintf("^(%s)", .dimensions)
   exports <- getNamespaceExports(utils::packageName()) # TODO: Use util_all_ind_functions
   ind_functions <- grep(.dimensions, exports, value = TRUE)
+  ind_functions <- c(ind_functions, "int_encoding_errors")
   ind_functions <- ind_functions[
     vapply(ind_functions,
            exists,
@@ -65,7 +66,8 @@ util_generate_calls <- function(dimensions,
     "con_contradictions", # we use the new cross-item-level now
     "acc_robust_univariate_outlier", # is just a synonym for acc_univariate_outlier
     "acc_distributions", # there are specific functions for location and proportion checks
-    "com_unit_missingness" # function does not really create something reasonable, currently
+    "com_unit_missingness", # function does not really create something reasonable, currently
+    "des_summary" # function just meant to be called directly by the user, more specific functions are available in the pipeline
   )), "int_datatype_matrix") # the data type matrix function does not start with int_all, but integrity should always run. However, it is still run before the pipeline, see util_evalute_calls and int_data_type_matrix
 
   ind_functions <- setNames(nm = ind_functions)
@@ -197,7 +199,7 @@ util_generate_calls <- function(dimensions,
 
   multivariatecol <- names(all_calls)[vapply(lapply(all_calls,
                                                     `[[`, "resp_vars"), length,
-                                             FUN.VALUE = integer(1)) != 1] # all calls that passed more ore less than one variable in resp_vars
+                                             FUN.VALUE = integer(1)) != 1] # all calls that passed more ore fewer than one variable in resp_vars
 
   multivariatecol <- gsub("\\..*$", "", multivariatecol)
 

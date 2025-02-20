@@ -20,14 +20,25 @@
 #'                                 `=`: `1 = male | 2 = female`
 #' @param ... Further defined variable attributes, see
 #'            [dataquieR::prep_create_meta]
-#' @param meta_data [data.frame] the metadata to extend
+#' @param item_level [data.frame] the metadata to extend
+#' @param meta_data [data.frame] old name for `item_level`
+#' @param meta_data_v2 [character] path to workbook like metadata file, see
+#'                                 [`prep_load_workbook_like_file`] for details.
+#'                                 **ALL LOADED DATAFRAMES WILL BE PURGED**,
+#'                                 using [`prep_purge_data_frame_cache`],
+#'                                 if you specify `meta_data_v2`.
 #'
 #' @return a data frame with amended metadata.
 #'
 #' @export
 #'
 prep_add_to_meta <- function(VAR_NAMES, DATA_TYPE, LABEL, VALUE_LABELS,
-                             meta_data = "item_level", ...) {
+                             item_level = "item_level",
+                             meta_data = item_level,
+                             meta_data_v2,
+                             ...) {
+
+  util_maybe_load_meta_data_v2()
 
   util_expect_data_frame(meta_data)
 

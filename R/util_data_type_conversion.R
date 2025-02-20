@@ -13,7 +13,13 @@ util_data_type_conversion <- function(x, type) {
   # look-up list about how to convert
   converts <- setNames(
     list(
-      function(x) { floor(as.numeric(x)) },
+      function(x) {
+        if (identical(attr(type, "orig_type"), "logical")) {
+          as.integer(as.logical(x))
+        } else {
+          floor(as.numeric(x))
+        }
+      },
       # as.integer may fail for too large integer numbers
       as.numeric,
       as.character,

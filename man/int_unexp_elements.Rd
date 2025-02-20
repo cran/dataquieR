@@ -4,12 +4,29 @@
 \alias{int_unexp_elements}
 \title{Check for unexpected data element count}
 \usage{
-int_unexp_elements(identifier_name_list, data_element_count)
+int_unexp_elements(
+  identifier_name_list,
+  data_element_count,
+  meta_data_dataframe = "dataframe_level",
+  meta_data_v2,
+  dataframe_level
+)
 }
 \arguments{
 \item{identifier_name_list}{\link{character} a character vector indicating the name of each study data frame, mandatory.}
 
 \item{data_element_count}{\link{integer}  an integer vector with the number of expected data elements, mandatory.}
+
+\item{meta_data_dataframe}{\link{data.frame} the data frame that contains the
+metadata for the data frame level}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{dataframe_level}{\link{data.frame} alias for \code{meta_data_dataframe}}
 }
 \value{
 a \link{list} with
@@ -23,21 +40,4 @@ This function contrasts the expected element number in each study in
 the metadata with the actual element number in each study data frame.
 
 \link{Indicator}
-}
-\examples{
-\dontrun{
-study_tables <- list(
-"sd1" = readRDS(system.file("extdata", "ship_subset1.RDS",
-                     package = "dataquieR")),
-"sd2" = readRDS(system.file("extdata", "ship_subset2.RDS",
-                     package = "dataquieR"))
-)
-
-prep_add_data_frames(data_frame_list = study_tables)
-
-int_unexp_elements(
- identifier_name_list = c("sd1", "sd2"),
- data_element_count = c(30, 29)
-)
-}
 }

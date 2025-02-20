@@ -26,7 +26,10 @@ util_string_is_not_categorical <- function(vec) {
   }
   vec_uniq <- unique(vec)
   # free-text fields can contain very long strings
-  long_elements <- max(nchar(vec_uniq)) > 100
+  long_elements <- max(nchar(vec_uniq,
+                             type = "bytes", # must also work for wrong encoding
+                             allowNA = TRUE,
+                             keepNA = FALSE)) > 100
   # JSON, XML or similar elements contain more punctuation symbols and possibly
   # space characters than expected for categorical variables
   many_non_alphanum_char <- median(
@@ -36,7 +39,10 @@ util_string_is_not_categorical <- function(vec) {
              grepl('[[:punct:]|[:space:]]',
                    unlist(strsplit(vv, split = ""))
                    )
-             ) / nchar(vv)
+             ) / nchar(vv,
+                       type = "bytes", # must also work for wrong encoding
+                       allowNA = TRUE,
+                       keepNA = FALSE)
          })
   ) > 0.4
   # For categorical variables, we expect a low proportion of unique values. So

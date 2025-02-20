@@ -15,7 +15,7 @@ For contradiction rules, the required pre-processing steps that can be given.
 TODO JM: MISSING_LABEL will not work for non-factor variables
 }
 \details{
-LABEL MISSING LIMITS MISSING_LABEL MISSING_INTERPRET
+LABEL LIMITS MISSING_NA MISSING_LABEL MISSING_INTERPRET
 }
 \seealso{
 \link{meta_data_cross}
@@ -30,10 +30,12 @@ Other meta_data_cross:
 \code{\link{CONTRADICTION_TERM}},
 \code{\link{CONTRADICTION_TYPE}},
 \code{\link{GOLDSTANDARD}},
+\code{\link{MULTIVARIATE_OUTLIER_CHECK}},
 \code{\link{MULTIVARIATE_OUTLIER_CHECKTYPE}},
 \code{\link{N_RULES}},
 \code{\link{REL_VAL}},
 \code{\link{VARIABLE_LIST}},
+\code{\link{meta_data_cross}},
 \code{\link{util_normalize_cross_item}()}
 }
 \concept{meta_data_cross}

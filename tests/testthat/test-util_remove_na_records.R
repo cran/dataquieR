@@ -4,7 +4,7 @@ test_that("util_remove_na_records works", {
   result <- util_remove_na_records(cars)
 
   # Check that the result has the correct structure
-  expect_is(result, "data.frame")
+  expect_s3_class(result, "data.frame")
 
   # Check that the result has the correct values when there are no NAs
   expect_identical(result, cars)

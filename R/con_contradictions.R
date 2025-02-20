@@ -31,12 +31,9 @@
 #'
 #' List function.
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @param resp_vars [variable list] the name of the measurement variables
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
 #' @param threshold_value [numeric] from=0 to=100. a numerical value
 #'                                                 ranging from 0-100
 #' @param check_table [data.frame] contradiction rules table.  Table defining
@@ -47,7 +44,6 @@
 #'                             If set, a summary output is generated for the
 #'                             defined categories plus one plot per
 #'                             category.
-#' `inheritParams` `acc_distributions`
 #' @return
 #' If `summarize_categories` is `FALSE`:
 #' A [list] with:
@@ -71,7 +67,7 @@
 #' result for contradictions within that category only. Additionally, in the
 #' slot `all_checks` a result as it would have been returned with
 #' `summarize_categories` set to `FALSE`. Finally, a slot `SummaryData` is
-#' returned containing sums per Category and an according [ggplot] in
+#' returned containing sums per Category and an according [ggplot2::ggplot] in
 #' `SummaryPlot`.
 #'
 #' @export
@@ -84,60 +80,18 @@
 #' [Online Documentation](
 #' https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_contradictions.html
 #' )
-#' @examples
-#' \dontrun{
-#' load(system.file("extdata", "meta_data.RData", package = "dataquieR"))
-#' load(system.file("extdata", "study_data.RData", package = "dataquieR"))
-#' check_table <- read.csv(system.file("extdata",
-#'   "contradiction_checks.csv",
-#'   package = "dataquieR"
-#' ),
-#' header = TRUE, sep = "#"
-#' )
-#' check_table[1, "tag"] <- "Logical"
-#' check_table[1, "Label"] <- "Becomes younger"
-#' check_table[2, "tag"] <- "Empirical"
-#' check_table[2, "Label"] <- "sex transformation"
-#' check_table[3, "tag"] <- "Empirical"
-#' check_table[3, "Label"] <- "looses academic degree"
-#' check_table[4, "tag"] <- "Logical"
-#' check_table[4, "Label"] <- "vegetarian eats meat"
-#' check_table[5, "tag"] <- "Logical"
-#' check_table[5, "Label"] <- "vegan eats meat"
-#' check_table[6, "tag"] <- "Empirical"
-#' check_table[6, "Label"] <- "non-veg* eats meat"
-#' check_table[7, "tag"] <- "Empirical"
-#' check_table[7, "Label"] <- "Non-smoker buys cigarettes"
-#' check_table[8, "tag"] <- "Empirical"
-#' check_table[8, "Label"] <- "Smoker always scrounges"
-#' check_table[9, "tag"] <- "Logical"
-#' check_table[9, "Label"] <- "Cuff didn't fit arm"
-#' check_table[10, "tag"] <- "Empirical"
-#' check_table[10, "Label"] <- "Very mature pregnant woman"
-#' label_col <- "LABEL"
-#' threshold_value <- 1
-#' con_contradictions(
-#'   study_data = study_data, meta_data = meta_data, label_col = label_col,
-#'   threshold_value = threshold_value, check_table = check_table
-#' )
-#' check_table[1, "tag"] <- "Logical, Age-Related"
-#' check_table[10, "tag"] <- "Empirical, Age-Related"
-#' con_contradictions(
-#'   study_data = study_data, meta_data = meta_data, label_col = label_col,
-#'   threshold_value = threshold_value, check_table = check_table
-#' )
-#' con_contradictions(
-#'   study_data = study_data, meta_data = meta_data, label_col = label_col,
-#'   threshold_value = threshold_value, check_table = check_table,
-#'   summarize_categories = TRUE
-#' )
-#' }
-con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
-                               label_col, threshold_value, check_table,
-                               summarize_categories = FALSE
+con_contradictions <- function(resp_vars = NULL,
+                               study_data,
+                               label_col,
+                               item_level = "item_level",
+                               threshold_value,
+                               check_table,
+                               summarize_categories = FALSE,
                                # flip_mode = "flip" # TODO: Fix noflip graph
-                               ) {
+                               meta_data = item_level,
+                               meta_data_v2) {
   # Preps ----------------------------------------------------------------------
+  util_maybe_load_meta_data_v2()
   # labels used instead of variable names?
   if (!(missing(label_col)) && label_col != VAR_NAMES) {
     util_message(
@@ -152,7 +106,8 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
   }
 
   # map meta to study
-  prep_prepare_dataframes(.replace_hard_limits = TRUE)
+  prep_prepare_dataframes(.replace_hard_limits = TRUE,
+                          .apply_factor_metadata = TRUE)
 
   util_correct_variable_use("resp_vars",
     allow_more_than_one = TRUE,
@@ -288,21 +243,21 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
     # p <- p + util_coord_flip(p = p) # TODO: estimate w and h, if p is not using discrete axes
 
     # https://stackoverflow.com/a/51795017
-    bp <- ggplot_build(p)
-    w <- 2 * length(bp$layout$panel_params[[1]]$x$get_labels())
-    if (w == 0) {
-      w <- 10
-    }
-    w <- w + 2 +
-      max(nchar(bp$layout$panel_params[[1]]$y$get_labels()),
-          na.rm = TRUE)
-    h <- 2 * length(bp$layout$panel_params[[1]]$y$get_labels())
-    if (h == 0) {
-      h <- 10
-    }
-    h <- h + 15
+#    bp <- ggplot_build(p)
+#    w <- 2 * length(bp$layout$panel_params[[1]]$x$get_labels())
+#    if (w == 0) {
+ #     w <- 10
+#    }
+#    w <- w + 2 +
+#      max(nchar(bp$layout$panel_params[[1]]$y$get_labels()),
+#          na.rm = TRUE)
+#    h <- 2 * length(bp$layout$panel_params[[1]]$y$get_labels())
+ #   if (h == 0) {
+#      h <- 10
+#    }
+ #   h <- h + 15
 
-    p <- util_set_size(p, width_em = w, height_em = h)
+#    p <- util_set_size(p, width_em = w, height_em = h)
 
     result$SummaryPlot <- p
 
@@ -356,35 +311,6 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
                      applicability_problem = TRUE)
       }
       resp_vars <- rvs_with_contr
-    }
-
-    # Label assignment ---------------------------------------------------------
-    # all labelled variables
-    levlabs <- meta_data$VALUE_LABELS[meta_data[[label_col]] %in% resp_vars]
-
-    # any variables without labels?
-    if (any(is.na(levlabs))) {
-      util_warning(paste0("Variables: ", paste0(resp_vars[is.na(levlabs)],
-                                                collapse = ", "),
-                          " have no assigned labels and levels."),
-                   applicability_problem = TRUE,
-                   intrinsic_applicability_problem = TRUE)
-    }
-
-    # only variables with labels
-    if (!all(is.na(levlabs))) {
-      rvs_ll <- resp_vars[!is.na(levlabs)]
-      levlabs <- levlabs[!is.na(levlabs)]
-
-      for (i in seq_along(rvs_ll)) {
-        ds1[[rvs_ll[i]]] <- util_assign_levlabs(
-          variable = ds1[[rvs_ll[i]]],
-          string_of_levlabs = levlabs[i],
-          splitchar = SPLIT_CHAR,
-          assignchar = " = ",
-          ordered = TRUE
-        )
-      }
     }
 
     # select contradiction checks
@@ -512,27 +438,27 @@ con_contradictions <- function(resp_vars = NULL, study_data, meta_data,
     st1 <- st1[, c(9, 10, 1:8)]
     #st1 <- dplyr::rename(st1, c("GRADING" = "Grading"))
 
-    suppressWarnings({
+#    suppressWarnings({
       # suppress wrong warnings: https://github.com/tidyverse/ggplot2/pull/4439/commits
       # find out size of the plot https://stackoverflow.com/a/51795017
-      bp <- ggplot_build(p)
-      w <- 2 * length(bp$layout$panel_params[[1]]$x$get_labels())
-      if (w == 0) {
-        w <- 10
-      }
-      w <- w + 2 +
-        max(nchar(bp$layout$panel_params[[1]]$y$get_labels()),
-            na.rm = TRUE)
-      w <- w +
-        max(nchar(bp$layout$panel_params[[1]]$y.sec$get_labels()),
-            na.rm = TRUE)
-      h <- 2 * length(bp$layout$panel_params[[1]]$y$get_labels())
-      if (h == 0) {
-        h <- 10
-      }
-      h <- h + 15
-      p <- util_set_size(p, width_em = w, height_em = h)
-    })
+#      bp <- ggplot_build(p)
+#      w <- 2 * length(bp$layout$panel_params[[1]]$x$get_labels())
+#      if (w == 0) {
+#        w <- 10
+ #     }
+ #     w <- w + 2 +
+ #       max(nchar(bp$layout$panel_params[[1]]$y$get_labels()),
+ #           na.rm = TRUE)
+ #     w <- w +
+ #       max(nchar(bp$layout$panel_params[[1]]$y.sec$get_labels()),
+ #           na.rm = TRUE)
+ #     h <- 2 * length(bp$layout$panel_params[[1]]$y$get_labels())
+#      if (h == 0) {
+#        h <- 10
+#      }
+ #     h <- h + 15
+#      p <- util_set_size(p, width_em = w, height_em = h)
+#    })
 
     # Output
     return(list(

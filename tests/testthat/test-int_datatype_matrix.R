@@ -1,7 +1,8 @@
 test_that("int_datatype_matrix works", {
   skip_on_cran() # slow and not so complicated. also, errors will be obvious.
-  meta_data <- prep_get_data_frame("meta_data")
-  study_data <- prep_get_data_frame("study_data")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -51,7 +52,6 @@ test_that("int_datatype_matrix works", {
                           study_data = study_data,
                           meta_data = md0,
                           label_col = LABEL),
-      all = TRUE,
       regexp =
         "yielding.+v00001 = string"
     )
@@ -69,7 +69,6 @@ test_that("int_datatype_matrix works", {
                                                          drop = FALSE],
                                    label_col = LABEL,
                                    split_segments = TRUE),
-    all = TRUE,
     regexp =  paste("Stratification for STUDY_SEGMENT is not possible",
                     "due to missing metadata.",
                     "Will split arbitrarily avoiding too large figures")
@@ -107,11 +106,11 @@ test_that("int_datatype_matrix works", {
   # TODO: skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
 
-  vdiffr::expect_doppelganger("integrity datatype",
+  expect_doppelganger2("integrity datatype",
                               appmatrix$SummaryPlot)
 
   for (n in names(appmatrix$DataTypePlotList)) {
-    vdiffr::expect_doppelganger(sprintf("intDt%s", n),
+    expect_doppelganger2(sprintf("intDt%s", n),
                                 appmatrix$DataTypePlotList[[n]])
   }
 

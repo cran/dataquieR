@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA='>
+    <rect x='0.00' y='0.00' width='720.00' height='576.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+</g>
+<defs>
+  <clipPath id='cpODcuNDh8NzE0LjUyfDg4LjI1fDQ4NS44MA=='>
+    <rect x='87.48' y='88.25' width='627.04' height='397.55' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpODcuNDh8NzE0LjUyfDg4LjI1fDQ4NS44MA==)'>
+<polyline points='87.48,377.38 714.52,377.38 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='87.48,196.68 714.52,196.68 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<polyline points='401.00,485.80 401.00,88.25 ' style='stroke-width: 1.07; stroke: #EBEBEB; stroke-linecap: butt;' />
+<rect x='139.73' y='287.03' width='522.53' height='180.70' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<rect x='139.73' y='106.32' width='522.53' height='180.70' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+</g>
+<defs>
+  <clipPath id='cpODcuNDh8NzE0LjUyfDcxLjYwfDg4LjI1'>
+    <rect x='87.48' y='71.60' width='627.04' height='16.65' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpODcuNDh8NzE0LjUyfDcxLjYwfDg4LjI1)'>
+<text x='401.00' y='82.96' text-anchor='middle' style='font-size: 8.80px; fill: #1A1A1A; font-family: sans;' textLength='101.24px' lengthAdjust='spacingAndGlyphs'>PART_QUESTIONNAIRE</text>
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+<text transform='translate(401.00,66.67) rotate(-90)' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='31.29px' lengthAdjust='spacingAndGlyphs'>MATCH</text>
+<text x='82.55' y='380.82' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='46.14px' lengthAdjust='spacingAndGlyphs'>ITEM_1_0</text>
+<text x='82.55' y='200.12' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='64.48px' lengthAdjust='spacingAndGlyphs'>QUEST_DT_0</text>
+<text transform='translate(13.05,287.03) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='61.16px' lengthAdjust='spacingAndGlyphs'>VARIABLES</text>
+<text x='349.39' y='537.43' style='font-size: 11.00px; font-family: sans;' textLength='3.06px' lengthAdjust='spacingAndGlyphs'> </text>
+<rect x='359.06' y='503.38' width='15.01' height='15.01' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
+<text x='380.69' y='513.91' style='font-size: 8.80px; font-family: sans;' textLength='71.92px' lengthAdjust='spacingAndGlyphs'>Matching datatype</text>
+<text x='87.48' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='216.50px' lengthAdjust='spacingAndGlyphs'>int_datatype_matrix segment v50000</text>
+</g>
+</svg>

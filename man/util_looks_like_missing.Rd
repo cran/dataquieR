@@ -19,13 +19,13 @@ missing code
 }
 \description{
 Values not being finite (see \code{\link{is.finite}}) are also reported as missing
-codes.
+codes. Also, all missing codes must be composed out of the digits 8 and
+9 and they must be the largest values of a variable.
 }
 \seealso{
 \code{\link{acc_univariate_outlier}}
 
 Other metadata_management: 
-\code{\link{CAN_THIS_BE_REMOVED_util_combine_missing_lists}()},
 \code{\link{util_dist_selection}()},
 \code{\link{util_find_free_missing_code}()},
 \code{\link{util_find_var_by_meta}()},

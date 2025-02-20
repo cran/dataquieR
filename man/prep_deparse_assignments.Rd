@@ -6,7 +6,7 @@
 \usage{
 prep_deparse_assignments(
   codes,
-  labels,
+  labels = codes,
   split_char = SPLIT_CHAR,
   mode = c("numeric_codes", "string_codes")
 )

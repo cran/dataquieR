@@ -8,7 +8,13 @@ it's evaluated value}
 util_eval_to_dataquieR_result(
   expression,
   env = parent.frame(),
-  filter_result_slots
+  filter_result_slots,
+  nm,
+  function_name,
+  my_call = expression,
+  my_storr_object = NULL,
+  init = FALSE,
+  called_in_pipeline = TRUE
 )
 }
 \arguments{
@@ -23,6 +29,19 @@ matches one of these, it'll
 be used for the report. If
 of length zero, no filtering
 is performed.}
+
+\item{nm}{\link{character} name for the computed result}
+
+\item{function_name}{\link{character} name of the function to be executed}
+
+\item{my_call}{the call being executed (equivalent to \code{expression})}
+
+\item{my_storr_object}{a \code{storr} object to store the result in}
+
+\item{init}{\link{logical} is this an initial call to compute dummy results?}
+
+\item{called_in_pipeline}{\link{logical} if the evaluation should be considered
+as part of a pipeline.}
 }
 \value{
 a \code{dataquieR_result} object
@@ -45,7 +64,6 @@ Other reporting_functions:
 \code{\link{util_generate_calls_for_function}()},
 \code{\link{util_load_manual}()},
 \code{\link{util_make_data_slot_from_table_slot}()},
-\code{\link{util_make_function}()},
 \code{\link{util_order_by_order}()},
 \code{\link{util_set_size}()}
 }

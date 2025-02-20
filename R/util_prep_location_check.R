@@ -16,7 +16,12 @@
 util_prep_location_check <- function(resp_vars,
                                      meta_data,
                                      report_problems = c("error", "warning",
-                                                         "message")) {
+                                                         "message"),
+                                     label_col = VAR_NAMES) {
+  resp_vars <- prep_get_labels(resp_vars = resp_vars,
+                               item_level = meta_data,
+                               label_col = label_col,
+                               force_label_col = "TRUE")
   report_problems <- match.arg(report_problems)
   rep_fun <- switch(report_problems,
                     error = util_error,
@@ -24,7 +29,8 @@ util_prep_location_check <- function(resp_vars,
                     message = util_message)
   loc_metric <- setNames(util_find_var_by_meta(resp_vars = resp_vars,
                                                target = "LOCATION_METRIC",
-                                               meta_data = meta_data),
+                                               meta_data = meta_data,
+                                               allowed_sources = label_col),
                          nm = resp_vars)
   loc_metric <- trimws(tolower(loc_metric))
 
@@ -37,7 +43,8 @@ util_prep_location_check <- function(resp_vars,
 
   loc_range <- setNames(util_find_var_by_meta(resp_vars = resp_vars,
                                               target = "LOCATION_RANGE",
-                                              meta_data = meta_data),
+                                              meta_data = meta_data,
+                                              allowed_sources = label_col),
                         nm = resp_vars)
   loc_range <- lapply(loc_range, util_parse_interval)
 

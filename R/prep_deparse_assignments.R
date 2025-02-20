@@ -12,15 +12,22 @@
 #' @return a vector with assignment strings for each row of
 #'         `cbind(codes, labels)`
 #' @export
-prep_deparse_assignments <- function(codes, labels, split_char = SPLIT_CHAR,
+prep_deparse_assignments <- function(codes, labels = codes,
+                                     split_char = SPLIT_CHAR,
                                      mode = c("numeric_codes",
                                               "string_codes")) {
   mode <- util_match_arg(mode)
+  no_labs <- missing(labels) || length(labels) == 0
+  if (length(labels) == 0) {
+    labels <- codes
+  }
   if (length(codes) != length(labels)) {
     util_error("%s and %s must have the same length",
                dQuote("values"),
                dQuote("labels"), applicability_problem = TRUE)
   }
+  if (is.list(codes)) codes <- unlist(codes)
+  if (is.list(labels)) labels <- unlist(labels)
   if (mode == "numeric_codes" && (
     suppressWarnings(!all(
       is.na(as.numeric(codes)) == is.na(codes) |
@@ -37,8 +44,13 @@ prep_deparse_assignments <- function(codes, labels, split_char = SPLIT_CHAR,
     labels <- gsub(split_char, "", labels, fixed = TRUE)
   }
   if (!!length(codes) && length(codes) == length(labels)) {
-    paste(codes, "=", labels,
-          collapse = sprintf(" %s ", split_char))
+    if (no_labs) {
+      paste(codes,
+            collapse = sprintf(" %s ", split_char))
+    } else {
+      paste(codes, "=", labels,
+            collapse = sprintf(" %s ", split_char))
+    }
   } else {
     split_char
   }

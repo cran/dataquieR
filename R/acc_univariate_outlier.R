@@ -56,13 +56,10 @@
 #'  - A scatter plot is generated for all examined variables, flagging
 #'    observations according to the no. violated rules (step 5).
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @param resp_vars [variable list] the name of the continuous measurement
 #'                                  variable
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
 #' @param exclude_roles [variable roles] a character (vector) of variable roles
 #'                                       not included
 #' @param n_rules [integer] from=1 to=4. the no. rules that must be violated
@@ -96,24 +93,29 @@
 #'   - `SummaryData`: [`data.frame`] with the columns
 #'        `Variables`, `Mean`, `SD`, `Median`, `Skewness`, `Tukey (N)`,
 #'        `3SD (N)`, `Hubert (N)`, `Sigma-gap (N)`, `Outliers (N)`,
-#'        `Outliers, low (N)`, `Outliers, high (N)` `Grading`
-#'   - `SummaryPlotList`: [`ggplot`] univariate outlier plots
+#'        `Outliers, low (N)`, `Outliers, high (N)`
+#'   - `SummaryPlotList`: [`ggplot2::ggplot`] univariate outlier plots
 #'
 #'
-acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
-                                   meta_data, exclude_roles,
+acc_univariate_outlier <- function(resp_vars = NULL,
+                                   study_data,
+                                   label_col,
+                                   item_level = "item_level",
+                                   exclude_roles,
                                    n_rules = length(unique(criteria)),
                                    max_non_outliers_plot = 10000,
                                    criteria = c("tukey", "3sd",
-                                                "hubert", "sigmagap")) {
+                                                "hubert", "sigmagap"),
+                                   meta_data = item_level,
+                                   meta_data_v2) {
 
   # preps ----------------------------------------------------------------------
+  util_maybe_load_meta_data_v2()
 
-
-  #campatibility with previous name (sixsigma)
+  #compatibility with previous name (sixsigma)
   #replace "sixsigma" (if any attributed in criteria) with 3SD
   old_name<- "sixsigma"
-    if(any(criteria %in% old_name)== TRUE){
+  if(any(criteria %in% old_name)== TRUE){
     criteria[criteria=="sixsigma"] <- "3sd"
   }
 
@@ -130,18 +132,18 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
 
   if (length(unique(criteria)) < 1 ||
       length(unique(criteria)) >
-        length(eval(formals(acc_univariate_outlier)$criteria)) ||
+      length(eval(formals(acc_univariate_outlier)$criteria)) ||
       !all(criteria %in% eval(formals(acc_univariate_outlier)$criteria))) {
     if (!.called_in_pipeline)
       util_message(c("The formal criteria must have > 0 and < %d entries.",
-                   "Allowed values are %s.",
-                   "I was called with %s, falling back to default %s."),
-                 length(eval(formals(acc_univariate_outlier)$criteria)),
-                 paste(dQuote(eval(formals(acc_univariate_outlier)$criteria)),
-                       collapse = ", "),
-                 paste(dQuote(unique(criteria)), collapse = ", "),
-                 paste(dQuote(eval(formals(acc_univariate_outlier)$criteria)),
-                       collapse = ", "), applicability_problem = TRUE)
+                     "Allowed values are %s.",
+                     "I was called with %s, falling back to default %s."),
+                   length(eval(formals(acc_univariate_outlier)$criteria)),
+                   paste(dQuote(eval(formals(acc_univariate_outlier)$criteria)),
+                         collapse = ", "),
+                   paste(dQuote(unique(criteria)), collapse = ", "),
+                   paste(dQuote(eval(formals(acc_univariate_outlier)$criteria)),
+                         collapse = ", "), applicability_problem = TRUE)
     criteria <- eval(formals(acc_univariate_outlier)$criteria)
   }
 
@@ -150,11 +152,11 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
       !(n_rules %in% seq_len(length(unique(criteria))))) {
     if (!.called_in_pipeline)
       util_message(
-      "The formal n_rules is not an integer between 1 and %d, default (%d) is used.",
-      length(unique(criteria)),
-      min(eval(formals(acc_univariate_outlier)$n_rules),
-          length(unique(criteria))),
-      applicability_problem = TRUE)
+        "The formal n_rules is not an integer between 1 and %d, default (%d) is used.",
+        length(unique(criteria)),
+        min(eval(formals(acc_univariate_outlier)$n_rules),
+            length(unique(criteria))),
+        applicability_problem = TRUE)
     n_rules <- min(eval(formals(acc_univariate_outlier)$n_rules),
                    length(unique(criteria)))
   }
@@ -176,13 +178,13 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   prep_prepare_dataframes(.replace_hard_limits = TRUE)
 
   util_correct_variable_use("resp_vars",
-    allow_more_than_one = TRUE,
-    allow_null = TRUE,
-    allow_any_obs_na = TRUE,
-    need_type = "integer | float",
-    need_scale = "interval | ratio",
-    do_not_stop = TRUE,
-    remove_not_found = TRUE
+                            allow_more_than_one = TRUE,
+                            allow_null = TRUE,
+                            allow_any_obs_na = TRUE,
+                            need_type = "integer | float",
+                            need_scale = "interval | ratio",
+                            do_not_stop = TRUE,
+                            remove_not_found = TRUE
   )
 
   if (is.null(meta_data[[DATA_TYPE]]) ||
@@ -222,7 +224,8 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
 
     # which are float or integer?
     resp_vars <- meta_data[[label_col]][meta_data[[DATA_TYPE]] %in%
-                                    c(DATA_TYPES$FLOAT, DATA_TYPES$INTEGER)]
+                                          c(DATA_TYPES$FLOAT,
+                                            DATA_TYPES$INTEGER)]
     util_message(paste0("The following variables: ",
                         paste0(resp_vars, collapse = ", "), " were selected."),
                  applicability_problem = TRUE,
@@ -244,10 +247,12 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
     if (!all(isfloat | !isrvs)) {
       resp_vars <- meta_data[[label_col]][isfloat & isrvs]
       if (!all(!isrvs | isfloat)) util_warning(paste0("Only: ",
-                                      paste0(resp_vars, collapse = ", "),
-                          " are defined to be of type float or integer."),
-                          applicability_problem = TRUE,
-                          intrinsic_applicability_problem = TRUE)
+                                                      paste0(resp_vars,
+                                                             collapse = ", "),
+                                                      " are defined to be of ",
+                                                      "type float or integer."),
+                                               applicability_problem = TRUE,
+                                               intrinsic_applicability_problem = TRUE)
     }
   }
 
@@ -326,10 +331,10 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
     ds2 <- ds2[, c(2, 1)]
     names(ds2) <- c("variable", "value")
   } else {
-   # ds2 <- melt(ds1_ll[, c(resp_vars)], measure.vars = resp_vars)
+    # ds2 <- melt(ds1_ll[, c(resp_vars)], measure.vars = resp_vars)
     ds2 <- stats::reshape(data = ds1_ll[, resp_vars],
-                             varying = colnames(ds1_ll[, resp_vars]),
-                             v.names = "value",
+                          varying = colnames(ds1_ll[, resp_vars]),
+                          v.names = "value",
                           times = colnames(ds1_ll[, resp_vars]),
                           direction = "long")
     ds2 <- ds2[, -which(names(ds2) == "id")]
@@ -354,8 +359,7 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   ds2plot$threeSD <- NA
   ds2plot$hubert <- NA
   ds2plot$sigmagap <- NA
-  # browser()
-  # View(ds2plot)
+
   # apply outlier functions to plot-df
   # after export/final built  correct the call of the utility functions
   ds2plotOL <- ds2plot %>%
@@ -395,13 +399,14 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   }
 
   # create summary table here --------------------------------------------------
-  st1 <- aggregate(ds2plot$value, list(ds2plot$variable), mean) # TODO: here and in multi, add standard columns for inidcator metrics
+  st1 <- aggregate(ds2plot$value, list(ds2plot$variable), mean) # TODO: here and in multi, add standard columns for indicator metrics
   colnames(st1) <- c("Variables", "Mean")
   st1$"No.records"<- aggregate(ds2plot$value, list(ds2plot$variable), length)$x
   st1$"SD" <- aggregate(ds2plot$value, list(ds2plot$variable), sd)$x
   st1$"Median" <- aggregate(ds2plot$value, list(ds2plot$variable), median)$x
   st1$"Skewness" <-
-    aggregate(ds2plot$value, list(ds2plot$variable), robustbase::mc, doScale = FALSE)$x
+    aggregate(ds2plot$value, list(ds2plot$variable), robustbase::mc,
+              doScale = FALSE)$x
   st1$"Tukey (N)" <- aggregate(ds2plot$tukey, list(ds2plot$variable), sum)$x
   st1$"3SD (N)" <-
     aggregate(ds2plot$threeSD, list(ds2plot$variable), sum)$x
@@ -409,17 +414,17 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
   st1$"Sigma-gap (N)" <-
     aggregate(ds2plot$sigmagap, list(ds2plot$variable), sum)$x
   st1$"Outliers (N)" <- aggregate(ds2plot$Rules, list(ds2plot$variable),
-                                     function(x) {
-    sum(x >= n_rules)
-  })$x
+                                  function(x) {
+                                    sum(x >= n_rules)
+                                  })$x
   st1$"Outliers, low (N)" <- aggregate(ds2plot$tlta, list(ds2plot$variable),
-                                function(x) {
-    sum(x == -1)
-  })$x
+                                       function(x) {
+                                         sum(x == -1)
+                                       })$x
   st1$"Outliers, high (N)" <- aggregate(ds2plot$tlta, list(ds2plot$variable),
-                                 function(x) {
-    sum(x == 1)
-  })$x
+                                        function(x) {
+                                          sum(x == 1)
+                                        })$x
   st1$GRADING <- ifelse(st1$"Outliers (N)" > 0, 1, 0)
 
   # format output
@@ -430,7 +435,9 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
 
   SummaryTable<- st1
   names(SummaryTable)[names(SummaryTable) == "Outliers (N)"] <- "NUM_acc_ud_outlu"
-  SummaryTable$PCT_acc_ud_outlu <- round(SummaryTable$NUM_acc_ud_outlu/SummaryTable$No.records*100, digits = 2)
+  SummaryTable$PCT_acc_ud_outlu <- round(SummaryTable$NUM_acc_ud_outlu/
+                                           SummaryTable$No.records*100,
+                                         digits = 2)
 
   # create plot list here ------------------------------------------------------
   # format to factor for plot
@@ -467,15 +474,23 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
         max_non_outliers_plot,
         n_non_ol,
         applicability_problem = FALSE
-        )
+      )
     }
 
     ds_i$Rules <- factor(ds_i$Rules)
 
     if (nrow(ds_i) > 0) {
+      ds_i$variable <-
+        prep_get_labels(
+          ds_i$variable,
+          item_level = meta_data,
+          label_col = label_col,
+          resp_vars_match_label_col_only = TRUE,
+          label_class = "SHORT")
       if (length(unique(ds_i$variable)) == 1 && .called_in_pipeline) {
         p_i <- ggplot(ds_i, aes(x = variable, y = value)) +
-          geom_jitter(data = ds_i, position = position_jitter(0.1),
+          geom_jitter(data = ds_i,
+                      position = position_jitter(width = 0.3, height = 0.03),
                       aes(color = Rules, alpha = 0.5, size =
                             as.numeric(Rules) / 10)) +
           scale_size_continuous(range = c(0.5, 3), guide = "none") +
@@ -486,7 +501,8 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
           theme(axis.text.x = element_blank())
       } else {
         p_i <- ggplot(ds_i, aes(x = variable, y = value)) +
-          geom_jitter(data = ds_i, position = position_jitter(0.1),
+          geom_jitter(data = ds_i,
+                      position = position_jitter(width = 0.3, height = 0.03),
                       aes(color = Rules, alpha = 0.5, size =
                             as.numeric(Rules) / 10)) +
           scale_size_continuous(range = c(0.5, 3), guide = "none") +
@@ -516,10 +532,38 @@ acc_univariate_outlier <- function(resp_vars = NULL, label_col, study_data,
         )
     }
 
+    # Define min and max values in plot for size hint
+    if (nrow(ds_i)==0){
+      #In case of an empty result in ds_i
+      min_val <- 0
+      max_val <- 0
+    } else{
+      min_val <-  min(ds_i$value)
+      max_val <- max(ds_i$value)
+    }
+
+    range <- max_val - min_val
+    y_variable <-  unique(ds_i$variable)
+    no_char_y <- max(nchar(c(min_val, max_val)))
+
+
+    # Figure size hint for plot
+    attr(p_i, "sizing_hints") <- list(
+      figure_type_id = "scatt_plot",
+      range = range,
+      number_of_vars = length(unique(ds_i$variable)),
+      no_char_y = no_char_y
+    )
+
     plot_list[[i]] <- util_set_size(p_i, width_em = 10, height_em = 25)
+
   }
 
-  return(list(SummaryTable = SummaryTable, SummaryData = st1, SummaryPlotList = plot_list))
+  st1 <- st1[, !names(st1) %in% c("GRADING")]
+
+  return(list(SummaryTable = SummaryTable,
+              SummaryData = st1,
+              SummaryPlotList = plot_list))
 }
 
 #' @inherit acc_univariate_outlier

@@ -4,12 +4,14 @@
 \alias{util_startsWith_prefix._or_equals_prefix}
 \title{String check for results/combined results}
 \usage{
-util_startsWith_prefix._or_equals_prefix(x, prefix)
+util_startsWith_prefix._or_equals_prefix(x, prefix, sep = ".")
 }
 \arguments{
 \item{x}{\link{character} haystack}
 
 \item{prefix}{\link{character} needle}
+
+\item{sep}{\link{character} separation string}
 }
 \value{
 \link{logical} if entries in x start with prefix-DOT/equal to prefix

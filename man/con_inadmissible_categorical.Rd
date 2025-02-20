@@ -7,9 +7,11 @@
 con_inadmissible_categorical(
   resp_vars = NULL,
   study_data,
-  meta_data,
   label_col,
-  threshold_value = 0
+  item_level = "item_level",
+  threshold_value = 0,
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
@@ -17,14 +19,22 @@ con_inadmissible_categorical(
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
-
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
 
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
+
 \item{threshold_value}{\link{numeric} from=0 to=100. a numerical value ranging
 from 0-100.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 a list with:
@@ -39,8 +49,6 @@ columns:
 \item \code{NON_MATCHING_N}: the number of observations with categories not defined
 \item \code{NON_MATCHING_N_PER_CATEGORY}: the number of observations for each of the
 unexpected categories
-\item \code{GRADING}: indicator TRUE/FALSE if inadmissible categorical values were
-observed (more than indicated by the \code{threshold_value})
 }
 \item \code{SummaryTable}: data frame for the \code{dataquieR} pipeline reporting the number
 and percentage of inadmissible categorical values

@@ -5,32 +5,53 @@
 \title{Compute Indicators for Qualified Segment Missingness}
 \usage{
 com_qualified_segment_missingness(
-  study_data,
-  meta_data,
   label_col = NULL,
+  study_data,
+  item_level = "item_level",
+  expected_observations = c("HIERARCHY", "ALL", "SEGMENT"),
+  meta_data = item_level,
+  meta_data_v2,
   meta_data_segment,
-  expected_observations = c("HIERARCHY", "ALL", "SEGMENT")
+  segment_level
 )
 }
 \arguments{
-\item{study_data}{\link{data.frame} the data frame that contains the measurements}
-
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
-attributes of study data}
-
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
 
-\item{meta_data_segment}{\link{data.frame} Segment level metadata}
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
+
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
 
 \item{expected_observations}{\link{enum} HIERARCHY | ALL | SEGMENT. Report the
 number of observations expected using
 the old \code{PART_VAR} concept. See
 \link{com_item_missingness} for an
 explanation.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{meta_data_segment}{\link{data.frame} Segment level metadata}
+
+\item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
 }
 \value{
-\link{list} list with entries:
+A \link{list} with:
+\itemize{
+\item \code{SegmentTable}: \link{data.frame} containing data quality checks for
+"Non-response rate" (\code{PCT_com_qum_nonresp}) and
+"Refusal rate" (\code{PCT_com_qum_refusal}) for each segment.
+\item \code{SegmentData}: a \link{data.frame} containing data quality checks for
+"Unexpected location" and "Unexpected proportion" per
+segment for a report
+}
 }
 \description{
 \link{Indicator}

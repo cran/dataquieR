@@ -30,17 +30,14 @@
 #'
 #' List function.
 #'
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
+#' @inheritParams .template_function_indicator
+#'
 #' @param id_vars [variable list] optional, a (vectorized) call of ID-variables
 #'                                that should not be
 #'                                considered in the calculation of unit-
 #'                                missingness
 #' @param strata_vars [variable] optional, a string or integer variable used for
 #'                               stratification
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
 #'
 #' @return A list with:
 #'   - `FlaggedStudyData`: [data.frame] with id-only-rows flagged in a column
@@ -54,11 +51,21 @@
 #' [Online Documentation](
 #' https://dataquality.qihs.uni-greifswald.de/VIN_com_impl_unit_missingness.html
 #' )
-com_unit_missingness <- function(study_data, meta_data, id_vars = NULL,
-                                 strata_vars = NULL, label_col) { # TODO: Discuss, if this function can be fully removed?
+com_unit_missingness <- function(id_vars = NULL,
+                                 strata_vars = NULL,
+                                 label_col,
+                                 study_data,
+                                 item_level = "item_level",
+                                 meta_data = item_level,
+                                 meta_data_v2) { # TODO: Discuss, if this function can be fully removed?
 
+  util_maybe_load_meta_data_v2()
   # map study and metadata
   prep_prepare_dataframes()
+  ds1_labelled <- prep_prepare_dataframes(.apply_factor_metadata_inadm = TRUE,
+                                          .internal = FALSE)
+
+  part_vars <- meta_data[[PART_VAR]]
 
   # correct variable usage
   util_correct_variable_use("id_vars",
@@ -116,16 +123,8 @@ com_unit_missingness <- function(study_data, meta_data, id_vars = NULL,
 
   # summarize for strata_vars
   if (!(is.null(strata_vars))) {
-    if (!(is.null(label_col)) & !(is.na(meta_data$VALUE_LABELS[
-        meta_data[[label_col]]
-          == strata_vars]))) {
-      lab_string <- meta_data$VALUE_LABELS[meta_data$LABEL == strata_vars]
-      sumdf1[[strata_vars]] <- util_assign_levlabs(sumdf1[[strata_vars]],
-        string_of_levlabs = lab_string,
-        splitchar = SPLIT_CHAR,
-        assignchar = " = "
-      )
-    }
+    sumdf1[, setdiff(strata_vars, part_vars)] <-
+      ds1_labelled[, setdiff(strata_vars, part_vars), FALSE]
 
     sumdf2 <- as.data.frame.matrix(table(sumdf1[[strata_vars]],
                                          sumdf1$Unit_missing))

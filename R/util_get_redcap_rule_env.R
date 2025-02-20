@@ -108,7 +108,17 @@ redcap_env <- (function() {
       }
       if (prep_dq_data_type_of(x) == DATA_TYPES$DATETIME ||
           prep_dq_data_type_of(y) == DATA_TYPES$DATETIME) {
-        res <- op(as.POSIXct(x), as.POSIXct(y))
+        xx <- try(as.POSIXct(x), silent = TRUE)
+        yy <- try(as.POSIXct(y), silent = TRUE)
+        if (util_is_try_error(xx)) {
+          util_error("Rule evaluation: Could not interpret %s as %s",
+                     util_pretty_vector_string(x), sQuote(DATA_TYPES$DATETIME))
+        }
+        if (util_is_try_error(yy)) {
+          util_error("Rule evaluation: Could not interpret %s as %s",
+                     util_pretty_vector_string(y), sQuote(DATA_TYPES$DATETIME))
+        }
+        res <- op(xx, yy)
         resrna <- is.na(res)
         if (identical(op, .Primitive("!="))) {
           if (any(resrna)) {
@@ -136,7 +146,17 @@ redcap_env <- (function() {
             res[is.na(res)] <- ""
         } else if (prep_dq_data_type_of(x) == DATA_TYPES$DATETIME &&
                    prep_dq_data_type_of(y) == DATA_TYPES$DATETIME) {
-          res <- op(as.POSIXct(x), as.POSIXct(y))
+          xx <- try(as.POSIXct(x), silent = TRUE)
+          yy <- try(as.POSIXct(y), silent = TRUE)
+          if (util_is_try_error(xx)) {
+            util_error("Rule evaluation: Could not interpret %s as %s",
+                       util_pretty_vector_string(x), sQuote(DATA_TYPES$DATETIME))
+          }
+          if (util_is_try_error(yy)) {
+            util_error("Rule evaluation: Could not interpret %s as %s",
+                       util_pretty_vector_string(y), sQuote(DATA_TYPES$DATETIME))
+          }
+          res <- op(xx, yy)
           if (any(is.na(res)))
             res[is.na(res)] <- ""
         } else {
@@ -150,7 +170,11 @@ redcap_env <- (function() {
             .x[is.na(x)] <- ""
             .y <- trimws(as.character(y))
             .y[is.na(y)] <- ""
-            res <- op(as.character(.x), as.character(.y))
+            res <- try(op(as.character(.x), as.character(.y)), silent = TRUE)
+            if (inherits(res, "try-error")) {
+              res <- try(op(readr::parse_guess(.x), readr::parse_guess(.y)),
+                         silent = TRUE)
+            }
           }
           res
         }
@@ -545,6 +569,9 @@ redcap_env <- (function() {
       !x
     }
   })
+
+  penv[["pi"]] <- pi
+  penv[["e"]] <- exp(1)
 
   `in` <- function(...) {
     `%in%`(...)

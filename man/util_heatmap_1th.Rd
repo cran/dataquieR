@@ -43,7 +43,7 @@ used for stratification
 \value{
 a \link{list} with:
 \itemize{
-\item \code{SummaryPlot}: \link{ggplot} object with the heatmap
+\item \code{SummaryPlot}: \link[ggplot2:ggplot]{ggplot2::ggplot} object with the heatmap
 }
 }
 \description{

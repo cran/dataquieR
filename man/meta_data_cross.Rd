@@ -8,5 +8,26 @@ Metadata describing groups of variables, e.g., for their multivariate
 distribution or for defining contradiction rules.
 }
 \seealso{
-check_table
+\link{check_table}
+
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_Cross_Item_Level_Metadata.html}{Online Documentation}
+
+Other meta_data_cross: 
+\code{\link{ASSOCIATION_DIRECTION}},
+\code{\link{ASSOCIATION_FORM}},
+\code{\link{ASSOCIATION_METRIC}},
+\code{\link{ASSOCIATION_RANGE}},
+\code{\link{CHECK_ID}},
+\code{\link{CHECK_LABEL}},
+\code{\link{CONTRADICTION_TERM}},
+\code{\link{CONTRADICTION_TYPE}},
+\code{\link{DATA_PREPARATION}},
+\code{\link{GOLDSTANDARD}},
+\code{\link{MULTIVARIATE_OUTLIER_CHECK}},
+\code{\link{MULTIVARIATE_OUTLIER_CHECKTYPE}},
+\code{\link{N_RULES}},
+\code{\link{REL_VAL}},
+\code{\link{VARIABLE_LIST}},
+\code{\link{util_normalize_cross_item}()}
 }
+\concept{meta_data_cross}

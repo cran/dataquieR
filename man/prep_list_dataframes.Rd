@@ -18,6 +18,7 @@ Other data-frame-cache:
 \code{\link{prep_get_data_frame}()},
 \code{\link{prep_load_folder_with_metadata}()},
 \code{\link{prep_load_workbook_like_file}()},
-\code{\link{prep_purge_data_frame_cache}()}
+\code{\link{prep_purge_data_frame_cache}()},
+\code{\link{prep_remove_from_cache}()}
 }
 \concept{data-frame-cache}

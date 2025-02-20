@@ -19,6 +19,8 @@
 #'  - A histogram-like plot contrasts the empirical vs. the technical
 #'    distribution
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @param resp_vars [variable] the name of the continuous measurement variable
 #' @param dist_col [variable attribute] the name of the variable attribute in
 #'                                      meta_data that provides the expected
@@ -27,16 +29,11 @@
 #' @param par1 [numeric] first parameter of the distribution if applicable
 #' @param par2 [numeric] second parameter of the distribution if applicable
 #' @param end_digits [logical] internal use. check for end digits preferences
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
 #' @inheritParams acc_distributions
 #'
 #' @return a list with:
-#'   - `SummaryData`: [data.frame] underlying the plot
-#'   - `SummaryPlot`: [ggplot2] probability distribution plot
+#'   - `ResultData`: [data.frame] underlying the plot
+#'   - `SummaryPlot`: [ggplot2::ggplot2] probability distribution plot
 #'   - `SummaryTable`: [data.frame] with the columns `Variables` and `FLG_acc_ud_shape`
 #'
 #' @export
@@ -50,11 +47,20 @@
 #' [Online Documentation](
 #' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_shape_or_scale.html
 #' )
-acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
-                               end_digits, label_col, study_data, meta_data,
-                               flip_mode = "noflip") {
+acc_shape_or_scale <- function(resp_vars,
+                               study_data,
+                               label_col,
+                               item_level = "item_level",
+                               dist_col,
+                               guess,
+                               par1, par2,
+                               end_digits,
+                               flip_mode = "noflip",
+                               meta_data = item_level,
+                               meta_data_v2) {
   # TODO: remove dist_col, expect column "DISTRIBUTIONS"
   # preps ----------------------------------------------------------------------
+  util_maybe_load_meta_data_v2()
   # map metadata to study data
   prep_prepare_dataframes(.replace_hard_limits = TRUE,
                           .replace_missings = TRUE)
@@ -232,7 +238,7 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
     h1 <- graphics::hist(ds1[[resp_vars]], breaks = breaks, plot = FALSE)
     nobs <- sum(h1$counts)
   }
-  # browser()
+
   if (end_digits == FALSE) {
     if (all(util_is_integer(ds1[[resp_vars]])) &
         length(unique(ds1[[resp_vars]])) < 20 & dist == "uniform") {
@@ -299,7 +305,7 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
     y_line <- rep(round(1 / length(unique(ds1[[resp_vars]])), digits = 2),
                   length = length(x2))
   }
-  # browser()
+
   df2 <- data.frame(
     x2 = x2,
     y_line = y_line
@@ -315,12 +321,12 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
     geom_errorbar(aes(ymin = LOWER_CL, ymax = UPPER_CL), width = 0.1) + {
       if (!(end_digits) & dist != "uniform") {
         geom_line(data = df2, aes(x = x2, y = y_line, color = "#E69F00"),
-                  linewidth = 2)
+                  linewidth = 1)
       }
     } + {
       if (!(end_digits) & dist == "uniform") {
         geom_hline(yintercept = unique(y_line), color = "#E69F00",
-                   linewidth = 2)
+                   linewidth = 1)
       }
     } + {
       if (!(end_digits) & dist == "uniform") {
@@ -328,21 +334,50 @@ acc_shape_or_scale <- function(resp_vars, dist_col, guess, par1, par2,
       }
     } + {
       if (end_digits) geom_hline(yintercept = 0.1, color = "#E69F00",
-                                 linewidth = 2)
+                                 linewidth = 1)
     } + {
       if (end_digits) xlab("End digits")
     } + scale_color_manual(values = c("#E69F00"), guide = "none")
 
-  p1 <- p1 + theme(legend.position = "none") # also suppresses the legend in the ggplotly figure
-  p1 <- p1 + util_coord_flip(p = p1) # TODO: estimate w and h, since p is not using discrete axes
-
+  p1 <- p1 + theme(legend.position = "none",
+                   axis.text.y = element_text(size = 10),
+                   axis.text.x = element_text(size = 10)) # also suppresses the legend in the ggplotly figure
+  fli <- util_coord_flip(p = p1)
+  p1 <- p1 + fli # TODO: estimate w and h, since p is not using discrete axes
+  is_flipped <- inherits(fli, "CoordFlip")
   p1 <- util_set_size(p1);
+  #Put the old SummaryData table (that was not organized one row per variable)
+  # inside the new result OtherTable that can be further processed
+  OtherTable <- df1
 
-  return(list(
-    SummaryData = df1, SummaryPlot = p1,
-    SummaryTable = data.frame(
-      Variables = resp_vars,
-      FLG_acc_ud_shape = 1 - prod(1 - util_as_numeric(df1$GRADING))
-    )
-  ))
+  #OtherTable <- OtherTable[, !names(OtherTable) %in% c("GRADING")]
+
+  #Create the SummaryTable
+  SummaryTable <-  data.frame(Variables = resp_vars,
+    FLG_acc_ud_shape = 1 - prod(1 - util_as_numeric(df1$GRADING))
+  )
+
+
+  no_intervals_flagged <- sum(as.numeric(as.character(df1$GRADING)))
+  no_intervals_over_tot <- sum(as.numeric(as.character(df1$GRADING)))/nrow(df1)
+
+  #SummaryData
+#  SummaryData <-  data.frame(Variables = resp_vars,
+#                             "Intervals_flagged" =
+#                               paste0(no_intervals_flagged, " (",
+#                                      no_intervals_over_tot,
+#                                      "%)"))
+
+  return(util_attach_attr(list(
+    SummaryPlot = p1,
+    ResultData  = OtherTable,
+    SummaryTable = SummaryTable
+  ), sizing_hints = list(
+    figure_type_id = "bar_chart",
+    rotated = is_flipped,
+    number_of_bars = nrow(p1$data),
+    range = max(p1$data$UPPER_CL) - min(p1$data$LOWER_CL),
+    no_char_x = 4,
+    no_char_y = 4
+  )))
 }

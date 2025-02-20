@@ -1,7 +1,8 @@
 #' Create a caption from an alias name of a `dq_report2` result
 #'
 #' @param alias alias name
-#' @param long not for menu entry
+#' @param long return result based on `menu_title_report`,
+#'             `matrix_column_title_report` otherwise
 #'
 #' @return caption
 #'
@@ -31,7 +32,22 @@ util_alias2caption <- function(alias, long = FALSE) {
     ftitle <-
       util_map_labels(fname,
                       util_get_concept_info("implementations"),
-                      to = "Implementationform",
+                      to = "menu_title_report",
+                      from = "function_R",
+                      ifnotfound = NA_character_)
+    if (util_empty(ftitle)) {
+      ftitle <-
+        util_map_labels(fname,
+                        util_get_concept_info("implementations"),
+                        to = "Implementationform",
+                        from = "function_R",
+                        ifnotfound = NA_character_)
+    }
+  } else {
+    ftitle <-
+      util_map_labels(fname,
+                      util_get_concept_info("implementations"),
+                      to = "matrix_column_title_report",
                       from = "function_R",
                       ifnotfound = NA_character_)
     if (util_empty(ftitle)) {
@@ -42,13 +58,6 @@ util_alias2caption <- function(alias, long = FALSE) {
                         from = "function_R",
                         ifnotfound = NA_character_)
     }
-  } else {
-    ftitle <-
-      util_map_labels(fname,
-                      util_get_concept_info("implementations"),
-                      to = "dq_report2_short_title",
-                      from = "function_R",
-                      ifnotfound = NA_character_)
   }
 
   if (is.na(ftitle)) {
@@ -72,7 +81,7 @@ util_alias2caption <- function(alias, long = FALSE) {
 
   suffix <- gsub("_", " ", suffix)
   if (!util_empty(suffix))
-    suffix <- paste0(": ", suffix)
+    suffix <- paste0(" ", suffix)
 
   r  <- paste0(ftitle, suffix)
 

@@ -188,9 +188,16 @@ util_normalize_cross_item <-
 
     # check DATA_PREPARATION ---------------------------------------------------
     set <- character(0)
-    if (VALUE_LABELS %in% colnames(meta_data) &&
-        !all(util_empty(meta_data[[VALUE_LABELS]])))
+    if ((VALUE_LABELS %in% colnames(meta_data) &&
+         !all(util_empty(meta_data[[VALUE_LABELS]]))) ||
+        (VALUE_LABEL_TABLE %in% colnames(meta_data) &&
+         !all(util_empty(meta_data[[VALUE_LABEL_TABLE]]))) # ||
+        # (STANDARDIZED_VOCABULARY_TABLE %in% colnames(meta_data) &&
+        #  !all(util_empty(meta_data[[STANDARDIZED_VOCABULARY_TABLE]])))
+        # FIXME: Enable for this case, too
+    ) {
       set <- c(set, "LABEL")
+    }
 
     set <- c(set, "MISSING_NA") # MISSING_LABEL MISSING_INTERPRET
 

@@ -61,7 +61,7 @@ test_that("util_parse_redcap_rule works", {
   expect_message(util_parse_redcap_rule('[con_consentdt]', debug = TRUE, entry_pred = "symbol_expression"))
   expect_error(eval(util_parse_redcap_rule('datediff([con_consentdt],[sda_osd1dt],"d",true)', debug = TRUE, entry_pred = "function_expression"), cars, util_get_redcap_rule_env()))
   expect_error(eval(util_parse_redcap_rule('datediff([con_consentdt],[sda_osd1dt],"d",true)', entry_pred = "function_expression"), cars, util_get_redcap_rule_env()))
-  expect_warning(expect_error(eval(util_parse_redcap_rule('datediff([con_consentdt],[sda_osd1dt],"d", "Y-M-D",true)', entry_pred = "function_expression"), cars, util_get_redcap_rule_env())))
+  expect_error(suppressWarnings(suppressMessages(eval(util_parse_redcap_rule('datediff([con_consentdt],[sda_osd1dt],"d", "Y-M-D",true)', entry_pred = "function_expression"), cars, util_get_redcap_rule_env()))))
   x <- data.frame(con_consentdt = c(as.POSIXct("2020-01-01"), as.POSIXct("2020-10-20")), sda_osd1dt = c(as.POSIXct("2020-01-20"), as.POSIXct("2020-10-01")))
   expect_silent(eval(util_parse_redcap_rule('datediff([con_consentdt],[sda_osd1dt],"d", "Y-M-D",true)', entry_pred = "function_expression"), x, util_get_redcap_rule_env()))
   expect_silent(eval(util_parse_redcap_rule('[con_consentdt] <> "" and [sda_osd1dt] <> "" and datediff([con_consentdt],[sda_osd1dt],"d", "Y-M-D",true)'), x, util_get_redcap_rule_env()))

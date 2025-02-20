@@ -5,12 +5,14 @@ if(!exists("meta") || is.null(meta))
 if (is.null(meta$Date)) meta$Date <- Sys.Date()
 year <- format(as.Date(meta$Date), "%Y")
 note <- sprintf("R package version %s", meta$Version)
+note <- paste0(note, " doi: 10.32614/CRAN.package.dataquieR")
 
 bibentry(bibtype = "Manual",
          title = "{dataquieR}: Data Quality in Epidemiological Research",
          author = c(
                        as.person("Elisa Kasbohm"),
                        as.person("Joany Marino"),
+                       as.person("Elena Salogni"),
                        as.person("Adrian Richter"),
                        as.person("Carsten Oliver Schmidt"),
 	                     as.person("Stephan Struckmann")),
@@ -19,12 +21,35 @@ bibentry(bibtype = "Manual",
          url = "https://dataquality.qihs.uni-greifswald.de/",
 
          textVersion =
-           paste("Elisa Kasbohm, Joany Marino, Adrian Richter, Carsten Oliver Schmidt, Stephan Struckmann",
+           paste("Elisa Kasbohm, Joany Marino, Elena Salogni, Adrian Richter, Carsten Oliver Schmidt, Stephan Struckmann",
      	       sprintf("(%s).", year),
                  "dataquieR: Data Quality in Epidemiological Research.",
   	       paste(note, ".", sep = ""),
                  "URL https://dataquality.qihs.uni-greifswald.de/")
 )
+
+bibentry(bibtype = "Article",
+         key = "Struckmann2024",
+         author = c(person(given = "Stephan",
+                           family = "Struckmann"),
+                    person(given = "Joany",
+                           family = "Mari{\\~{n}}o"),
+                    person(given = "Elisa",
+                           family = "Kasbohm"),
+                    person(given = "Elena",
+                           family = "Salogni"),
+                    person(given = c("Carsten", "Oliver"),
+                           family = "Schmidt")),
+         title = "dataquieR 2: An updated R package for FAIR data quality assessments in observational studies and electronic health record data",
+         journal = "Journal of Open Source Software",
+         year = "2024",
+         publisher = "The Open Journal",
+         volume = "9",
+         number = "98",
+         pages = "6581",
+         doi = "10.21105/joss.06581",
+         url = "https://doi.org/10.21105/joss.06581")
+
 
 bibentry(bibtype = "Article",
       title =

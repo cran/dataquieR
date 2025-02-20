@@ -4,14 +4,20 @@
 \alias{prep_clean_labels}
 \title{Support function to scan variable labels for applicability}
 \usage{
-prep_clean_labels(label_col, meta_data = "item_level", no_dups = FALSE)
+prep_clean_labels(
+  label_col,
+  item_level = "item_level",
+  no_dups = FALSE,
+  meta_data = item_level,
+  meta_data_v2
+)
 }
 \arguments{
 \item{label_col}{\link{character} label attribute to adjust or character vector to
 adjust, depending on \code{meta_data} argument is
 given or missing.}
 
-\item{meta_data}{\link{data.frame} metadata data frame: If \code{label_col} is a label
+\item{item_level}{\link{data.frame} metadata data frame: If \code{label_col} is a label
 attribute to adjust, this is the metadata
 table to process on. If missing, \code{label_col}
 must be a character vector with values to
@@ -20,6 +26,14 @@ adjust.}
 \item{no_dups}{\link{logical} disallow duplicates in input or output vectors of
 the function, then, prep_clean_labels would call
 \code{stop()} on duplicated labels.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
 a data.frame with:
@@ -37,6 +51,10 @@ Adjust labels in meta_data to be valid variable names in formulas for
 diverse r functions, such as \code{\link{glm}} or \code{\link[lme4:lmer]{lme4::lmer}}.
 }
 \details{
+Hint: The following is still true, but the functions should be capable
+of doing potentially needed fixes on-the-fly automatically, so likely
+you will not need this function any more.
+
 Currently, labels as given by \code{label_col} arguments in the most functions
 are directly used in formula, so that they become natural part of the
 outputs, but different models expect differently strict syntax for such

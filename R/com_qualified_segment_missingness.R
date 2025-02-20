@@ -2,30 +2,40 @@
 #'
 #' [Indicator]
 #'
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
+#' @inheritParams .template_function_indicator
+#'
 #' @param meta_data_segment [data.frame] Segment level metadata
 #' @param expected_observations [enum] HIERARCHY | ALL | SEGMENT. Report the
 #'                                     number of observations expected using
 #'                                     the old `PART_VAR` concept. See
 #'                                     [com_item_missingness] for an
 #'                                     explanation.
+#' @param segment_level [data.frame] alias for `meta_data_segment`
 #'
-#' @return [list] list with entries:
+#' @return A [list] with:
+#'   - `SegmentTable`: [data.frame] containing data quality checks for
+#'                     "Non-response rate" (`PCT_com_qum_nonresp`) and
+#'                     "Refusal rate" (`PCT_com_qum_refusal`) for each segment.
+#'   - `SegmentData`: a [data.frame] containing data quality checks for
+#'                    "Unexpected location" and "Unexpected proportion" per
+#'                     segment for a report
 #'
 #' @export
-com_qualified_segment_missingness <- function(study_data,
-                                              meta_data,
-                                              label_col = NULL,
+com_qualified_segment_missingness <- function(label_col = NULL,
+                                              study_data,
+                                              item_level = "item_level",
+                                              expected_observations = c("HIERARCHY",
+                                                                        "ALL",
+                                                                        "SEGMENT"),
+                                              meta_data = item_level,
+                                              meta_data_v2,
                                               meta_data_segment,
-                                        expected_observations = c("HIERARCHY",
-                                                                  "ALL",
-                                                                  "SEGMENT")) {
+                                              segment_level) {
 
   # Preparation of the input ----
+  util_maybe_load_meta_data_v2()
+
+  util_ck_arg_aliases()
 
   prep_prepare_dataframes(.replace_missings = FALSE)
 
@@ -45,8 +55,8 @@ com_qualified_segment_missingness <- function(study_data,
         meta_data_segment[[STUDY_SEGMENT]] == segment, , FALSE]
       util_stop_if_not(nrow(cur_seg) == 1) # TODO: write a proper error message; # TOOD: Don't stop, only return() in case of an error # this checks, that the segment level metadata has exactly 1 line for the current segment
       .cur_state_var <- cur_seg[[SEGMENT_PART_VARS]] # .cur_state_var is the participation status variable of the current segment
-      if (length(.cur_state_var) != 1) { # only one variable should be listed in that cell
-        util_warning("Missing or doubled %s in %s for %",
+      if (length(.cur_state_var) != 1 || is.na(.cur_state_var)) { # only one variable should be listed in that cell
+        util_warning("Missing or doubled %s in %s for %s",
                      sQuote(SEGMENT_PART_VARS),
                      sQuote("meta_data_segment"),
                      dQuote(segment),
@@ -115,8 +125,8 @@ com_qualified_segment_missingness <- function(study_data,
           # really compute stuff ----
           r <- util_table_of_vct(factor( # counts the number of "CODE_INTERPRED"/AAPOR letters for the observations, by converting the value to a factor and tabulating it
             ds1[[cur_state_var]], # the variable with the (not-yet) AAPOR codes
-            levels = cur_miss[["CODE_VALUE"]], # TODO: Add constants and streamline with prep_extract_cause_label_df and prep_add_cause_label_df # CODES used in the cur_state_var are on the missing-code table in the column CODE_VALUE
-            labels = cur_miss[["CODE_INTERPRET"]]))
+            levels = cur_miss[[CODE_VALUE]], # TODO: Streamline with prep_extract_cause_label_df and prep_add_cause_label_df # CODES used in the cur_state_var are on the missing-code table in the column CODE_VALUE
+            labels = cur_miss[[CODE_INTERPRET]]))
 
           r <- as.list(setNames(r$Freq, nm = r$Var1)) # convert the data frame with columns Var1 and Freq to a named list, names are the AAPOR codes, values are the frequencies
 
@@ -252,6 +262,10 @@ com_qualified_segment_missingness <- function(study_data,
 #    util_error("Can not compute qualified segment missingness",
 #               applicability_problem = TRUE)
 #  }
+
+  text_to_display <- util_get_hovertext("[com_qualified_segment_missingness_hover]")
+  attr(SegmentData, "description") <- text_to_display
+
 
   return(list( # return the results
     SegmentTable = SegmentTable,

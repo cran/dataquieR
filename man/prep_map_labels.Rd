@@ -6,17 +6,19 @@
 \usage{
 prep_map_labels(
   x,
-  meta_data = "item_level",
+  item_level = "item_level",
   to = LABEL,
   from = VAR_NAMES,
   ifnotfound,
-  warn_ambiguous = FALSE
+  warn_ambiguous = FALSE,
+  meta_data_v2,
+  meta_data = item_level
 )
 }
 \arguments{
 \item{x}{\link{character} variable names, character vector, see parameter from}
 
-\item{meta_data}{\link{data.frame} metadata data frame, if, as a \code{dataquieR}
+\item{item_level}{\link{data.frame} metadata data frame, if, as a \code{dataquieR}
 developer, you do not have
 \strong{item-level-metadata}, you should use
 \link{util_map_labels} instead to avoid consistency
@@ -31,6 +33,14 @@ found: it will be coerced to a list if necessary.}
 
 \item{warn_ambiguous}{\link{logical} print a warning if mapping variables from
 \code{from} to \code{to} produces ambiguous identifiers.}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
 }
 \value{
 a character vector with:

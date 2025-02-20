@@ -39,7 +39,6 @@ Other robustness_functions:
 \code{\link{util_is_numeric_in}()},
 \code{\link{util_is_valid_missing_codes}()},
 \code{\link{util_match_arg}()},
-\code{\link{util_only_NAs}()},
 \code{\link{util_stop_if_not}()},
 \code{\link{util_warn_unordered}()}
 }

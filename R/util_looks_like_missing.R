@@ -1,7 +1,8 @@
 #' Check for repetitive values using the digits 8 or 9 only
 #'
 #' Values not being finite (see [`is.finite`]) are also reported as missing
-#' codes.
+#' codes. Also, all missing codes must be composed out of the digits 8 and
+#' 9 and they must be the largest values of a variable.
 #'
 #' @param x [`numeric`] vector to test
 #' @param n_rules [`numeric`] Only outlying values can be missing
@@ -33,7 +34,8 @@ util_looks_like_missing <- function(x, n_rules = 1) {
   }
 #  x[sysmiss] <- mean(x[!sysmiss], na.rm = TRUE)
   TYPICAL_MISSINGCODES <- c(
-    99, 999, 9999, 99999, 999999, 9999999, 999999999
+    99, 999, 9999, 99999, 999999, 9999999, 999999999,
+    99990:99999, 999990:999999, 9999990:9999999, 999999990:999999999
   )
 
   .x <- abs(x)
@@ -51,13 +53,23 @@ util_looks_like_missing <- function(x, n_rules = 1) {
   hub[sysmiss] <- 0
   sigg <- util_sigmagap(x)
   sigg[sysmiss] <- 0
-
-  return(
-    sysmiss | (r &
-      (tuk +
-       ssig +
-       hub +
-       sigg >= n_rules))
+  r <- sysmiss | (r &
+                    (tuk +
+                       ssig +
+                       hub +
+                       sigg >= n_rules)
   )
-
+  # only, if there is no number > these numbers not being one of them
+  repeat {
+    done <- TRUE
+    if (any(r[!is.na(r)])) {
+      cur_min <- min(abs(x)[r], na.rm = TRUE)
+      if (any(abs(x)[!r] > cur_min, na.rm = TRUE)) {
+        r <- r & (abs(x) != cur_min)
+        done <- FALSE
+      }
+    }
+    if (done) break ;
+  }
+  return(r)
 }

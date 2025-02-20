@@ -22,11 +22,13 @@ util_sub_string_right_from_.(c("ab", "asdxy.z"))
 }
 \seealso{
 Other string_functions: 
+\code{\link{util_abbreviate_unique}()},
 \code{\link{util_filter_names_by_regexps}()},
 \code{\link{util_pretty_vector_string}()},
 \code{\link{util_set_dQuoteString}()},
 \code{\link{util_set_sQuoteString}()},
-\code{\link{util_sub_string_left_from_.}()}
+\code{\link{util_sub_string_left_from_.}()},
+\code{\link{util_translate}()}
 }
 \concept{reporting}
 \concept{string_functions}

@@ -1,19 +1,23 @@
 test_that("util_no_value_labels works", {
   skip_on_cran()
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   local({
-    meta_data <- prep_get_data_frame("meta_data")
+    meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
     expect_identical(util_no_value_labels("CENTER_0", meta_data = meta_data,
                                           label_col = LABEL, stop = FALSE,
                                           warn = FALSE), character(0))
     expect_message(util_no_value_labels("CENTER_0", meta_data = meta_data,
                                         label_col = LABEL, stop = FALSE,
-                                        warn = TRUE), character(0),
-      regexp = NULL
+                                        warn = TRUE),
+      regexp = paste("The variables .+CENTER_0.+ are neither float",
+                     "nor integer without VALUE_LABELS. Ignoring those"),
+      perl = TRUE
     )
     expect_error(util_no_value_labels("CENTER_0", meta_data = meta_data,
                                       label_col = LABEL, stop = TRUE,
-                                      warn = FALSE), character(0),
-      regexp = NULL,
+                                      warn = FALSE),
+      regexp = paste("None of the variables .+CENTER_0.+ is float or",
+                     "integer without VALUE_LABELS; aborting."),
       class = "error"
     )
     expect_identical(

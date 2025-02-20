@@ -40,7 +40,7 @@ util_par_pmap <- function(.l, .f, ...,
                                                   load.balancing = TRUE))
     }
     on.exit(suppressMessages(parallelMap::parallelStop()))
-  }
+  } # TODO: else it fails with Error in `assign(n, get(n, envir = env), envir = ee)`: cannot add bindings to a locked environment -- guess, the same problem I had in util_evaluate_calls see ''if (parallelMap::parallelGetOptions()$settings$mode == "local") {'' therein
   more_args <- list(...)
   if ("meta_data" %in% names(more_args)) {
     meta_data <- more_args[["meta_data"]]

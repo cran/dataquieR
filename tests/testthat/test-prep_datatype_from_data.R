@@ -10,8 +10,7 @@ test_that("prep_datatype_from_data works", {
     regexp = paste("The following .+resp_vars.+ are missing from",
                    "the .+study_data.+.",
                    "Won't return a type for them: .+speedx.+"),
-    perl = TRUE,
-    all = TRUE
+    perl = TRUE
   )
   expect_error(prep_datatype_from_data("xx"),
                regexp = paste("Need study data as a data",

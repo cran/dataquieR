@@ -6,18 +6,24 @@
 \usage{
 prep_get_labels(
   resp_vars,
-  meta_data = "item_level",
+  item_level = "item_level",
   label_col,
   max_len = MAX_LABEL_LEN,
   label_class = c("SHORT", "LONG"),
-  label_lang = "",
-  resp_vars_are_var_names_only = FALSE
+  label_lang = getOption("dataquieR.lang", ""),
+  resp_vars_are_var_names_only = FALSE,
+  resp_vars_match_label_col_only = FALSE,
+  meta_data = item_level,
+  meta_data_v2,
+  force_label_col = getOption("dataquieR.force_label_col",
+    dataquieR.force_label_col_default)
 )
 }
 \arguments{
 \item{resp_vars}{\link{variable list} the variable names to fetch for}
 
-\item{meta_data}{\link{meta_data} the metadata, item-level}
+\item{item_level}{\link{data.frame} the data frame that contains metadata
+attributes of study data}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
@@ -30,12 +36,33 @@ be longer}
 according to the metadata model should be returned}
 
 \item{label_lang}{\link{character} optional language suffix, if available in
-the metadata}
+the metadata. Can be controlled by the option
+\code{dataquieR.lang}.}
 
 \item{resp_vars_are_var_names_only}{\link{logical} If \code{TRUE}, do not use
 other labels than \link{VAR_NAMES}
 for finding \code{resp_vars} in
 \code{meta_data}}
+
+\item{resp_vars_match_label_col_only}{\link{logical} If \code{TRUE}, do not use
+other labels than those,
+referred by \code{label_col}
+for finding \code{resp_vars} in
+\code{meta_data}}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{force_label_col}{\link{enum} auto | FALSE | TRUE. if \code{TRUE}, always use
+labels according \code{label_col}, \code{FALSE} means
+use labels matching best the function's
+requirements, \code{auto} means \code{FALSE}, if in a
+\code{dq_report()} and \code{TRUE}, otherwise.}
 }
 \value{
 \link{character} suitable labels for each \code{resp_vars}, names of this

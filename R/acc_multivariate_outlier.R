@@ -34,6 +34,8 @@
 #'
 #' List function.
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @param variable_group [variable list] the names of the continuous
 #'                                       measurement variables building
 #'                                       a group, for that multivariate outliers
@@ -49,15 +51,13 @@
 #'                                                sampling is not deterministic.
 #' @param criteria [set] tukey | 3SD | hubert | sigmagap. a vector with
 #'                       methods to be used for detecting outliers.
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
+#' @param scale [logical] Should min-max-scaling be applied per variable?
+#' @param multivariate_outlier_check [logical] really check, pipeline use,
+#'                                              only.
 #'
 #' @return a list with:
 #'   - `SummaryTable`: [data.frame] underlying the plot
-#'   - `SummaryPlot`: [ggplot2] outlier plot
+#'   - `SummaryPlot`: [ggplot2::ggplot2] outlier plot
 #'   - `FlaggedStudyData` [data.frame] contains the original data frame with
 #'                                     the additional columns `tukey`,
 #'                                     `3SD`,
@@ -78,15 +78,42 @@
 #' [Online Documentation](
 #' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_multivariate_outlier.html
 #' )
-acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
-                                     label_col,
+acc_multivariate_outlier <- function(variable_group = NULL,
+                                     id_vars = NULL,
+                                     label_col = VAR_NAMES,
+                                     study_data,
+                                     item_level = "item_level",
                                      n_rules = 4,
                                      max_non_outliers_plot = 10000,
                                      criteria = c("tukey", "3sd",
                                                   "hubert", "sigmagap"),
-                                     study_data, meta_data) { # TODO: see univ.out to select criteria to use
+                                     meta_data = item_level,
+                                     meta_data_v2,
+                                     scale = getOption("dataquieR.acc_multivariate_outlier.scale",
+                                                       dataquieR.acc_multivariate_outlier.scale_default),
+                                     multivariate_outlier_check = TRUE) { # TODO: see univ.out to select criteria to use
 
   # preps ----------------------------------------------------------------------
+  util_expect_scalar(multivariate_outlier_check,
+                     check_type = is.logical)
+  if (.called_in_pipeline && !multivariate_outlier_check) {
+    util_error("No multivariate outliers requested",
+               intrinsic_applicability_problem = TRUE)
+  }
+
+  util_maybe_load_meta_data_v2()
+
+  if (missing(label_col)) {
+    orig_label_col <- rlang::missing_arg()
+  } else {
+    orig_label_col <- force(label_col)
+  }
+
+  label_col <- attr(prep_get_labels("",
+                                    item_level = meta_data,
+                                    label_class = "SHORT",
+                                    label_col = label_col),
+                    "label_col")
 
   #campatibility with previous name (sixsigma)
   #replace "sixsigma" (if any attributed in criteria) with 3SD
@@ -103,9 +130,6 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
                      allow_more_than_one = TRUE,
                      allow_null = TRUE,
                      check_type = is.character)
-
-
-
 
 
   if (length(unique(criteria)) < 1 ||
@@ -245,8 +269,6 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
   ds1plot$MD <- mahalanobis(ds1plot[, variable_group], colMeans(ds1plot[, variable_group,
                                                              drop = FALSE]), Sx)
 
-  # browser()
-
   # outlier identification
   # Initialize with NA
   ds1plot$tukey <- NA
@@ -344,8 +366,17 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
   ds2plot$time <- factor(ds2plot$time, levels = lev, ordered = FALSE)
   rownames(ds2plot) <- NULL
   names(ds2plot)[names(ds2plot) == "time"] <- "variable"
+  ds2plot$orig_value <- ds2plot$value
 
-  # use neamed color vector
+  # apply min-max-scaling if selected
+  if (scale) {
+    ds2plot <- ds2plot %>%
+      dplyr::group_by(variable) %>%
+      dplyr::mutate(value = (value - min(value)) / (max(value) - min(value))) %>%
+      dplyr::ungroup()
+  }
+
+  # use named color vector
   disc_cols <- c("#2166AC", "#fdd49e", "#fc8d59", "#d7301f", "#7f0000")
   names(disc_cols) <- c(0:4)
 
@@ -364,26 +395,96 @@ acc_multivariate_outlier <- function(variable_group = NULL, id_vars = NULL,
   .s <- .s[seq_along(levels(ds2plot$Rules))]
   names(.s) <- levels(ds2plot$Rules)
 
-  # browser()
-
   # PLOT
-  p <- ggplot(ds2plot, aes(x = factor(ds2plot$variable, levels = variable_group),
+  p <- ggplot(ds2plot, aes(x = factor(variable, levels = variable_group),
                            y = value, colour = Rules,
-                           group = .data[[id_vars]])) +
+                           group = .data[[id_vars]],
+                           label = .data$orig_value)) +
     geom_path(aes(alpha = Rules, linewidth = Rules), position = "identity") +
     scale_color_manual(values = disc_cols) +
     geom_point(aes(alpha = Rules)) +
     scale_alpha_manual(values = .a) +
-    discrete_scale("linewidth", # deprecated sicne ggplot 3.6.0: "outlier_rules_scale",
+    discrete_scale("linewidth", # deprecated since ggplot 3.6.0: "outlier_rules_scale",
                             palette = function(n) {
                               c(0.05, 0.2, 0.3, 0.4, 0.5)
                             }) +
     xlab("") + ylab("") +
     theme_minimal()
 
+  if (scale) {
+    p <- p +
+      scale_y_continuous(breaks = c(0, 1), labels = c("min", "max"))
+  }
+
+  # Information for sizing
+  number_of_vars <- length(unique(ds2plot$variable))
+  min_value <- min(ds2plot$value, na.rm = TRUE)
+  max_value <- max(ds2plot$value, na.rm = TRUE)
+  range <- max_value - min_value
+  no_char_y <- nchar(max_value)
+
+  #Sizing information - a default
+  attr(p, "sizing_hints") <- list(
+    figure_type_id = "multivar_plot",
+    number_of_vars = number_of_vars,
+    range = range,
+    no_char_y = no_char_y
+  )
+  rm(min_value, max_value, range, number_of_vars, no_char_y)
+
+
+  SummaryData <- st1
+
+  # # fix Variables column in SummaryData
+  # vs <- lapply(util_parse_assignments(SummaryData$Variables,
+  #                               multi_variate_text = TRUE),
+  #        prep_get_labels,
+  #        item_level = meta_data,
+  #        label_col = label_col,
+  #        label_class = "SHORT",
+  #        resp_vars_match_label_col_only = TRUE
+  # )
+  # SummaryData$Variables <-
+  #   lapply(vs, paste0, collapse = sprintf(" %s ", SPLIT_CHAR))
+
+  #############################################
+
+  if (!missing(orig_label_col)) { # map back SummaryTable to requested label_col and tables to suitable table labels
+    for (slot in c("SummaryTable", "SummaryData")) {
+      tb <- get(slot)
+      vs <- lapply(util_parse_assignments(tb$Variables,
+                                          multi_variate_text = TRUE),
+                   function(x) {
+                     prep_map_labels(
+                       x = x,
+                       item_level = meta_data,
+                       from = label_col,
+                       to  = orig_label_col,
+                       ifnotfound = x,
+                       warn_ambiguous = FALSE
+                     )
+                   }
+      )
+      tb$Variables <-
+        lapply(vs, paste0, collapse = sprintf(" %s ", SPLIT_CHAR))
+
+      tb[["Variables"]] <-
+        prep_map_labels(x = tb[["Variables"]],
+                        item_level = meta_data,
+                        to  = orig_label_col,
+                        from = label_col,
+                        ifnotfound = tb[["Variables"]],
+                        warn_ambiguous = FALSE)
+      assign(slot, tb)
+    }
+  }
+
+  ##########################################
+
+
   return(list(FlaggedStudyData = ds1plot,
               SummaryTable = SummaryTable,  # TODO: VariableGroupTable, maybe other functions, too?
-              SummaryData = st1,  # TODO: VariableGroupTable, maybe other functions, too?
+              SummaryData = SummaryData,  # TODO: VariableGroupTable, maybe other functions, too?
               SummaryPlot =
                 util_set_size(p,
                               width_em = 25 +

@@ -7,7 +7,7 @@ test_that("util_plot_figure_plotly works", {
   result <- util_plot_figure_plotly(p1)
 
   # Check that the result is a plotly object
-  expect_is(result, "plotly")
+  expect_s3_class(result, "plotly")
 
   # Create a test patchwork
   p2 <- ggplot(mtcars) +
@@ -17,5 +17,5 @@ test_that("util_plot_figure_plotly works", {
   result_2 <- util_plot_figure_plotly(p3)
 
   # Check that the result is an HTML plot tag
-  expect_is(result_2, "shiny.tag")
+  expect_s3_class(result_2, "shiny.tag")
 })

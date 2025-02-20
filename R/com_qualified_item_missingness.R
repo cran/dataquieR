@@ -2,19 +2,23 @@
 #'
 #' [Indicator]
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @param resp_vars [variable list] the name of the measurement variables
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
 #' @param expected_observations [enum] HIERARCHY | ALL | SEGMENT. Report the
 #'                                     number of observations expected using
 #'                                     the old `PART_VAR` concept. See
 #'                                     [com_item_missingness] for an
 #'                                     explanation.
 #'
-#' @return [list] list with entries:
+#' @return A [list] with:
+#'   - `SummaryTable`: [data.frame] containing data quality checks for
+#'                     "Non-response rate" (`PCT_com_qum_nonresp`) and
+#'                     "Refusal rate" (`PCT_com_qum_refusal`) for each response
+#'                     variable in `resp_vars`.
+#'   - `SummaryData`: a [data.frame] containing data quality checks for
+#'                    “Non-response rate” and "Refusal rate"
+#'                    for a report
 #'
 #' @export
 #'
@@ -41,7 +45,7 @@
 #' resp_vars <- sample(colnames(ship), ceiling(ncol(ship) / 20), FALSE)
 #' mistab <- prep_get_data_frame("missing_matchtable1")
 #' valid_replacement_codes <-
-#'   mistab[mistab$CODE_INTERPRET != "I", "CODE_VALUE",
+#'   mistab[mistab$CODE_INTERPRET != "I", CODE_VALUE,
 #'     drop =
 #'     TRUE] # sample only replacement codes on item level. I uses the actual
 #'           # values
@@ -63,16 +67,21 @@
 #' meta_data <- prep_get_data_frame("item_level")
 #' label <- LABEL
 #' }
-com_qualified_item_missingness <-    function(resp_vars, study_data,
-                                              meta_data,
+com_qualified_item_missingness <-    function(resp_vars,
+                                              study_data,
                                               label_col = NULL,
+                                              item_level = "item_level",
                                               expected_observations = c("HIERARCHY",
                                                                         "ALL",
-                                                                        "SEGMENT")) {
+                                                                        "SEGMENT"),
+                                              meta_data = item_level,
+                                              meta_data_v2) {
   # TODO: Allow also here dates values as missing codes
   # TODO (for the example): Add also missing table assignments to the synthetic cases with PART_VAR working following the old implementation
 
   # Preparation of the input ----
+
+  util_maybe_load_meta_data_v2()
 
   prep_prepare_dataframes(.replace_missings = FALSE)
 
@@ -142,8 +151,8 @@ com_qualified_item_missingness <-    function(resp_vars, study_data,
             util_filter_missing_list_table_for_rv(cur_miss, rv, rv_vn)
 
           # really compute stuff ----
-          code_for_P <- head(cur_miss[cur_miss[["CODE_INTERPRET"]] == "I",
-                                 "CODE_VALUE", TRUE], 1) # get the first code for I to replace the real measurements by this code
+          code_for_P <- head(cur_miss[cur_miss[[CODE_INTERPRET]] == "I",
+                                 CODE_VALUE, TRUE], 1) # get the first code for I to replace the real measurements by this code
           if (length(code_for_P) == 0) {
             code_for_P <- util_find_free_missing_code(cur_miss$CODE_VALUE)
              P_df <- data.frame(
@@ -154,8 +163,8 @@ com_qualified_item_missingness <-    function(resp_vars, study_data,
              )
              cur_miss <- util_rbind(cur_miss,
                                P_df)
-             code_for_P <- head(cur_miss[cur_miss[["CODE_INTERPRET"]] == "I",
-                                         "CODE_VALUE", TRUE], 1) # get the first code for I to replace the real measurements by this code
+             code_for_P <- head(cur_miss[cur_miss[[CODE_INTERPRET]] == "I",
+                                         CODE_VALUE, TRUE], 1) # get the first code for I to replace the real measurements by this code
           }
           if (length(code_for_P) != 1) {
             # nocov start: Cannot be reached, because if there would've been no I code, we would have one after the last block. If we had > 1, we would have chosen the first one already, wlog
@@ -172,15 +181,15 @@ com_qualified_item_missingness <-    function(resp_vars, study_data,
 
           rx <- ds1[[rv]]
 
-          rx[!is.na(rx) & !(rx %in% cur_miss[cur_miss[["CODE_INTERPRET"]] != "I",
-                                             "CODE_VALUE", TRUE])] <- code_for_P
+          rx[!is.na(rx) & !(rx %in% cur_miss[cur_miss[[CODE_INTERPRET]] != "I",
+                                             CODE_VALUE, TRUE])] <- code_for_P
 
           rx <- suppressWarnings(as.numeric(rx)) # TODO: Handle dates, handle errors
 
           r <- util_table_of_vct(factor( # counts the number of "CODE_INTERPRED"/AAPOR letters for the observations, by converting the value to a factor and tabulating it
             rx, # the (not-yet) AAPOR codes
-            levels = cur_miss[["CODE_VALUE"]], # TODO: Add constants and streamline with prep_extract_cause_label_df and prep_add_cause_label_df # CODES used in the rv are on the missing-code table in the column CODE_VALUE
-            labels = cur_miss[["CODE_INTERPRET"]]))
+            levels = cur_miss[[CODE_VALUE]], # TODO: Streamline with prep_extract_cause_label_df and prep_add_cause_label_df # CODES used in the rv are on the missing-code table in the column CODE_VALUE
+            labels = cur_miss[[CODE_INTERPRET]]))
 
           r <- as.list(setNames(r$Freq, nm = r$Var1)) # convert the data frame with columns Var1 and Freq to a named list, names are the AAPOR codes, values are the frequencies
 
@@ -336,6 +345,9 @@ com_qualified_item_missingness <-    function(resp_vars, study_data,
            })
 
   # SummaryTable$GRADING <- SummaryTable[["PCT_com_qum_nonresp"]] > 10 # only to avoid empty output in issue matrix, can be removed, now.
+
+  text_to_display <- util_get_hovertext("[com_qualified_item_missingness_hover]")
+  attr(SummaryData, "description") <- text_to_display
 
   return(list( # return the results
     SummaryTable = SummaryTable,

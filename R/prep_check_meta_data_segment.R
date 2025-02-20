@@ -7,7 +7,12 @@
 #'
 #' @param meta_data_segment [data.frame] data frame or path/url of a metadata
 #'                                       sheet for the segment level
-#'
+#' @param meta_data_v2 [character] path to workbook like metadata file, see
+#'                                 [`prep_load_workbook_like_file`] for details.
+#'                                 **ALL LOADED DATAFRAMES WILL BE PURGED**,
+#'                                 using [`prep_purge_data_frame_cache`],
+#'                                 if you specify `meta_data_v2`.
+#' @param segment_level [data.frame] alias for `meta_data_segment`
 #' @return standardized metadata sheet as data frame
 #' @export
 #'
@@ -23,7 +28,13 @@
 #' mds1$SEGMENT_UNIQUE_ROWS[[2]] <- "xxx" # not convertible
 #' # print(prep_check_meta_data_segment(mds1)) # fail
 #' }
-prep_check_meta_data_segment <- function(meta_data_segment = "segment_level") {
+prep_check_meta_data_segment <- function(meta_data_segment = "segment_level",
+                                         meta_data_v2,
+                                         segment_level
+                                         ) {
+
+  util_maybe_load_meta_data_v2()
+  util_ck_arg_aliases()
   util_expect_data_frame(meta_data_segment)
 
   if (!(SEGMENT_RECORD_COUNT %in% colnames(meta_data_segment))) {
@@ -33,8 +44,8 @@ prep_check_meta_data_segment <- function(meta_data_segment = "segment_level") {
   if (!(SEGMENT_ID_REF_TABLE %in% colnames(meta_data_segment))) {
     if ("SEGMENT_ID_TABLE" %in% colnames(meta_data_segment)) {
       util_message("Did not find %s in metadata, but %s, renaming it...",
-                   SEGMENT_ID_REF_TABLE,
-                   SEGMENT_ID_TABLE,
+                   dQuote("SEGMENT_ID_REF_TABLE"),
+                   dQuote("SEGMENT_ID_TABLE"),
                    applicability_problem = TRUE,
                    intrinsic_applicability_problem = FALSE)
       colnames(meta_data_segment)[colnames(meta_data_segment) ==
@@ -61,8 +72,22 @@ prep_check_meta_data_segment <- function(meta_data_segment = "segment_level") {
     meta_data_segment$SEGMENT_RECORD_CHECK <- rep(NA,
                                                   nrow(meta_data_segment))
   }
+  if (!(SEGMENT_UNIQUE_ID %in% colnames(meta_data_segment))) {
+    meta_data_segment[[SEGMENT_UNIQUE_ID]] <- rep(1,
+                                                    nrow(meta_data_segment))
+  }
 
   r <- util_expect_data_frame(
+    custom_errors = list(
+      SEGMENT_ID_VARS = "Column DF_ID_VARS must be character",
+      SEGMENT_PART_VARS = "Column SEGMENT_PART_VARS must be character",
+      STUDY_SEGMENT = "Column STUDY_SEGMENT must be character",
+      SEGMENT_RECORD_COUNT = "Column SEGMENT_RECORD_COUNT must be integer",
+      SEGMENT_ID_REF_TABLE = "Column SEGMENT_ID_REF_TABLE must be character",
+      SEGMENT_RECORD_CHECK = "Column SEGMENT_RECORD_CHECK must be subset, superset or exact",
+      SEGMENT_UNIQUE_ROWS = "Column SEGMENT_UNIQUE_ROWS must be true, false, or no_id",
+      SEGMENT_UNIQUE_ID = "Column SEGMENT_UNIQUE_ID must be integer"
+    ),
     meta_data_segment,
     list(
       SEGMENT_ID_VARS = is.character,
@@ -71,9 +96,13 @@ prep_check_meta_data_segment <- function(meta_data_segment = "segment_level") {
       SEGMENT_RECORD_COUNT = util_all_is_integer,
       SEGMENT_ID_REF_TABLE = is.character,
       SEGMENT_RECORD_CHECK = function(x) {
-        all(util_empty(x) | x %in% c("subset", "exact"))
+        all(util_empty(x) | x %in% c("superset", "subset", "exact"))
       },
-      SEGMENT_UNIQUE_ROWS = is.logical
+      SEGMENT_UNIQUE_ROWS = function(x) {
+        all(util_empty(x) | tolower(trimws(x)) %in%
+              c("f", "t", "true", "false", "no_id"))
+      },
+      SEGMENT_UNIQUE_ID = util_all_is_integer
     ),
     list(
       SEGMENT_ID_VARS = as.character, # TODO: Write utility functions for converting data types with proper warnings
@@ -84,10 +113,11 @@ prep_check_meta_data_segment <- function(meta_data_segment = "segment_level") {
       SEGMENT_RECORD_CHECK = function(x) {
         r <-
           factor(tolower(trimws(as.character(x))),
-                 levels = c(c("subset", "exact")))
+                 levels = c("superset", "subset", "exact"))
         levels(r)[as.numeric(r)]
       },
-      SEGMENT_UNIQUE_ROWS = as.logical
+      SEGMENT_UNIQUE_ROWS = as.character,
+      SEGMENT_UNIQUE_ID = as.integer
     )
   )
 

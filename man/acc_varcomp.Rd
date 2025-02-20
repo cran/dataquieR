@@ -2,119 +2,99 @@
 % Please edit documentation in R/acc_varcomp.R
 \name{acc_varcomp}
 \alias{acc_varcomp}
-\title{Estimates variance components}
+\title{Utility function to compute model-based ICC depending on the (statistical) data type}
 \usage{
 acc_varcomp(
   resp_vars = NULL,
-  group_vars,
+  group_vars = NULL,
   co_vars = NULL,
-  min_obs_in_subgroup = 30,
-  min_subgroups = 5,
-  label_col = NULL,
-  threshold_value = 0.05,
   study_data,
-  meta_data
+  label_col,
+  item_level = "item_level",
+  min_obs_in_subgroup = 10,
+  min_subgroups = 5,
+  cut_off_linear_model_for_ord = 10,
+  meta_data = item_level,
+  meta_data_v2
 )
 }
 \arguments{
-\item{resp_vars}{\link{variable list} the names of the continuous measurement
-variables}
+\item{resp_vars}{\link{variable} the name of the measurement variable}
 
-\item{group_vars}{\link{variable list} the names of the resp. observer, device or
-reader variables}
+\item{group_vars}{\link{variable} the name of the examiner, device or
+reader variable}
 
-\item{co_vars}{\link{variable list} a vector of covariables, e.g. age and sex for
-adjustment}
+\item{co_vars}{\link{variable list} a vector of covariables, e.g. age and sex,
+for adjustment}
 
-\item{min_obs_in_subgroup}{\link{integer} from=0. optional argument if a
-"group_var" is used. This argument
-specifies the minimum no. of observations
-that is required to include a subgroup
-(level) of the "group_var" in the analysis.
-Subgroups with fewer observations are
-excluded. The default is 30.}
-
-\item{min_subgroups}{\link{integer} from=0. optional argument if a "group_var" is
-used. This argument specifies the
-minimum no. of subgroups (levels)
-included "group_var". If the variable
-defined in "group_var" has fewer
-subgroups it is not used for analysis.
-The default is 5.}
+\item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
 
-\item{threshold_value}{\link{numeric} from=0 to=1. a numerical value ranging
-from 0-1}
-
-\item{study_data}{\link{data.frame} the data frame that contains the measurements}
-
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
+
+\item{min_obs_in_subgroup}{\link{integer} from=0. This optional argument specifies
+the minimum number of observations that is
+required to include a subgroup (level) of the
+\code{group_var} in the analysis. Subgroups with less
+observations are excluded.}
+
+\item{min_subgroups}{\link{integer} from=0. This optional argument specifies
+the minimum number of subgroups (level) of the
+\code{group_var} that is required to run the
+analysis. If there are less subgroups, the
+analysis is not conducted.}
+
+\item{cut_off_linear_model_for_ord}{\link{integer} from=0. This optional argument
+specifies the minimum number of observations for
+individual levels of an ordinal outcome
+(\code{resp_var}) that is required to run a linear
+mixed effects model instead of a mixed effects
+ordered regression (i.e., a cut-off value above
+which linear models are considered a good
+approximation). The argument can be set to
+\code{NULL} if ordered regression models are
+preferred for ordinal data in any case.}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
 }
 \value{
-a list with:
-\itemize{
-\item \code{SummaryTable}: data frame with ICCs per \code{rvs}
-\item \code{SummaryData}: data frame with ICCs per \code{rvs}
-\item \code{ScalarValue_max_icc}: maximum variance contribution value by group_vars
-\item \code{ScalarValue_argmax_icc}: variable with maximum variance contribution by
-group_vars
-}
+The function returns two data frames, 'SummaryTable' and
+'SummaryData', that differ only in the names of the columns.
 }
 \description{
-Variance based models and intraclass correlations (ICC) are approaches to
-examine the impact of so-called process variables on the measurements. This
-implementation is model-based.
-
-\strong{NB:} The term ICC is frequently used to describe the agreement between
-different observers, examiners or even devices. In respective settings a good
-agreement is pursued. ICC-values can vary between \verb{[-1;1]} and an ICC close
-to 1 is desired (Koo and Li 2016, Müller and Büttner 1994).
-
-However, in multi-level analysis the ICC is interpreted differently. Please
-see Snijders et al. (Sniders and Bosker 1999). In this context the proportion
-of variance explained by respective group levels indicate an influence of (at
-least one) level of the respective group_vars. An ICC close to 0 is desired.
+This function is still under construction. It is designed to run for any
+statistical data type as follows:
+\itemize{
+\item Variables with only two distinct values will be modeled by mixed effects
+logistic regression.
+\item Nominal variables will be transformed to binary variables. This can be
+user-specified using the metadata columns \code{RECODE_CASES} and/or
+\code{RECODE_CONTROL}. Otherwise, the most frequent category will be assigned
+to cases and the remaining categories to control. As for other binary
+variables, the ICC will be computed using a mixed effects logistic
+regression.
+\item Ordinal variables will be analyzed by linear mixed effects models, if
+every level of the variable has at least as many observations as
+specified in the argument \code{cut_off_linear_model_for_ord}. Otherwise, the
+data will be modeled by a mixed effects ordered regression, if the
+package \code{ordinal} is available.
+\item Metric variables with integer values are analyzed by linear mixed
+effects models.
+\item For variables with data type \code{float}, the existing implementation
+\code{acc_varcomp} is called, which also uses linear mixed effects models.
+}
 
 \link{Indicator}
 }
-\section{ALGORITHM OF THIS IMPLEMENTATION:}{
-\itemize{
-\item This implementation is yet restricted to data of type float.
-\item Missing codes are removed from resp_vars (if defined in the metadata)
-\item Deviations from limits, as defined in the metadata, are removed
-\item A linear mixed-effects model is estimated for resp_vars using co_vars and
-group_vars for adjustment.
-\item An output data frame is generated for group_vars indicating the ICC.
-}
-}
-
-\examples{
-\dontrun{
-# runs spuriously slow on rhub
-load(system.file("extdata/study_data.RData", package = "dataquieR"))
-load(system.file("extdata/meta_data.RData", package = "dataquieR"))
-co_vars <- c("SEX_0", "AGE_0")
-min_obs_in_subgroup <- 30
-min_subgroups <- 3
-label_col <- LABEL
-rvs <- c("DBP_0", "SBP_0")
-group_vars <- prep_map_labels(rvs, meta_data = meta_data, from = label_col,
-  to = VAR_NAMES)
-group_vars <- prep_map_labels(group_vars, meta_data = meta_data,
-  to = GROUP_VAR_OBSERVER)
-group_vars <- prep_map_labels(group_vars, meta_data = meta_data)
-acc_varcomp(
-  resp_vars = rvs, group_vars = group_vars, co_vars = co_vars,
-  min_obs_in_subgroup = min_obs_in_subgroup,
-  min_subgroups = min_subgroups, label_col = label_col,
-  study_data = study_data, meta_data = meta_data
-)
-}
-
-}
-\seealso{
-\href{https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_varcomp.html}{Online Documentation}
+\details{
+Not yet described
 }

@@ -44,20 +44,20 @@ test_that("A_less_than_B_vv works", {
                      A = "age_at_followup",
                      B = "age_at_baseline")
     ,  c(0, 0, 0, 0, 0, 0, 0, 0))
-  expect_warning(A_less_than_B_vv(study_data = study_data,
+  suppressWarnings(expect_warning(A_less_than_B_vv(study_data = study_data,
                                   A = "sex_at_baseline",
                                   B = "sex_at_followup"),
-                 regexp = "Could not convert .* to numeric values")
-  expect_warning(A_less_than_B_vv(study_data = study_data,
+                 regexp = "Could not convert .* to numeric values"))
+  suppressWarnings(expect_warning(A_less_than_B_vv(study_data = study_data,
                    A = "sex_at_baseline",
                    B = "sex_at_followup"),
                regexp =
-                      "Don't know, how to compare values of .+? (.+factor.+)")
-  expect_equal(A_less_than_B_vv(study_data = study_data,
+                      "Don't know, how to compare values of .+? (.+factor.+)"))
+  suppressWarnings(expect_equal(A_less_than_B_vv(study_data = study_data,
                    A = "income_class_fu",
                    B = "income_class_bl"),
-               c(0, 0, 0, 0, 0, 1, 1, 1))
-  expect_warning(
+               c(0, 0, 0, 0, 0, 1, 1, 1)))
+  suppressWarnings(expect_warning(
     expect_equal(A_less_than_B_vv(study_data = study_data,
                    A = "worst_grade",
                    B = "best_grade"),
@@ -65,7 +65,7 @@ test_that("A_less_than_B_vv works", {
     regexp =
       paste0("Don't know, how to compare values of .+worst_grade.+",
              "(.+factor.+, .+integer.+)", collapse = " ")
-  )
+  ))
 })
 
 test_that("A_less_equal_B_vv works", {
@@ -75,23 +75,23 @@ test_that("A_less_equal_B_vv works", {
                      A = "age_at_followup",
                      B = "age_at_baseline")
     ,  c(0, 0, 0, 0, 0, 0, 0, 0))
-  expect_warning(
+  suppressWarnings(expect_warning(
     A_less_equal_B_vv(study_data = study_data,
                                    A = "sex_at_baseline",
                                    B = "sex_at_followup"),
-    regexp = "Could not convert .* to numeric values")
+    regexp = "Could not convert .* to numeric values"))
 
-  expect_warning(
+  suppressWarnings(expect_warning(
     A_less_equal_B_vv(study_data = study_data,
                                   A = "sex_at_baseline",
                                   B = "sex_at_followup"),
     regexp = "Don't know, how to compare values of .+? (.+factor.+)"
-  )
-  expect_equal(A_less_equal_B_vv(study_data = study_data,
+  ))
+  suppressWarnings(expect_equal(A_less_equal_B_vv(study_data = study_data,
                                 A = "income_class_fu",
                                 B = "income_class_bl"),
-               c(0, 0, 0, 1, 0, 1, 1, 1))
-  expect_warning(
+               c(0, 0, 0, 1, 0, 1, 1, 1)))
+  suppressWarnings(expect_warning(
     expect_equal(A_less_equal_B_vv(study_data = study_data,
                                   A = "worst_grade",
                                   B = "best_grade"),
@@ -99,7 +99,7 @@ test_that("A_less_equal_B_vv works", {
     regexp =
       paste0("Don't know, how to compare values of .+worst_grade.+",
              "(.+factor.+, .+integer.+)", collapse = " ")
-  )
+  ))
 })
 
 
@@ -110,23 +110,23 @@ test_that("A_greater_than_B_vv works", {
                       A = "age_at_followup",
                       B = "age_at_baseline")
     ,  c(1, 1, 1, 1, 1, 1, 1, 1))
-  expect_warning(
+  suppressWarnings(expect_warning(
     A_greater_than_B_vv(study_data = study_data,
                                      A = "sex_at_baseline",
                                      B = "sex_at_followup"),
-    regexp = "Could not convert .* to numeric values")
+    regexp = "Could not convert .* to numeric values"))
 
-  expect_warning(
+  suppressWarnings(expect_warning(
     A_greater_than_B_vv(study_data = study_data,
                                    A = "sex_at_baseline",
                                    B = "sex_at_followup"),
     regexp = "Don't know, how to compare values of .+? (.+factor.+)"
-  )
+  ))
   expect_equal(A_greater_than_B_vv(study_data = study_data,
                                  A = "income_class_fu",
                                  B = "income_class_bl"),
                c(1, 1, 1, 0, 1, 0, 0, 0))
-  expect_warning(
+  suppressWarnings(expect_warning(
     expect_equal(A_greater_than_B_vv(study_data = study_data,
                                    A = "worst_grade",
                                    B = "best_grade"),
@@ -134,7 +134,7 @@ test_that("A_greater_than_B_vv works", {
     regexp =
       paste("Don't know, how to compare values of .+worst_grade.+",
              "(.+factor.+, .+integer.+)", collapse = " ")
-  )
+  ))
 })
 
 
@@ -145,23 +145,23 @@ test_that("A_greater_equal_B_vv works", {
                      A = "age_at_followup",
                      B = "age_at_baseline")
     ,  c(1, 1, 1, 1, 1, 1, 1, 1))
-  expect_warning(
+  suppressWarnings(expect_warning(
     A_greater_equal_B_vv(study_data = study_data,
                                       A = "sex_at_baseline",
                                       B = "sex_at_followup"),
-    regexp = "Could not convert .* to numeric values")
+    regexp = "Could not convert .* to numeric values"))
 
-  expect_warning(
+  suppressWarnings(expect_warning(
     A_greater_equal_B_vv(study_data = study_data,
                                   A = "sex_at_baseline",
                                   B = "sex_at_followup"),
     regexp = "Don't know, how to compare values of .+? (.+factor.+)"
-  )
+  ))
   expect_equal(A_greater_equal_B_vv(study_data = study_data,
                                 A = "income_class_fu",
                                 B = "income_class_bl"),
                c(1, 1, 1, 1, 1, 0, 0, 0))
-  expect_warning(
+  suppressWarnings(expect_warning(
     expect_equal(A_greater_equal_B_vv(study_data = study_data,
                                   A = "worst_grade",
                                   B = "best_grade"),
@@ -169,7 +169,7 @@ test_that("A_greater_equal_B_vv works", {
     regexp =
       paste0("Don't know, how to compare values of .+worst_grade.+",
              "(.+factor.+, .+integer.+)", collapse = " ")
-  )
+  ))
 })
 
 test_that("A_present_not_B_vv works", {

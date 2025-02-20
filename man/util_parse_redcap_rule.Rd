@@ -89,7 +89,6 @@ cars, util_get_redcap_rule_env())
 \seealso{
 Other parser_functions: 
 \code{\link{util_interpret_limits}()},
-\code{\link{util_interpret_range}()},
 \code{\link{util_parse_assignments}()},
 \code{\link{util_parse_interval}()}
 }

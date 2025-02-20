@@ -9,6 +9,7 @@
 \alias{SCALE_LEVEL}
 \alias{UNIT}
 \alias{VALUE_LABELS}
+\alias{VALUE_LABEL_TABLE}
 \alias{MISSING_LIST}
 \alias{JUMP_LIST}
 \alias{MISSING_LIST_TABLE}
@@ -54,11 +55,15 @@
 \alias{PROPORTION_LIMIT_UP}
 \alias{INCL_PROPORTION_LIMIT_LOW}
 \alias{INCL_PROPORTION_LIMIT_UP}
-\alias{RECODE}
+\alias{RECODE_CASES}
+\alias{RECODE_CONTROL}
 \alias{GRADING_RULESET}
+\alias{STANDARDIZED_VOCABULARY_TABLE}
+\alias{DATAFRAMES}
+\alias{ENCODING}
 \title{Well-known metadata column names, names of metadata columns}
 \format{
-An object of class \code{list} of length 53.
+An object of class \code{list} of length 58.
 }
 \usage{
 WELL_KNOWN_META_VARIABLE_NAMES
@@ -79,7 +84,64 @@ see \link{UNITS}.
 all entries of this list will be mapped to the package's exported NAMESPACE
 environment directly, i.e. they are available directly by their names too:
 \itemize{
-\item \link{VAR_NAMES},  - \link{LABEL},  - \link{DATA_TYPE},  - \link{SCALE_LEVEL},  - \link{UNIT},  - \link{VALUE_LABELS},  - \link{MISSING_LIST},  - \link{JUMP_LIST},  - \link{MISSING_LIST_TABLE},  - \link{HARD_LIMITS},  - \link{DETECTION_LIMITS},  - \link{SOFT_LIMITS},  - \link{CONTRADICTIONS},  - \link{DISTRIBUTION},  - \link{DECIMALS},  - \link{DATA_ENTRY_TYPE},  - \link{END_DIGIT_CHECK},  - \link{CO_VARS},  - \link{GROUP_VAR_OBSERVER},  - \link{GROUP_VAR_DEVICE},  - \link{KEY_OBSERVER},  - \link{KEY_DEVICE},  - \link{TIME_VAR},  - \link{KEY_DATETIME},  - \link{PART_VAR},  - \link{STUDY_SEGMENT},  - \link{KEY_STUDY_SEGMENT},  - \link{VARIABLE_ROLE},  - \link{VARIABLE_ORDER},  - \link{LONG_LABEL},  - \link{SOFT_LIMIT_LOW},  - \link{SOFT_LIMIT_UP},  - \link{HARD_LIMIT_LOW},  - \link{HARD_LIMIT_UP},  - \link{DETECTION_LIMIT_LOW},  - \link{DETECTION_LIMIT_UP},  - \link{INCL_SOFT_LIMIT_LOW},  - \link{INCL_SOFT_LIMIT_UP},  - \link{INCL_HARD_LIMIT_LOW},  - \link{INCL_HARD_LIMIT_UP},  - \link{LOCATION_RANGE},  - \link{LOCATION_METRIC},  - \link{PROPORTION_RANGE},  - \link{LOCATION_LIMIT_LOW},  - \link{LOCATION_LIMIT_UP},  - \link{INCL_LOCATION_LIMIT_LOW},  - \link{INCL_LOCATION_LIMIT_UP},  - \link{PROPORTION_LIMIT_LOW},  - \link{PROPORTION_LIMIT_UP},  - \link{INCL_PROPORTION_LIMIT_LOW},  - \link{INCL_PROPORTION_LIMIT_UP},  - \link{RECODE},  - \link{GRADING_RULESET}
+\item \link{VAR_NAMES}
+\item \link{LABEL}
+\item \link{DATA_TYPE}
+\item \link{SCALE_LEVEL}
+\item \link{UNIT}
+\item \link{VALUE_LABELS}
+\item \link{VALUE_LABEL_TABLE}
+\item \link{MISSING_LIST}
+\item \link{JUMP_LIST}
+\item \link{MISSING_LIST_TABLE}
+\item \link{HARD_LIMITS}
+\item \link{DETECTION_LIMITS}
+\item \link{SOFT_LIMITS}
+\item \link{CONTRADICTIONS}
+\item \link{DISTRIBUTION}
+\item \link{DECIMALS}
+\item \link{DATA_ENTRY_TYPE}
+\item \link{END_DIGIT_CHECK}
+\item \link{CO_VARS}
+\item \link{GROUP_VAR_OBSERVER}
+\item \link{GROUP_VAR_DEVICE}
+\item \link{KEY_OBSERVER}
+\item \link{KEY_DEVICE}
+\item \link{TIME_VAR}
+\item \link{KEY_DATETIME}
+\item \link{PART_VAR}
+\item \link{STUDY_SEGMENT}
+\item \link{KEY_STUDY_SEGMENT}
+\item \link{VARIABLE_ROLE}
+\item \link{VARIABLE_ORDER}
+\item \link{LONG_LABEL}
+\item \link{SOFT_LIMIT_LOW}
+\item \link{SOFT_LIMIT_UP}
+\item \link{HARD_LIMIT_LOW}
+\item \link{HARD_LIMIT_UP}
+\item \link{DETECTION_LIMIT_LOW}
+\item \link{DETECTION_LIMIT_UP}
+\item \link{INCL_SOFT_LIMIT_LOW}
+\item \link{INCL_SOFT_LIMIT_UP}
+\item \link{INCL_HARD_LIMIT_LOW}
+\item \link{INCL_HARD_LIMIT_UP}
+\item \link{LOCATION_RANGE}
+\item \link{LOCATION_METRIC}
+\item \link{PROPORTION_RANGE}
+\item \link{LOCATION_LIMIT_LOW}
+\item \link{LOCATION_LIMIT_UP}
+\item \link{INCL_LOCATION_LIMIT_LOW}
+\item \link{INCL_LOCATION_LIMIT_UP}
+\item \link{PROPORTION_LIMIT_LOW}
+\item \link{PROPORTION_LIMIT_UP}
+\item \link{INCL_PROPORTION_LIMIT_LOW}
+\item \link{INCL_PROPORTION_LIMIT_UP}
+\item \link{RECODE_CASES}
+\item \link{RECODE_CONTROL}
+\item \link{GRADING_RULESET}
+\item \link{STANDARDIZED_VOCABULARY_TABLE}
+\item \link{DATAFRAMES}
+\item \link{ENCODING}
 }
 }
 \examples{

@@ -28,16 +28,17 @@
 #'
 #' @export
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @param resp_vars [variable list] the name of the measurement variables
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
 #' @param limits [enum] HARD_LIMITS | SOFT_LIMITS | DETECTION_LIMITS. what
 #'                                             limits from metadata to check for
 #' @param return_flagged_study_data [logical] return `FlaggedStudyData` in the
 #'                                            result
+#' @param return_limit_categorical [logical] if TRUE return limit deviations also
+#'                                           for categorical variables
+#' @param show_obs [logical] Should (selected) individual observations be marked
+#'                           in the figure for continuous variables?
 #'
 #' @inheritParams acc_distributions
 #'
@@ -53,9 +54,11 @@
 #'                                   checked whether the value is below or above
 #'                                   the limits. Optional, see
 #'                                   `return_flagged_study_data`.
-#'   - `SummaryTable` [data.frame] summarizes limit deviations for each
+#'   - `SummaryTable` [data.frame] summarizing limit deviations for each
 #'                                 variable.
-#'   - `SummaryPlotList` [list] of [ggplot]s The plots for each variable are
+#'   - `SummaryData` [data.frame] summarizing limit deviations for each
+#'                                 variable for a report.
+#'   - `SummaryPlotList` [list] of [ggplot2::ggplot]s The plots for each variable are
 #'                            either a histogram (continuous) or a
 #'                            barplot (discrete).
 #'   - `ReportSummaryTable`: heatmap-like data frame about limit violations
@@ -64,10 +67,17 @@
 #' - [Online Documentation](
 #' https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_limit_deviations.html
 #' )
-con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
-                                 meta_data, limits = NULL,
+con_limit_deviations <- function(resp_vars = NULL,
+                                 study_data,
+                                 label_col,
+                                 item_level = "item_level",
+                                 limits = NULL,
                                  flip_mode = "noflip",
-                                 return_flagged_study_data = FALSE) {
+                                 return_flagged_study_data = FALSE,
+                                 return_limit_categorical = TRUE,
+                                 meta_data = item_level,
+                                 meta_data_v2,
+                                 show_obs = TRUE) {
   # make R CMD check happy
   Limits <- NULL
   Number <- NULL
@@ -78,9 +88,12 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
 
   # preps ----------------------------------------------------------------------
   # map metadata to study data
+  util_maybe_load_meta_data_v2()
+
   prep_prepare_dataframes()
 
   util_expect_scalar(return_flagged_study_data, check_type = is.logical)
+  util_expect_scalar(return_limit_categorical, check_type = is.logical)
 
   # Which limits should be assessed?
   if (!is.null(limits) && !(all(limits %in% colnames(meta_data)))) {
@@ -201,7 +214,28 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
       if (all(!is_interval)) {
         return(NA)
       } else {
-        return(lim_int[is_interval])
+        if(return_limit_categorical == FALSE) {
+          ## In both cases ('resp_vars' were specified by the user or
+          # selected automatically), we have to check whether the given limits can
+          # be assessed, the resp_vars need to be ratio or interval, not categorical
+          var_scale_lev <- meta_data[meta_data[[label_col]] == rvs, SCALE_LEVEL, drop = FALSE]
+          is_categorical <- var_scale_lev %in% c(SCALE_LEVELS$NOMINAL,
+                                                 SCALE_LEVELS$ORDINAL) # FIXME: ordinal may make sense, if limits have been defined, too.
+          if (is_categorical == TRUE) {
+            util_message(
+              paste0("The limits for ", sQuote(rvs),
+                     " cannot be interpreted as the response",
+                     " variable is categorical"),
+              applicability_problem = TRUE,
+              intrinsic_applicability_problem = TRUE)
+          }
+          if (is_categorical) {
+            return(NA)
+          }
+          return(lim_int[is_interval])
+        } else {
+          return(lim_int[is_interval])
+        }
       }
     }))
 
@@ -324,7 +358,7 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
   base_col <-
     colorRampPalette(
       colors = c("#2166AC","#fdd49e","#fc8d59","#d7301f","#B2182B","#7f0000"))(
-                         length(given_limits) + 1)
+        length(given_limits) + 1)
   # line types for limits (apart from HARD_LIMITS)
   base_lty <- c(2, 4:6)
   # text design
@@ -397,6 +431,12 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
     plot_histogram <-
       meta_data[[SCALE_LEVEL]][which(meta_data[[label_col]] == rv)] %in%
       c(SCALE_LEVELS$INTERVAL, SCALE_LEVELS$RATIO)
+
+    plot_histogram_integer <-
+      meta_data[[SCALE_LEVEL]][which(meta_data[[label_col]] == rv)] %in%
+      c(SCALE_LEVELS$INTERVAL, SCALE_LEVELS$RATIO) &&
+      meta_data[[DATA_TYPE]][which(meta_data[[label_col]] == rv)] %in%
+      c("integer")
 
     values <- NULL # to make r cmd check happy
 
@@ -499,6 +539,7 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
         myxlim <- c(min_plot, max_plot)
         myxlim <- as.POSIXct(myxlim, origin = min(as.POSIXct(Sys.Date()), 0)) # ensure to have posixct
       }
+
       # prepare limit lines
       all_limits <- c(lower_limits, upper_limits)
       all_limits <- all_limits[!is.na(all_limits)]
@@ -515,8 +556,14 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
                   spec_lines$limits, drop = FALSE])
 
       # histogram: create plot -------------------------------------------------
-      p <- ggplot(data = rv_data, aes(x = .data[["values"]],
-                                      fill = .data[["limit_violations"]]))
+      if (plot_histogram_integer) {
+        p <- ggplot(data = rv_data, aes(x = .data[["values"]],
+                                        fill = .data[["limit_violations"]]))
+      } else {
+        p <- ggplot(data = rv_data, aes(x = .data[["values"]],
+                                        fill = .data[["limit_violations"]]))
+      }
+
       # add bins per segment
       for (ii in seq_along(plot_segments_intervals)) {
         p <- p +
@@ -526,6 +573,47 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
                                           plot_segments_intervals[[ii]])),
             breaks = bin_breaks[[ii]]
           )
+      }
+
+      # add scattered points for individual observations if suitable/required
+      bb <- do.call(c, bin_breaks)
+      bb <- bb[!duplicated(bb)]
+      if (plot_histogram_integer) {
+        if (mean(bb[-1] - bb[-length(bb)]) < 7 && length(bb) <= 6) show_obs <- FALSE
+        # do not show individual observations for integer variables with few slim bars
+      }
+      if (show_obs) {
+        max_bar_height <- max(table(cut(rv_data$value, breaks = bb)))
+        ypos <- -0.05 * max_bar_height
+        subdata <- NULL
+        for (ii in seq_len(length(bb)-1)) {
+          if (ii != length(bb) - 1) {
+            subd <- subset(rv_data, values >= bb[ii] & values < bb[ii+1])
+          } else {
+            subd <- subset(rv_data, values >= bb[ii] & values <= bb[ii+1])
+          }
+          if (nrow(subd) > 7) {
+            # select some (different at best) values from the bin
+            sel_val <- quantile(as.numeric(subd$values),
+                                probs = seq(0, 1, length.out = 7), type = 3)
+            sel_ind <- vapply(sel_val, FUN.VALUE = integer(1),
+                              FUN = function(x) {
+                                which(as.numeric(subd$value) == x)[1] })
+            subd <- subd[sel_ind, ]
+          }
+          if (nrow(subd) > 0) {
+            subdata <- rbind(subdata, subd)
+          }
+        }
+        p <- p +
+          geom_point(aes(y = ypos),
+                     data = subdata,
+                     col = "darkgray",
+                     position =
+                       position_jitter(height = 0.01 * max_bar_height,
+                                       width = 0),
+                     size = 1,
+                     alpha = 0.6)
       }
 
       p <- p +
@@ -541,12 +629,16 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
                           breaks = spec_bars$limit_violations,
                           guide = "none") +
         ggplot2::scale_linetype_manual(name = "limits",
-                              values = spec_lines$lty,
-                              breaks = spec_lines$limits) +
+                                       values = spec_lines$lty,
+                                       breaks = spec_lines$limits) +
         scale_color_manual(name = "limits",
                            values = spec_lines$color,
                            breaks = spec_lines$limits) +
-        labs(x = paste0(rv), y = "") +
+        labs(x = paste0(prep_get_labels(resp_vars = rv,
+                                        resp_vars_match_label_col_only = TRUE,
+                                        label_class = "SHORT",
+                                        label_col = label_col,
+                                        item_level = meta_data)), y = "") +
         theme_minimal() +
         theme(
           title = spec_txt,
@@ -555,13 +647,74 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
           axis.title.x = spec_txt,
           axis.title.y = spec_txt
         )
-    } else {
+
+      if (plot_histogram_integer) {
+        val_1 <- all_limits
+        names(val_1) <- NULL
+        val_1 <- c(val_1, rv_data$values)
+        p <- p + scale_x_continuous(breaks = util_int_breaks_rounded(val_1))
+
+        rm(values)
+      }
+
+
+      #calculate height y axis
+      #c1<- cut(rv_data$values,bin_breaks[[1]])
+      #c1<- cut(rv_data$values,unique(unlist(bin_breaks)))
+      #c1<- table(c1)
+      #min_bin_height <- min(c1)
+      #max_bin_height <- max(c1)
+      obj1 <- ggplot2::ggplot_build(p)
+      min_bin_height <- min(util_rbind(data_frames_list = obj1$data)$count,
+                            na.rm = TRUE)
+      max_bin_height <- max(util_rbind(data_frames_list = obj1$data)$count,
+                            na.rm = TRUE)
+      no_bars <- sum(!is.na(util_rbind(data_frames_list = obj1$data)$count))
+
+      total_w <- c(util_rbind(data_frames_list = obj1$data)$xmin,
+                   util_rbind(data_frames_list = obj1$data)$xmax,
+                   util_rbind(data_frames_list = obj1$data)$xintercept)
+      total_w <- total_w[!is.na(total_w)]
+      min_total_w <- min(total_w)
+      max_total_w <- max(total_w)
+      total_w <- max_total_w - min_total_w
+      min_x_plot <- min(util_rbind(data_frames_list = obj1$data)$xmin, na.rm = TRUE)
+      max_x_plot <- max(util_rbind(data_frames_list = obj1$data)$xmax, na.rm = TRUE)
+      no_char_y <- nchar(round(max_bin_height, digits = 0))
+      no_char_x <- nchar(round(max_total_w, digits = 0))
+      rm(obj1)
+
+      if (any(class(bin_breaks[[1]][1]) %in% "POSIXct")) { #TODO: fix this!!!!!!
+        #FIXME: cut using dates
+        min_bin_height <- 0
+        max_bin_height <- 100
+      }
+
+      #calculate length x axis
+ #     min_x_plot <- min_data
+ #     max_x_plot <- max_data
+      #  no_bars <- length(unique(unlist(bin_breaks)))+1
+
+      # Min and Max values of limits
+      min_limits <- min(all_limits_df$values)
+      max_limits <- max(all_limits_df$values)
+    }  else {
       # bar chart --------------------------------------------------------------
       # prepare limit lines (move by 0.5 to prevent overlap with bars)
       all_limits <- c(lower_limits - 0.5, upper_limits + 0.5)
       all_limits <- all_limits[!is.na(all_limits)]
       all_limits_df <- data.frame("limits" = names(all_limits),
                                   "values" = all_limits)
+      # add the limit interval to the legend of the plot
+      all_limits_df$limits <- paste(
+        all_limits_df$limits,
+        meta_data[meta_data[[label_col]] == rv,
+                  all_limits_df$limits, drop = FALSE])
+      spec_lines$limits <- paste(
+        spec_lines$limits,
+        meta_data[meta_data[[label_col]] == rv,
+                  spec_lines$limits, drop = FALSE])
+
       # include space for the moved limits (or wide bars) to the plotting range
       max_plot <- max_plot + 0.5
       min_plot <- min_plot - 0.5
@@ -582,12 +735,16 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
                           breaks = spec_bars$limit_violations,
                           guide = "none") +
         ggplot2::scale_linetype_manual(name = "limits",
-                              values = spec_lines$lty,
-                              breaks = spec_lines$limits) +
+                                       values = spec_lines$lty,
+                                       breaks = spec_lines$limits) +
         scale_color_manual(name = "limits",
                            values = spec_lines$color,
                            breaks = spec_lines$limits) +
-        labs(x = paste0(rv), y = "") +
+        labs(x = paste0(prep_get_labels(resp_vars = rv,
+                                        resp_vars_match_label_col_only = TRUE,
+                                        label_class = "SHORT",
+                                        label_col = label_col,
+                                        item_level = meta_data)), y = "") +
         theme_minimal() +
         theme(
           title = spec_txt,
@@ -595,33 +752,88 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
           axis.text.y = spec_txt,
           axis.title.x = spec_txt,
           axis.title.y = spec_txt
-        )
+        ) +
+        scale_x_continuous(breaks = util_int_breaks_rounded(rv_data$values))
+
+      #calculate height y axis
+      #table_temp <- as.data.frame(dplyr::summarize(
+      #  dplyr::group_by(rv_data, values),
+      #  n = dplyr::n()))
+      #min_bin_height <- min(table_temp$n)
+      #max_bin_height <- max(table_temp$n)
+      #no_bars <- length(table_temp$values)
+      #rm(table_temp)
+      obj1 <- ggplot2::ggplot_build(p)
+      min_bin_height <- min(util_rbind(data_frames_list = obj1$data)$count,
+                            na.rm = TRUE)
+      max_bin_height <- max(util_rbind(data_frames_list = obj1$data)$count,
+                            na.rm = TRUE)
+      no_bars <- sum(!is.na(util_rbind(data_frames_list = obj1$data)$count))
+      total_w <- c(util_rbind(data_frames_list = obj1$data)$xmin,
+                   util_rbind(data_frames_list = obj1$data)$xmax,
+                   util_rbind(data_frames_list = obj1$data)$xintercept)
+      total_w <- total_w[!is.na(total_w)]
+      min_total_w <- min(total_w)
+      max_total_w <- max(total_w)
+      total_w <- max_total_w - min_total_w
+      min_x_plot <- min(util_rbind(data_frames_list = obj1$data)$xmin, na.rm = TRUE)
+      max_x_plot <- max(util_rbind(data_frames_list = obj1$data)$xmax, na.rm = TRUE)
+      no_char_y <- nchar(round(max_bin_height, digits = 0))
+      no_char_x <- nchar(round(max_total_w, digits = 0))
+      rm(obj1)
+
+      #calculate length x axis
+   #   min_x_plot <- min_plot
+  #    max_x_plot <- max_plot
+
+      # Min and Max values of limits
+      min_limits <- min(all_limits_df$values)
+      max_limits <- max(all_limits_df$values)
+
     }
 
-    suppressWarnings({
+#    suppressWarnings({
       # NA observations can be removed, but should not be checked twice, see
       # above.
       # https://stackoverflow.com/a/51795017
-      bp <- ggplot_build(p)
-      w <- 2 * length(bp$layout$panel_params[[1]]$x$get_labels())
-      if (w == 0) {
-        w <- 10
-      }
-      w <- w + 10 +
-        max(nchar(bp$layout$panel_params[[1]]$y$get_labels()),
-            na.rm = TRUE
-        )
-      h <- 2 * length(bp$layout$panel_params[[1]]$y$get_labels())
-      if (h == 0) {
-        h <- 10
-      }
-      h <- h + 20
+#      bp <- ggplot_build(p)
+#      w <- 2 * length(bp$layout$panel_params[[1]]$x$get_labels())
+##      if (w == 0) {
+#        w <- 10
+ #     }
+ #     w <- w + 10 +
+ #       max(nchar(bp$layout$panel_params[[1]]$y$get_labels()),
+ #           na.rm = TRUE
+ #       )
+ #     h <- 2 * length(bp$layout$panel_params[[1]]$y$get_labels())
+ #     if (h == 0) {
+ #       h <- 10
+ #     }
+  #    h <- h + 20
 
-      p <- util_set_size(p, width_em = w, height_em = h)
-    })
+  #    p <- util_set_size(p, width_em = w, height_em = h)
+ #   })
+
+    # Calculations to reduce script_iframe
+    range_x <- max_x_plot - min_x_plot
+    #range_x_within_limits <-  max_limits - min_limits
+    range_height <- max_bin_height - min_bin_height
+
+    # calculate actual width of limits and data using respective no.bars as unit
+    no_bars_in_all_w <- round((total_w * no_bars)/range_x, digits = 0)
+
+    # Figure size hint for plot
+    attr(p, "sizing_hints") <- list(figure_type_id = "bar_limit",
+                                   range = range_height,
+                                   no_bars_in_all_w = no_bars_in_all_w,
+                                   no_char_x = no_char_x,
+                                   no_char_y = no_char_y)
+
 
     return(p)
   }) # end lapply plot_list
+  #size_hint_list <- attributes(plot_list[[1]])$sizing_hint_int
+  #attr(plot_list[[1]], "sizing_hint_int") <- NULL
 
   # flagged study data ---------------------------------------------------------
   if (return_flagged_study_data) {
@@ -679,8 +891,9 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
   colnames(heatmap_tab)[3:ncol(heatmap_tab)] <-
     paste(colnames(heatmap_tab)[3:ncol(heatmap_tab)], "violations")
 
-  class(heatmap_tab) <- union("ReportSummaryTable", class(heatmap_tab))
-
+  heatmap_tab <- util_validate_report_summary_table(heatmap_tab,
+                                                  meta_data = meta_data,
+                                                  label_col = label_col)
   # summary table --------------------------------------------------------------
   sumtab_inadm_num <- vapply(
     resp_vars, FUN.VALUE = numeric(2), FUN = function(rv) {
@@ -808,14 +1021,80 @@ con_limit_deviations <- function(resp_vars = NULL, label_col, study_data,
 
   rownames(sumtab) <- NULL
 
+  #Modify the SummaryData from long to wide format to be more concise to read
+  sumdat_wide <- stats::reshape(sumdat,
+                                idvar = c("Variables", "Limits"),
+                                timevar = "Section",
+                                direction = "wide")
+  sumdat_wide$`Below.limits-N (%)`<- paste0(sumdat_wide$Number.below, " (",
+                                            sumdat_wide$Percentage.below,")")
+  sumdat_wide$`Within.limits-N (%)`<- paste0(sumdat_wide$Number.within, " (",
+                                             sumdat_wide$Percentage.within,")")
+  sumdat_wide$`Above.limits-N (%)`<- paste0(sumdat_wide$Number.above, " (",
+                                            sumdat_wide$Percentage.above,")")
+  sumdat_wide <- sumdat_wide[, c("Variables", "Limits", "Below.limits-N (%)",
+                                 "Within.limits-N (%)", "Above.limits-N (%)")]
+
+
+  text_to_display <- util_get_hovertext("[con_limit_dev_hover]")
+  attr(sumdat_wide, "description") <- text_to_display
+
+  if (length(plot_list) == 1) {
+    obj1 <- ggplot2::ggplot_build(plot_list[[resp_vars]])
+    min_bin_height <- min(util_rbind(data_frames_list = obj1$data)$count,
+                          na.rm = TRUE)
+    max_bin_height <- max(util_rbind(data_frames_list = obj1$data)$count,
+                          na.rm = TRUE)
+    no_bars <- sum(!is.na(util_rbind(data_frames_list = obj1$data)$count))
+    total_w <- c(util_rbind(data_frames_list = obj1$data)$xmin,
+                 util_rbind(data_frames_list = obj1$data)$xmax,
+                 util_rbind(data_frames_list = obj1$data)$xintercept)
+    total_w <- total_w[!is.na(total_w)]
+    min_total_w <- min(total_w)
+    max_total_w <- max(total_w)
+    total_w <- max_total_w - min_total_w
+    min_x_plot <- min(util_rbind(data_frames_list = obj1$data)$xmin, na.rm = TRUE)
+    max_x_plot <- max(util_rbind(data_frames_list = obj1$data)$xmax, na.rm = TRUE)
+    range_x <- max_x_plot - min_x_plot
+    # calculate actual width of limits and data using respective no.bars as unit
+    no_bars_in_all_w <- round((total_w * no_bars)/range_x, digits = 0)
+    #range_x_within_limits <-  max_limits - min_limits
+    range_height <- max_bin_height - min_bin_height
+
+    if(min_bin_height == Inf ||
+       min_bin_height == -Inf ||
+       max_bin_height == Inf ||
+       max_bin_height == -Inf ) {
+      range_height <- 100 #an intermediate size plot in height
+    }
+
+    if(min_bin_height == Inf ||
+       min_bin_height == -Inf) {
+      min_bin_height <- 0
+    }
+
+    if(max_bin_height == Inf ||
+       max_bin_height == -Inf) {
+      max_bin_height <- 0
+    }
+
+
+
+    no_char_y <- nchar(round(max_bin_height, digits = 0))
+    no_char_x <- nchar(round(total_w, digits = 0))
+    rm(obj1)
+  }
+
+
+
   # final return statement -----------------------------------------------------
   return(util_attach_attr(list(
     FlaggedStudyData = fsd,
     SummaryTable = sumtab,
-    SummaryData = sumdat,
+    SummaryData = sumdat_wide,
     ReportSummaryTable = heatmap_tab,
-    SummaryPlotList = plot_list
-  ), as_plotly = "util_as_plotly_con_limit_deviations"))
+    SummaryPlotList = plot_list),
+  as_plotly = "util_as_plotly_con_limit_deviations"))
 }
 
 
@@ -842,6 +1121,23 @@ util_as_plotly_con_limit_deviations <- function(res, ...) {
     }
   }
   py <- plotly::layout(py, legend = list(traceorder = "reversed"))
+  # pyb <- plotly::plotly_build(py)
+  # pb <- ggplot2::ggplot_build(p)
+  # py <- plotly::add_segments(
+  #   py,
+  #   y = 0,
+  #   yend = 200,
+  #   x = as.numeric(as.POSIXct('2020-01-03 12:00:00')),
+  #   xend = as.numeric(as.POSIXct('2020-01-03 12:00:00')),
+  #   line = list(dash = "dash", color = "red"),
+  #   inherit = FALSE,
+  #   name = "Test")
+  # for all data in vline:, i.e. py$x$data[[i]]$type == "scatter"
+  for (l_i in which(vapply(lapply(py$x$data, `[[`, "type"), `==`,
+         "scatter",
+         FUN.VALUE = logical(1)))) {
+    py$x$data[[l_i]]$x <- as.numeric(py$x$data[[l_i]]$x)
+  }
   # for (i in seq_len(length(lb))) {
   #   lb <- ggplot_build(p)$plot$scales$scales[[1]]$get_labels(i)
   #   cl <- ggplot_build(p)$plot$scales$scales[[1]]$palette(i)

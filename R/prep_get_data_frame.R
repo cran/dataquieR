@@ -18,6 +18,9 @@
 #' @param keep_types [logical] keep types as possibly defined in a file, if the
 #'                             data frame is loaded from one. set `TRUE` for
 #'                             study data.
+#' @param column_names_only [logical] if TRUE imports only headers (column names)
+#'                                    of the data frame and no content
+#'                                    (an empty data frame)
 #'
 #' @return [data.frame] a data frame
 #' @export
@@ -52,16 +55,12 @@
 #' # ship_meta
 #' #
 #' prep_get_data_frame("meta_data | meta_data")
-#' prep_get_data_frame(file.path(system.file(package = "dataquieR"),
-#'   "extdata", "meta_data.RData"))
-#' prep_get_data_frame(file.path(system.file(package = "dataquieR"),
-#'   "extdata", "meta_data.RData|meta_data"))
 #' }
 prep_get_data_frame <- function(data_frame_name,
-                                .data_frame_list = .dataframe_environment,
-                                keep_types = FALSE) {
+                                .data_frame_list = .dataframe_environment(),
+                                keep_types = FALSE,
+                                column_names_only = FALSE) {
   # IDEA: also allow to address rows or cells from dataframes using the syntax in data_frame_name
-
   if (!missing(keep_types)) {
     util_expect_scalar(keep_types,
                        check_type = is.logical,
@@ -69,6 +68,12 @@ prep_get_data_frame <- function(data_frame_name,
                          sprintf("%s needs to be to be a logical value.",
                                  sQuote("keep_types")))
   }
+
+  util_expect_scalar(column_names_only,
+                     check_type = is.logical,
+                     error_message =
+                       sprintf("%s needs to be to be a logical value.",
+                               sQuote("column_names_only")))
 
   data_frame_name <- gsub("\\s*\\|\\s*", "|", data_frame_name)
 
@@ -78,7 +83,141 @@ prep_get_data_frame <- function(data_frame_name,
                sQuote(".data_frame_list"))
   }
 
-  if (exists(data_frame_name, envir = .data_frame_list, mode = "list")) {
+  # Special case of ship.RDS not present in the package anymore
+  if (grepl(sprintf("^ship(\\s*\\%s.*)?$", SPLIT_CHAR), data_frame_name) ) {
+    util_stop_if_not(
+      `no shortcuts in tests` =
+        !identical(Sys.getenv("TESTTHAT"), "true"))
+
+    # nocov start
+    # this cannot be checked, because we disallow shortcuts in tests, see above.
+    data_frame_name <-
+      sub(sprintf("^ship(\\s*\\%s.*)?$", SPLIT_CHAR),
+          "https://dataquality.qihs.uni-greifswald.de/extdata/ship.RDS\\1",
+          data_frame_name)
+    # nocov end
+  }
+
+  # Special case of ship.RDS not present in the package anymore
+  if (grepl(sprintf("^ship_subset[1-3](\\s*\\%s.*)?$", SPLIT_CHAR),
+            data_frame_name) ) {
+    util_stop_if_not(
+      `no shortcuts in tests` =
+        !identical(Sys.getenv("TESTTHAT"), "true"))
+
+    # nocov start
+    # this cannot be checked, because we disallow shortcuts in tests, see above.
+    data_frame_name <-
+      sub(sprintf("^ship_subset([1-3])(\\s*\\%s.*)?$", SPLIT_CHAR),
+    "https://dataquality.qihs.uni-greifswald.de/extdata/ship_subset\\1.RDS\\2",
+          data_frame_name)
+    # nocov end
+  }
+
+  # Special case of ship.RDS not present in the package anymore
+  if (grepl(sprintf("^ship_meta_v2(\\s*\\%s.*)?$", SPLIT_CHAR), data_frame_name) ) {
+    util_stop_if_not(
+      `no shortcuts in tests` =
+        !identical(Sys.getenv("TESTTHAT"), "true"))
+
+    # nocov start
+    # this cannot be checked, because we disallow shortcuts in tests, see above.
+    data_frame_name <-
+      sub(sprintf("^ship_meta_v2(\\s*\\%s.*)?$", SPLIT_CHAR),
+      "https://dataquality.qihs.uni-greifswald.de/extdata/ship_meta_v2.xlsx\\1",
+          data_frame_name)
+    # nocov end
+  }
+
+  # Special case of ship.RDS not present in the package anymore
+  if (grepl(sprintf("^ship_meta_dataframe(\\s*\\%s.*)?$", SPLIT_CHAR), data_frame_name) ) {
+    util_stop_if_not(
+      `no shortcuts in tests` =
+        !identical(Sys.getenv("TESTTHAT"), "true"))
+
+    # nocov start
+    # this cannot be checked, because we disallow shortcuts in tests, see above.
+    data_frame_name <-
+      sub(sprintf("^ship_meta_dataframe(\\s*\\%s.*)?$", SPLIT_CHAR),
+"https://dataquality.qihs.uni-greifswald.de/extdata/ship_meta_dataframe.xlsx\\1",
+          data_frame_name)
+    # nocov end
+  }
+
+  # Special case of ship.RDS not present in the package anymore
+  if (grepl(sprintf("^ship_meta(\\s*\\%s.*)?$", SPLIT_CHAR), data_frame_name) ) {
+    util_stop_if_not(
+      `no shortcuts in tests` =
+        !identical(Sys.getenv("TESTTHAT"), "true"))
+
+    # nocov start
+    # this cannot be checked, because we disallow shortcuts in tests, see above.
+    data_frame_name <-
+      sub(sprintf("^ship_meta(\\s*\\%s.*)?$", SPLIT_CHAR),
+          "https://dataquality.qihs.uni-greifswald.de/extdata/ship_meta.RDS\\1",
+          data_frame_name)
+    # nocov end
+  }
+
+  # Special case of study_data.RData not present in the package anymore
+  if (grepl(sprintf("^study_data(\\s*\\%s.*)?$", SPLIT_CHAR),
+            data_frame_name) && !exists(data_frame_name,
+                                        envir = .dataframe_environment(),
+                                        mode = "list")) {
+    util_stop_if_not(
+      `no shortcuts in tests` =
+        !identical(Sys.getenv("TESTTHAT"), "true"))
+
+    # nocov start
+    # this cannot be checked, because we disallow shortcuts in tests, see above.
+    data_frame_name <-
+      sub(sprintf("^study_data(\\s*\\%s.*)?$", SPLIT_CHAR),
+      "https://dataquality.qihs.uni-greifswald.de/extdata/study_data.RData\\1",
+          data_frame_name)
+    # nocov end
+  }
+
+  # Special case of study_data.RData not present in the package anymore
+  if (grepl(sprintf("^meta_data_v2(\\s*\\%s.*)?$", SPLIT_CHAR),
+            data_frame_name) ) {
+    util_stop_if_not(
+      `no shortcuts in tests` =
+        !identical(Sys.getenv("TESTTHAT"), "true"))
+
+    # nocov start
+    # this cannot be checked, because we disallow shortcuts in tests, see above.
+    data_frame_name <-
+      sub(sprintf("^meta_data_v2(\\s*\\%s.*)?$", SPLIT_CHAR),
+      "https://dataquality.qihs.uni-greifswald.de/extdata/meta_data_v2.xlsx\\1",
+          data_frame_name)
+    # nocov end
+  }
+
+  # Special case of study_data.RData not present in the package anymore
+  if (grepl(sprintf("^meta_data(\\s*\\%s.*)?$", SPLIT_CHAR),
+            data_frame_name) ) {
+    util_stop_if_not(
+      `no shortcuts in tests` =
+        !identical(Sys.getenv("TESTTHAT"), "true"))
+
+    # nocov start
+    # this cannot be checked, because we disallow shortcuts in tests, see above.
+    data_frame_name <-
+      sub(sprintf("^meta_data(\\s*\\%s.*)?$", SPLIT_CHAR),
+        "https://dataquality.qihs.uni-greifswald.de/extdata/meta_data.RData\\1",
+          data_frame_name)
+    # nocov end
+  }
+
+  if (all(startsWith(
+    data_frame_name,
+    "https://dataquality.qihs.uni-greifswald.de/extdata/"))) {
+    # trust our own example files
+    withr::local_options(list(rio.import.trust = TRUE))
+  }
+
+  if (!column_names_only && nzchar(data_frame_name) && exists(data_frame_name,
+                                   envir = .data_frame_list, mode = "list")) {
     r <- get(data_frame_name, envir = .data_frame_list, mode = "list")
     if (is.data.frame(r)) {
       return(r)
@@ -108,11 +247,109 @@ prep_get_data_frame <- function(data_frame_name,
     fn <- paste0(head(splitted, -1), collapse = SPLIT_CHAR)
   }
 
-  if (is.null(which)) {
-    r <- util_rio_import(fn, keep_types = keep_types)
-  } else {
-    r <- util_rio_import(fn, keep_types = keep_types,
-                         which = which)
+  r <- NULL
+
+  if (startsWith(fn, "<") &&
+      endsWith(fn, ">")) {
+    fn <- paste0("voc:", substr(fn, 2, nchar(fn) - 1))
+  }
+  if (startsWith(fn, "voc:")) {
+    .voc <- sub("^voc:", "", fn)
+    voc_tab <- util_get_voc_tab()
+    # table lookup to modify fn to package: or data:
+    recall_arg <-
+      try(subset(voc_tab, get("voc") == .voc, "url", drop = TRUE))
+    if (!inherits(recall_arg, "try-error") && length(recall_arg) == 1) {
+      return(Recall(recall_arg))
+    }
+    # data("icd_meta_codes", envir = e)
+  }
+  # auto request to install missing packages
+  if (startsWith(fn, "dbx:")) {# FIXME: Test this
+    try({
+      util_ensure_suggested("dbx", goal = "accessing databases")
+      dbxurl <- sub("^dbx:", "", fn)
+      connect_args <- list(url = dbxurl)
+      opt_args <- getOption("dataquieR")
+      if (is.list(opt_args)) {
+        connect_args <-
+          connect_args[!(names(connect_args) %in% names(opt_args))]
+        connect_args <- c(connect_args, opt_args)
+      }
+      con <- do.call(dbx::dbxConnect, connect_args)
+      withr::with_db_connection(con, { # TODO: Where conditions, also for the other url types maye with @
+        if (is.null(which)) {
+          util_error("Need a table name for database access %s.",
+                     dQuote(fn),
+                     applicability_problem = TRUE)
+        }
+        which <- gsub("[^a-zA-Z0-9_\\.\\[\\]]", "", which)
+        if (is.null(col)) {
+          col <- "*"
+        } else {
+          col <- gsub("[^a-zA-Z0-9_\\.\\[\\]]", "", col)
+        }
+        r <- dbx::dbxSelect(con,  #TODO: consider the argument column_names_only also in this case
+                            sprintf("SELECT %s FROM %s",
+                                    col,
+                                    which))
+      })
+      if (!is.data.frame(r)) {
+        util_error("Could not load %s",
+                   dQuote(fn),
+                   applicability_problem = TRUE)
+      }
+    })
+  } else if (startsWith(fn, "extdata:")) {
+    p <- sub("^extdata:", "", fn)
+    p <- strsplit(p, "/", fixed = TRUE)[[1]]
+    package <- p[[1]]
+    util_ensure_suggested(package, goal = "load data from it")
+    p[[1]] <- "extdata"
+    fn <- do.call(system.file, c(as.list(p), list(package = package)))
+  } else if (startsWith(fn, "package:")) {
+    p <- sub("^package:", "", fn)
+    p <- strsplit(p, "/", fixed = TRUE)[[1]]
+    package <- p[[1]]
+    util_ensure_suggested(package, goal = "load data from it")
+    p <- p[-1]
+    fn <- do.call(system.file, c(as.list(p), list(package = package)))
+  } else if (startsWith(fn, "data:")) try({
+    p <- sub("^data:", "", fn)
+    p <- strsplit(p, "/", fixed = TRUE)[[1]]
+    package <- p[[1]]
+    util_ensure_suggested(package, goal = "load data from it")
+    p <- p[-1]
+    if (length(p) > 0 || length(which) != 1) {
+      util_error("Cannot load %s", dQuote(fn), applicability_problem = TRUE)
+    }
+    # also allow missing package, then use search() or installed.packages()
+    .e <- new.env(parent = emptyenv())
+    utils::data(list = which,
+         package = package,
+         envir = .e)
+    r <- .e[[which]]  #TODO: consider the new argument column_names_only also here
+    if (!is.data.frame(r)) {
+      util_error("Could not load %s",
+                 dQuote(fn),
+                 applicability_problem = TRUE)
+    }
+  })
+
+  # create a conditional named list based on argument column_names_only
+  if (!is.data.frame(r)) {
+    arguments_for_rio_import <- list(fn = fn,
+                                     keep_types = keep_types)
+    if (column_names_only) {
+      to_add_list <- list(n_max = 0, nrows = 0)
+      arguments_for_rio_import <- c(arguments_for_rio_import, to_add_list)
+    } else {
+      if (!is.null(which)) {
+        to_add_list <- list(which = which)
+        arguments_for_rio_import <- c(arguments_for_rio_import, to_add_list)
+      }
+    }
+    r <- do.call(util_rio_import, arguments_for_rio_import)
   }
 
   if (inherits(r, "try-error") || !is.data.frame(r)) {
@@ -132,12 +369,22 @@ prep_get_data_frame <- function(data_frame_name,
       }
     }
 
-    if (is.null(which)) {
-      r <- util_rio_import(fn, keep_types = keep_types)
+
+    # create a conditional named list based on argument column_names_only
+    arguments_for_rio_import <- list(fn = fn,
+                                     keep_types = keep_types)
+    if (column_names_only) {
+      to_add_list <- list(n_max = 0, nrows = 0)
+      arguments_for_rio_import <- c(arguments_for_rio_import, to_add_list)
     } else {
-      r <- util_rio_import(fn, keep_types = keep_types,
-                           which = which)
+      if (!is.null(which)) {
+        to_add_list <- list(which = which)
+        arguments_for_rio_import <- c(arguments_for_rio_import, to_add_list)
+      }
     }
+
+    r <- do.call(util_rio_import, arguments_for_rio_import)
+
 
     if (inherits(r, "try-error")) {
       if (conditionMessage(attr(r, "condition")) ==
@@ -162,23 +409,76 @@ prep_get_data_frame <- function(data_frame_name,
                  dQuote(fn),
                  sQuote("rio"))
     }
+
+
   }
 
   if (!is.null(col)) {
-    if (!(col %in% colnames(r))) {
-      util_error("%s does not contain a column named %s on/in %s",
+    if (grepl("+", col, fixed = TRUE)) {
+      col <- strsplit(col, "+", fixed = TRUE)[[1]]
+    }
+    if (!(all(col %in% colnames(r)))) {
+      util_error("%s does not contain all of the columns %s on/in %s",
                  dQuote(fn),
-                 dQuote(col),
+                 dQuote(util_pretty_vector_string(col)),
                  dQuote(which))
     }
     r <- r[, col, drop = FALSE]
   }
 
+  # delete invalid character codes
+  if (nrow(r) > 0) {
+    chars <- vapply(r, is.character, FUN.VALUE = logical(1))
+    r[, chars] <-
+      lapply(r[, chars, drop = FALSE],
+             function(x) {
+               from <- Encoding(x)
+               from <- setdiff(from, "unknown")
+               from <- head(names(which.max(table(from))), 1)
+               if (length(from) != 1) {
+                 from <- "UTF-8"
+               }
+               x <- iconv(x, from, "UTF-8", sub = '')
+               Encoding(x) <- "UTF-8"
+               return(x)
+             })
+  }
 
-
-  assign(data_frame_name, r, envir = .data_frame_list)
-
+  if (!column_names_only) {
+    assign(data_frame_name, r, envir = .data_frame_list)
+  }
   return(r)
 }
 
-.dataframe_environment <- new.env(parent = emptyenv())
+.global.dataframe_environment <- new.env(parent = emptyenv())
+
+util_set_dataframe_environment <- function(env = NULL) {
+  if (is.null(env)) {
+    assign(x = "dataframe_environment",
+           value = .global.dataframe_environment,
+           envir = dataquieR.properties)
+  } else {
+    util_stop_if_not(is.environment(env))
+    assign(x = "dataframe_environment",
+           value = env,
+           envir = dataquieR.properties)
+  }
+}
+
+.dataframe_environment <- function() {
+  return(get(x = "dataframe_environment",
+             envir = dataquieR.properties,
+             mode = "environment"))
+}
+
+util_set_dataframe_environment(NULL)
+
+with_dataframe_environment <- function(expr,
+                                       env = new.env(parent = emptyenv())) {
+  old_env <- .dataframe_environment()
+  withr::defer({
+    util_set_dataframe_environment(old_env)
+  })
+  util_set_dataframe_environment(env)
+  force(rlang::eval_tidy(expr, env = parent.frame()))
+}

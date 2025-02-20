@@ -19,6 +19,9 @@ plot.dataquieR_summary <- function(x, y, ..., filter, dont_plot = FALSE,
                                 "digest", "DT", "rmarkdown",
                                 "markdown", "plotly"),
                         goal = "generate plain HTML-summaries.")
+
+  x <- util_reclassify_dataquieR_summary(x)
+
   repsum <- x
   indicator_metric <- NULL
   function_name <- NULL

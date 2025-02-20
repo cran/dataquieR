@@ -8,6 +8,8 @@
 #' @param block_load_factor [numeric] multiply size of parallel compute blocks
 #'                                    by this factor.
 #' @param dir [character] output directory for potential `iframes`.
+#' @param my_dashboard [list] of class `shiny.tag.list` featuring a dashboard or
+#'                            missing or `NULL`
 #'
 #' @return named list, each entry becomes a file with the name of the entry.
 #'         the contents are `HTML` objects as used by `htmltools`.
@@ -24,20 +26,19 @@
 #' @family html
 #' @concept process
 #' @keywords internal
-
 util_generate_pages_from_report <- function(report, template,
                                             disable_plotly,
                                             progress = progress,
                                             progress_msg = progress_msg,
                                             block_load_factor,
-                                            dir) {
+                                            dir,
+                                            my_dashboard) {
   util_ensure_suggested(pkg = c("htmltools"),
                                 goal = "generate interactive HTML-reports.")
   have_plot_ly <- util_ensure_suggested(pkg = c("plotly"),
                                         goal = "generate interactive figures in plain HTML-reports.",
                                         err = FALSE)
   if (disable_plotly) have_plot_ly <- FALSE
-
   if (have_plot_ly) {
     plot_figure <- util_plot_figure_plotly
   } else {
@@ -97,7 +98,7 @@ util_generate_pages_from_report <- function(report, template,
   if (nchar(attr(report, "label_modification_text")) > 0) {
     notes_labels <- htmltools::div(
       htmltools::h3("Label modifications"),
-      util_html_table(attr(report, "label_modification_table"),
+      util_html_table(util_df_escape(attr(report, "label_modification_table")),
                       dl_fn = "Label_modifications")
     )
   } else {
@@ -121,6 +122,9 @@ util_generate_pages_from_report <- function(report, template,
     p[vapply(p, is.call, FUN.VALUE = logical(1))] <-
       vapply(lapply(p[vapply(p, is.call, FUN.VALUE = logical(1))], deparse),
              paste, collapse = "\n", FUN.VALUE = character(1))
+    p[vapply(p, inherits, "POSIXt", FUN.VALUE = logical(1))] <-
+      vapply(p[vapply(p, inherits, "POSIXt", FUN.VALUE = logical(1))],
+             paste, collapse=" ", FUN.VALUE = character(1))
     p <- p[vapply(p, is.vector, FUN.VALUE = logical(1))]
     p <- p[vapply(p, length, FUN.VALUE = integer(1)) == 1]
     p <- data.frame(`  ` = names(p),
@@ -130,23 +134,50 @@ util_generate_pages_from_report <- function(report, template,
   }
 
   # Information on dataset sizes
+  vinsd <- attr(report, "study_data_dimnames")[[2]]
+  vinmd <- meta_data[[VAR_NAMES]]
+  with_md <- intersect(vinsd, vinmd)
+  wo_md <- setdiff(vinsd, vinmd)
+  if (length(wo_md) > 0) {
+    mark <- function(x) {
+      paste0("<strong>", x, "</strong")
+    }
+  } else {
+    mark <- identity
+  }
   info_sd <-
     data.frame(
       "Number of ..." = c(
         "observations in study data set",
-        "variables in study data set",
-        "variables with item-level metadata"
+        mark("variables in study data set"),
+        mark("variables with item-level metadata")
       ),
       " " = c(
         length(attr(report, "study_data_dimnames")[[1]]),
-        length(attr(report, "study_data_dimnames")[[2]]),
-        length(intersect(
-          attr(report, "study_data_dimnames")[[2]],
-          meta_data[[VAR_NAMES]]))
-        ),
+        mark(as.character(length(vinsd))),
+        mark(as.character(length(with_md)))),
       # TODO: Does it suffice to check for VAR_NAMES in the metadata? Should we also check if any valid metadata information apart from the name is given?
-      check.names = FALSE
-    )
+      check.names = FALSE)
+  info_sd_hover <- info_sd
+  info_sd_hover[] <- ""
+  if (length(wo_md) > 0) {
+    info_sd_hover[2, ] <- paste0(
+      "<span style=\"color:#ffffbb\">Variables without metadata: ",
+      util_pretty_vector_string(wo_md, n_max = 20),
+      "</span>; Variables in study data: ",
+      util_pretty_vector_string(vinsd, n_max = 20))
+  } else {
+    info_sd_hover[2, ] <- util_pretty_vector_string(vinsd, n_max = 20)
+  }
+  if (length(wo_md) > 0) {
+    info_sd_hover[3, ] <- paste0(
+      "<span style=\"color:#ffffbb\">Variables without metadata: ",
+     util_pretty_vector_string(wo_md, n_max = 20),
+     "</span>; Variables with metadata: ",
+     util_pretty_vector_string(with_md, n_max = 20))
+  } else {
+    info_sd_hover[3, ] <- util_pretty_vector_string(with_md, n_max = 20)
+  }
   info_md <-
     data.frame(
       "Number of ..." = "variables in item-level metadata",
@@ -189,13 +220,15 @@ util_generate_pages_from_report <- function(report, template,
                        htmltools::h2(subtitle),
                        htmltools::h3("Study data summary"),
                        htmltools::browsable(util_formattable(
+                         escape_all_content = FALSE,
                          info_sd,
                          min_color = c(255, 255, 255),
                          max_color = c(255, 255, 255),
                          style_header = c(
                            "font-weight: bold;width: 15em;text-align: left;",
                            "font-weight: bold;width: 6em;"
-                         )
+                         ),
+                         hover_texts = info_sd_hover
                        )),
                        htmltools::h3("Metadata summary"),
                        htmltools::p(warn_pred_meta),
@@ -225,13 +258,12 @@ util_generate_pages_from_report <- function(report, template,
                          "Display Detailed View"),
                        htmltools::h2("Technical information"),
                        htmltools::p("The table below summarizes technical information about this report, the R session and the operating system."),
-                       util_html_table(p,
+                       util_html_table(util_df_escape(p),
                                        dl_fn = "Report_Metadata"),
                        htmltools::p(htmltools::tags$i(id = "render-time",
                                                       sprintf("Rendered using %s %s at %s",
                                                               utils::packageName(),
-                                                              as.character(packageVersion(
-                                                                utils::packageName())),
+                                                              util_dataquieR_version(),
                                                               as.character(Sys.time()))
                        )),
                        htmltools::tags$script( # https://stackoverflow.com/a/34579496
@@ -289,7 +321,12 @@ util_generate_pages_from_report <- function(report, template,
                        util_abbreviate = util_abbreviate)
   )
 
-
+  if (!missing(my_dashboard) && inherits(my_dashboard, "shiny.tag.list")) {
+    append_single_page("General",
+                       "Item-level data quality dashboard",
+                       "dashboard.html",
+                       my_dashboard)
+  }
 
 # Removed all Venn diagram section
   # generate Venn diagram
@@ -372,7 +409,6 @@ util_generate_pages_from_report <- function(report, template,
   # parallelMap::parallelSource(sfile, master = FALSE)
 
 # TODO: if https://community.plotly.com/t/cant-show-heatmap-inside-div-error-something-went-wrong-with-axis-scaling/30616/9 is fixed, use auto-sizing
-
   dim_pages <- util_html_for_dims(
     report,
     use_plot_ly = have_plot_ly,
@@ -454,11 +490,11 @@ util_generate_pages_from_report <- function(report, template,
     meta_data_segment = "Segment-level metadata",
     meta_data_dataframe = "Dataframe-level metadata",
     meta_data_cross_item = "Cross-item-level metadata",
-    meta_data = "Item-level metadata"
+    meta_data = "Item-level metadata",
+    meta_data_item_computation = "Item-computation-level metadata"
   )
 
   for (mdn in meta_data_frames) {
-
     xlmd <- attr(report, mdn) # x level metadata
 
     if (mdn == "meta_data") {
@@ -496,24 +532,45 @@ util_generate_pages_from_report <- function(report, template,
       # TODO: include warnings from util_normalize_cross_item on the cross-item metadata level page
     }
 
+    xlmd[, !grepl("_TABLE$", colnames(xlmd))] <-
+      util_df_escape(xlmd[, !grepl("_TABLE$", colnames(xlmd)),
+                                drop = FALSE])
+
     for (cn in grep("_TABLE$", colnames(xlmd), value = TRUE)) {
 
       xlmd[!util_empty(xlmd[[cn]]), cn] <- vapply(FUN.VALUE = character(1),
                                                   xlmd[!util_empty(xlmd[[cn]]), cn],
                                                   FUN = function(tn) {
-                                                    paste(as.character(htmltools::a(href = paste0(tn, ".html"), tn)),
+                                                    paste(as.character(htmltools::a(href = paste0(
+                                                      prep_link_escape(tn, html = TRUE), ".html"), tn)),
                                                           collapse = "")
                                                   }
       )
 
     }
 
+    # Hover text for headers of metadata tables
+    text_to_display <- util_get_hovertext(mdn)
+
+    # filter text_to_display only for headers actually present in the metadata
+    text_to_display <- text_to_display[names(text_to_display)  %in% names(xlmd)]
+
+    attr(xlmd, "description") <- text_to_display
+
+
     meta_data_table <- util_html_table(
       xlmd, # generate links in VAR_NAMES/Variables, only possible if meta_data and label_col are available
       meta_data = meta_data,
       label_col = label_col,
       dl_fn = mdn,
-      output_format = "HTML" # needed for generating plain html, "RMD" would generate a mix between Rmd and html
+      output_format = "HTML", # needed for generating plain html, "RMD" would generate a mix between Rmd and html
+      col_tags =
+        lapply(lapply(setNames(nm = VARATT_REQUIRE_LEVELS_ORDER),
+               util_get_var_att_names_of_level,  cumulative = FALSE),
+               function(x) {
+                 union(VAR_NAMES, x)
+               }
+        )
     )
 
     tmpl <- system.file("templates", template, paste0(mdn, ".html"),
@@ -557,24 +614,60 @@ util_generate_pages_from_report <- function(report, template,
   referred_tables <- attr(report, "referred_tables")
   if (length(referred_tables)) { # show all tables referred to by the report
     for (reftab in names(referred_tables)) {
-      append_single_page("Metadata",
-                         paste("Table", sQuote(reftab)),
-                         paste0(reftab, ".html"),
-                         htmltools::h1(dQuote(reftab)),
-                         util_html_table(
-                           referred_tables[[reftab]], # generate links in VAR_NAMES/Variables, only possible if meta_data and label_col are available
-                           meta_data = meta_data,
-                           label_col = label_col,
-                           dl_fn = reftab,
-                           output_format = "HTML" # needed for generating plain html, "RMD" would generate a mix between Rmd and html
-                         )
-      )
+      if (nrow(referred_tables[[reftab]]) > 1000) {
+        append_single_page("Metadata",
+                           paste("Table", sQuote(reftab)),
+                           paste0(prep_link_escape(reftab, html = TRUE), ".html"),
+                           htmltools::h1(dQuote(reftab)),
+                           util_html_table(
+                             util_df_escape(head(referred_tables[[reftab]], 1000)), # generate links in VAR_NAMES/Variables, only possible if meta_data and label_col are available
+                             meta_data = meta_data,
+                             label_col = label_col,
+                             dl_fn = reftab,
+                             output_format = "HTML" # needed for generating plain html, "RMD" would generate a mix between Rmd and html
+                           ),
+                           htmltools::tags$hr(),
+                           htmltools::p(
+                             sprintf("Showing only the first 1000 rows of a table with %d rows",
+                                     nrow(referred_tables[[reftab]]))
+                           )
+        )
+      } else {
+        append_single_page("Metadata",
+                           paste("Table", sQuote(reftab)),
+                           paste0(prep_link_escape(reftab, html = TRUE), ".html"),
+                           htmltools::h1(dQuote(reftab)),
+                           util_html_table(
+                             util_df_escape(referred_tables[[reftab]]), # generate links in VAR_NAMES/Variables, only possible if meta_data and label_col are available
+                             meta_data = meta_data,
+                             label_col = label_col,
+                             dl_fn = reftab,
+                             output_format = "HTML" # needed for generating plain html, "RMD" would generate a mix between Rmd and html
+                           )
+        )
+      }
     }
   }
 
 
   rsts <- util_get_rule_sets()
   for (rstsn in names(rsts)) {
+    ..tb <- util_df_escape(rsts[[rstsn]])
+    if ("indicator_metric" %in% colnames(..tb)) {
+      ..tb[["indicator_metric"]] <- lapply(..tb[["indicator_metric"]],
+                                         function(im) {
+                                           as.character(
+                                             htmltools::span(
+                                               title = im, # TODO: for downloads in Excel by datatables.js, use an alternative technical column
+                                               util_translate_indicator_metrics(im)
+                                               ))
+                                         })
+    }
+
+    #add hover text to headers of table Grading ruleset
+    text_to_display <- util_get_hovertext("grading_rulesets")
+    attr(..tb, "description") <- text_to_display
+
     append_single_page("Metadata",
                        paste("Grading Ruleset", dQuote(rstsn)),
                        paste0("rulesets.html"),
@@ -585,10 +678,33 @@ util_generate_pages_from_report <- function(report, template,
                          meta_data_name = "grading_rulesets",
                          meta_data_title =
                            "Grading Rulesets",
-                         meta_data_table = util_html_table(rsts[[rstsn]])
+                         meta_data_table = util_html_table(..tb)
                        )
     )
   }
+
+  ..tb <- util_df_escape(util_get_ruleset_formats())
+  if ("color" %in% colnames(..tb)) {
+    ..tb[["color"]] <- lapply(..tb[["color"]],
+                                         function(cl) {
+                                           as.character(
+                                             htmltools::span( # TODO: for downloads in Excel by datatables.js, use an alternative technical column
+                                               style = htmltools::css(
+                                                 background_color =
+                                                   util_col2rgb(cl),
+                                                 color =
+                                                   util_get_fg_color(
+                                                     util_col2rgb(cl))
+                                               ),
+                                               cl
+                                             ))
+                                         })
+  }
+
+  #add hover text to headers of table Ruleset formats
+  text_to_display <- util_get_hovertext("grading_formats")
+  attr(..tb, "description") <- text_to_display
+
 
   append_single_page("Metadata",
                      "Ruleset Formats",
@@ -601,7 +717,7 @@ util_generate_pages_from_report <- function(report, template,
                        meta_data_title =
                          "Ruleset Formats",
                        meta_data_table =
-                         util_html_table(util_get_ruleset_formats())
+                         util_html_table(..tb)
                      )
   )
 

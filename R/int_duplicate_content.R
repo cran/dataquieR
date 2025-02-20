@@ -12,17 +12,46 @@
 #'            [util_int_duplicate_content_segment] or
 #'            [util_int_duplicate_content_dataframe]
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @return a [list]. Depending on `level`, see
 #'   [util_int_duplicate_content_segment] or
 #'   [util_int_duplicate_content_dataframe] for a description of the outputs.
 #'
 #' @export
 int_duplicate_content <- function(level = c("dataframe", "segment"),
+                                  study_data,
+                                  item_level = "item_level",
+                                  label_col,
+                                  meta_data = item_level,
+                                  meta_data_v2,
                                   ...) {
+  util_maybe_load_meta_data_v2()
   level <- util_match_arg(level)
-  cl <- sys.call()
-  fname <- paste("util", util_deparse1(cl[[1]]), level, sep = "_")
+  fname <- rlang::call_name(rlang::frame_call())
+  fname <- paste("util", fname, level, sep = "_")
+  miss_label_col <- missing(label_col)
+  if (miss_label_col) {
+    label_col <- NULL
+  }
+  if (missing(study_data)) {
+    cl_l <- list(fname, level = level, #item_level = item_level,
+                 meta_data = meta_data,
+                 label_col = label_col, ...)
+  } else {
+    cl_l <- list(fname, level = level, #item_level = item_level,
+                 meta_data = meta_data,
+                 study_data = study_data,
+                 label_col = label_col, ...)
+  }
+  if (missing(item_level) && !missing(meta_data)) {
+    cl_l$item_level <- NULL
+  }
+  if (miss_label_col) {
+    cl_l$label_col <- NULL
+  }
+  cl_l <- cl_l[names(cl_l) %in% c("", names(formals(fname)))]
   cl2 <- do.call("call",
-                 list(fname, level = level, ...))
+                 cl_l)
   eval(cl2)
 }

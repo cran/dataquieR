@@ -74,16 +74,17 @@ test_that("util_interpret_limits works", {
     1577833200, NA, FALSE, TRUE,
     Inf, NA, FALSE, TRUE,
   )
-  expect_equivalent(a, b, tolerance = 1e-3)
+  expect_equal(a, b, tolerance = 1e-3, ignore_attr = TRUE)
 
   meta[[WELL_KNOWN_META_VARIABLE_NAMES$HARD_LIMITS]] <- NA
   meta[[WELL_KNOWN_META_VARIABLE_NAMES$HARD_LIMITS]][1] <- "[0; 0-0)"
   meta[[WELL_KNOWN_META_VARIABLE_NAMES$HARD_LIMITS]][2] <- "[3-3;Inf)"
-  expect_warning(m3 <- util_interpret_limits(meta),
+  wm <- conditionMessage(capture_warning(m3 <- util_interpret_limits(meta)))
+
+  expect_match(wm,
                  regexp =
                    paste0("Damaged (lower|upper)",
                           ".+HARD_LIMITS.+: .+(3-3|0-0).+ in .+[12].+"),
-                 all = TRUE,
                  perl = TRUE
   )
 })

@@ -6,31 +6,32 @@
 \usage{
 com_segment_missingness(
   study_data,
-  meta_data,
-  group_vars = NULL,
-  meta_data_segment,
+  item_level = "item_level",
   strata_vars = NULL,
+  group_vars = NULL,
   label_col,
   threshold_value,
   direction,
   color_gradient_direction,
   expected_observations = c("HIERARCHY", "ALL", "SEGMENT"),
-  exclude_roles = c(VARIABLE_ROLES$PROCESS)
+  exclude_roles = c(VARIABLE_ROLES$PROCESS),
+  meta_data = item_level,
+  meta_data_v2,
+  segment_level,
+  meta_data_segment
 )
 }
 \arguments{
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
-\item{meta_data}{\link{data.frame} the data frame that contains metadata
+\item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
-
-\item{group_vars}{\link{variable} the name of a variable used for grouping,
-defaults to \emph{NULL} for not grouping output}
-
-\item{meta_data_segment}{\link{data.frame} Segment level metadata. Optional.}
 
 \item{strata_vars}{\link{variable} the name of a variable used for stratification,
 defaults to NULL for not grouping output}
+
+\item{group_vars}{\link{variable} the name of a variable used for grouping,
+defaults to \emph{NULL} for not grouping output}
 
 \item{label_col}{\link{variable attribute} the name of the column in the metadata
 with labels of variables}
@@ -63,14 +64,27 @@ expected, if both segment variables are
 
 \item{exclude_roles}{\link{variable roles} a character (vector) of variable roles
 not included}
+
+\item{meta_data}{\link{data.frame} old name for \code{item_level}}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
+
+\item{meta_data_segment}{\link{data.frame} Segment level metadata. Optional.}
 }
 \value{
 a list with:
 \itemize{
-\item \code{SummaryData}: data frame about segment missingness
+\item \code{ResultData}: data frame about segment missingness
 \item \code{SummaryPlot}: ggplot2 heatmap plot: a heatmap-like graphic that
 highlights critical values depending on the respective
 threshold_value and direction.
+\item \code{ReportSummaryTable}: data frame underlying \code{SummaryPlot}
 }
 }
 \description{

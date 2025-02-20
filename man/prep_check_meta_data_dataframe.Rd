@@ -4,11 +4,23 @@
 \alias{prep_check_meta_data_dataframe}
 \title{Verify and normalize metadata on data frame level}
 \usage{
-prep_check_meta_data_dataframe(meta_data_dataframe = "dataframe_level")
+prep_check_meta_data_dataframe(
+  meta_data_dataframe = "dataframe_level",
+  meta_data_v2,
+  dataframe_level
+)
 }
 \arguments{
 \item{meta_data_dataframe}{\link{data.frame} data frame or path/url of a metadata
 sheet for the data frame level}
+
+\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\code{\link{prep_load_workbook_like_file}} for details.
+\strong{ALL LOADED DATAFRAMES WILL BE PURGED},
+using \code{\link{prep_purge_data_frame_cache}},
+if you specify \code{meta_data_v2}.}
+
+\item{dataframe_level}{\link{data.frame} alias for \code{meta_data_dataframe}}
 }
 \value{
 standardized metadata sheet as data frame
@@ -32,7 +44,7 @@ mds1 <- mds
 mds1$DF_UNIQUE_ROWS[[2]] <- "xxx" # not convertible
 # print(prep_check_meta_data_dataframe(mds1)) # fail
 mds1 <- mds
-mds1$DF_UNIQUE_ID[[2]] <- 12 # not yet supported
+mds1$DF_UNIQUE_ID[[2]] <- 12
 # print(prep_check_meta_data_dataframe(mds1)) # fail
 }
 }

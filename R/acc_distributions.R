@@ -2,8 +2,7 @@
 #'
 #' @description
 #' Data quality indicator checks "Unexpected location" and "Unexpected
-#' proportion" with histograms and, if a grouping variable is included, plots of
-#' empirical cumulative distributions for the subgroups.
+#' proportion" with histograms.
 #'
 #' [Indicator]
 #'
@@ -24,19 +23,12 @@
 #' PROPORTION_RANGE (range of expected values for the proportions of the
 #' categories)).
 #' - Plot histogram(s).
-#' - If group_vars is specified by the user, distributions within group-wise
-#' ecdf are presented.
 #'
 #' @export
 #'
+#' @inheritParams .template_function_indicator
+#'
 #' @param resp_vars [variable list] the names of the measurement variables
-#' @param group_vars [variable list] the name of the observer, device or
-#'                                   reader variable
-#' @param study_data [data.frame] the data frame that contains the measurements
-#' @param meta_data [data.frame] the data frame that contains metadata
-#'                               attributes of study data
-#' @param label_col [variable attribute] the name of the column in the metadata
-#'                                       with labels of variables
 #' @param plot_ranges [logical] Should the plot show ranges and results from the
 #'                              data quality checks? (default: TRUE)
 #' @param check_param [enum] any | location | proportion. Which type of check
@@ -61,7 +53,7 @@
 #'   - `SummaryData`: a [data.frame] containing data quality checks for
 #'                    "Unexpected location" and / or "Unexpected proportion"
 #'                    for a report
-#'   - `SummaryPlotList`: [list] of [ggplot]s for each response variable in
+#'   - `SummaryPlotList`: [list] of [ggplot2::ggplot]s for each response variable in
 #'                    `resp_vars`.
 #'
 #' @importFrom ggplot2 ggplot aes geom_histogram geom_bar geom_vline stat_ecdf
@@ -75,16 +67,22 @@
 #' [Online Documentation](
 #' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_distributions.html
 #' )
-acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
-                              study_data, meta_data,
+acc_distributions <- function(resp_vars = NULL,
+                              study_data,
                               label_col,
+                              item_level = "item_level",
                               check_param = c("any", "location", "proportion"),
                               plot_ranges = TRUE,
-                              flip_mode = "noflip") { # FIXME: EK: Please address the distribution issue of having too many different versions (after discussion with me)
-
+                              flip_mode = "noflip",
+                              meta_data = item_level,
+                              meta_data_v2) {
   # preps ----------------------------------------------------------------------
   # map metadata to study data
-  prep_prepare_dataframes(.replace_hard_limits = TRUE)
+  util_maybe_load_meta_data_v2()
+  prep_prepare_dataframes(.replace_hard_limits = TRUE,
+                          #.apply_factor_metadata = TRUE, # can be omitted in favor of .apply_factor_metadata_inadm
+                          .apply_factor_metadata_inadm = TRUE
+  )
 
   # If no response variable is defined, all suitable variables will be selected.
   if (length(resp_vars) == 0) {
@@ -101,69 +99,7 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
     }
   }
 
-  # set up grouping variables, if needed
-  if (all(is.na(group_vars))) {
-    group_vars <- NULL
-  } else {
-    util_correct_variable_use("group_vars",
-                              allow_null = TRUE,
-                              allow_more_than_one = FALSE,
-                              allow_any_obs_na = TRUE,
-                              allow_all_obs_na = FALSE,
-                              need_type = "!float",
-                              need_scale = "nominal | ordinal"
-    )
-    # TODO: Still needed? Utility function?
-    if (length(group_vars) > 0) {
-      # all labelled variables
-      levlabs <- meta_data$VALUE_LABELS[meta_data[[label_col]] %in% group_vars]
-
-      if (any(grepl("=", levlabs) | is.na(levlabs))) {
-        # any variables without labels?
-        if (any(is.na(levlabs))) {
-          util_warning(paste0(
-            "Variables ", paste0(group_vars[is.na(levlabs)], collapse = ", "),
-            " have no assigned labels and levels and can therefore not be ",
-            "used as grouping variables in acc_distributions."
-          ), applicability_problem = TRUE)
-        }
-
-        # only variables with labels
-        gvs_ll <- group_vars[!is.na(levlabs)]
-        gvs_ll <- gvs_ll[match(gvs_ll,
-                               meta_data[[label_col]][
-                                 meta_data[[label_col]] %in% group_vars])]
-        levlabs <- levlabs[!is.na(levlabs)]
-
-        for (i in seq_along(gvs_ll)) {
-          ds1[[gvs_ll[i]]] <- util_assign_levlabs(
-            variable = ds1[[gvs_ll[i]]],
-            string_of_levlabs = levlabs[i],
-            splitchar = SPLIT_CHAR,
-            assignchar = " = "
-          )
-        }
-      }
-
-      # The grouping variable(s) should not be included as response variable(s).
-      if (any(group_vars %in% resp_vars)) {
-        resp_vars <- resp_vars[-which(resp_vars %in% group_vars)]
-        util_warning(paste("Removed grouping variable from response variables",
-                           "for acc_distributions."),
-                     applicability_problem = TRUE)
-      }
-      if (length(resp_vars) == 0) {
-        util_warning("No variables left to analyse for acc_distributions.",
-                     applicability_problem = TRUE,
-                     intrinsic_applicability_problem = TRUE)
-        return(list(SummaryTable = list(),
-                    SummaryPlotList = list(),
-                    SummaryData = list()))
-      }
-    }
-  }
-
-  util_correct_variable_use("resp_vars",
+  util_correct_variable_use(resp_vars,
                             allow_more_than_one = TRUE,
                             allow_any_obs_na = TRUE,
                             allow_all_obs_na = FALSE,
@@ -174,7 +110,7 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
   )
 
   # Which parameter of the distribution should be checked?
-  dq_param <- match.arg(check_param)
+  dq_param <- util_match_arg(check_param)
 
   # DQ indicator "Unexpected location" requires metadata for the range of
   # expected values for the location parameter and the location metric.
@@ -199,10 +135,9 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
                                                     meta_data[[label_col]])]
       if (any(scale_level %in% c("interval", "ratio"))) {
         rvs_loc <- resp_vars[scale_level %in%
-                                    c("interval", "ratio")]
+                               c("interval", "ratio")]
         res_loc <- suppressWarnings(acc_distributions(
-          resp_vars = rvs_loc,
-          group_vars = group_vars, study_data = study_data,
+          resp_vars = rvs_loc, study_data = study_data,
           meta_data = meta_data, label_col = label_col,
           check_param = "location", plot_ranges = plot_ranges,
           flip_mode = flip_mode))
@@ -212,10 +147,9 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
 
       if (any(!(scale_level %in% c("interval", "ratio")))) {
         rvs_prop <- resp_vars[!(scale_level %in%
-                                       c("interval", "ratio"))]
+                                  c("interval", "ratio"))]
         res_prop <- suppressWarnings(acc_distributions(
-          resp_vars = rvs_prop,
-          group_vars = group_vars, study_data = study_data,
+          resp_vars = rvs_prop, study_data = study_data,
           meta_data = meta_data, label_col = label_col,
           check_param = "proportion", plot_ranges = plot_ranges,
           flip_mode = flip_mode))
@@ -247,12 +181,14 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
     } else if (dq_param == "location") {
       rvs_meta <- util_prep_location_check(resp_vars = resp_vars,
                                            meta_data = meta_data,
-                                           report_problems = "warning")
+                                           report_problems = "warning",
+                                           label_col = label_col)
     } else {
       rvs_meta <- util_prep_proportion_check(resp_vars = resp_vars,
                                              meta_data = meta_data,
-                                             study_data = ds1,
-                                             report_problems = "warning")
+                                             ds1 = ds1,
+                                             report_problems = "warning",
+                                             label_col = label_col)
     }
   }
 
@@ -278,8 +214,8 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
       }
 
       loc_res <- setNames(nm = c("Variables",
- #                                paste(c("FLG","VAL"), "acc_ud_loc", sep = "_"),
-                                  "FLG_acc_ud_loc", "values_from_data",
+                                 #                                paste(c("FLG","VAL"), "acc_ud_loc", sep = "_"),
+                                 "FLG_acc_ud_loc", "values_from_data",
                                  "loc_func",
                                  "loc_range"),
                           list(rv,
@@ -325,7 +261,7 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
 
       prop_res <-  setNames(nm = c(
         "Variables",
-#        paste(c("FLG", "VAL"), "acc_ud_prop", sep = "_"),
+        #        paste(c("FLG", "VAL"), "acc_ud_prop", sep = "_"),
         "FLG_acc_ud_prop", "values_from_data",
         "prop_range",
         "flg_which"),
@@ -347,6 +283,7 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
       x[-which(names(x) == "flg_which")]
     })
   } else {
+    flg_cat_prop <- list()
     dq_check_list <- list()
   }
 
@@ -354,11 +291,15 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
   rownames(res_dq_check) <- NULL
 
   # summary table --------------------------------------------------------------
-  res_out <- res_dq_check[, 1:4]
-  # GRADING for backwards compatibility
-  res_out$GRADING <- as.numeric(res_out[, 2])
-  res_out$GRADING[which(is.na(res_out$GRADING))] <- 0
-
+  if(ncol(res_dq_check)==0) { # in case there is no check for location or range, it provides a table without columns
+    res_out <- res_dq_check
+    res_view <- res_dq_check
+  } else{
+    res_out <- res_dq_check[, 1:4]
+    # GRADING for backwards compatibility
+    res_out$GRADING <- as.numeric(res_out[, 2])
+    res_out$GRADING[which(is.na(res_out$GRADING))] <- 0
+  }
 
   # summary data ---------------------------------------------------------------
   if (dq_param == "location") {
@@ -382,21 +323,28 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
   # plot -----------------------------------------------------------------------
   ref_env <- environment()
   plot_list <- lapply(setNames(nm = resp_vars), function(rv) {
+
+    # find suitable lables
+    lb <- paste0(prep_get_labels(rv,
+                                 item_level = meta_data,
+                                 label_col = label_col,
+                                 resp_vars_match_label_col_only = TRUE,
+                                 label_class = "SHORT"))
+
     # omit NAs from data to prevent ggplot2 warning messages
     ds1 <- ds1[!(is.na(ds1[[rv]])), , drop = FALSE]
 
     # Should the plot be a histogram? If not, it will be a bar chart.
     plot_histogram <-
       meta_data[[SCALE_LEVEL]][which(meta_data[[label_col]] == rv)] %in%
-        c(SCALE_LEVELS$INTERVAL, SCALE_LEVELS$RATIO) #&&
-      #!(dq_param == "proportion" && rv %in% rvs_with_meta)
+      c(SCALE_LEVELS$INTERVAL, SCALE_LEVELS$RATIO)
 
     txtspec <- element_text(
       colour = "black", hjust = .5,
-      vjust = .5, face = "plain"
+      vjust = .5, face = "plain", size = 10
     )
 
-    col_bars <- "grey"
+    col_bars <- "#2166AC"
     blue_red <- hcl.colors(10, "Plasma")[c(1,6)]
 
     if (plot_histogram) {
@@ -416,56 +364,43 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
 
       if (!is_datetime_var[[rv]]) {
         p <- p + scale_x_continuous(expand = expansion(mult = 0.1),
-                                    name = paste0(rv))
+                                    name = lb)
       } else {
         p <- p + ggplot2::scale_x_datetime(expand = expansion(mult = 0.1),
-                                           name = paste0(rv))
+                                           name = lb)
       }
+
+      obj1<- ggplot2::ggplot_build(p)
+      no_char_y <- max(nchar(obj1$data[[1]]$ymax))
+      no_char_x <- 4
+
     } else {
       # bar chart --------------------------------------------------------------
-      col_bars_sep <- setNames(nm = union(names(rvs_meta$Range[[rv]]),
-                                          unique(ds1[[rv]])),
-                               rep(col_bars,
-                                   length(union(names(rvs_meta$Range[[rv]]),
-                                                unique(ds1[[rv]])))))
+      if (!is.factor(ds1[[rv]])) {
+        lvls <- union(names(rvs_meta$Range[[rv]]), unique(ds1[[rv]]))
+      } else {
+        lvls <- levels(ds1[[rv]])
+      }
+      plot_data <- data.frame("cat" = factor(lvls, levels = lvls),
+                              "count" = unlist(lapply(lvls, function(ll) {
+                                length(which(ds1[[rv]] == ll)) })),
+                              "col" = col_bars)
       if (plot_ranges & any(!is.na(flg_cat_prop[[rv]]))) {
         # if bars outside of expected ranges shall be highlighted
-        col_bars_sep[flg_cat_prop[[rv]]] <- blue_red[2]
-      }
-      col_bars <- col_bars_sep
-      count_tab <- table(factor(ds1[[rv]]))
-      col_bars <- col_bars[names(count_tab)[which(count_tab > 0)]]
-      # bar for 0 counts has 0 height and needs no color
-      # (would cause a ggplot error)
-      exp_bars <- names(col_bars_sep) # expected bars
-      ds1[[rv]] <- factor(ds1[[rv]], levels = exp_bars)
-
-      if ("VALUE_LABELS" %in% colnames(meta_data) &&
-          !util_empty(meta_data$VALUE_LABELS[which(meta_data[[label_col]] ==
-                                                   rv)])) {
-        val_lab <- util_parse_assignments(
-          split_on_any_split_char = TRUE, split_char = c(SPLIT_CHAR, '<'),
-          meta_data[[VALUE_LABELS]][which(meta_data[[label_col]] == rv)])
-        if (all(levels(ds1[[rv]]) %in% names(val_lab))) {
-          # TODO: Should the other be discarded?
-          levels(ds1[[rv]]) <- vapply(levels(ds1[[rv]]),
-                                      function(old_lev) {
-                                        val_lab[[old_lev]]
-                                      },
-                                      FUN.VALUE = character(1))
-          exp_bars <- levels(ds1[[rv]])
-        }
+        plot_data[plot_data[["cat"]] %in% flg_cat_prop[[rv]], "col"] <- blue_red[2]
       }
 
-      p <- ggplot(data = ds1[, rv, drop = FALSE],
-                  aes(x = .data[[rv]])) +
-        geom_bar(fill = col_bars, width = 0.8)
+      p <- util_bar_plot(plot_data = plot_data,
+                         cat_var = "cat",
+                         num_var = "count",
+                         fill_var = "col",
+                         colors = unique(plot_data[, "col"]),
+                         relative = FALSE, show_numbers = FALSE, flip = FALSE)
+      p <- p + xlab(lb)
 
-      p <- p +
-        scale_x_discrete(name = paste0(rv),
-                         breaks = as.character(exp_bars),
-                         drop = FALSE,
-                         expand = expansion(add = 0.5, mult = 0.1))
+      obj1<- ggplot2::ggplot_build(p)
+      no_char_y <- max(nchar(obj1$data[[1]]$ymax))
+      no_char_x <- max(nchar(lvls))
     }
 
     # add ranges (if needed) ---------------------------------------------------
@@ -549,6 +484,7 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
     }
 
     fli <- util_coord_flip(p = p, ref_env = ref_env)
+    is_flipped <- inherits(fli, "CoordFlip")
 
     p <- p +
       fli +
@@ -563,53 +499,105 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
         axis.title.y = txtspec
       )
 
-    # ecdf by group_vars -------------------------------------------------------
-    if (length(group_vars) > 0 & plot_histogram) {
-      ds1[[group_vars]] <- as.factor(ds1[[group_vars]]) # there is only one
-      # grouping variable, we have ensured this by allow_more_than_one = FALSE
-      pp <- ggplot(data = ds1[, c(rv, group_vars), drop = FALSE],
-                   aes(x = .data[[rv]], colour = .data[[group_vars]])) +
-        fli +
-        stat_ecdf(geom = "step") +
-        labs(x = "", y = paste0("ECDF: ", rv, " (by ",
-                                paste0(group_vars, collapse = ", "), ")")) +
-        scale_x_continuous(expand = expansion(mult = 0.1),
-                           limits = range(breaks_x)) +
-        theme_minimal() +
-        theme(
-          title = txtspec,
-          axis.text.x = txtspec,
-          axis.text.y = txtspec,
-          axis.title.x = txtspec,
-          axis.title.y = txtspec,
-          legend.title = element_blank()
-        )
+    # Adust the following, if changing the bar chart plots above:
+    #    if (length(P$layers) == 1 &&
+    #        inherits(P$layers[[1]]$geom, "GeomBar")) {
+    # bar chart sizing_hints attributes, can also be attached to the
+    # figures, alone
+    #        .tb <- table(P$data)
+    #       attr(P, "sizing_hints") <- list(
+    #         figure_type_id = "bar_chart",
+    #         rotated = is_flipped,
+    #         number_of_bars = dim(.tb),
+    #         min_bar_height = min(.tb),
+    #         max_bar_height = max(.tb)
+    #       )
+    #   }
 
-      if (util_ensure_suggested("colorspace",
-                                "use the colorspace color scale",
-                                err = FALSE)) {
-        pp <- pp +
-          colorspace::scale_color_discrete_sequential(palette = "Plasma",
-                                                      na.value = "grey")
+    util_set_size(p)
+  })
+  #TODO: get here the values for the attributes from the plot
+  # Add sizing hints only if resp_vars is one
+  if (length(resp_vars)==1) {
+    #sizing information
+    if (!is.null(plot_list[[resp_vars]])) {
+      obj1 <- ggplot2::ggplot_build(plot_list[[resp_vars]])
+      #in case of ecdf
+      if (length(obj1$layout$facet_params$.possible_columns) == 2) {
+        min_bar_height <- 0
+        max_bar_height <- 0
+        range_bar <- 400 #an intermediate size plot in height
+      } else {
+        # in case of a single ditribution plot
+        min_bar_height <- min(util_rbind(data_frames_list = obj1$data)$ymax,
+                              na.rm = TRUE)
+        max_bar_height <- max(util_rbind(data_frames_list = obj1$data)$ymax,
+                              na.rm = TRUE)
+        range_bar <- max_bar_height - min_bar_height
+
+        if(min_bar_height == Inf ||
+           min_bar_height == -Inf ||
+           max_bar_height == Inf ||
+           max_bar_height == -Inf ) {
+          range_bar <- 400 #an intermediate size plot in height
+        }
       }
 
-      P <- p + pp +
-        plot_layout(ncol = 1) +
-        plot_annotation(tag_levels = 'A')
-    } else {
-      P <- p
+      rotated <- unique(util_rbind(data_frames_list = obj1$data)$flipped_aes)
+      rotated <-  rotated[!is.na(rotated)]
+      if (inherits(ds1[[resp_vars]], "POSIXct")) {
+        number_of_bars <- 10
+      } else {
+        #    number_of_bars <- nrow(util_rbind(data_frames_list = obj1$data))
+        #fix number in case of acc_distrib_prop o loc
+        #    if (check_param == "proportion" || check_param == "location") {
+        #      number_of_bars <- nrow(obj1$data[[1]])
+        #    }
+        number_of_bars <- nrow(obj1$data[[1]])
+
+        # fix number in case there are categories not listed in the obj1,
+        # example OBS_BP_0 in ship example data
+        if (is.factor(ds1[[resp_vars]])) {
+          no_levels <- length(levels(ds1[[resp_vars]]))
+          number_of_bars <- max(c(number_of_bars,no_levels))
+        }
+      }
+
+      no_char_y <- max(nchar(obj1$data[[1]]$ymax))
+
+      if(meta_data[meta_data[[label_col]] == resp_vars,
+                   SCALE_LEVEL, drop = FALSE] %in% c("ratio", "interval")) {
+        no_char_x <- 4
+      } else {
+        exp_bars <- levels(ds1[[resp_vars]])
+        no_char_x <- max(nchar(exp_bars))
+      }
+      rm(obj1)
     }
+    return(util_attach_attr(list(SummaryTable = res_out,
+                                 SummaryData = res_view,
+                                 SummaryPlotList = plot_list),
+                            sizing_hints = list(figure_type_id = "bar_chart",
+                                                rotated = rotated,
+                                                number_of_bars = number_of_bars,
+                                                range = range_bar,
+                                                no_char_x = no_char_x,
+                                                no_char_y = no_char_y),
+                            as_plotly = "util_as_plotly_acc_distributions"))
+  } else {
+    return(util_attach_attr(list(SummaryTable = res_out,
+                                 SummaryData = res_view,
+                                 SummaryPlotList = plot_list),
+                            as_plotly = "util_as_plotly_acc_distributions"))
+  }
 
-    util_set_size(P)
-  })
 
-
-
-  return(util_attach_attr(list(SummaryTable = res_out,
-              SummaryData = res_view,
-              SummaryPlotList = plot_list),
-         as_plotly = "util_as_plotly_acc_distributions"))
 }
+
+
+
+
+
 
 #' Plots and checks for distributions -- Location
 #' @inherit acc_distributions
@@ -621,43 +609,20 @@ acc_distributions <- function(resp_vars = NULL, group_vars = NULL,
 #' )
 acc_distributions_loc <- function(resp_vars = NULL,
                                   study_data,
-                                  meta_data,
-                                  label_col,
+                                  label_col = VAR_NAMES,
+                                  item_level = "item_level",
                                   check_param = "location",
                                   plot_ranges = TRUE,
-                                  flip_mode = "noflip") {
+                                  flip_mode = "noflip",
+                                  meta_data = item_level,
+                                  meta_data_v2) {
+  util_maybe_load_meta_data_v2()
   rvs_meta <- util_prep_location_check(resp_vars = resp_vars,
                                        meta_data = meta_data,
-                                       report_problems = "error")
+                                       report_problems = "error",
+                                       label_col = label_col)
   acc_distributions(
-    resp_vars = resp_vars, group_vars = NULL, study_data = study_data,
-    meta_data = meta_data, label_col = label_col,
-    check_param = "location", plot_ranges = plot_ranges,
-    flip_mode = flip_mode
-  )
-}
-
-#' Plots and checks for distributions -- Location, ECDF
-#' @inherit acc_distributions
-#' @export
-#' @seealso
-#' - [acc_distributions]
-#' - [Online Documentation](
-#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_distributions.html
-#' )
-acc_distributions_loc_ecdf <- function(resp_vars = NULL,
-                                       group_vars = NULL,
-                                  study_data,
-                                  meta_data,
-                                  label_col,
-                                  check_param = "location",
-                                  plot_ranges = TRUE,
-                                  flip_mode = "noflip") {
-  rvs_meta <- util_prep_location_check(resp_vars = resp_vars,
-                                       meta_data = meta_data,
-                                       report_problems = "error")
-  acc_distributions(
-    resp_vars = resp_vars, group_vars = group_vars, study_data = study_data,
+    resp_vars = resp_vars, study_data = study_data,
     meta_data = meta_data, label_col = label_col,
     check_param = "location", plot_ranges = plot_ranges,
     flip_mode = flip_mode
@@ -674,40 +639,32 @@ acc_distributions_loc_ecdf <- function(resp_vars = NULL,
 #' )
 acc_distributions_prop <- function(resp_vars = NULL,
                                    study_data,
-                                   meta_data,
                                    label_col,
+                                   item_level = "item_level",
                                    check_param = "proportion",
                                    plot_ranges = TRUE,
-                                   flip_mode = "noflip") {
+                                   flip_mode = "noflip",
+                                   meta_data = item_level,
+                                   meta_data_v2) {
+  util_maybe_load_meta_data_v2()
+  prep_prepare_dataframes(.replace_hard_limits = TRUE,
+                          #.apply_factor_metadata = TRUE, # can be omitted in favor of .apply_factor_metadata_inadm
+                          .apply_factor_metadata_inadm = TRUE
+                          )
   md_prep <- util_prep_proportion_check(
     resp_vars = resp_vars,
     meta_data = meta_data,
-    study_data = study_data,
-    report_problems = "error"
+    ds1 = ds1,
+    report_problems = "error",
+    label_col = label_col
   )
 
   acc_distributions(
-    resp_vars = resp_vars, group_vars = NULL, study_data = study_data,
+    resp_vars = resp_vars, study_data = study_data,
     meta_data = meta_data, label_col = label_col,
     check_param = "proportion", plot_ranges = plot_ranges,
     flip_mode = flip_mode
   )
-}
-
-util_has_no_group_vars <- function(resp_vars,
-                                   meta_data = "item_level",
-                                   label_col = LABEL) {
-  util_expect_scalar(resp_vars)
-  util_expect_data_frame(meta_data)
-  columns <- grep("^GROUP_VAR_.*", colnames(meta_data), value = TRUE)
-  resp_vars <- util_find_var_by_meta(resp_vars,
-                        meta_data = meta_data,
-                        label_col = label_col)
-  if (is.na(resp_vars)) {
-    return(TRUE)
-  }
-  rowSums(!util_empty(meta_data[meta_data[["VAR_NAMES"]] == resp_vars,
-            columns, FALSE])) == 0
 }
 
 #' Plots and checks for distributions -- only
@@ -723,89 +680,42 @@ util_has_no_group_vars <- function(resp_vars,
 #' )
 acc_distributions_only <- function(resp_vars = NULL,
                                    study_data,
-                                   meta_data,
-                                   label_col,
-                                   flip_mode = "noflip") {
+                                   label_col = VAR_NAMES,
+                                   item_level = "item_level",
+                                   flip_mode = "noflip",
+                                   meta_data = item_level,
+                                   meta_data_v2) {
+  util_maybe_load_meta_data_v2()
   loc_avail <- !inherits(try(util_prep_location_check(resp_vars = resp_vars,
                                        meta_data = meta_data,
-                                       report_problems = "error"),
+                                       report_problems = "error",
+                                       label_col = label_col),
                    silent = TRUE), "try-error")
-  if (loc_avail) {
+  if (.called_in_pipeline && loc_avail) {
     util_error("%s is already in a distribution location check plot figure",
                dQuote(resp_vars),
                applicability_problem = TRUE,
                intrinsic_applicability_problem = TRUE)
   }
+  prep_prepare_dataframes(.replace_hard_limits = TRUE,
+                          .apply_factor_metadata = TRUE, # can be omitted in favor of .apply_factor_metadata_inadm
+                          .apply_factor_metadata_inadm = TRUE)
   prop_avail <- !inherits(try(util_prep_proportion_check(
                     resp_vars = resp_vars,
                     meta_data = meta_data,
-                    study_data = study_data,
-                    report_problems = "error"
+                    ds1 = ds1,
+                    report_problems = "error",
+                    label_col = label_col
                   ), silent = TRUE), "try-error")
-  if (prop_avail) {
+  if (.called_in_pipeline && prop_avail) {
     util_error("%s is already in a distribution proportion check plot figure",
                dQuote(resp_vars),
                applicability_problem = TRUE,
                intrinsic_applicability_problem = TRUE)
   }
 
-  if (!util_has_no_group_vars(resp_vars = resp_vars,
-                         meta_data = meta_data,
-                         label_col = label_col)) {
-    util_error("%s is already in a ecdf/distribution plot figure",
-               dQuote(resp_vars),
-               applicability_problem = TRUE,
-               intrinsic_applicability_problem = TRUE)
-  }
   acc_distributions(
-    resp_vars = resp_vars, group_vars = NULL, study_data = study_data,
-    meta_data = meta_data, label_col = label_col,
-    flip_mode = flip_mode
-  )
-}
-
-#' Plots and checks for distributions -- only, but with ecdf
-#'
-#' [Descriptor]
-#' @inherit acc_distributions
-#' @export
-#' @seealso
-#' - [acc_distributions]
-#' - [Online Documentation](
-#' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_distributions.html
-#' )
-acc_distributions_only_ecdf <- function(resp_vars = NULL,
-                                   study_data,
-                                   group_vars = NULL,
-                                   meta_data,
-                                   label_col,
-                                   flip_mode = "noflip") {
-  prep_prepare_dataframes()
-  util_correct_variable_use(group_vars)
-  loc_avail <- !inherits(try(util_prep_location_check(resp_vars = resp_vars,
-                                                      meta_data = meta_data,
-                                                      report_problems = "error"),
-                             silent = TRUE), "try-error")
-  if (loc_avail) {
-    util_error("%s is already in a distribution location check plot figure",
-               dQuote(resp_vars),
-               applicability_problem = TRUE,
-               intrinsic_applicability_problem = TRUE)
-  }
-  prop_avail <- !inherits(try(util_prep_proportion_check(
-    resp_vars = resp_vars,
-    meta_data = meta_data,
-    study_data = study_data,
-    report_problems = "error"
-  ), silent = TRUE), "try-error")
-  if (prop_avail) {
-    util_error("%s is already in a distribution proportion check plot figure",
-               dQuote(resp_vars),
-               applicability_problem = TRUE,
-               intrinsic_applicability_problem = TRUE)
-  }
-  acc_distributions(
-    resp_vars = resp_vars, group_vars = group_vars, study_data = study_data,
+    resp_vars = resp_vars, study_data = study_data,
     meta_data = meta_data, label_col = label_col,
     flip_mode = flip_mode
   )
@@ -846,44 +756,6 @@ util_as_plotly_acc_distributions <- function(res, ...) {
 
   res$SummaryPlot <- res$SummaryPlotList[[1]]
 
-  if (inherits(res$SummaryPlot, "patchwork")) {
-    py1 <- try(plotly::ggplotly(res$SummaryPlot[[1]],
-                                ...), silent = TRUE)
-    py2 <- try(plotly::ggplotly(res$SummaryPlot[[2]],
-                                ...), silent = TRUE)
-    util_stop_if_not(!inherits(py1, "try-error"))
-    util_stop_if_not(!inherits(py2, "try-error"))
-    # https://plotly.com/r/subplots/#subplots-with-shared-yaxes
-    plotly::subplot(
-      plotly::add_annotations( # https://stackoverflow.com/a/59191142
-        py1,
-        text = "A",
-        x = 0,
-        y = 1,
-        yref = "paper",
-        xref = "paper",
-        xanchor = "left",
-        yanchor = "top",
-        yshift = 20,
-        showarrow = FALSE,
-        font = list(size = 15)
-      ),
-      plotly::add_annotations( # https://stackoverflow.com/a/59191142
-        py2,
-        text = "B",
-        x = 0,
-        y = 1,
-        yref = "paper",
-        xref = "paper",
-        xanchor = "left",
-        yanchor = "top",
-        yshift = 20,
-        showarrow = FALSE,
-        font = list(size = 15)
-      ),
-      nrows = 2,
-      shareX = TRUE)
-  } else {
-    plotly::ggplotly(res$SummaryPlot, ...)
-  }
+  py <- plotly::ggplotly(res$SummaryPlot, ...)
+  plotly::layout(py, xaxis = list(tickangle = "auto"))
 }

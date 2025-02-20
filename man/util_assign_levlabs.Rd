@@ -40,11 +40,14 @@ for warning messages}
 values}
 }
 \value{
-a \link{data.frame} with labels assigned to categorical variables
+a factor with labels assigned to categorical variables
 (if available)
 }
 \description{
 function to assign labels to levels of a variable
+}
+\details{
+DEPRECATED from v2.5.0
 }
 \seealso{
 Other data_management: 
@@ -52,10 +55,12 @@ Other data_management:
 \code{\link{util_check_group_levels}()},
 \code{\link{util_compare_meta_with_study}()},
 \code{\link{util_dichotomize}()},
+\code{\link{util_fix_merge_dups}()},
 \code{\link{util_merge_data_frame_list}()},
 \code{\link{util_rbind}()},
 \code{\link{util_remove_na_records}()},
 \code{\link{util_replace_hard_limit_violations}()},
+\code{\link{util_round_to_decimal_places}()},
 \code{\link{util_study_var2factor}()},
 \code{\link{util_table_of_vct}()}
 }

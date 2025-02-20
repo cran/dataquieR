@@ -13,6 +13,8 @@
 #' It expects two objects in the caller's environment: `ds1` and `meta_data`.
 #' `meta_data` is the metadata data frame and `ds1` is produced by a preceding
 #' call of [prep_prepare_dataframes] using `meta_data` and `study_data`.
+#' So this function can only be used after calling the function
+#' [prep_prepare_dataframes]
 #'
 #' [util_correct_variable_use] and [util_correct_variable_use2] differ only in
 #' the default of the argument `role`.
@@ -308,7 +310,8 @@ util_correct_variable_use <- function(arg_name,
     }
   }
   if (length(variable) > 0) { # if we have at least one variable name
-    if (!all(is.character(variable))) { # and one name is not a character string
+    if (!all(is.character(variable) |
+             is.na(variable))) { # and one name is not a character string
       util_error("Need character variable names in argument %s", arg_name,
                  applicability_problem = TRUE)
       # this is (at least up to now, may allow symbols here similar
@@ -364,6 +367,7 @@ util_correct_variable_use <- function(arg_name,
                                     which(!is.na(variable)))
       non_matching_vars <- variable[non_matching_ind]
       other_col <- setdiff(c(VAR_NAMES, LABEL, LONG_LABEL), label_col)
+      other_col <- intersect(other_col, colnames(meta_data))
       map_res <- lapply(setNames(nm = other_col), function(oc) {
         unname(
           util_map_labels(
@@ -432,12 +436,21 @@ util_correct_variable_use <- function(arg_name,
   data_problem_container <- new.env(parent = emptyenv())
   for (v in variable) { # now, check all variable values from the data
     if (!allow_all_obs_na && all(is.na(ds1[[v]]))) {
-      # if all observations are NA and this is prohibited
-      record_problem("Variable '%s' (%s) has only NA observations",
-                     na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
-                     applicability_problem = applicability_problem,
-                     intrinsic_applicability_problem =
-                       intrinsic_applicability_problem)
+      if (is.na(v)) {
+        # if all observations are NA and this is prohibited
+        record_problem("There are NAs in the variable names passed in %s",
+                       arg_name,
+                       applicability_problem = applicability_problem,
+                       intrinsic_applicability_problem =
+                         intrinsic_applicability_problem)
+      } else{
+        # if all observations are NA and this is prohibited
+        record_problem("Variable '%s' (%s) has only NA observations",
+                       na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
+                       applicability_problem = applicability_problem,
+                       intrinsic_applicability_problem =
+                         intrinsic_applicability_problem)
+      }
       data_problem_container[[v]] <- TRUE
     }
 # names(empty_containter) gibt die geflaggten Variablen
@@ -451,20 +464,22 @@ util_correct_variable_use <- function(arg_name,
       data_problem_container[[v]] <- TRUE
     }
 
-    uniq_rv <- unique(ds1[[v]])
-    uniq_rv <- uniq_rv[!util_empty(uniq_rv)]
-    n_distinct_values <- length(uniq_rv)
-    if (n_distinct_values < min_distinct_values) {
-      # if we have fewer distinct values than required
-      record_problem(c("Variable '%s' (%s) has fewer distinct values than required",
-                       "for the argument %s of %s"),
-                     na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
-                     sQuote(arg_name),
-                     sQuote(rlang::caller_call()[[1]]),
-                     applicability_problem = applicability_problem,
-                     intrinsic_applicability_problem =
-                       intrinsic_applicability_problem)
-      data_problem_container[[v]] <- TRUE
+    if (min_distinct_values > 0) {
+      uniq_rv <- unique(ds1[[v]])
+      uniq_rv <- uniq_rv[!util_empty(uniq_rv)]
+      n_distinct_values <- length(uniq_rv)
+      if (n_distinct_values < min_distinct_values) {
+        # if we have fewer distinct values than required
+        record_problem(c("Variable '%s' (%s) has fewer distinct values than required",
+                         "for the argument %s of %s"),
+                       na.omit(v)[na.omit(v) %in% colnames(ds1)], arg_name,
+                       sQuote(arg_name),
+                       sQuote(rlang::caller_call()[[1]]),
+                       applicability_problem = applicability_problem,
+                       intrinsic_applicability_problem =
+                         intrinsic_applicability_problem)
+        data_problem_container[[v]] <- TRUE
+      }
     }
   }
 

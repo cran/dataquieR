@@ -40,6 +40,8 @@ util_html_for_var <- function(report, cur_var, use_plot_ly, template,
                            rs[rs$x != "Total", , drop = FALSE])
     rs <-
       rs[!grepl("background: #ffffff", rs[, 2], fixed = TRUE), , drop = FALSE]
+    rs <-
+      rs[!is.na(rs[, 2]), , drop = FALSE]
 
     texts <- vapply(rs[, 1, drop = TRUE],
                     util_alias2caption, long = TRUE, FUN.VALUE = character(1))
@@ -154,7 +156,28 @@ util_html_for_var <- function(report, cur_var, use_plot_ly, template,
 
 
 
-  title <- htmltools::h1(cur_var)
+  title <- htmltools::tagList(
+    htmltools::h1(prep_get_labels(cur_var,
+                                  max_len = 9999999,
+                                  meta_data = meta_data,
+                                  label_col = label_col,
+                                  resp_vars_match_label_col_only = TRUE,
+                                  label_class = "LONG")),
+     htmltools::h2(paste0(
+       prep_map_labels(cur_var,
+                       meta_data = meta_data,
+                       to = VAR_NAMES,
+                       from = label_col,
+                       ifnotfound = "",
+                       warn_ambiguous = FALSE),
+      " ",
+      prep_get_labels(cur_var,
+                      meta_data = meta_data,
+                      label_col = label_col,
+                      resp_vars_match_label_col_only = TRUE,
+                      label_class = "SHORT")
+       ))
+  )
 
   cur_md <- meta_data[meta_data[[label_col]] == cur_var,
                       , FALSE] # subset the metadata for the current variable to show it in the report
@@ -198,8 +221,16 @@ util_html_for_var <- function(report, cur_var, use_plot_ly, template,
 
   page <- htmltools::tagList(add_anchor, title, body)
 
+  title <- prep_get_labels(cur_var,
+                           meta_data = meta_data,
+                           label_col = label_col,
+                           max_len = 9999999,
+                           resp_vars_match_label_col_only = TRUE,
+                           label_class = "LONG")
+  title <- sprintf("%s: %s", names(title), title)
+
   return(list(list("Single Variables",
-                     cur_var,
+                     title,
                      sprintf("VAR_%s.html", prep_link_escape(cur_var, #remove special characters from variable name
                                                              html = TRUE)),
                      page)))

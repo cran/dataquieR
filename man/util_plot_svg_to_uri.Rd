@@ -4,10 +4,17 @@
 \alias{util_plot_svg_to_uri}
 \title{Replacement for \code{htmltools::plotTag}}
 \usage{
-util_plot_svg_to_uri(expr)
+util_plot_svg_to_uri(expr, w = 800, h = 600)
 }
 \arguments{
 \item{expr}{plot expression}
+
+\item{w}{width}
+
+\item{h}{height
+
+\code{w} and \code{h} are mostly used for the relation of fixed text sizes to
+the figure size.}
 }
 \value{
 \code{htmltools} compatible object

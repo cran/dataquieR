@@ -6,60 +6,44 @@
 \usage{
 util_int_duplicate_content_segment(
   level = c("segment"),
-  study_segment,
+  identifier_name_list,
+  id_vars_list,
+  unique_rows,
   study_data,
-  meta_data
+  meta_data,
+  meta_data_segment = "segment_level",
+  segment_level
 )
 }
 \arguments{
 \item{level}{\link{character} a character vector indicating whether the assessment should be conducted at the study level (level = "dataframe") or at the segment level (level = "segment").}
 
-\item{study_segment}{\link{vector} the vector that contains the name of the identifier to be used in the assessment. For the study level, corresponds to the names of the different data frames. For the segment level, indicates the name of the segments.}
+\item{identifier_name_list}{\link{vector} the vector that contains the name of the identifier to be used in the assessment. For the study level, corresponds to the names of the different data frames. For the segment level, indicates the name of the segments.}
+
+\item{id_vars_list}{\link{list} the list containing the identifier variables names to be used in the assessment.}
+
+\item{unique_rows}{\link{vector} named. for each segment, either true/false or \code{no_id} to exclude ID variables from check}
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements, mandatory.}
 
 \item{meta_data}{\link{data.frame} the data frame that contains metadata attributes of the study data, mandatory.}
+
+\item{meta_data_segment}{\link{data.frame} -- optional: Segment level metadata}
+
+\item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
 }
 \value{
 a \link{list} with
 \itemize{
 \item \code{SegmentData}: data frame with the results of the quality check for duplicated entries
 \item \code{SegmentTable}: data frame with selected duplicated entries check results, used for the data quality report.
-\item \code{Duplicates}: vector with row indices of duplicated entries, if any, otherwise NULL.
+\item \code{Other}: vector with row indices of duplicated entries, if any, otherwise NULL.
 }
 }
 \description{
 This function tests for duplicates entries in the data set. It is possible to
 check duplicated entries by study segments or to consider only selected
 segments.
-}
-\examples{
-\dontrun{
-study_data <- readRDS(system.file("extdata", "ship.RDS", package = "dataquieR"))
-meta_data <- readRDS(system.file("extdata", "ship_meta.RDS", package = "dataquieR"))
-
-# Segment level
-int_duplicate_content(
-  level = "segment",
-  study_segment = c("INTRO", "INTERVIEW"),
-  study_data = study_data,
-  meta_data = meta_data
-)
-
-# Studies or data frame level
-study_tables <- list(
-  "sd1" = readRDS(system.file("extdata", "ship.RDS", package = "dataquieR")),
-  "sd2" = readRDS(system.file("extdata", "ship.RDS", package = "dataquieR"))
-)
-
-int_duplicate_content(
-  level = "dataframe",
-  study_segment = c("sd1", "sd2"),
-  study_data = study_tables,
-  meta_data = meta_data
-)
-}
-
 }
 \seealso{
 Other integrity_indicator_functions: 

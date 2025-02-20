@@ -11,7 +11,7 @@
 #' @keywords internal
 
 util_parse_interval <- function(int) {
-  if (is.na(int)) {
+  if (util_empty(int)) {
     return(NA)
   }
   if (exists(int, .interval_cache)) {

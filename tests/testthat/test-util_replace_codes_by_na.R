@@ -1,8 +1,9 @@
 test_that("util_replace_codes_by_na works", {
   skip_on_cran()
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   local({
-    meta_data <- prep_get_data_frame("meta_data")
-    study_data <- prep_get_data_frame("study_data")
+    meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+    study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
     sd0 <- study_data[1:30, 30:35, FALSE]
     md0 <- meta_data[meta_data$VAR_NAMES %in% colnames(sd0), , FALSE]
     expected <- structure(list(v00024 = c(
