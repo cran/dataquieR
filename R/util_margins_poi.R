@@ -85,6 +85,13 @@ util_margins_poi <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   res_df <- data.frame(emmeans::emmeans(model, group_vars, type = "response"),
                        check.names = FALSE)
 
+  # adjust for covariates, if needed
+  ds1$resp_var_adj <-
+    # estimated mean for each level of the grouping variable
+    res_df$rate[match(ds1[[group_vars]], res_df[, group_vars])] +
+    # residuals: original value of the response variable - fitted value
+    ds1[[resp_vars]] - model$fitted.values
+
   summary_ds <- as.data.frame(
     dplyr::summarize(
       dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
@@ -103,9 +110,7 @@ util_margins_poi <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
 
   # thresholds -----------------------------------------------------------------
   if (threshold_type %in% c("empirical", "none")) {
-    # th <- exp(as.numeric(coefficients(glm(v101 ~ 1,
-    #    family = poisson(link="log"), data = expl_df))))
-    th <- 1
+    th <- sqrt(omv$margins) # Poisson distribution: variance=rate, SD=sqrt(var)
     parn <- c(
       paste("-", threshold_value, "TH", sep = ""), "Mean",
       paste("+", threshold_value, "TH", sep = "")
@@ -149,8 +154,9 @@ util_margins_poi <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   }
 
   # Plot 1: hybrid density/boxplot graph
-  p1 <- ggplot(data = ds1[, c(resp_vars, group_vars), drop = FALSE],
-               aes(x =  .data[[group_vars]], y =  .data[[resp_vars]])) +
+  p1 <- ggplot(data = ds1[, c("resp_var_adj", group_vars), drop = FALSE],
+               aes(x = .data[[group_vars]],
+                   y = round(.data[["resp_var_adj"]]))) +
     geom_count(aes(alpha = 0.9), color = "gray") +
     geom_pointrange(
       data = res_df, aes(
@@ -158,8 +164,7 @@ util_margins_poi <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
         y = margins,
         ymin = LCL,
         ymax = UCL,
-        color = as.factor(GRADING),
-        # n = sample_size
+        color = as.factor(GRADING)#, n = sample_size
       ),
       shape = 18, linewidth = 1,
       inherit.aes = FALSE,
@@ -168,7 +173,7 @@ util_margins_poi <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
     theme_minimal() +
     labs(x = "", y = "") +
     theme(
-      legend.position = "None", legend.title = element_blank(),
+      legend.position = "none", legend.title = element_blank(),
       text = element_text(size = 16),
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
     ) +
@@ -178,12 +183,12 @@ util_margins_poi <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
     p1 <- p1 +
       geom_text(data = summary_ds,
                 aes(x = summary_ds[, group_vars],
-                    y = max(ds1[, c(resp_vars), drop = FALSE]) + 1.2,
+                    y = max(round(ds1[, "resp_var_adj", drop = FALSE])) + 1.2,
                     label = sample_size),
                 hjust = 0.5, angle = 90) +
       annotate("text",
-               x = 0.50,
-               y = max(ds1[, c(resp_vars), drop = FALSE]) + 1.2,
+               x = 0.5,
+               y = max(round(ds1[, "resp_var_adj", drop = FALSE])) + 1.2,
                label = "N")
   }
 
@@ -199,19 +204,23 @@ util_margins_poi <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   }
 
   # Plot 2: overall distributional plot flipped on y-axis of plot 1
-  get_y_scale <- ggplot(ds1[, resp_vars, drop = FALSE], aes(x = .data[[resp_vars]])) +
+  get_y_scale <- ggplot(ds1[, "resp_var_adj", drop = FALSE],
+                        aes(x = round(.data[["resp_var_adj"]]))) +
     geom_density(alpha = 0.35)
   aty <- mean(range(ggplot_build(get_y_scale)$data[[1]]$y))
 
-  p2 <- ggplot(ds1[, resp_vars, drop = FALSE], aes(.data[[resp_vars]])) +
+  p2 <- ggplot(ds1[, "resp_var_adj", drop = FALSE],
+               aes(round(.data[["resp_var_adj"]]))) +
     geom_density(alpha = 0.35) +
     coord_flip() +
     theme_minimal() +
     labs(x = NULL, y = NULL) +
-    ggplot2::xlim(c(min(min(ds1[, c(resp_vars), drop = FALSE]), pars),
-                    max(max(ds1[, c(resp_vars), drop = FALSE])+1.2, pars + offs))) +
+    ggplot2::xlim(c(min(min(round(ds1[, "resp_var_adj", drop = FALSE])), pars),
+                    max(max(round(ds1[, "resp_var_adj", drop = FALSE])) + 1.2,
+                        pars + offs))) +
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
           text = element_text(size = 16))
+
   if (threshold_type != "none") {
     p2 <-
       p2 +

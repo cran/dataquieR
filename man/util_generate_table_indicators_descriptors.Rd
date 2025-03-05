@@ -5,10 +5,10 @@
 \title{Create a table summarizing the number of indicators and descriptors
 in the report}
 \usage{
-util_generate_table_indicators_descriptors(x)
+util_generate_table_indicators_descriptors(report)
 }
 \arguments{
-\item{x}{a report summary (\code{summary(r)})}
+\item{report}{a report}
 }
 \value{
 a table containing the number of indicators and descriptors created

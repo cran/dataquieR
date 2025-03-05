@@ -52,7 +52,7 @@
 #'                              approximation). The argument can be set to
 #'                              `NULL` if ordered regression models are
 #'                              preferred for ordinal data in any case.
-#'
+#' @param threshold_value Deprecated.
 #' @return The function returns two data frames, 'SummaryTable' and
 #'         'SummaryData', that differ only in the names of the columns.
 #'
@@ -68,11 +68,23 @@ acc_varcomp <- function(resp_vars = NULL,
                         min_obs_in_subgroup = 10,
                         min_subgroups = 5,
                         cut_off_linear_model_for_ord = 10,
+                        threshold_value = lifecycle::deprecated(),
                         meta_data = item_level,
                         meta_data_v2) {
   # preps and checks -----------------------------------------------------------
+
+  if (lifecycle::is_present(threshold_value)) {
+
+    # Signal the deprecation to the user
+    lifecycle::deprecate_stop("2.5.0",
+                              'dataquieR::acc_varcomp(threshold_value)',
+                              details =
+                                c("use the grading rules instaed, see",
+                                  "GRADING_RULESET and online documentation"))
+
+  }
+
   util_maybe_load_meta_data_v2()
-  threshold_value <- 0.05
 
   prep_prepare_dataframes(.replace_hard_limits = TRUE,
                           .apply_factor_metadata = TRUE)
@@ -414,14 +426,14 @@ acc_varcomp <- function(resp_vars = NULL,
                                   co_vars = co_vars,
                                   min_obs_in_subgroup = min_obs_in_subgroup,
                                   min_subgroups = min_subgroups,
-                                  label_col = label_col, threshold_value = threshold_value,
+                                  label_col = label_col,
                                   study_data = study_data, meta_data = meta_data)
     } else {
       util_error("No method implemented for scale level ratio and data types string or datetime, sorry.",
                  applicability_problem = TRUE)
     }
   } else if (var_scale == SCALE_LEVELS$INTERVAL && var_prop$NDistinct > 2){
-    if( var_dtype == DATA_TYPES$INTEGER) {
+    if (var_dtype == DATA_TYPES$INTEGER) {
       ## integer values, variable on interval or ratio scale ---------------------
       # linear model with random effects
       fit1 <- try(lme4::lmer(formula = fmla, data = ds1, REML = TRUE))
@@ -462,7 +474,7 @@ acc_varcomp <- function(resp_vars = NULL,
                                   co_vars = co_vars,
                                   min_obs_in_subgroup = min_obs_in_subgroup,
                                   min_subgroups = min_subgroups,
-                                  label_col = label_col, threshold_value = threshold_value,
+                                  label_col = label_col,
                                   study_data = study_data, meta_data = meta_data)
     } else {
       util_error("No method implemented for scale level interval and data types string or datetime, sorry.",
@@ -478,13 +490,11 @@ acc_varcomp <- function(resp_vars = NULL,
       util_round_to_decimal_places(res_icc$Median.Class.Size, 1)
 
     sumtab <- res_icc
-    sumtab[["GRADING"]] <- as.numeric(threshold_value <= sumtab$ICC)
     names(sumtab)[names(sumtab) == "ICC"] <- "ICC_acc_ud_loc"
 
     SummaryData <- res_icc
 
-    SummaryData <- SummaryData[, setdiff(colnames(SummaryData), c("Model.Call",
-                                                                  "GRADING"))]
+    SummaryData <- SummaryData[, setdiff(colnames(SummaryData), c("Model.Call"))]
 
     # TODO: How to return rvs_bin_note?
     return(list("SummaryTable" = sumtab,

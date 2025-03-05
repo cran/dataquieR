@@ -59,6 +59,12 @@
 #'                  datasets?
 #' @param exclude_constant_subgroups [logical] Should subgroups with constant
 #'                  values be excluded?
+#' @param min_bandwidth [numeric] lower limit for the LOESS bandwidth, should be
+#'                  greater than 0 and less than or equal to 1. In general,
+#'                  increasing the bandwidth leads to a smoother trend line.
+#' @param min_proportion [numeric] lower limit for the proportion of the smaller
+#'                  group (cases or controls) for creating a LOESS figure,
+#'                  should be greater than 0 and less than 0.4.
 #'
 #' @return a [list] with:
 #'   - `SummaryPlotList`: list with two plots if `plot_format = "BOTH"`,
@@ -132,11 +138,20 @@ acc_loess <- function(resp_vars,
                                   dataquieR.acc_loess.plot_format_default),
                       meta_data = item_level,
                       meta_data_v2,
-                      n_group_max = getOption("dataquieR.max_group_var_levels_in_plot", dataquieR.max_group_var_levels_in_plot_default),
+                      n_group_max =
+                        getOption("dataquieR.max_group_var_levels_in_plot",
+                                  dataquieR.max_group_var_levels_in_plot_default),
                       enable_GAM = getOption("dataquieR.GAM_for_LOESS",
                                              dataquieR.GAM_for_LOESS.default),
-                      exclude_constant_subgroups = getOption("dataquieR.acc_loess.exclude_constant_subgroups",
-                                                             dataquieR.acc_loess.exclude_constant_subgroups.default)) {
+                      exclude_constant_subgroups =
+                        getOption("dataquieR.acc_loess.exclude_constant_subgroups",
+                                  dataquieR.acc_loess.exclude_constant_subgroups.default),
+                      min_bandwidth =
+                        getOption("dataquieR.acc_loess.min_bw",
+                                  dataquieR.acc_loess.min_bw.default),
+                      min_proportion =
+                        getOption("dataquieR.acc_loess.min_proportion",
+                                  dataquieR.acc_loess.min_proportion.default)) {
   # preps ----------------------------------------------------------------------
   util_maybe_load_meta_data_v2()
 
@@ -215,6 +230,12 @@ acc_loess <- function(resp_vars,
                                    c("AUTO", "COMBINED", "FACETS", "BOTH",
                                      "auto", "combined", "facets", "both" ),
                                    fixed = TRUE)) })
+  util_expect_scalar(
+    min_bandwidth,
+    check_type = function(x) {
+      util_is_numeric_in(min = 0, max = 1)(x) && x != 0 })
+  util_expect_scalar(min_proportion,
+                     check_type = util_is_numeric_in(min = 0, max = 0.4))
 
   # check data properties to choose a suitable method
   ds1 <- ds1[, c(resp_vars, time_vars, group_vars, co_vars)]
@@ -246,7 +267,8 @@ acc_loess <- function(resp_vars,
                                 n_group_max = n_group_max,
                                 enable_GAM = enable_GAM,
                                 exclude_constant_subgroups =
-                                  exclude_constant_subgroups)
+                                  exclude_constant_subgroups,
+                                min_bandwidth = min_bandwidth)
   } else if ((var_prop$NDistinct < 10 &&
               scl %in% c(SCALE_LEVELS$RATIO, SCALE_LEVELS$INTERVAL)) ||
              scl %in% c(SCALE_LEVELS$NOMINAL, SCALE_LEVELS$ORDINAL)) {
@@ -264,7 +286,9 @@ acc_loess <- function(resp_vars,
                          n_group_max = n_group_max,
                          enable_GAM = enable_GAM,
                          exclude_constant_subgroups =
-                           exclude_constant_subgroups)
+                           exclude_constant_subgroups,
+                         min_bandwidth = min_bandwidth,
+                         min_proportion = min_proportion)
   } else {
     util_error("Variable '%s' has a disallowed scale level (%s)",
                dQuote(resp_vars),

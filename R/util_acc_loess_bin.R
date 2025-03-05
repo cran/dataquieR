@@ -49,6 +49,12 @@
 #'                  datasets?
 #' @param exclude_constant_subgroups [logical] Should subgroups with constant
 #'                  values be excluded?
+#' @param min_bandwidth [numeric] lower limit for the LOESS bandwidth, should be
+#'                  greater than 0 and less than or equal to 1. In general,
+#'                  increasing the bandwidth leads to a smoother trend line.
+#' @param min_proportion [numeric] lower limit for the proportion of the smaller
+#'                  group (cases or controls) for creating a LOESS figure,
+#'                  should be greater than 0 and less than 0.4.
 #'
 #' @return a [list] with:
 #'   - `SummaryPlotList`: a plot.
@@ -76,8 +82,13 @@ util_acc_loess_bin <- function(
                             dataquieR.max_group_var_levels_in_plot_default),
     enable_GAM = getOption("dataquieR.GAM_for_LOESS",
                            dataquieR.GAM_for_LOESS.default),
-    exclude_constant_subgroups = getOption("dataquieR.acc_loess.exclude_constant_subgroups",
-                                           dataquieR.acc_loess.exclude_constant_subgroups.default)) {
+    exclude_constant_subgroups =
+      getOption("dataquieR.acc_loess.exclude_constant_subgroups",
+                dataquieR.acc_loess.exclude_constant_subgroups.default),
+    min_bandwidth = getOption("dataquieR.acc_loess.min_bw",
+                              dataquieR.acc_loess.min_bw.default),
+    min_proportion = getOption("dataquieR.acc_loess.min_proportion",
+                               dataquieR.acc_loess.min_proportion.default)) {
   # preps ----------------------------------------------------------------------
   # map metadata to study data
   prep_prepare_dataframes(.replace_hard_limits = TRUE,
@@ -160,7 +171,7 @@ util_acc_loess_bin <- function(
       n_prior - n_post, " observations were excluded",
       ifelse(nchar(msg) > 0, " additionally.", "."))
   }
-  if (nchar(msg) > 0) {
+  if (!is.null(msg) && nchar(msg) > 0) {
     util_message(trimws(msg),
                  applicability_problem = FALSE)
   }
@@ -356,7 +367,8 @@ util_acc_loess_bin <- function(
                applicability_problem = TRUE,
                intrinsic_applicability_problem = TRUE)
   }
-  if (var_prop$PropZeroes > 0.9 || var_prop$PropZeroes < 0.1) {
+  if (var_prop$PropZeroes > 1 - min_proportion ||
+      var_prop$PropZeroes < min_proportion) {
     util_error("The response variable contains too few cases/controls.",
                applicability_problem = TRUE,
                intrinsic_applicability_problem = TRUE)
@@ -377,21 +389,36 @@ util_acc_loess_bin <- function(
   ds1$time_vars_num <- suppressWarnings(as.numeric(ds1[[time_vars]]))
 
   # Modelling group-wise trends ------------------------------------------------
-  # adjust response for covariables (if any) using a linear model
+  # adjust response for covariables (if any)
   if (length(co_vars) > 0) {
     fmla <- as.formula(paste0(paste0(util_bQuote(resp_vars), "~"),
-                              paste0(util_bQuote(co_vars),
-                                     collapse = " + ")))
-    logfit1 <- glm(fmla, data = ds1, family = binomial(link = "logit"))
+                              paste0(
+                                paste0(util_bQuote(co_vars), collapse = " + "),
+                                " + ",
+                                util_bQuote(group_vars)
+                              )))
+    suppressWarnings({
+      logfit1 <- glm(fmla, data = ds1, family = binomial(link = "logit"))
+    })
+    group_marg <- data.frame(
+      emmeans::emmeans(logfit1, group_vars, type = "response"),
+      check.names = FALSE)
     # store residuals
     # These values will be used for LOESS fits. In this way, we fit LOESS after
     # adjusting the response for the covariables.
-    ds1$Residuals <- ds1[[resp_vars]] - logfit1$fitted.values
-    # Memory consumption
-    rm(logfit1)
+    ds1$Residuals <-
+      # estimated mean for each level of the grouping variable
+      group_marg$prob[match(ds1[[group_vars]], group_marg[, group_vars])] +
+      # residuals: original value of the response variable - fitted value
+      ds1[[resp_vars]] - logfit1$fitted.values
+    rm(logfit1) # Memory consumption
   } else {
     ds1$Residuals <- ds1[[resp_vars]]
   }
+
+  # calculate LOESS smoothing parameter based on the number of observations
+  bw_loess <- min(1, round(100/nrow(ds1), 2)) # upper limit: 1
+  bw_loess <- max(min_bandwidth, bw_loess) # lower limit as specified
 
   # fit LOESS/GAM for each group separately
   grouped_ds1 <- split(ds1, ds1[[group_vars]])
@@ -422,18 +449,13 @@ util_acc_loess_bin <- function(
 
       fit_vals <- mgcv::predict.gam(fit_i, data_i_seq_num)
     } else { # LOWESS
-      # calculate smoothing parameter for data_i
-      max_smooth <- round(1 / log10(length(unique(data_i[[time_vars]]))), 2)
-      max_smooth <- max(0.5, # max_smooth should be greater than or equal to 0.5
-                        # max_smooth should not be greater than 1
-                        # (happens if there are few time points)
-                        min(max_smooth, 1),
-                        na.rm = TRUE)
       # fit LOWESS for data_i
       fit_i <- suppressWarnings(
         lowess(x = data_i[["ROUND_TIME"]],
                y = data_i[["Residuals"]],
-               f = max_smooth))
+               f = bw_loess,
+               iter = 0)) # For binary variables, the `robustifying iterations`
+      # can lead to an underestimation of the proportion of cases.
       fit_i_df <- unique(as.data.frame(fit_i))
       fit_vals <- fit_i_df$y
       data_i_seq <- as.POSIXct(fit_i_df$x)
@@ -471,8 +493,8 @@ util_acc_loess_bin <- function(
     hex_code <- NULL
   }
 
-  y_min <- mean(ds1$Residuals) - sd(ds1$Residuals)
-  y_max <- mean(ds1$Residuals) + sd(ds1$Residuals)
+  y_min <- max(0, mean(ds1$Residuals) - sd(ds1$Residuals))
+  y_max <- min(1, mean(ds1$Residuals) + sd(ds1$Residuals))
 
   # Facet-Grids for categorical variable (observer/device)
   p1 <- ggplot(fit_groups,

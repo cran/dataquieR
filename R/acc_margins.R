@@ -418,7 +418,9 @@ acc_margins <- function(resp_vars = NULL,
                                 label_col = label_col,
                                 adjusted_hint = adjusted_hint,
                                 title = title,
-                                sort_group_var_levels = sort_group_var_levels)
+                                sort_group_var_levels = sort_group_var_levels,
+                                include_numbers_in_figures =
+                                  include_numbers_in_figures)
     obj1<- ggplot2::ggplot_build(mar_out$plot)
     obj1_data <- util_rbind(data_frames_list = obj1$data)
     min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
@@ -511,7 +513,9 @@ acc_margins <- function(resp_vars = NULL,
                                   label_col = label_col,
                                   adjusted_hint = adjusted_hint,
                                   title = title,
-                                  sort_group_var_levels = sort_group_var_levels)
+                                  sort_group_var_levels = sort_group_var_levels,
+                                  include_numbers_in_figures =
+                                    include_numbers_in_figures)
       obj1<- ggplot2::ggplot_build(mar_out$plot)
       obj1_data <- util_rbind(data_frames_list = obj1$data)
       min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)

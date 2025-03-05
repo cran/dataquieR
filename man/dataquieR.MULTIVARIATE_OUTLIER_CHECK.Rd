@@ -31,6 +31,8 @@ Other options:
 \code{\link{dataquieR.WARNINGS_WITH_CALLER}},
 \code{\link{dataquieR.acc_loess.exclude_constant_subgroups}},
 \code{\link{dataquieR.acc_loess.mark_time_points}},
+\code{\link{dataquieR.acc_loess.min_bw}},
+\code{\link{dataquieR.acc_loess.min_proportion}},
 \code{\link{dataquieR.acc_loess.plot_format}},
 \code{\link{dataquieR.acc_loess.plot_observations}},
 \code{\link{dataquieR.acc_margins_num}},

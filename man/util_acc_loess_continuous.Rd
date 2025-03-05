@@ -28,7 +28,9 @@ util_acc_loess_continuous(
   enable_GAM = getOption("dataquieR.GAM_for_LOESS", dataquieR.GAM_for_LOESS.default),
   exclude_constant_subgroups =
     getOption("dataquieR.acc_loess.exclude_constant_subgroups",
-    dataquieR.acc_loess.exclude_constant_subgroups.default)
+    dataquieR.acc_loess.exclude_constant_subgroups.default),
+  min_bandwidth = getOption("dataquieR.acc_loess.min_bw",
+    dataquieR.acc_loess.min_bw.default)
 )
 }
 \arguments{
@@ -94,6 +96,10 @@ datasets?}
 
 \item{exclude_constant_subgroups}{\link{logical} Should subgroups with constant
 values be excluded?}
+
+\item{min_bandwidth}{\link{numeric} lower limit for the LOESS bandwidth, should be
+greater than 0 and less than or equal to 1. In general,
+increasing the bandwidth leads to a smoother trend line.}
 }
 \value{
 a \link{list} with:

@@ -1,4 +1,6 @@
 test_that("statichtmlWidget works", {
+  skip_if_not_installed("htmlwidgets")
+
   shw <- statichtmlWidget(htmltools::HTML("<div>Hello!!</div>"),
                           width = 100,
                           height = 20,

@@ -377,7 +377,7 @@ try({
   system("git rev-parse HEAD",
          intern = TRUE,ignore.stderr = TRUE
          )
-)))
+)), silent = TRUE)
 
 if (util_is_try_error(.git_hash) ||
     !is.character(.git_hash) ||

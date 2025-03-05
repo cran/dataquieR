@@ -28,6 +28,9 @@
 #' @param sort_group_var_levels [logical] Should the levels of the grouping
 #'                        variable be sorted descending by the number of
 #'                        observations (in the figure)?
+#' @param include_numbers_in_figures [logical] Should the figure report the
+#'                        number of observations for each level of the grouping
+#'                        variable?
 #'
 #' @return A table and a matching plot.
 #'
@@ -46,7 +49,10 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
                              title = "",
                              sort_group_var_levels =
                                getOption("dataquieR.acc_margins_sort",
-                                         dataquieR.acc_margins_sort_default)) {
+                                         dataquieR.acc_margins_sort_default),
+                             include_numbers_in_figures =
+                               getOption("dataquieR.acc_margins_num",
+                                         dataquieR.acc_margins_num_default)) {
   # preps and checks -----------------------------------------------------------
   # to avoid "no visible binding for global variable ‘sample_size’"
   sample_size <- NULL
@@ -98,6 +104,13 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   res_df <- data.frame(emmeans::emmeans(model, group_vars, type = "response"),
                        check.names = FALSE)
 
+  # adjust for covariates, if needed
+  ds1$resp_var_adj <-
+    # estimated mean for each level of the grouping variable
+    res_df$prob[match(ds1[[group_vars]], res_df[, group_vars])] +
+    # residuals: original value of the response variable - fitted value
+    ds1[[resp_vars]] - model$fitted.values
+
   summary_ds <- as.data.frame(
     dplyr::summarize(
       dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
@@ -116,8 +129,9 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
 
   # thresholds -----------------------------------------------------------------
   if (threshold_type %in% c("empirical", "none")) {
-    th <- mean(ds1[[resp_vars]])
-    th <- th * (1 - th)
+    th <- mean(ds1[["resp_var_adj"]]) # TODO: use estimate in 'omv'?
+    th <- th * (1 - th) # TODO: Is variance here a good estimator? Maybe align
+    # with measurements of deviation for nominal variables?
     parn <- c(
       paste("-", threshold_value, "TH", sep = ""), "Prob.",
       paste("+", threshold_value, "TH", sep = "")
@@ -149,9 +163,10 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   # ensure the readability of the figures
   res_df_plot <- res_df[, c(group_vars, "margins", "LCL", "UCL",
                             "GRADING", "sample_size")]
-  gr_var <- tapply(ds1[[resp_vars]], ds1[[group_vars]], var)
-  if (any(gr_var == 0)) {
-    gr_ci_excl <- names(gr_var)[gr_var == 0]
+  gr_var <- tapply(ds1[["resp_var_adj"]], ds1[[group_vars]], var)
+  gr_zero <- gr_var < sqrt(.Machine$double.eps)
+  if (any(gr_zero)) {
+    gr_ci_excl <- names(gr_var)[gr_zero]
     res_df_plot$LCL[as.character(res_df_plot[, group_vars]) %in% gr_ci_excl] <- NA
     res_df_plot$UCL[as.character(res_df_plot[, group_vars]) %in% gr_ci_excl] <- NA
   }
@@ -172,8 +187,9 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   }
 
   # Plot 1: hybrid density/boxplot graph
-  p1 <- ggplot(data = ds1[, c(resp_vars, group_vars), drop = FALSE],
-               aes(x =  .data[[group_vars]], y =  .data[[resp_vars]])) +
+  p1 <- ggplot(data = ds1[, c("resp_var_adj", group_vars), drop = FALSE],
+               aes(x = .data[[group_vars]],
+                   y = round(.data[["resp_var_adj"]]))) +
     geom_count(aes(alpha = 0.9), color = "gray") +
     geom_pointrange(
       data = res_df_plot, aes(
@@ -181,8 +197,7 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
         y = margins,
         ymin = LCL,
         ymax = UCL,
-        color = as.factor(GRADING),
-        # n = sample_size
+        color = as.factor(GRADING)#, n = sample_size
       ),
       shape = 18, linewidth = 1,
       inherit.aes = FALSE,
@@ -191,18 +206,26 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
     theme_minimal() +
     labs(x = "", y = "") +
     theme(
-      legend.position = "None", legend.title = element_blank(),
+      legend.position = "none", legend.title = element_blank(),
       text = element_text(size = 16),
-      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
+      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+      plot.margin = ggplot2::unit(c(2, 0, 2, 0), "mm")
     ) +
-    scale_colour_manual(values = warn_code)+
-    geom_text(data = summary_ds, aes(x = summary_ds[, group_vars],
-                                     y = max(ds1[, c(resp_vars), drop = FALSE])+1.2,
-                                     label =  sample_size), hjust = 0.5, angle = 90)+
-    annotate("text", x=0.50, y=max(ds1[, c(resp_vars), drop = FALSE])+1.2, label= "N") +
-    ggplot2::ylim(0, 1) +
-    ggplot2::theme(plot.margin = ggplot2::unit(c(2, 0, 2, 0),
-                             "mm"))
+    scale_colour_manual(values = warn_code) +
+    ggplot2::expand_limits(y = c(0, 1))
+
+    if (include_numbers_in_figures) {
+      p1 <- p1 +
+        geom_text(data = summary_ds,
+                  aes(x = summary_ds[, group_vars],
+                      y = max(round(ds1[, "resp_var_adj", drop = FALSE])) + 0.3,
+                      label = sample_size),
+                  hjust = 0.5, angle = 90) +
+        annotate("text",
+                 x = 0.5,
+                 y = max(round(ds1[, "resp_var_adj", drop = FALSE])) + 0.3,
+                 label = "N")
+    }
 
   if (threshold_type != "none") {
     p1 <-
@@ -216,22 +239,25 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   }
 
   # Plot 2: overall distributional plot flipped on y-axis of plot 1
-  get_y_scale <- ggplot(ds1[, resp_vars, drop = FALSE], aes(x = .data[[resp_vars]])) +
+  get_y_scale <- ggplot(ds1[, "resp_var_adj", drop = FALSE],
+                        aes(x = round(.data[["resp_var_adj"]]))) +
     geom_density(alpha = 0.35)
   aty <- mean(range(ggplot_build(get_y_scale)$data[[1]]$y))
 
-  p2 <- ggplot(ds1[, resp_vars, drop = FALSE], aes(.data[[resp_vars]])) +
+  p2 <- ggplot(ds1[, "resp_var_adj", drop = FALSE],
+               aes(round(.data[["resp_var_adj"]]))) +
     geom_density(alpha = 0.35) +
     coord_flip() +
     theme_minimal() +
     labs(x = NULL, y = NULL) +
-    # ggplot2::xlim(c(min(min(ds1[, c(resp_vars), drop = FALSE]), pars),
-    #                 max(max(ds1[, c(resp_vars), drop = FALSE])+1.2, pars + offs))) +
+    ggplot2::xlim(c(min(min(round(ds1[, "resp_var_adj", drop = FALSE])), pars),
+                    max(max(round(ds1[, "resp_var_adj", drop = FALSE])) + 0.3,
+                        pars + offs))) +
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-          text = element_text(size = 16)) +
-    ggplot2::xlim(0, 1) +
-    ggplot2::theme(plot.margin = ggplot2::unit(c(0, 2, 0, 2),
-                                               "mm"))
+          text = element_text(size = 16),
+          plot.margin = ggplot2::unit(c(0, 2, 0, 2), "mm")) +
+    ggplot2::expand_limits(x = c(0, 1))
+
   if (threshold_type != "none") {
     p2 <-
       p2 +
@@ -249,6 +275,7 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   if (is.null(caption)) {
     caption <- ""
   }
+
   # combine plots and add the title
   res_plot <- # TODO: For all patchwork-calls, add information to reproduce the layout in plot.ly
     p1 +

@@ -102,7 +102,7 @@ util_interpret_limits <- function(mdata) { # TODO: Use the redcap parser, instea
 
     # Split limits
     myfun1 <- function(x) {
-      trimws(unlist(strsplit(as.character(x), split = ";"), "both"))
+      trimws(unlist(strsplit(as.character(x), split = ";")), "both")
     }
 
     # add to dataframe

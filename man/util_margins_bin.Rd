@@ -18,7 +18,9 @@ util_margins_bin(
   adjusted_hint = "",
   title = "",
   sort_group_var_levels = getOption("dataquieR.acc_margins_sort",
-    dataquieR.acc_margins_sort_default)
+    dataquieR.acc_margins_sort_default),
+  include_numbers_in_figures = getOption("dataquieR.acc_margins_num",
+    dataquieR.acc_margins_num_default)
 )
 }
 \arguments{
@@ -62,6 +64,10 @@ with labels of variables}
 \item{sort_group_var_levels}{\link{logical} Should the levels of the grouping
 variable be sorted descending by the number of
 observations (in the figure)?}
+
+\item{include_numbers_in_figures}{\link{logical} Should the figure report the
+number of observations for each level of the grouping
+variable?}
 }
 \value{
 A table and a matching plot.

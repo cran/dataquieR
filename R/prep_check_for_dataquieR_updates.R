@@ -37,6 +37,7 @@ prep_check_for_dataquieR_updates <- function(beta = FALSE,
   all_deps <- unique(trimws(unlist(strsplit(split = ",", fixed = TRUE, x =
                           unname(unlist(utils::packageDescription("dataquieR",
     fields = c("Depends", "Imports", "LinkingTo", "Suggests", "Enhances"))))))))
+  all_deps <- gsub("\\s+", " ", all_deps)
   all_deps <- all_deps[!util_empty(all_deps)]
   all_deps <- all_deps[!startsWith(all_deps, "R ")]
   if (ask) {

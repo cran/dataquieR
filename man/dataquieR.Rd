@@ -27,6 +27,8 @@ This package features the following \code{options()}:
 \item \link{dataquieR.WARNINGS_WITH_CALLER}
 \item \link{dataquieR.acc_loess.exclude_constant_subgroups}
 \item \link{dataquieR.acc_loess.mark_time_points}
+\item \link{dataquieR.acc_loess.min_bw}
+\item \link{dataquieR.acc_loess.min_proportion}
 \item \link{dataquieR.acc_loess.plot_format}
 \item \link{dataquieR.acc_loess.plot_observations}
 \item \link{dataquieR.acc_margins_num}
@@ -84,6 +86,8 @@ Other options:
 \code{\link{dataquieR.WARNINGS_WITH_CALLER}},
 \code{\link{dataquieR.acc_loess.exclude_constant_subgroups}},
 \code{\link{dataquieR.acc_loess.mark_time_points}},
+\code{\link{dataquieR.acc_loess.min_bw}},
+\code{\link{dataquieR.acc_loess.min_proportion}},
 \code{\link{dataquieR.acc_loess.plot_format}},
 \code{\link{dataquieR.acc_loess.plot_observations}},
 \code{\link{dataquieR.acc_margins_num}},
@@ -118,8 +122,8 @@ Other options:
 Authors:
 \itemize{
   \item Elisa Kasbohm \email{elisa.kasbohm@uni-greifswald.de} (\href{https://orcid.org/0000-0001-5261-538X}{ORCID})
-  \item Joany Marino \email{joany.marino@uni-greifswald.de} (\href{https://orcid.org/0000-0002-4657-3758}{ORCID})
   \item Elena Salogni \email{elena.salogni@uni-greifswald.de} (\href{https://orcid.org/0009-0007-3767-7145}{ORCID})
+  \item Joany Marino \email{joany.marino@uni-greifswald.de} (\href{https://orcid.org/0000-0002-4657-3758}{ORCID})
   \item Adrian Richter \email{richtera@uni-greifswald.de} (\href{https://orcid.org/0000-0002-3372-2021}{ORCID})
   \item Carsten Oliver Schmidt \email{carsten.schmidt@uni-greifswald.de} (\href{https://orcid.org/0000-0001-5266-9396}{ORCID})
 }

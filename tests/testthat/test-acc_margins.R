@@ -170,7 +170,7 @@ test_that("acc_margins works without label_col", {
   expect_false(
     inherits(try(ggplot_build(res3d$SummaryPlot)), "try-error"))
 
-  # 3. poisson model
+  # 3. Poisson model
   md$SCALE_LEVEL[md$LABEL == "N_INJURIES_0"] <- SCALE_LEVELS$INTERVAL
   expect_message(
     res4 <- acc_margins(resp_vars = "N_INJURIES_0", study_data = study_data,
@@ -398,4 +398,352 @@ expect_message(
   # TODO: skip_if_not(capabilities()["long.double"])
   expect_doppelganger2("margins plot for CRP_0 ok",
                               res1$SummaryPlot)
+})
+
+test_that("acc_margins works with co_vars", {
+  skip_on_cran() # slow
+  skip_if_not_installed("withr")
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
+                       dataquieR.ERRORS_WITH_CALLER = TRUE,
+                       dataquieR.WARNINGS_WITH_CALLER = TRUE,
+                       dataquieR.MESSAGES_WITH_CALLER = TRUE)
+  meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  meta_data <-
+    prep_scalelevel_from_data_and_metadata(study_data = study_data,
+                                           meta_data = meta_data)
+
+  # 1. linear regression
+  # example 1: obvious differences between examiners
+  set.seed(1352)
+  sd1 <- study_data
+  sd1[["v00012"]] <- rep(c("USR_301", "USR_243", "USR_121"), 1000)
+  sd1[["v00004"]][which(sd1[["v00012"]] == "USR_301")] <- 10
+  sd1[["v00004"]][which(sd1[["v00012"]] == "USR_243")] <- 0
+  sd1[["v00004"]][which(sd1[["v00012"]] == "USR_121")] <- -10
+  sd1[["v00004"]] <- round(sd1[["v00004"]] + 70 +
+                             5 * sd1[["v00002"]] +
+                             0.5 * sd1[["v00003"]] + rnorm(n = nrow(sd1)))
+  md1 <- meta_data
+  md1[["HARD_LIMITS"]][md1[[VAR_NAMES]] == "v00004"] <- ""
+
+  suppressMessages(
+    res1_lm_unadj <- acc_margins(resp_vars = "SBP_0", # v00004
+                                 group_vars = "USR_BP_0", # v00012
+                                 co_vars = NULL,
+                                 study_data = sd1,
+                                 meta_data = md1,
+                                 label_col = LABEL,
+                                 sort_group_var_levels = FALSE)
+  )
+  # compare estimates from the model with empirical mean values
+  mu_emp <- tapply(sd1[["v00004"]], sd1[["v00012"]], mean, na.rm = TRUE)
+  mu_emp <- mu_emp[match(res1_lm_unadj$ResultData$USR_BP_0, names(mu_emp))]
+  expect_lte(max(abs(as.numeric(res1_lm_unadj$ResultData$margins) - mu_emp)),
+             0.01)
+  suppressMessages(
+    res1_lm <- acc_margins(resp_vars = "SBP_0",
+                           group_vars = "USR_BP_0",
+                           co_vars = c("SEX_0", "AGE_0"),
+                           study_data = sd1,
+                           meta_data = md1,
+                           label_col = LABEL,
+                           sort_group_var_levels = FALSE)
+  )
+  # marginal means should be almost the same in both approaches
+  expect_lte(
+    max(abs(
+      as.numeric(res1_lm_unadj$ResultData$margins) -
+        as.numeric(res1_lm$ResultData$margins)
+      )), 2)
+  # standard errors should be much smaller when adjusting for the covariates in
+  # this example
+  expect_true(all(
+    as.numeric(res1_lm_unadj$ResultData$SE) >
+      as.numeric(res1_lm$ResultData$SE)
+  ))
+
+  # example 2: no differences between examiners after adjusting for covariates
+  set.seed(1352)
+  sd1 <- study_data
+  age_cut3 <- as.numeric(cut(sd1[["v00003"]], breaks = 3))
+  age_cut3[which(is.na(age_cut3))] <- 1
+  sd1[["v00012"]] <- c("USR_301", "USR_243", "USR_121")[age_cut3]
+  sd1[["v00002"]][which(sd1[["v00012"]] == "USR_301")] <- 0
+  sd1[["v00002"]][which(sd1[["v00012"]] == "USR_243")] <- 1
+  sd1[["v00002"]][which(sd1[["v00012"]] == "USR_121")] <-
+    sample(c(0,1), replace = TRUE,
+           size = length(which(sd1[["v00012"]] == "USR_121")))
+  sd1[["v00004"]] <- round(70 + 20 * sd1[["v00002"]] + 0.2 * sd1[["v00003"]] +
+                             rnorm(sd = 3, n = nrow(sd1)))
+  md1 <- meta_data
+  md1[["HARD_LIMITS"]][md1[[VAR_NAMES]] == "v00004"] <- ""
+  suppressMessages(
+    res2_lm_unadj <- acc_margins(resp_vars = "SBP_0", # v00004
+                                 group_vars = "USR_BP_0", # v00012
+                                 co_vars = NULL,
+                                 study_data = sd1,
+                                 meta_data = md1,
+                                 label_col = LABEL,
+                                 sort_group_var_levels = FALSE)
+  )
+  res2u_mar <- as.numeric(res2_lm_unadj$ResultData$margins)
+  # compare estimates from the model with empirical mean values
+  mu_emp <- tapply(sd1[["v00004"]], sd1[["v00012"]], mean, na.rm = TRUE)
+  mu_emp <- mu_emp[match(res2_lm_unadj$ResultData$USR_BP_0, names(mu_emp))]
+  expect_lte(max(abs(res2u_mar - mu_emp)), 0.01)
+  # the estimated marginal means should deviate considerably
+  expect_gte(max(res2u_mar) - min(res2u_mar), 15)
+  suppressMessages(
+    res2_lm <- acc_margins(resp_vars = "SBP_0",
+                           group_vars = "USR_BP_0",
+                           co_vars = c("SEX_0", "AGE_0"),
+                           study_data = sd1,
+                           meta_data = md1,
+                           label_col = LABEL,
+                           sort_group_var_levels = FALSE)
+  )
+  res2a_mar <- as.numeric(res2_lm$ResultData$margins)
+  # the estimated marginal means should deviate only minimally
+  expect_lte(max(res2a_mar) - min(res2a_mar), 2)
+  # there should be levels of the grouping variable that deviate considerably
+  # between both approaches, and one level of the grouping variable that
+  # deviates only slightly
+  expect_gte(max(abs(res2u_mar - res2a_mar)), 10)
+  expect_lte(min(abs(res2u_mar - res2a_mar)), 2)
+
+  # 2. binary regression
+  # no differences between examiners after adjusting for covariates
+  set.seed(603)
+  sd1 <- study_data
+  age_cut3 <- as.numeric(cut(sd1[["v00003"]], breaks = 3))
+  age_cut3[which(is.na(age_cut3))] <- 1
+  sd1[["v00011"]] <- c("USR_321", "USR_590", "USR_213")[age_cut3]
+  sd1[["v00002"]][which(sd1[["v00011"]] == "USR_321")] <- 0
+  sd1[["v00002"]][which(sd1[["v00011"]] == "USR_590")] <- 1
+  sd1[["v00002"]][which(sd1[["v00011"]] == "USR_213")] <-
+    sample(c(0,1), replace = TRUE,
+           size = length(which(sd1[["v00011"]] == "USR_213")))
+  mlin <- log(0.3) + 0.25 * sd1[["v00002"]] +
+    2 * (sd1[["v00003"]] - mean(sd1[["v00003"]], na.rm = TRUE)) /
+    sd(sd1[["v00003"]], na.rm = TRUE)
+  mlin[which(is.na(mlin))] <- mean(mlin, na.rm = TRUE)
+  sd1[["v00007"]] <- rbinom(n = nrow(sd1), size = 1, prob = 1/(1 + exp(-mlin)))
+  md1 <- meta_data
+  md1[["RECODE_CASES"]] <- ""
+  md1[["RECODE_CONTROL"]] <- ""
+  md1[["RECODE_CASES"]][md1$VAR_NAMES == "v00007"] <- "yes"
+  md1[["RECODE_CONTROL"]][md1$VAR_NAMES == "v00007"] <- "no"
+
+  suppressMessages(
+    res3_bin_unadj <- acc_margins(resp_vars = "ASTHMA_0",
+                                  study_data = sd1,
+                                  meta_data = md1,
+                                  group_vars = "USR_VO2_0",
+                                  co_vars = NULL,
+                                  label_col = LABEL)
+  )
+  res3u_mar <- as.numeric(res3_bin_unadj$ResultData$margins)
+  # compare estimates from the model with empirical mean values
+  mu_emp <- tapply(sd1[["v00007"]], sd1[["v00011"]], mean, na.rm = TRUE)
+  mu_emp <- mu_emp[match(res3_bin_unadj$ResultData$USR_VO2_0, names(mu_emp))]
+  expect_lte(max(abs(res3u_mar - mu_emp)), 0.01)
+  # the estimated marginal means should deviate considerably
+  expect_gte(max(res3u_mar) - min(res3u_mar), 0.5)
+  suppressMessages(
+    res3_bin <- acc_margins(resp_vars = "ASTHMA_0",
+                            study_data = sd1,
+                            meta_data = md1,
+                            group_vars = "USR_VO2_0",
+                            co_vars = c("SEX_0", "AGE_0"),
+                            label_col = LABEL)
+  )
+  res3a_mar <- as.numeric(res3_bin$ResultData$margins)
+  # the estimated marginal means should deviate only minimally
+  expect_lte(max(res3a_mar) - min(res3a_mar), 0.2)
+  # there should be levels of the grouping variable that deviate considerably
+  # between both approaches, and one level of the grouping variable that
+  # deviates only slightly
+  expect_gte(max(abs(res3u_mar - res3a_mar)), 0.5)
+  expect_lte(min(abs(res3u_mar - res3a_mar)), 0.2)
+
+  # 3. Poisson regression
+  # example 1: obvious differences between examiners
+  set.seed(1646)
+  sd1 <- study_data
+  parm_age <- (sd1[["v00003"]] - min(sd1[["v00003"]], na.rm = TRUE)) /
+    (max(sd1[["v00003"]], na.rm = TRUE) - min(sd1[["v00003"]], na.rm = TRUE))
+  parm_sex <- 0.4 * sd1[["v00002"]]
+  sd1[["v00032"]] <- rep(c("USR_321", "USR_247", "USR_520"), 1000)
+  sd1[["v00026"]][which(sd1[["v00032"]] == "USR_321")] <- 1
+  sd1[["v00026"]][which(sd1[["v00032"]] == "USR_247")] <- 0.5
+  sd1[["v00026"]][which(sd1[["v00032"]] == "USR_520")] <- 0
+  ll1 <- exp(sd1[["v00026"]] + parm_age + parm_sex)
+  ll1[which(is.na(ll1))] <- 1
+  sd1[["v00026"]] <- rpois(lambda = ll1, n = nrow(sd1))
+  # scale down to trigger Poisson regression (v2.5.0)
+  if (max(sd1[["v00026"]], na.rm = TRUE) >= 20) {
+    sd1[["v00026"]] <- round(sd1[["v00026"]]/max(sd1[["v00026"]]) * 19)
+  }
+  md1 <- meta_data
+  md1[["HARD_LIMITS"]][md1[[VAR_NAMES]] == "v00026"] <- ""
+  md1$SCALE_LEVEL[md1$LABEL == "N_INJURIES_0"] <- SCALE_LEVELS$INTERVAL
+
+  suppressMessages(
+    res5_poi_unadj <- acc_margins(resp_vars = "N_INJURIES_0",
+                                  group_vars = "USR_SOCDEM_0",
+                                  co_vars = NULL,
+                                  study_data = sd1,
+                                  meta_data = md1,
+                                  label_col = LABEL,
+                                  sort_group_var_levels = FALSE)
+  )
+  # compare estimates from the model with empirical mean values
+  mu_emp <- tapply(sd1[["v00026"]], sd1[["v00032"]], mean, na.rm = TRUE)
+  mu_emp <- mu_emp[match(res5_poi_unadj$ResultData$USR_SOCDEM_0, names(mu_emp))]
+  expect_lte(max(abs(as.numeric(res5_poi_unadj$ResultData$margins) - mu_emp)),
+             0.01)
+  suppressMessages(
+    res5_poi <- acc_margins(resp_vars = "N_INJURIES_0",
+                            group_vars = "USR_SOCDEM_0",
+                            co_vars = c("SEX_0", "AGE_0"),
+                            study_data = sd1,
+                            meta_data = md1,
+                            label_col = LABEL,
+                            sort_group_var_levels = FALSE)
+  )
+
+  # marginal means should be almost the same in both approaches
+  expect_lte(
+    max(abs(
+      as.numeric(res5_poi_unadj$ResultData$margins) -
+        as.numeric(res5_poi$ResultData$margins)
+    )), 2)
+
+  # example 2: no differences between examiners after adjusting for covariates
+  set.seed(2128)
+  sd1 <- study_data
+  age_cut3 <- as.numeric(cut(sd1[["v00003"]], breaks = 3))
+  age_cut3[which(is.na(age_cut3))] <- 1
+  sd1[["v00032"]] <- c("USR_321", "USR_247", "USR_520")[age_cut3]
+  sd1[["v00002"]][which(sd1[["v00032"]] == "USR_321")] <- 0
+  sd1[["v00002"]][which(sd1[["v00032"]] == "USR_520")] <- 1
+  sd1[["v00002"]][which(sd1[["v00032"]] == "USR_247")] <-
+    sample(c(0,1), replace = TRUE,
+           size = length(which(sd1[["v00032"]] == "USR_247")))
+  ll1 <- exp(parm_age + 0.5 * sd1[["v00002"]])
+  ll1[which(is.na(ll1))] <- 1
+  sd1[["v00026"]] <- rpois(lambda = ll1, n = nrow(sd1))
+  md1 <- meta_data
+  md1[["HARD_LIMITS"]][md1[[VAR_NAMES]] == "v00026"] <- ""
+  md1$SCALE_LEVEL[md1$LABEL == "N_INJURIES_0"] <- SCALE_LEVELS$INTERVAL
+
+  suppressMessages(
+    res6_poi_unadj <- acc_margins(resp_vars = "N_INJURIES_0",
+                                  group_vars = "USR_SOCDEM_0",
+                                  co_vars = NULL,
+                                  study_data = sd1,
+                                  meta_data = md1,
+                                  label_col = LABEL,
+                                  sort_group_var_levels = FALSE)
+  )
+  # compare estimates from the model with empirical mean values
+  mu_emp <- tapply(sd1[["v00026"]], sd1[["v00032"]], mean, na.rm = TRUE)
+  mu_emp <- mu_emp[match(res6_poi_unadj$ResultData$USR_SOCDEM_0, names(mu_emp))]
+  expect_lte(max(abs(as.numeric(res6_poi_unadj$ResultData$margins) - mu_emp)),
+             0.01)
+  suppressMessages(
+    res6_poi <- acc_margins(resp_vars = "N_INJURIES_0",
+                            group_vars = "USR_SOCDEM_0",
+                            co_vars = c("SEX_0", "AGE_0"),
+                            study_data = sd1,
+                            meta_data = md1,
+                            label_col = LABEL,
+                            sort_group_var_levels = FALSE)
+  )
+  res6u_mar <- as.numeric(res6_poi_unadj$ResultData$margins)
+  res6a_mar <- as.numeric(res6_poi$ResultData$margins)
+  # the estimated marginal means in the adjusted model should deviate
+  # less than in the unadjusted model
+  expect_gte(var(res6u_mar), var(res6a_mar))
+  # the estimated marginal means in the adjusted model should deviate
+  # only minimally
+  expect_lte(max(res6a_mar) - min(res6a_mar), 0.5)
+  # there should be levels of the grouping variable that deviate considerably
+  # between both approaches, and one level of the grouping variable that
+  # deviates only slightly
+  expect_gte(max(abs(res6u_mar - res6a_mar)), 1)
+  expect_lte(min(abs(res6u_mar - res6a_mar)), 0.5)
+
+  # 4. ordinal regression
+  # TODO
+  md1 <- meta_data
+  md1$SCALE_LEVEL[md1$LABEL == "MEAT_CONS_0"] <- SCALE_LEVELS$ORDINAL
+  expect_error(
+    res8_ord <- acc_margins(resp_vars = "MEAT_CONS_0",
+                            group_vars = "CENTER_0",
+                            co_vars = "AGE_0",
+                            study_data = study_data,
+                            meta_data = md1,
+                            label_col = LABEL,
+                            cut_off_linear_model_for_ord = NULL,
+                            sort_group_var_levels = FALSE),
+    regexp = paste("Covariate argument for ordinal regression",
+                   "not yet supported.")
+  )
+
+  # 5. multinomial regression
+  set.seed(940)
+  sd1 <- study_data
+  age_cut3 <- as.numeric(cut(sd1[["v00003"]], breaks = 3))
+  age_cut3[which(is.na(age_cut3))] <- 1
+  sd1[["v00000"]] <- c(1:3)[age_cut3]
+  sd1[["v00002"]][which(sd1[["v00002"]] == 1)] <-
+    sample(c(0,1), replace = TRUE,
+           size = length(which(sd1[["v00002"]] == 1))) #0
+  sd1[["v00002"]][which(sd1[["v00002"]] == 2)] <-
+    sample(c(0,1), replace = TRUE,
+           size = length(which(sd1[["v00002"]] == 2)))#1
+  sd1[["v00002"]][which(sd1[["v00002"]] == 3)] <-
+    sample(c(0,1), replace = TRUE,
+           size = length(which(sd1[["v00002"]] == 3)))
+  xx <- #0.25 * sd1[["v00002"]] +
+    #0.75 *
+    (rank(sd1[["v00003"]], na.last = FALSE) - 1)/nrow(sd1)
+  xx[which(is.na(xx))] <- mean(xx, na.rm = TRUE)
+  xx <- (xx - min(xx))/(max(xx) - min(xx))
+  sd1[["v00023"]] <- round(xx * 4)
+  md1 <- meta_data
+  md1[["HARD_LIMITS"]][md1[[VAR_NAMES]] == "v00023"] <- ""
+  md1$SCALE_LEVEL[md1$LABEL == "MEAT_CONS_0"] <- SCALE_LEVELS$NOMINAL
+
+  res10_cat_unadj <- acc_margins(resp_vars = "MEAT_CONS_0",
+                                 group_vars = "CENTER_0",
+                                 study_data = sd1,
+                                 meta_data = md1,
+                                 label_col = LABEL,
+                                 dichotomize_categorical_resp = FALSE)
+
+  expect_error(
+    res10_cat <- acc_margins(resp_vars = "MEAT_CONS_0",
+                             group_vars = "CENTER_0",
+                             co_vars = c("AGE_0", "SEX_0"),
+                             study_data = sd1,
+                             meta_data = md1,
+                             label_col = LABEL,
+                             dichotomize_categorical_resp = FALSE),
+    regexp = paste("Adjusting for covariates is currently",
+                   "only supported for factor variables",
+                   "with 2 or more levels")
+  )
+  # TODO
+  res10_cat <- acc_margins(resp_vars = "MEAT_CONS_0",
+                                 group_vars = "CENTER_0",
+                           co_vars = "AGE_GROUP_0",
+                                 study_data = sd1,
+                                 meta_data = md1,
+                                 label_col = LABEL,
+                                 dichotomize_categorical_resp = FALSE)
+
 })

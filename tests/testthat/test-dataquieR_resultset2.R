@@ -1,6 +1,7 @@
 test_that("dataquieR_resultset2 class", {
   skip_on_cran() # slow, parallel, ...
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  skip_if_not_installed("storr")
 
   # db_dir <- "/tmp/asdfasdf"
   # unlink(db_dir, recursive = T, force = T)
@@ -110,6 +111,7 @@ test_that("dataquieR_resultset2 class", {
 })
 
 test_that("storr helper functions", {
+  skip_if_not_installed("storr")
   sf1 <- prep_create_storr_factory()
   so1 <- sf1()
   sf2 <- prep_create_storr_factory(namespace = "Test")

@@ -98,6 +98,13 @@ util_margins_lm <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   res_df <- data.frame(emmeans::emmeans(model, group_vars, type = "response"),
                        check.names = FALSE)
 
+  # adjust for covariates, if needed
+  ds1$resp_var_adj <-
+    # estimated mean for each level of the grouping variable
+    res_df$emmean[match(ds1[[group_vars]], res_df[, group_vars])] +
+    # residuals: original value of the response variable - fitted value
+    model$residuals
+
   summary_ds <- as.data.frame(
     dplyr::summarize(
       dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
@@ -108,10 +115,6 @@ util_margins_lm <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   res_df <- dplyr::rename(res_df, c("margins" = "emmean", "LCL" = "lower.CL",
                                     "UCL" = "upper.CL"))
 
-  # TODO: check whether the following problem still occurs:
-  # emmeans::emmeans appears not working correctly for the overall mean. Somehow
-  # the package assumes an interaction term although there isn't.
-  # call emmeans::emmeans
   # adjusted overall mean
   omv <- data.frame(emmeans::emmeans(model, "1", type = "response"))
   omv <- dplyr::rename(omv, c("margins" = "emmean", "LCL" = "lower.CL",
@@ -120,7 +123,9 @@ util_margins_lm <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
 
   # thresholds -----------------------------------------------------------------
   if (threshold_type %in% c("empirical", "none")) {
-    th <- sd(ds1[[resp_vars]])
+    th <- sd(ds1[["resp_var_adj"]])  # TODO: here we use an empirical estimate,
+    # but in other margin functions we use estimates based on properties of the
+    # assumed distribution
     parn <- c(
       paste("-", threshold_value, "TH", sep = ""), "Mean",
       paste("+", threshold_value, "TH", sep = "")
@@ -165,8 +170,8 @@ util_margins_lm <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   }
 
   # Plot 1: hybrid density/boxplot graph
-  p1 <- ggplot(data = ds1[, c(resp_vars, group_vars), drop = FALSE],
-               aes(x = .data[[group_vars]], y = .data[[resp_vars]]))
+  p1 <- ggplot(data = ds1[, c("resp_var_adj", group_vars), drop = FALSE],
+               aes(x = .data[[group_vars]], y = .data[["resp_var_adj"]]))
   if (show_violins) {
     p1 <- p1 + geom_violin(alpha = 0.9, draw_quantiles = TRUE, fill = "gray99")
   }
@@ -178,8 +183,7 @@ util_margins_lm <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
         y = margins,
         ymin = LCL,
         ymax = UCL,
-        color = as.factor(GRADING)
-        # n = sample_size
+        color = as.factor(GRADING)#, n = sample_size
       ),
       shape = 18, linewidth = 1,
       inherit.aes = FALSE,
@@ -188,7 +192,7 @@ util_margins_lm <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     theme_minimal() +
     labs(x = "", y = "") +
     theme(
-      legend.position = "None", legend.title = element_blank(),
+      legend.position = "none", legend.title = element_blank(),
       text = element_text(size = 16),
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
     ) +
@@ -198,12 +202,12 @@ util_margins_lm <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
     p1 <- p1 +
       geom_text(data = summary_ds,
                 aes(x = summary_ds[, group_vars],
-                    y = max(ds1[, c(resp_vars), drop = FALSE]) + 1.2,
+                    y = max(ds1[, "resp_var_adj", drop = FALSE]) + 1.2,
                     label = sample_size),
                 hjust = 0.5, angle = 90) +
       annotate("text",
-               x = 0.50,
-               y = max(ds1[, c(resp_vars), drop = FALSE]) + 1.2,
+               x = 0.5,
+               y = max(ds1[, "resp_var_adj", drop = FALSE]) + 1.2,
                label = "N")
   }
 
@@ -223,19 +227,23 @@ util_margins_lm <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
   }
 
   # Plot 2: overall distributional plot flipped on y-axis of plot 1
-  get_y_scale <- ggplot(ds1[, resp_vars, drop = FALSE], aes(x = .data[[resp_vars]])) +
+  get_y_scale <- ggplot(ds1[, "resp_var_adj", drop = FALSE],
+                        aes(x = .data[["resp_var_adj"]])) +
     geom_density(alpha = 0.35)
   aty <- mean(range(ggplot_build(get_y_scale)$data[[1]]$y))
 
-  p2 <- ggplot(ds1[, resp_vars, drop = FALSE], aes(.data[[resp_vars]])) +
+  p2 <- ggplot(ds1[, "resp_var_adj", drop = FALSE],
+               aes(.data[["resp_var_adj"]])) +
     geom_density(alpha = 0.35) +
     coord_flip() +
     theme_minimal() +
     labs(x = NULL, y = NULL) +
-    ggplot2::xlim(c(min(min(ds1[, c(resp_vars), drop = FALSE]), pars),
-                    max(max(ds1[, c(resp_vars), drop = FALSE])+1.2, pars + offs))) +
+    ggplot2::xlim(c(min(min(ds1[, "resp_var_adj", drop = FALSE]), pars),
+                    max(max(ds1[, "resp_var_adj", drop = FALSE]) + 1.2,
+                        pars + offs))) +
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
           text = element_text(size = 16))
+
   if (threshold_type != "none") {
     p2 <-
       p2 +

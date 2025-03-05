@@ -193,7 +193,7 @@ util_generate_pages_from_report <- function(report, template,
   }
 
   ## create a table with the summary of indicators and descriptors
-  info_dim_dq <- util_generate_table_indicators_descriptors(summary(report))
+  info_dim_dq <- util_generate_table_indicators_descriptors(report)
   # info_dim_dq <- rbind(info_dim_dq,
   #                      data.frame(Dimension = "Descriptors",
   #                                 `No. DQ indicators` = 0,

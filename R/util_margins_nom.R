@@ -61,6 +61,20 @@ util_margins_nom <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   if (any(count_nom[, 2] < min_obs_in_subgroup)) {
     util_error("Not enough observations per group (after data preparation).")
   }
+  # ensure that the model supports the specified covariates
+  if (length(co_vars) > 0) {
+    covar_prop <- util_dist_selection(ds1[, co_vars, drop = FALSE])
+    covar_fact <- setNames(nm = co_vars,
+                           vapply(ds1[, co_vars, drop = FALSE], FUN.VALUE = logical(1),
+                           FUN = is.factor))
+    covar_excl <- union(which(covar_prop$NCategory <= 2),
+                        which(!covar_fact))
+    if (length(covar_excl) > 0) { # TODO: work in progress!
+      util_error(paste("Adjusting for covariates is currently",
+                       "only supported for factor variables with",
+                       "2 or more levels"))
+    }
+  }
 
   # modelling ------------------------------------------------------------------
   # if no co_vars are defined for adjustment only the intercept is modelled
@@ -92,7 +106,7 @@ util_margins_nom <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
     util_bQuote(resp_vars)
   ))
   nom_int_fmla <- as.formula(paste0(
-    "~ ", paste0(co_vars_bQ, collapse = " + "), " | ",
+    "~ 1 | ",
     util_bQuote(resp_vars)
   ))
 
@@ -102,7 +116,7 @@ util_margins_nom <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   summary_ds <- as.data.frame(
     dplyr::summarize(
       dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
-                         unname(c(group_vars, resp_vars))),
+                         unname(c(group_vars, resp_vars)), .drop = FALSE),
       sample_size = dplyr::n()))
 
   res_df <- merge(res_df, summary_ds, by = c(group_vars, resp_vars),
@@ -129,7 +143,6 @@ util_margins_nom <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
                   by = c(resp_vars, group_vars), all = TRUE)
 
   # figure ---------------------------------------------------------------------
-
   omv[, group_vars] <- "overall"
   nom_plot_data <- merge(res_df, omv,
                          by = c(resp_vars, group_vars, "margins", "SE", "df",

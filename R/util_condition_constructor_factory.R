@@ -92,7 +92,8 @@ util_condition_constructor_factory <- function(
 
     if (identical(as.logical(getOption("dataquieR.CONDITIONS_WITH_STACKTRACE", FALSE)), FALSE)) {
       stacktrace <- ""
-      if (.called_in_pipeline || .condition_type != "error") {
+      if ((exists(".called_in_pipeline") && .called_in_pipeline) ||
+          .condition_type != "error") {
         calling <- character(0)
       }
     } else {
@@ -121,7 +122,8 @@ util_condition_constructor_factory <- function(
         .cond_constructor(message = paste(c(m, calling, stacktrace),
                                           collapse = "\n"),
                           trace = rlang::trace_back(bottom = 2),
-                          use_cli_format = !.called_in_pipeline,
+                          use_cli_format = (!exists(".called_in_pipeline") ||
+                                              !.called_in_pipeline),
                           call = caller.)
 
     } else {
@@ -134,7 +136,8 @@ util_condition_constructor_factory <- function(
       }
       ec <-
         .cond_constructor(trace = rlang::trace_back(bottom = 2),
-                          use_cli_format = !.called_in_pipeline,
+                          use_cli_format = (!exists(".called_in_pipeline") ||
+                                              !.called_in_pipeline),
                           message = paste0(c(do.call("sprintf", c(
           list(fmt = paste0(title, mm)),
           m_args)),

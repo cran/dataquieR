@@ -198,9 +198,10 @@ if (isFirefox) {
           var id = wrapper.attr("id");
           if (id.match(/_wrapper$/) !== null) {
             var dt = $("#" + id.replaceAll(/_wrapper$/g, "")).DataTable();
+            var cidx = computeColIndex(dt);
             wrapper.find(".dataTables_scrollHead td input").each(function(i) {
               $(this).on( "keyup", function() {
-                dt.column(i).search( $(this).val() ).draw();
+                dt.column(cidx.dom2data[i]).search( $(this).val() ).draw();
               })
             })
           }

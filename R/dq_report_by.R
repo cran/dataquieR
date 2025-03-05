@@ -344,7 +344,38 @@ dq_report_by <- function(study_data,
   if (!missing(meta_data_v2)) {
     util_message("Have %s set, so I'll remove all loaded data frames",
                  sQuote("meta_data_v2"))
+
+
+    #save the grading rule-sets and formats and re-add to cache after purge
+    grading_rl <- NULL
+    if (getOption("dataquieR.grading_rulesets",
+                  dataquieR.grading_rulesets_default) %in%
+        prep_list_dataframes()) {
+      grading_rl <- prep_get_data_frame(getOption("dataquieR.grading_rulesets",
+                                                  dataquieR.grading_rulesets_default))
+    }
+   format_rl <- NULL
+    if (options("dataquieR.grading_formats" =
+                dataquieR.grading_formats_default) %in%
+        prep_list_dataframes()) {
+      format_rl <- prep_get_data_frame(options("dataquieR.grading_formats" =
+                                                 dataquieR.grading_formats_default))
+    }
     prep_purge_data_frame_cache()
+    if(!is.null(grading_rl)) {
+      prep_add_data_frames(
+        data_frame_list =
+          setNames(list(grading_rl),
+                   nm = getOption("dataquieR.grading_rulesets",
+                                  dataquieR.grading_rulesets_default)))
+    }
+    if(!is.null(format_rl)) {
+      prep_add_data_frames(
+        data_frame_list =
+          setNames(list(format_rl),
+                   nm = options("dataquieR.grading_formats" =
+                                  dataquieR.grading_formats_default)))
+    }
     #try to import the metadata, and if not possible, try to add
     # the path if provided
     m <- try(prep_load_workbook_like_file(meta_data_v2), silent = TRUE)

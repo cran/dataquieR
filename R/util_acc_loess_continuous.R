@@ -60,6 +60,9 @@
 #'                  datasets?
 #' @param exclude_constant_subgroups [logical] Should subgroups with constant
 #'                  values be excluded?
+#' @param min_bandwidth [numeric] lower limit for the LOESS bandwidth, should be
+#'                  greater than 0 and less than or equal to 1. In general,
+#'                  increasing the bandwidth leads to a smoother trend line.
 #'
 #' @return a [list] with:
 #'   - `SummaryPlotList`: list with two plots if `plot_format = "BOTH"`,
@@ -137,8 +140,11 @@ util_acc_loess_continuous <- function(
                             dataquieR.max_group_var_levels_in_plot_default),
     enable_GAM = getOption("dataquieR.GAM_for_LOESS",
                            dataquieR.GAM_for_LOESS.default),
-    exclude_constant_subgroups = getOption("dataquieR.acc_loess.exclude_constant_subgroups",
-                                           dataquieR.acc_loess.exclude_constant_subgroups.default)) {
+    exclude_constant_subgroups =
+      getOption("dataquieR.acc_loess.exclude_constant_subgroups",
+                dataquieR.acc_loess.exclude_constant_subgroups.default),
+    min_bandwidth = getOption("dataquieR.acc_loess.min_bw",
+                              dataquieR.acc_loess.min_bw.default)) {
   # preps ----------------------------------------------------------------------
   # map metadata to study data
   prep_prepare_dataframes(.replace_hard_limits = TRUE,
@@ -384,18 +390,31 @@ util_acc_loess_continuous <- function(
   # adjust response for covariables (if any) using a linear model
   if (length(co_vars) > 0) {
     fmla <- as.formula(paste0(paste0(util_bQuote(resp_vars), "~"),
-                              paste0(util_bQuote(co_vars),
-                                     collapse = " + ")))
+                              paste0(
+                                paste0(util_bQuote(co_vars), collapse = " + "),
+                                " + ",
+                                util_bQuote(group_vars)
+                              )))
     lmfit1 <- lm(fmla, data = ds1)
-    # store residuals + intercept (i.e., discard effects from covariables)
+    group_marg <- data.frame(
+      emmeans::emmeans(lmfit1, group_vars, type = "response"),
+      check.names = FALSE)
+    # store residuals (i.e., discard effects from covariables)
     # These values will be used for LOESS fits. In this way, we fit LOESS after
     # adjusting the response for the covariables.
-    ds1$Residuals <- lmfit1$residuals + lmfit1$coefficients[1]
-    # Memory consumption
-    rm(lmfit1)
+    ds1$Residuals <-
+      # estimated mean for each level of the grouping variable
+      group_marg$emmean[match(ds1[[group_vars]], group_marg[, group_vars])] +
+      # residuals: original value of the response variable - fitted value
+      lmfit1$residuals
+    rm(lmfit1) # Memory consumption
   } else {
     ds1$Residuals <- ds1[[resp_vars]]
   }
+
+  # calculate LOESS smoothing parameter based on the number of observations
+  bw_loess <- min(1, round(100/nrow(ds1), 2)) # upper limit: 1
+  bw_loess <- max(min_bandwidth, bw_loess) # lower limit as specified
 
   # fit LOESS/GAM for each group separately
   grouped_ds1 <- split(ds1, ds1[[group_vars]])
@@ -426,18 +445,11 @@ util_acc_loess_continuous <- function(
 
       fit_vals <- mgcv::predict.gam(fit_i, data_i_seq_num)
     } else { # LOWESS
-      # calculate smoothing parameter for data_i
-      max_smooth <- round(1 / log10(length(unique(data_i[[time_vars]]))), 2)
-      max_smooth <- max(0.3, # max_smooth should be greater than or equal to 0.3
-                        # max_smooth should not be greater than 1
-                        # (happens if there are few time points)
-                        min(max_smooth, 1),
-                        na.rm = TRUE)
       # fit LOWESS for data_i
       fit_i <- suppressWarnings(
         lowess(x = data_i[["ROUND_TIME"]],
                y = data_i[["Residuals"]],
-               f = max_smooth))
+               f = bw_loess))
       fit_i_df <- unique(as.data.frame(fit_i))
       fit_vals <- fit_i_df$y
       data_i_seq <- as.POSIXct(fit_i_df$x)

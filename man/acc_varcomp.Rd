@@ -14,6 +14,7 @@ acc_varcomp(
   min_obs_in_subgroup = 10,
   min_subgroups = 5,
   cut_off_linear_model_for_ord = 10,
+  threshold_value = lifecycle::deprecated(),
   meta_data = item_level,
   meta_data_v2
 )
@@ -57,6 +58,8 @@ which linear models are considered a good
 approximation). The argument can be set to
 \code{NULL} if ordered regression models are
 preferred for ordinal data in any case.}
+
+\item{threshold_value}{Deprecated.}
 
 \item{meta_data}{\link{data.frame} old name for \code{item_level}}
 

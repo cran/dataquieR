@@ -47,8 +47,6 @@
 #'                                        defined in "group_var" has fewer
 #'                                        subgroups it is not used for analysis.
 #'                                        The default is 5.
-#' @param threshold_value [numeric] from=0 to=1. a numerical value ranging
-#'                                              from 0-1
 #' @param study_data [data.frame] the data frame that contains the measurements
 #' @param item_level [data.frame] the data frame that contains metadata
 #'                               attributes of study data
@@ -84,7 +82,6 @@ util_acc_varcomp <-
            co_vars = NULL,
            min_obs_in_subgroup = 30,
            min_subgroups = 5,
-           threshold_value = 0.05,
            meta_data = item_level,
            meta_data_v2) { # TODO: does this function remove observers w/o observations?
 
@@ -344,21 +341,14 @@ util_acc_varcomp <-
   max_icc <- suppressWarnings(max(icc_output$ICC, na.rm = TRUE))
   argmax_icc <- icc_output$Variables[which.max(icc_output$ICC)]
 
-
-  icc_output[["GRADING"]] <- as.numeric(threshold_value <= icc_output$ICC)
-
-
-   ## Format
+  # format
   rownames(icc_output) <- NULL
   SummaryTable <- icc_output
   SummaryData <- icc_output
   names(SummaryTable)[names(SummaryTable) == "ICC"] <- "ICC_acc_ud_loc"
 
-
-  #fix rounding decimal places and columns present
-  SummaryData$GRADING <- NULL
-  SummaryData <- SummaryData[, setdiff(colnames(SummaryData), c("Model.Call",
-                                                                "GRADING"))]
+  # fix rounding decimal places and columns present
+  SummaryData <- SummaryData[, setdiff(colnames(SummaryData), c("Model.Call"))]
   SummaryData$ICC <- util_round_to_decimal_places(SummaryData$ICC)
   SummaryData$Mean.Class.Size <-
     util_round_to_decimal_places(SummaryData$Mean.Class.Size)

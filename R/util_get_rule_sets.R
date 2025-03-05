@@ -73,6 +73,19 @@ util_get_rule_sets <- function() {
 
   default_rs <- GRADING_RULESETs[["0"]]
 
+  for (needed in setdiff(c("CAT_applicability", "CAT_error",
+                   "CAT_anamat", "CAT_indicator_or_descriptor"),
+                   unique(default_rs$indicator_metric))) {
+    add_row <- shipped_rulesets[!is.na(shipped_rulesets$GRADING_RULESET) &
+                       shipped_rulesets$GRADING_RULESET == "0" &
+                       !is.na(shipped_rulesets$indicator_metric) &
+                       shipped_rulesets$indicator_metric == needed, , FALSE]
+    default_rs <- util_rbind(default_rs,
+                              add_row)
+  }
+
+  GRADING_RULESETs[["0"]] <- default_rs
+
   to_amend <- setNames(nm = setdiff(GRADING_RULESET_names, "0"))
 
   GRADING_RULESETs[as.character(to_amend)] <- lapply(to_amend, function(rs) {

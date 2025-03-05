@@ -1,16 +1,24 @@
 #' Create a table summarizing the number of indicators and descriptors
 #' in the report
 #'
-#' @param x a report summary (`summary(r)`)
+#' @param report a report
 #'
 #' @return a table containing the number of indicators and descriptors created
 #' in the report, separated by data quality dimension.
 #'
 #' @keywords internal
+util_generate_table_indicators_descriptors <- function(report) {
 
-util_generate_table_indicators_descriptors <- function(x) {
+  util_stop_if_not(inherits(report, "dataquieR_resultset2"))
 
-  util_stop_if_not(inherits(x, "dataquieR_summary"))
+  #Obtain the names of the group (e.g., observer, device...)
+  tab_attrib <- attributes(attributes(report)$matrix_list)$function_alias_map
+
+  alias2functionname <- setNames(tab_attrib$name, nm = tab_attrib$alias)
+
+  #create the summary
+  x <- summary(report)
+
   # this represents the current object
   this <- attr(x, "this")
   withr::with_environment(this, {
@@ -37,13 +45,15 @@ util_generate_table_indicators_descriptors <- function(x) {
                                  data.frame(stopped_functions ,
                                             row.names=NULL))
     colnames(stopped_functions) <- c("fun_names", "stopped_yn")
-    # remove the suffixes(.var_names, .ALL, _device, _observer) from fun names
+    # remove the suffixes(.var_names, .[ALL]) from fun names
     stopped_functions$fun_names1 <- gsub("(^[^.]*).*", "\\1",
                                           stopped_functions$fun_names)
-    stopped_functions$fun_names1 <- gsub("(.*)(_device)$", "\\1",
-                                          stopped_functions$fun_names1)
-    stopped_functions$fun_names1 <- gsub("(.*)(_observer)$", "\\1",
-                                          stopped_functions$fun_names1)
+
+    # translate call-names/aliases to function names,
+    # i.e., remove all possible group-suffixes (_device, _observer...)
+    stopped_functions$fun_names1 <-
+      alias2functionname[`stopped_functions`$fun_names1]
+
     stopped_functions <- unique(stopped_functions[, c("fun_names1",
                                                 "stopped_yn"),
                                             drop = FALSE ])

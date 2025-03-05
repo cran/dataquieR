@@ -101,6 +101,12 @@ util_margins_ord <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   #   util_error("No data left after data preparation.")
   # }
 
+  # TODO: work in progress!
+  if (length(co_vars) > 0 && all(!util_empty(co_vars))) {
+    util_error(paste("Covariate argument for ordinal regression",
+                       "not yet supported."))
+  }
+
   # ensure that the grouping variable has the specified minimum number of levels
   check_df <- util_table_of_vct(ds1[[group_vars]])
   if (length(check_df[, 1]) < min_subgroups) {

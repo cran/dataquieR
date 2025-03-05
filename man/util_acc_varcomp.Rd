@@ -13,7 +13,6 @@ util_acc_varcomp(
   co_vars = NULL,
   min_obs_in_subgroup = 30,
   min_subgroups = 5,
-  threshold_value = 0.05,
   meta_data = item_level,
   meta_data_v2
 )
@@ -51,9 +50,6 @@ included "group_var". If the variable
 defined in "group_var" has fewer
 subgroups it is not used for analysis.
 The default is 5.}
-
-\item{threshold_value}{\link{numeric} from=0 to=1. a numerical value ranging
-from 0-1}
 
 \item{meta_data}{\link{data.frame} old name for \code{item_level}}
 

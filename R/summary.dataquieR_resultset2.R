@@ -146,67 +146,6 @@ summary.dataquieR_resultset2 <- function(object, aspect = c("applicability", "er
 
     result <- result[!is.na(result[[VAR_NAMES]]), , FALSE] # remove all non-variable-related stuff, not yet supported, here.
 
-    result %>% dplyr::filter(!startsWith(as.character(indicator_metric), "CAT_") &
-                               !startsWith(as.character(indicator_metric), "MSG_")) %>%
-      dplyr::group_by(VAR_NAMES) %>%
-      dplyr::summarise(rowmax = suppressWarnings(
-        max(util_as_cat(class), na.rm = TRUE))) ->
-      rowmaxes
-
-    rowmax <- paste(rowmaxes$rowmax) # also make NA -> "NA"
-
-    rowmaxes$label <- vapply(labels[rowmax], identity,
-                             FUN.VALUE = character(1))
-
-    rowmaxes$color <- vapply(colors[rowmax], identity,
-                             FUN.VALUE = character(1))
-
-    rowmaxes$order <- vapply(order_of[rowmax], identity,
-                             FUN.VALUE = integer(1))
-
-    rowmaxes$filter <- vapply(filter_of[rowmax], identity,
-                             FUN.VALUE = character(1))
-
-    get_cell_text <- function(lb, cl, o, f, vn) {
-      # util_message("lb = %s, cl = %s, o = %s, f = %s, vn = %s",
-      #              sQuote(lb), sQuote(cl), sQuote(o), sQuote(f), sQuote(vn))
-      link <- util_generate_anchor_link(labels_of_var_names_in_report[[vn]],
-                                        "",
-                                        title =
-                                          htmltools::HTML(as.character(lb)))
-      link$attribs$style <- c(link$attribs$style,
-                              "text-decoration:none;display:block;")
-      fg_color <- util_get_fg_color(cl)
-      link$attribs$style <- c(link$attribs$style, sprintf("color:%s;", fg_color))
-
-      paste0(
-        htmltools::tagList(
-        # htmltools::p(cn),
-        # htmltools::p(vn)
-        htmltools::pre(
-          onclick = "",
-          style = sprintf("height: 100%%; min-height: 2em; margin: 0em; padding: 0em; background: %s; cursor: pointer; text-align: center;", cl),
-          sort = o,
-          filter = f,
-          title = "",
-          link)
-      ), collapse = "\n")
-    }
-
-    rowmaxes$cell_text <- setNames(vapply(mapply(
-      SIMPLIFY = FALSE,
-      FUN = get_cell_text,
-      lb = rowmaxes$label,
-      cl = rowmaxes$color,
-      o = rowmaxes$order,
-      f = rowmaxes$filter,
-      vn = rowmaxes$VAR_NAMES
-    ),
-    FUN = identity,
-    FUN.VALUE = character(1)),
-    nm = labels_of_var_names_in_report[rowmaxes$VAR_NAMES])
-
-
     # compute stopped_functions
     stopped_functions <- vapply(object,
                                 inherits, what = "dataquieR_NULL",
@@ -233,6 +172,15 @@ summary.dataquieR_resultset2 <- function(object, aspect = c("applicability", "er
     # FIXME: avoid to do this already once, before
     result <- util_metrics_to_classes(result,
                                       attr(object, "meta_data")) # re-classify
+
+    rowmaxes <- util_compute_rowmaxes(result = result,
+                                      labels = labels,
+                                      colors = colors,
+                                      order_of = order_of,
+                                      filter_of = filter_of,
+                                      labels_of_var_names_in_report =
+                                        labels_of_var_names_in_report)
+
 
     this <- new.env(parent = emptyenv())
 
@@ -354,6 +302,15 @@ util_reclassify_dataquieR_summary <- function(x) {
   attr(x, "this")$result <-
     util_metrics_to_classes(rs_table_long, meta_data)
 
+  attr(x, "this")$rowmaxes <- util_compute_rowmaxes(
+    result = attr(x, "this")$result,
+    labels = attr(x, "this")$labels,
+    colors = attr(x, "this")$colors,
+    order_of = attr(x, "this")$order_of,
+    filter_of = attr(x, "this")$filter_of,
+    labels_of_var_names_in_report =
+      attr(x, "this")$labels_of_var_names_in_report)
+
   attr(x, "rule_digest") <-
     rlang::hash(list(util_get_rule_sets(),
                      util_get_ruleset_formats()))
@@ -361,3 +318,73 @@ util_reclassify_dataquieR_summary <- function(x) {
   x
 }
 
+util_compute_rowmaxes <- function(result,
+                                  labels,
+                                  colors,
+                                  order_of,
+                                  filter_of,
+                                  labels_of_var_names_in_report) {
+  indicator_metric <- NULL # make R CMD check happy
+  result %>% dplyr::filter(!startsWith(as.character(indicator_metric), "CAT_") &
+                             !startsWith(as.character(indicator_metric), "MSG_")) %>%
+    dplyr::group_by(VAR_NAMES) %>%
+    dplyr::summarise(rowmax = suppressWarnings(######
+                                               max(util_as_cat(class), na.rm = TRUE))) ->
+    rowmaxes
+
+  rowmax <- paste(rowmaxes$rowmax) # also make NA -> "NA"
+
+  rowmaxes$label <- vapply(labels[rowmax], identity,
+                           FUN.VALUE = character(1))
+
+  rowmaxes$color <- vapply(colors[rowmax], identity,
+                           FUN.VALUE = character(1))
+
+  rowmaxes$order <- vapply(order_of[rowmax], identity,
+                           FUN.VALUE = integer(1))
+
+  rowmaxes$filter <- vapply(filter_of[rowmax], identity,
+                            FUN.VALUE = character(1))
+
+  get_cell_text <- function(lb, cl, o, f, vn) {
+    # util_message("lb = %s, cl = %s, o = %s, f = %s, vn = %s",
+    #              sQuote(lb), sQuote(cl), sQuote(o), sQuote(f), sQuote(vn))
+    link <- util_generate_anchor_link(labels_of_var_names_in_report[[vn]],
+                                      "",
+                                      title =
+                                        htmltools::HTML(as.character(lb)))
+    link$attribs$style <- c(link$attribs$style,
+                            "text-decoration:none;display:block;")
+    fg_color <- util_get_fg_color(cl)
+    link$attribs$style <- c(link$attribs$style, sprintf("color:%s;", fg_color))
+
+    paste0(
+      htmltools::tagList(
+        # htmltools::p(cn),
+        # htmltools::p(vn)
+        htmltools::pre(
+          onclick = "",
+          style = sprintf("height: 100%%; min-height: 2em; margin: 0em; padding: 0em; background: %s; cursor: pointer; text-align: center;", cl),
+          sort = o,
+          filter = f,
+          title = "",
+          link)
+      ), collapse = "\n")
+  }
+
+  rowmaxes$cell_text <- setNames(vapply(mapply(
+    SIMPLIFY = FALSE,
+    FUN = get_cell_text,
+    lb = rowmaxes$label,
+    cl = rowmaxes$color,
+    o = rowmaxes$order,
+    f = rowmaxes$filter,
+    vn = rowmaxes$VAR_NAMES
+  ),
+  FUN = identity,
+  FUN.VALUE = character(1)),
+  nm = labels_of_var_names_in_report[rowmaxes$VAR_NAMES])
+
+  return(rowmaxes)
+
+}

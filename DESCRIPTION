@@ -1,6 +1,6 @@
 Package: dataquieR
 Title: Data Quality in Epidemiological Research
-Version: 2.5.0
+Version: 2.5.1
 Authors@R: 
     c(person(given = "University Medicine Greifswald",
              role = "cph"),
@@ -9,16 +9,16 @@ Authors@R:
              role = "aut",
              comment = c(ORCID = "0000-0001-5261-538X"),
              email = "elisa.kasbohm@uni-greifswald.de"),
-      person(given = "Joany",
-             family = "Marino",
-             role = "aut",
-             comment = c(ORCID = "0000-0002-4657-3758"),
-             email = "joany.marino@uni-greifswald.de"),
       person(given = "Elena",
              family = "Salogni",
              role = "aut",
              comment = c(ORCID = "0009-0007-3767-7145"),
              email = "elena.salogni@uni-greifswald.de"),       
+      person(given = "Joany",
+             family = "Marino",
+             role = "aut",
+             comment = c(ORCID = "0000-0002-4657-3758"),
+             email = "joany.marino@uni-greifswald.de"),
       person(given = "Adrian",
              family = "Richter",
              role = "aut",
@@ -83,11 +83,11 @@ Config/testthat/start-first: dq_report_by_sm, dq_report2,
         util_correct_variable_use
 BuildManual: TRUE
 NeedsCompilation: no
-Packaged: 2025-02-20 18:13:39 UTC; struckmanns
+Packaged: 2025-03-05 17:44:09 UTC; struckmanns
 Author: University Medicine Greifswald [cph],
   Elisa Kasbohm [aut] (<https://orcid.org/0000-0001-5261-538X>),
-  Joany Marino [aut] (<https://orcid.org/0000-0002-4657-3758>),
   Elena Salogni [aut] (<https://orcid.org/0009-0007-3767-7145>),
+  Joany Marino [aut] (<https://orcid.org/0000-0002-4657-3758>),
   Adrian Richter [aut] (<https://orcid.org/0000-0002-3372-2021>),
   Carsten Oliver Schmidt [aut] (<https://orcid.org/0000-0001-5266-9396>),
   Stephan Struckmann [aut, cre] (<https://orcid.org/0000-0002-8565-7962>),
@@ -99,4 +99,4 @@ Author: University Medicine Greifswald [cph],
     No. 825903) [fnd]
 Maintainer: Stephan Struckmann <stephan.struckmann@uni-greifswald.de>
 Repository: CRAN
-Date/Publication: 2025-02-20 18:40:02 UTC
+Date/Publication: 2025-03-05 18:10:02 UTC

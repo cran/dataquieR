@@ -445,3 +445,27 @@ dataquieR.acc_loess.exclude_constant_subgroups.default <- FALSE
 #' @docType data
 options("dataquieR.acc_loess.exclude_constant_subgroups" =
           dataquieR.acc_loess.exclude_constant_subgroups.default)
+
+dataquieR.acc_loess.min_bw.default <- 0.2
+#' @name dataquieR.acc_loess.min_bw
+#' @title Lower limit for the LOESS bandwidth
+#' @description
+#' The value should be greater than 0 and less than or equal to 1. In general,
+#' increasing the bandwidth leads to a smoother trend line.
+#' @family options
+#' @docType data
+options("dataquieR.acc_loess.min_bw" =
+          dataquieR.acc_loess.min_bw.default)
+
+dataquieR.acc_loess.min_proportion.default <- 0.1
+#' @name dataquieR.acc_loess.min_proportion
+#' @title Lower limit for the proportion of cases or controls to create a
+#' smoothed time trend figure
+#' @description
+#' The value should be greater than 0 and less than 0.4. If the proportion of
+#' cases or controls is lower than the specified value, the LOESS figure will
+#' not be created for the specified binary outcome.
+#' @family options
+#' @docType data
+options("dataquieR.acc_loess.min_proportion" =
+          dataquieR.acc_loess.min_proportion.default)

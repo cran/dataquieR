@@ -41,7 +41,7 @@ util_compress_ggplots_in_res <- function(r) {
                                      }
                                    })
                                  }))))
-    mv <- c(mv, "facet") # keep column facet as used in util_margins_nom
+    mv <- c(mv, "facet", "resp_var_adj") # keep column facet as used in util_margins_nom, column resp_var_adj is used in ..._lm, ..._bin, ..._poi
 
     if ("facet" %in% names(r)) {
       facet_v <- NULL

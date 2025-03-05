@@ -510,8 +510,10 @@ util_evaluate_calls <-
                                      r = int_datatype_matrix.,
                                      nm = names(int_datatype_matrix.),
                                      function(r, nm) {
+                                       s <- prep_extract_summary(r)
                                        r_summary1 <-
-                                         prep_summary_to_classes(prep_extract_summary(r))
+                                         suppressWarnings(
+                                           prep_summary_to_classes(s)) # FIXME: split this function, we do not want classes, here
 
                                        CAT_ <-
                                          vapply(setNames(nm = c("applicability", "error", "anamat", "indicator_or_descriptor")), function(aspect) {

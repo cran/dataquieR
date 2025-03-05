@@ -40,7 +40,7 @@ test_that("acc_varcomp works without label_col", {
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
       as.matrix(res1$SummaryTable)),
-      na.rm = TRUE) - 784.112)), 0.1
+      na.rm = TRUE) - 783.112)), 0.1
   )
 
   expect_true(res1$ScalarValue_max_icc == 0.112)
@@ -122,7 +122,7 @@ test_that("acc_varcomp works illegal min_obs_in_subgroup/min_subgroups", {
   expect_lt(
     suppressWarnings(abs(sum(as.numeric(
       as.matrix(res1$SummaryTable)),
-      na.rm = TRUE) - 784.112)), 0.1
+      na.rm = TRUE) - 783.112)), 0.1
   )
 
   expect_true(res1$ScalarValue_max_icc == 0.112)

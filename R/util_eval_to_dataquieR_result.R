@@ -123,7 +123,8 @@ util_eval_to_dataquieR_result <- function(expression, env = parent.frame(),
     if (length(r) > 0) {
       try({
         # r_summary <- util_extract_indicator_metrics(r$SummaryTable)
-        r_summary1 <- prep_summary_to_classes(prep_extract_summary(r)) # FIXME: split this function, we do not want classes, here
+        s <- prep_extract_summary(r)
+        r_summary1 <- suppressWarnings(prep_summary_to_classes(s)) # FIXME: split this function, we do not want classes, here
         #      r_summary <- r_summary0$Table
 
       }, silent = TRUE)

@@ -1231,7 +1231,7 @@ test_that("optional features for acc_loess work as expected", {
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 time_vars = "LAB_DT_0", co_vars = c("AGE_0", "SEX_0"),
                 label_col = LABEL, mark_time_points = TRUE,
-                plot_observations = TRUE)
+                plot_observations = TRUE, min_bandwidth = 0.5)
     ,
     regexp = "Due to missing values in DEV_NO_0, AGE_0, SEX_0 or LAB_DT_0, N = 308 observations were excluded. Due to missing values in CRP_0, N = 131 observations were excluded"
   )
@@ -1282,7 +1282,9 @@ test_that("optional features for acc_loess work as expected", {
                 group_vars = "USR_VO2_0",
                 time_vars = "EXAM_DT_0",
                 label_col = LABEL,
-                exclude_constant_subgroups = TRUE)
+                exclude_constant_subgroups = TRUE,
+                min_bandwidth = 0.5,
+                min_proportion = 0.05)
     ,
     regexp = sprintf("(%s|%s|%s|%s)",
                      paste("Due to missing values in USR_VO2_0 or EXAM_DT_0,",
