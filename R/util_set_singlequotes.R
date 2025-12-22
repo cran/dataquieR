@@ -9,7 +9,7 @@
 #'
 #' @family string_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_set_sQuoteString <- function(string) {
   old <- options(useFancyQuotes = FALSE)
   on.exit(options(old))

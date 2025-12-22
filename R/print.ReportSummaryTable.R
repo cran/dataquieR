@@ -12,6 +12,8 @@
 #'                                values
 #' @param view [logical] if `view` is `FALSE`, do not print but return the
 #'                       output, only
+#' @param drop [logical] if `drop` is `FALSE`, keep unused levels,
+#'                       see [dataquieR.droplevels_ReportSummaryTable]
 #' @param x `ReportSummaryTable` objects to print
 #' @inheritParams acc_distributions
 #' @param ... not used, yet
@@ -25,7 +27,13 @@ print.ReportSummaryTable <- function(x, relative = lifecycle::deprecated(),
                                      dt = FALSE,
                                      fillContainer = FALSE,
                                      displayValues = FALSE,
-                                     view = TRUE, ...,
+                                     view = TRUE,
+                                     drop =
+                                       getOption(
+                                 "dataquieR.droplevels_ReportSummaryTable",
+                                 dataquieR.droplevels_ReportSummaryTable_default
+                                         ),
+                                     ...,
                                      flip_mode = "auto") {
 
   if (lifecycle::is_present(relative)) {
@@ -33,6 +41,14 @@ print.ReportSummaryTable <- function(x, relative = lifecycle::deprecated(),
     lifecycle::deprecate_warn(
       "2.5.0",
       "dataquieR::print.ReportSummaryTable(relative = )")
+  }
+
+  util_expect_scalar(drop,
+                     check_type = is.logical,
+                     error_message = "drop needs to be either TRUE or FALSE")
+
+  if (drop) {
+    x <- droplevels(x)
   }
 
   #definition of colscale
@@ -129,6 +145,11 @@ print.ReportSummaryTable <- function(x, relative = lifecycle::deprecated(),
   rownames(tb) <- NULL
   names(tb) <- c("Variables", "variable", "value")
 
+  if (all(is.na(tb$value))) {
+    tb <- tb[FALSE, , FALSE]
+  } else {
+    tb <- tb[!is.na(tb$value), , FALSE]
+  }
 
   levs <- unique(tb$variable)
 
@@ -139,7 +160,7 @@ print.ReportSummaryTable <- function(x, relative = lifecycle::deprecated(),
 
     tb$variable <- factor(tb$variable,
                           levels = levs)
-  }else {
+  } else {
 
   #sort levels
   #levs <- sort(levs)
@@ -369,17 +390,23 @@ print.ReportSummaryTable <- function(x, relative = lifecycle::deprecated(),
                                              labels = scales::percent)
           gtlb <- paste0(" ", round(tb_copy$value * 100, digits = 2), "%")
           texts <-
-            geom_text(label = gtlb,
-                      hjust = hjust, vjust = vjust, size = 3.5)
+            util_create_lean_ggplot(geom_text(label = gtlb,
+                      hjust = hjust, vjust = vjust, size = 3.5),
+                      gtlb = gtlb,
+                      hjust = hjust, vjust = vjust
+            )
         } else {
           scale_fill <- scale_fill_gradientn(colors = rev(colscale))
           gtlb <- paste0(" ", round(tb_copy$value, digits = 2))
           texts <-
-            geom_text(label = gtlb,
-                      hjust = hjust, vjust = vjust, size = 3.5)
+            util_create_lean_ggplot(geom_text(label = gtlb,
+                      hjust = hjust, vjust = vjust, size = 3.5),
+                      gtlb = gtlb,
+                      hjust = hjust, vjust = vjust
+            )
         }
 
-        p <- ggplot(tb_copy, aes(
+        p <- util_create_lean_ggplot(ggplot(tb_copy, aes(
           x = .data[[x]], y = .data[[y]],
           fill = .data[[fill]]
         )) + geom_bar(stat = "identity", na.rm = TRUE,
@@ -399,7 +426,16 @@ print.ReportSummaryTable <- function(x, relative = lifecycle::deprecated(),
             legend.position = "bottom",
             axis.text.x = element_text(angle = 90, hjust = 0),
             axis.text.y = element_text(size = 10)
-          ) + xlab("") + ylab("")
+          ) + xlab("") + ylab(""),
+          tb_copy = tb_copy,
+          x = x,
+          y = y,
+          fill = fill,
+          texts = texts,
+          fli = fli,
+          scale_fill = scale_fill,
+          rel_ax = rel_ax
+        )
       }
 
 
@@ -476,11 +512,16 @@ print.ReportSummaryTable <- function(x, relative = lifecycle::deprecated(),
       attr(p, "sizing_hints") <- list(
         figure_type_id = "bar_chart",
         rotated = is_flipped,
-        number_of_bars = ifelse(is.null(nrow(p$data)), 0,  nrow(p$data)),
-        range = (fct * suppressWarnings(max(p$data[[y]], na.rm = TRUE)))-
-          (fct * suppressWarnings(min(p$data[[y]], na.rm = TRUE))),
-        no_char_vars = suppressWarnings(max(nchar(as.character(p$data$Variables)), na.rm = TRUE)),
-        no_char_numbers = suppressWarnings(max(nchar(p$data$value), na.rm = TRUE)) #max no. numbers for tick labels
+        number_of_bars = ifelse(is.null(nrow(util_gg_get(p, "data"))), 0,
+                                nrow(util_gg_get(p, "data"))),
+        range = (fct * suppressWarnings(max(util_gg_get(p, "data")[[y]],
+                                            na.rm = TRUE)))-
+          (fct * suppressWarnings(min(util_gg_get(p, "data")[[y]],
+                                      na.rm = TRUE))),
+        no_char_vars = suppressWarnings(max(nchar(
+          as.character(util_gg_get(p, "data")$Variables)), na.rm = TRUE)),
+        no_char_numbers = suppressWarnings(max(nchar(
+          util_gg_get(p, "data")$value), na.rm = TRUE)) #max no. numbers for tick labels
       )
 
 
@@ -505,7 +546,7 @@ print.ReportSummaryTable <- function(x, relative = lifecycle::deprecated(),
         xsize <- 10
         ysize <- 10
 
-        p <- ggplot(tb, aes(x = Variables, y = variable, colour = value, size = value)) +
+        p <- util_create_lean_ggplot(ggplot(tb, aes(x = Variables, y = variable, colour = value, size = value)) +
           geom_point()  + #scale_size_continuous(range = c(-1, 10)) + scale_x_discrete() +# breaks = 50 * seq_len(length(unique(tb$Variables)))) +
           #scale_x_discrete(guide = guide_axis(n.dodge = 5)) +
           labs(title = waiver(),
@@ -519,7 +560,13 @@ print.ReportSummaryTable <- function(x, relative = lifecycle::deprecated(),
           theme(#aspect.ratio=5*length(unique(tb$Variables))/7/length(unique(tb$Variables)),
                 axis.text.x = element_text(angle = 35, hjust = 1,
                                            size = xsize),
-                axis.text.y = element_text(size = ysize))
+                axis.text.y = element_text(size = ysize)),
+          tb = tb,
+          xlim = xlim,
+          colscale = colscale,
+          xsize = xsize,
+          ysize = ysize
+        )
 
 
         no_char_vars <- max(nchar(as.character(tb$Variables)))
@@ -528,7 +575,7 @@ print.ReportSummaryTable <- function(x, relative = lifecycle::deprecated(),
 
         fli <- util_coord_flip(p = p, w = nrow(hm), h = ncol(hm))
         is_flipped <- inherits(fli, "CoordFlip")
-        p <- p + fli
+        p <- util_lazy_add_coord(p, fli)
 
         p <- util_set_size(p, 500, 300)
 
@@ -561,28 +608,34 @@ print.ReportSummaryTable <- function(x, relative = lifecycle::deprecated(),
 
         #    colcode <- c("#B2182B", "#ef6548", "#92C5DE", "#2166AC", "#B0B0B0")
         #    names(colcode) <- levels(tb$value)
-
-        p <- ggplot(tb, aes(
+        fli <- util_coord_flip(w = nrow(hm), h = ncol(hm))
+        lcolcode <- length(colcode)
+        p <- util_create_lean_ggplot(ggplot(tb, aes(
           x = variable, y = Variables,
           fill = value
         )) + geom_tile(colour = "white", linewidth = 0.8) + # https://github.com/tidyverse/ggplot2/issues/5051
           theme_minimal() +
           # (if (nrow(hm) > ncol(hm)) coord_flip()) +
-          util_coord_flip(w = nrow(hm), h = ncol(hm)) +
+          fli +
           scale_fill_manual(values = cc, name = " ") +
           #      scale_fill_gradientn(colors = rev(colscale)) +
           #      scale_x_discrete(position = "top") +
           xlab("") +
           ylab("") +
           guides(fill = guide_legend(
-            ncol = 1, nrow = length(colcode),
+            ncol = 1, nrow = lcolcode,
             byrow = TRUE
           )) +
           theme(
             legend.position = "bottom",
             axis.text.x = element_text(angle = 90, hjust = 0, size = 10),
             axis.text.y = element_text(size = 10)
-          )
+          ),
+          tb = tb,
+          fli = fli,
+          cc = cc,
+          lcolcode = lcolcode
+        )
         if (view) print(p)
 
         attr(p, "from_ReportSummaryTable") <- TRUE

@@ -27,7 +27,7 @@ test_that("util_remove_na_records works", {
   # Find how many NAs are left
   # nas <- sum(rowSums(is.na(cars_na[, colnames(cars_na), FALSE])) > 0)
 
-  expect_message(result_remove_na <- util_remove_na_records(cars_na),
+  expect_message2(result_remove_na <- util_remove_na_records(cars_na),
                  regexp = ". observations because of NAs in some of the following columns.",
                  perl = TRUE)
 

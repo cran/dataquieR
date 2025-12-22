@@ -6,7 +6,7 @@
 #' @return a table containing the number of indicators and descriptors created
 #' in the report, separated by data quality dimension.
 #'
-#' @keywords internal
+#' @noRd
 util_generate_table_indicators_descriptors <- function(report) {
 
   util_stop_if_not(inherits(report, "dataquieR_resultset2"))

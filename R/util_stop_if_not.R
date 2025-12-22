@@ -12,7 +12,7 @@
 #'
 #' @family robustness_functions
 #' @concept condition
-#' @keywords internal
+#' @noRd
 util_stop_if_not <- function(..., label, label_only) { # FIXME: Strange ... problems in some cases
   cc <- rlang::current_call()
   # rlang::call_name(cl)

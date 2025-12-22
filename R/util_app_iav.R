@@ -14,9 +14,9 @@
 #' - 4 not applicable because of not suitable data type
 #'
 #' @seealso [pro_applicability_matrix]
-#' @keywords internal
+#' @noRd
 
-util_app_iav <- function(x, dta) {
+util_app_iav <- function(x, dta) { # TODO: TIME only or remove
   c1 <- rep(0, times = dim(x)[1])
   if (HARD_LIMITS %in% names(x))
     c1 <- c1 | !is.na(x[[HARD_LIMITS]])

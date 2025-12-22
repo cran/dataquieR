@@ -25,6 +25,7 @@
 #'
 #' @return a vector from rankICC::rankICC
 #'
+#' @noRd
 util_varcomp_robust <- function(resp_vars = NULL, group_vars = NULL,
                                 study_data = study_data, meta_data = meta_data,
                                 min_obs_in_subgroup = 10, min_subgroups = 5,

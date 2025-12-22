@@ -368,3 +368,48 @@ body {
   height: auto !important;
   width: auto !important;
 }
+
+div.infobutton a {
+  color: turquoise;
+}
+
+/* dataquieR: combined plot + table result layout */
+.dataquieR_result.dq-plot-table-result > .dq-plot-table-grid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 1.5rem;
+  /* important: let items stretch vertically */
+  align-items: stretch;
+  justify-items: stretch;
+}
+
+/* explicitly allow the table cell to take its content height */
+.dq-plot-table-result .dq-table-cell {
+  align-self: stretch;
+}
+
+/* allow both cells to shrink properly inside the grid */
+.dq-plot-table-result .dq-plot-cell,
+.dq-plot-table-result .dq-table-cell {
+  min-width: 0;
+}
+
+/* table + widget should fully fill their grid cell */
+.dq-plot-table-result .dq-table-cell .table_result,
+.dq-plot-table-result .dq-table-cell .datatables.html-widget,
+.dq-plot-table-result .dq-table-cell table {
+  width: 100% !important;
+  max-width: none;
+}
+
+/* NEW: stacked variant – keep grid, but use one column and two rows */
+.dataquieR_result.dq-plot-table-result.dq-stack-table > .dq-plot-table-grid {
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 1.5rem;
+}
+
+/* make both cells span the single column */
+.dataquieR_result.dq-plot-table-result.dq-stack-table .dq-plot-cell,
+.dataquieR_result.dq-plot-table-result.dq-stack-table .dq-table-cell {
+  grid-column: 1 / -1;
+}

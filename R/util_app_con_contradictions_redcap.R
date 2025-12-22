@@ -13,7 +13,7 @@
 #' - 3 data type matches and applicable
 #'
 #' @seealso [pro_applicability_matrix]
-#' @keywords internal
+#' @noRd
 
 util_app_con_contradictions_redcap <- function(x, dta) { # TODO: would need meta_data_cross_item
   c1 <- rep(1, times = dim(x)[1])

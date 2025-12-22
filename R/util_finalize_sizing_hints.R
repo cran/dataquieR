@@ -6,7 +6,7 @@
 #' @return a list with figure_type_id, w, and h; sizes are as `CSS`, existing
 #'         elements are kept, `w_in_cm` and `h_in_cm` are estimates for the
 #'         size in centimeters on a typical computer display (in 2024)
-#' @keywords internal
+#' @noRd
 util_finalize_sizing_hints <- function(sizing_hints) {
   original_sizing_hint <- sizing_hints
   if (!is.list(original_sizing_hint)) {
@@ -648,7 +648,7 @@ util_finalize_sizing_hints <- function(sizing_hints) {
 #' @param x a plot object
 #'
 #' @return a list with `dqr` and `x`, but fixed
-#' @keywords internal
+#' @noRd
 util_fix_sizing_hints <- function(dqr, x) {
   if (!is.null(attr(x, "sizing_hints"))) {
     if (!is.null(attr(dqr, "sizing_hints"))) {

@@ -85,7 +85,7 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
   if (!all(df_name_ok)) {
     util_warning("Losing %d data frame(s), because they could not be loaded",
                  sum(!df_name_ok)
-                 )
+    )
   }
 
   meta_data_dataframe <- meta_data_dataframe[df_name_ok, , FALSE]
@@ -104,17 +104,17 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
   meta_data_element_count_1 <-
     meta_data_dataframe[
       !util_empty(meta_data_dataframe[[DF_ELEMENT_COUNT]]), ,
-    drop = FALSE
-  ]
+      drop = FALSE
+    ]
 
   unexp_element_count_out <- NULL # TODO: capture errors form the next all and put them to the matrices
   try(silent = TRUE, {
     unexp_element_count_out <- withr::with_options(list(
       dataquieR.testdebug = TRUE),
-                                                   int_unexp_elements(
-      identifier_name_list = meta_data_element_count_1[[DF_NAME]],
-      data_element_count = meta_data_element_count_1[[DF_ELEMENT_COUNT]]
-    ))
+      int_unexp_elements(
+        identifier_name_list = meta_data_element_count_1[[DF_NAME]],
+        data_element_count = meta_data_element_count_1[[DF_ELEMENT_COUNT]]
+      ))
   })
 
   # 2. Unexpected data element set ----
@@ -126,9 +126,9 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
     meta_data[[STUDY_SEGMENT]] <- NULL
     unexp_element_set_out <-withr::with_options(list(
       dataquieR.testdebug = TRUE), int_sts_element_dataframe(item_level = meta_data,
-                                                       meta_data_dataframe =
-                                                         meta_data_dataframe
-                                                        )$DataframeTable)
+                                                             meta_data_dataframe =
+                                                               meta_data_dataframe
+      )$DataframeTable)
 
     unexp_element_set_out$GRADING <-
       ifelse(unexp_element_set_out$NUM_int_sts_element == 0, 0, 1)
@@ -147,9 +147,9 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
   try(silent = TRUE, {
     unexp_records_out <- withr::with_options(list(
       dataquieR.testdebug = TRUE), int_unexp_records_dataframe(
-      identifier_name_list = meta_data_record_count_1[[DF_NAME]],
-      data_record_count = meta_data_record_count_1[[DF_RECORD_COUNT]]
-    ))
+        identifier_name_list = meta_data_record_count_1[[DF_NAME]],
+        data_record_count = meta_data_record_count_1[[DF_RECORD_COUNT]]
+      ))
   })
 
   # 4. Unexpected data record set ----
@@ -161,7 +161,7 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
       drop = FALSE
     ]
 
-#  meta_data_record_set_1
+  #  meta_data_record_set_1
 
   unexp_records_id_out <- NULL # TODO: capture errors form the next all and put them to the matrices
   try(silent = TRUE, {
@@ -181,17 +181,17 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
       !util_empty(meta_data_dataframe[[DF_UNIQUE_ID]]) &
         !util_empty(meta_data_dataframe[[DF_ID_VARS]]), ,
       drop = FALSE
-  ]
+    ]
 
   duplicate_ids_out <- NULL # TODO: capture errors form the next all and put them to the matrices
   try(silent = TRUE, {
     duplicate_ids_out <- withr::with_options(list(
       dataquieR.testdebug = TRUE), int_duplicate_ids(
-      level = "dataframe",
-      identifier_name_list = meta_data_dup_ids_1[[DF_NAME]],
-      id_vars_list = id_vars_list_vector[meta_data_dup_ids_1[[DF_NAME]]],
-      repetitions = meta_data_dup_ids_1[[DF_UNIQUE_ID]]))
-    })
+        level = "dataframe",
+        identifier_name_list = meta_data_dup_ids_1[[DF_NAME]],
+        id_vars_list = id_vars_list_vector[meta_data_dup_ids_1[[DF_NAME]]],
+        repetitions = meta_data_dup_ids_1[[DF_UNIQUE_ID]]))
+  })
 
   # 6. Duplicates: content ----
 
@@ -211,12 +211,12 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
   try(silent = TRUE, {
     duplicates_rows_out <- withr::with_options(list(
       dataquieR.testdebug = TRUE), int_duplicate_content(
-      level = "dataframe",
-      identifier_name_list = meta_data_dup_rows_1[[DF_NAME]],
-      id_vars_list = id_vars_list_vector[meta_data_dup_rows_1[[DF_NAME]]],
-      unique_rows = setNames(meta_data_dup_rows_1[[DF_UNIQUE_ROWS]],
-                             nm = meta_data_dup_rows_1[[DF_NAME]])
-    ))
+        level = "dataframe",
+        identifier_name_list = meta_data_dup_rows_1[[DF_NAME]],
+        id_vars_list = id_vars_list_vector[meta_data_dup_rows_1[[DF_NAME]]],
+        unique_rows = setNames(meta_data_dup_rows_1[[DF_UNIQUE_ROWS]],
+                               nm = meta_data_dup_rows_1[[DF_NAME]])
+      ))
   })
 
   # Output ----
@@ -234,34 +234,18 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
   unexp_element_set_outData$`Data frame` <-
     unexp_element_set_outData[[DF_NAME]]
   unexp_element_set_outData[[DF_NAME]] <- NULL
-  # TODO: Further map names here, later only from the technical table?
+
+  # Translate indicator metric columns via helper (leave unknowns untouched)
   cn <- colnames(unexp_element_set_outData)
   if (length(cn) > 0) {
-    cn_pref <- vapply(strsplit(cn, "_"), `[[`, 1, FUN.VALUE = character(1))
-    cn_suff <- vapply(lapply(strsplit(cn, "_"), tail, -1), paste,
-                      collapse = "_", FUN.VALUE = character(1))
-    cn_pref <-
-      util_recode(
-        cn_pref,
-        util_get_concept_info("abbreviationMetrics"),
-        "Abbreviation",
-        "Metrics",
-        NA_character_
-      )
-
-    cn_suff <-
-      util_recode(
-        cn_suff,
-        util_get_concept_info("dqi"),
-        "abbreviation",
-        "Name",
-        NA_character_
-      )
-
-
-    colnames(unexp_element_set_outData)[!is.na(cn_pref) & !is.na(cn_suff)] <-
-      paste0(cn_suff, ": ", cn_pref)[!is.na(cn_pref) & !is.na(cn_suff)]
+    colnames(unexp_element_set_outData) <- util_translate_indicator_metrics(
+      cn,
+      short = FALSE,
+      long  = TRUE,
+      ignore_unknown = TRUE
+    )
   }
+
   resultData <- list(
     int_sts_countel = unexp_element_count_out$DataframeData,
     int_sts_element = unexp_element_set_outData,
@@ -275,10 +259,13 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
     rownames(resultData[[n]]) <- NULL
   }
 
+  dqi <- util_get_concept_info("dqi")
+  dqi <- dqi[!util_empty(dqi$abbreviation) & !util_empty(dqi$Name), , FALSE]
+
   names(resultData) <-
     util_recode(
       names(resultData),
-      util_get_concept_info("dqi"),
+      dqi,
       "abbreviation",
       "Name",
       names(resultData)
@@ -288,7 +275,7 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
   cn <- colnames(DataframeTable)
   if (length(cn) > 0) {
     cn[startsWith(cn, "GRADING.")] <- gsub("^GRADING\\.", "GRADING_",
-                                       cn[startsWith(cn, "GRADING.")])
+                                           cn[startsWith(cn, "GRADING.")])
     colnames(DataframeTable) <- cn
   }
   # DataframeData <- util_merge_data_frame_list(resultData, "Data frame")
@@ -299,12 +286,12 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
   }
 
   DataframeData <- data.frame(Dataframe = DataframeTable[[DF_NAME]])
-  #Replace separate columns with just one column containing N and %
-    #Only if content is present, merge columns
+  # Replace separate columns with just one column containing N and %
+  # Only if content is present, merge columns
   if(!is.null(DataframeData_1$`Unexpected data element count (Number)`)){
     DataframeData$`Unexpected data element count N (%)` <- util_paste0_with_na(DataframeData_1$`Unexpected data element count (Number)`, " (",
-                                                   DataframeData_1$`Unexpected data element count (Percentage (0 to 100))`, ")")
-   DataframeData$`Unexpected data element count (Grading)`<- DataframeData_1$`Unexpected data element count (Grading)`
+                                                                               DataframeData_1$`Unexpected data element count (Percentage (0 to 100))`, ")")
+    DataframeData$`Unexpected data element count (Grading)`<- DataframeData_1$`Unexpected data element count (Grading)`
   }
 
   if(!is.null(DataframeData_1$`Unexp. Variables`)){
@@ -313,25 +300,25 @@ int_all_datastructure_dataframe <- function(meta_data_dataframe =
 
   if(!is.null(DataframeData_1$`Unexpected data element set (Number)`)){
     DataframeData$`Unexpected data element set N (%)` <- util_paste0_with_na(DataframeData_1$`Unexpected data element set (Number)`, " (",
-                                                   DataframeData_1$`Unexpected data element set (Percentage (0 to 100))`, ")")
+                                                                             DataframeData_1$`Unexpected data element set (Percentage (0 to 100))`, ")")
     DataframeData$`Unexpected data element set (Grading)`<- DataframeData_1$`Unexpected data element set (Grading)`
   }
 
   if(!is.null(DataframeData_1$`Unexpected data record count (Number)`)){
     DataframeData$`Unexpected data record count N (%)` <- util_paste0_with_na(DataframeData_1$`Unexpected data record count (Number)`, " (",
-                                                   DataframeData_1$`Unexpected data record count (Percentage (0 to 100))`, ")")
+                                                                              DataframeData_1$`Unexpected data record count (Percentage (0 to 100))`, ")")
     DataframeData$`Unexpected data record count (Grading)`<- DataframeData_1$`Unexpected data record count (Grading)`
   }
 
   if(!is.null(DataframeData_1$`Unexpected data record set (Number)`)){
     DataframeData$`Unexpected data record set N (%)` <- util_paste0_with_na(DataframeData_1$`Unexpected data record set (Number)`, " (",
-                                                 DataframeData_1$`Unexpected data record set (Percentage (0 to 100))`, ")")
+                                                                            DataframeData_1$`Unexpected data record set (Percentage (0 to 100))`, ")")
     DataframeData$`Unexpected data record set (Grading)`<- DataframeData_1$`Unexpected data record set (Grading)`
   }
 
   if(!is.null(DataframeData_1$`Duplicates (Number)`)){
     DataframeData$`Duplicates N (%)`<- util_paste0_with_na(DataframeData_1$`Duplicates (Number)`," (",
-                                                    DataframeData_1$`Duplicates (Percentage (0 to 100))`, ")")
+                                                           DataframeData_1$`Duplicates (Percentage (0 to 100))`, ")")
     DataframeData$`Duplicates (Grading)`<- DataframeData_1$`Duplicates (Grading)`
   }
 

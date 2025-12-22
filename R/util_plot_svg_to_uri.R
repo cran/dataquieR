@@ -10,7 +10,7 @@
 #' the figure size.
 #'
 #' @return `htmltools` compatible object
-#' @keywords internal
+#' @noRd
 util_plot_svg_to_uri <- function(expr, w = 800, h = 600) {
   tmpfil <- NULL
   withr::with_tempfile("tmpfil", fileext = ".svg", {

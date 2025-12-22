@@ -1,24 +1,17 @@
 test_that("acc_loess works without label_col and catches wrong inputs", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   skip_on_cran() # slow test
   skip_if_translated()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -52,7 +45,7 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
 
   sd1 <- study_data
   sd1[["v00017"]][1:1000] <- NA
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = sd1, # continuous variable
                 meta_data = meta_data, group_vars = "v00016",
@@ -61,7 +54,7 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
     regexp = "Due to missing values in v00016 or v00017, N = 1243 observations were excluded. Due to missing values in v00014, N = 82 observations were excluded"
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00008", # categorical variable
                 study_data = study_data,
@@ -85,7 +78,7 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
   sd1[["v00017"]][1:1000] <- "2001-02-29"
   sd1[["v00013"]] <- as.character(sd1[["v00013"]])
   sd1[["v00013"]][1:1000] <- "2001-02-29"
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = sd1,
                 meta_data = meta_data, group_vars = "v00016",
@@ -99,7 +92,7 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
                            "were excluded")),
     perl = TRUE
   )
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00008", study_data = sd1,
                 meta_data = meta_data, group_vars = "v00011",
@@ -130,7 +123,7 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = study_data,
                 meta_data = meta_data, group_vars = "v00016",
@@ -144,7 +137,7 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = study_data,
                 meta_data = meta_data, group_vars = "v00016",
@@ -155,7 +148,7 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
     regexp = "Due to missing values in v00016 or v00017, N = 308 observations were excluded. Due to missing values in v00014, N = 131 observations were excluded"
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = study_data,
                 meta_data = meta_data, group_vars = "v00016",
@@ -228,7 +221,7 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
     )
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = study_data,
                 meta_data = meta_data, group_vars = "v00016",
@@ -236,7 +229,7 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
                 time_vars = "v00017") # ===> "LAB_DT_0"
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = study_data,
                 meta_data = meta_data, group_vars = "v00016",
@@ -248,7 +241,7 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
                      "Due to missing values in v00016 or v00017, N = 308 observations were excluded. Due to missing values in v00014, N = 131 observations were excluded")
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00014", study_data = study_data,
                 meta_data = meta_data, group_vars = "v00016",
@@ -271,23 +264,16 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
 
 test_that("acc_loess works with label_col", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -321,7 +307,7 @@ test_that("acc_loess works with label_col", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -343,7 +329,7 @@ test_that("acc_loess works with label_col", {
       na.rm = TRUE) - 21.82126)), 50
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "VO2_CAPCAT_0", # categorical variable
                 study_data = study_data,
@@ -368,7 +354,7 @@ test_that("acc_loess works with label_col", {
 
   sd0 <- study_data
   sd0[["v00007"]][which(sd0[["v00011"]] == "USR_211")] <- 0 # one subgroup has constant values
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "ASTHMA_0", # categorical variable
                 study_data = sd0,
@@ -393,7 +379,7 @@ test_that("acc_loess works with label_col", {
 
   md0 <- meta_data
   md0[[SCALE_LEVEL]][md0[[LABEL]] == "VO2_CAPCAT_0"] <- SCALE_LEVELS$ORDINAL
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "VO2_CAPCAT_0", # categorical variable
                 study_data = study_data,
@@ -418,7 +404,7 @@ test_that("acc_loess works with label_col", {
 
   sd0 <- study_data
   sd0[["v00014"]][which(sd0[["v00016"]] == 4)] <- 2.5 # one subgroup has constant values
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0",
                 study_data = sd0,
@@ -436,27 +422,20 @@ test_that("acc_loess works with label_col", {
 
 test_that("acc_loess output matches", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -503,7 +482,7 @@ test_that("acc_loess output matches", {
   md0[["RECODE_CASES"]][md0$VAR_NAMES == "v00007"] <- "yes"
   md0[["RECODE_CONTROL"]][md0$VAR_NAMES == "v00007"] <- "no"
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "ASTHMA_0", # categorical variable
                 study_data = sd0,
@@ -519,27 +498,20 @@ test_that("acc_loess output matches", {
 
 test_that("acc_loess min_obs_in_subgroups with label_col", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
-  expect_message(
+  expect_message2(
     expect_error({
       res1 <-
         acc_loess(resp_vars = "CRP_0", study_data = study_data,
@@ -563,23 +535,16 @@ test_that("acc_loess min_obs_in_subgroups with label_col", {
 
 test_that("acc_loess with co-vars output matches", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -587,7 +552,7 @@ test_that("acc_loess with co-vars output matches", {
   sd0 <- study_data
   sd0$v00003[1:10] <- NA
   sd0$v00002[11:20] <- NA
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -599,7 +564,7 @@ test_that("acc_loess with co-vars output matches", {
 
   sd0 <- study_data
   sd0$v00014 <- as.factor(sd0$v00014)
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -662,7 +627,7 @@ test_that("acc_loess with co-vars output matches", {
 #     resp_vars = "ASTHMA_0", time_vars = "EXAM_DT_0", group_vars = "USR_VO2_0",
 #     study_data = sd0[which(sd0[["v00002"]] == 1), ], meta_data = md0)
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "ASTHMA_0", # categorical variable
                 study_data = sd0,
@@ -679,24 +644,17 @@ test_that("acc_loess with co-vars output matches", {
 
 test_that("acc_loess works for all time ranges", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   skip_on_cran() # slow test
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -728,13 +686,14 @@ test_that("acc_loess works for all time ranges", {
   )
 
   sd0 <- study_data
+  # FIXME: The old adjust_type function does not interpret 19 as 0019 but as 2019. same hint, there. 1969 is the first year with 19, there.
   sd0[["v00017"]][1:3] <- sd0[["v00017"]][1:3] - 2000 * 60 * 60 * 24 * 365
   # extreme gap, unnoticed typo in year (inspired from real-world data case)
   md0 <- meta_data
   md0[["HARD_LIMITS"]][md0[["VAR_NAMES"]] == "v00017"] <- NA
   sd0[["v00013"]][1:3] <- sd0[["v00013"]][1:3] - 2000 * 60 * 60 * 24 * 365
   md0[["HARD_LIMITS"]][md0[["VAR_NAMES"]] == "v00013"] <- NA
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
                 meta_data = md0, group_vars = "DEV_NO_0",
@@ -748,7 +707,7 @@ test_that("acc_loess works for all time ranges", {
   expect_false(
     inherits(try(ggplot_build(res1$SummaryPlotList$CRP_0)), "try-error"))
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00008", # categorical variable
                 study_data = sd0, meta_data = md0,
@@ -770,7 +729,7 @@ test_that("acc_loess works for all time ranges", {
 
 
   sd0 <- study_data
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -816,7 +775,7 @@ test_that("acc_loess works for all time ranges", {
                                  rep(min(study_data$v00017, na.rm = TRUE), 25),
                                  rep(max(study_data$v00017, na.rm = TRUE), 25)))
   md0 <- meta_data[which(meta_data$VAR_NAMES %in% colnames(sd0)), ]
-  expect_message(
+  expect_message2(
     acc_test <-
       acc_loess(resp_vars = "v00014", study_data = sd0,
                 meta_data = md0, group_vars = "v00016",
@@ -847,7 +806,7 @@ test_that("acc_loess works for all time ranges", {
     sample(x = 11, size = sum(!is.na(sd0[[g]])),
            replace = TRUE) # for >= 11 groups,
                            # R standard colors are used.
-  expect_message(
+  expect_message2(
     res0 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -859,7 +818,7 @@ test_that("acc_loess works for all time ranges", {
     sample(x = 8, size = sum(!is.na(sd0[[g]])),
            replace = TRUE) # for <= 8 groups,
                            # dataquieR standard colors are used.
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd0,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -877,34 +836,28 @@ test_that("acc_loess works for all time ranges", {
 
   g <- ggplot2::ggplot_build(res0$SummaryPlotList$Loess_fits_combined)
   got0 <- sort(unique(g$data[[1]][["colour"]]))
-  ggs_default <- sort(ggplot2::scale_color_discrete()$palette(11))
+  skip_if_not_installed("scales")
+  ggs_default <- sort(scales::hue_pal()(11))
 
   expect_equal(got0, ggs_default)
 })
 
 test_that("acc_loess output matches plot_format=auto", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -921,7 +874,7 @@ test_that("acc_loess output matches plot_format=auto", {
   sd1 <- study_data
   set.seed(42)
   sd1$v00016 <- sample(1:20, size = nrow(sd1), replace = TRUE)
-  expect_message(
+  expect_message2(
     res2 <-
       acc_loess(resp_vars = "CRP_0", study_data = sd1,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -947,27 +900,20 @@ test_that("acc_loess output matches plot_format=auto", {
 
 test_that("acc_loess output matches plot_format=combined", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -991,27 +937,20 @@ test_that("acc_loess output matches plot_format=combined", {
 
 test_that("acc_loess output matches plot_format=facets", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -1035,27 +974,20 @@ test_that("acc_loess output matches plot_format=facets", {
 
 test_that("acc_loess output matches plot_format=both", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -1081,23 +1013,16 @@ test_that("acc_loess output matches plot_format=both", {
 
 test_that("acc_loess output matches plot_format=invalid1", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -1114,23 +1039,16 @@ test_that("acc_loess output matches plot_format=invalid1", {
 
 test_that("acc_loess output matches plot_format=invalid2", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -1147,28 +1065,21 @@ test_that("acc_loess output matches plot_format=invalid2", {
 
 test_that("acc_loess works without a grouping variable", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
                        dataquieR.WARNINGS_WITH_CALLER = TRUE,
                        dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   skip_if_translated()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00014", # continuous variable
                 study_data = study_data,
@@ -1182,7 +1093,7 @@ test_that("acc_loess works without a grouping variable", {
   expect_false(
     inherits(try(ggplot_build(res1$SummaryPlotList$CRP_0)), "try-error"))
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00008", # categorical variable
                 study_data = study_data,
@@ -1205,27 +1116,20 @@ test_that("acc_loess works without a grouping variable", {
 
 test_that("optional features for acc_loess work as expected", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   # testthat::local_reproducible_output()
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
                        dataquieR.WARNINGS_WITH_CALLER = TRUE,
                        dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -1239,7 +1143,7 @@ test_that("optional features for acc_loess work as expected", {
   expect_false(
     inherits(try(ggplot_build(res1$SummaryPlotList$CRP_0)), "try-error"))
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -1252,7 +1156,7 @@ test_that("optional features for acc_loess work as expected", {
   expect_false(
     inherits(try(ggplot_build(res1$SummaryPlotList$CRP_0)), "try-error"))
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "v00008", # categorical variable
                 study_data = study_data,
@@ -1274,7 +1178,7 @@ test_that("optional features for acc_loess work as expected", {
 
   sd0 <- study_data
   sd0[["v00007"]][which(sd0[["v00011"]] == "USR_211")] <- 0 # one subgroup has constant values
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "ASTHMA_0", # categorical variable
                 study_data = sd0,
@@ -1304,7 +1208,7 @@ test_that("optional features for acc_loess work as expected", {
 
   sd0 <- study_data
   sd0[["v00014"]][which(sd0[["v00016"]] == 4)] <- 2.5 # one subgroup has constant values
-  expect_message(
+  expect_message2(
     res1 <-
       acc_loess(resp_vars = "CRP_0",
                 study_data = sd0,

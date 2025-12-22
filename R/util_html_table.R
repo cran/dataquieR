@@ -59,11 +59,11 @@
 #'
 #' @return the table to be added to an `rmd`/´`html` file as
 #'         [htmlwidgets::htmlwidgets]
-#' @seealso [util_formattable()]
+#' @seealso `util_formattable()`
 #'
 #' @family summary_functions
 #' @concept html
-#' @keywords internal
+#' @noRd
 #'
 util_html_table <- function(tb,
                   filter = "top",
@@ -332,6 +332,37 @@ util_html_table <- function(tb,
                               FUN.VALUE = character(1))
   }
 
+  # insert another label column
+  if (exists("nice_lb") && exists("vn")) {
+    ..is_html_escaped <- (identical(attr(tb, "is_html_escaped"), TRUE))
+    ..description <- attr(tb, "description")
+    ..plain_label <- attr(tb[["Variables"]], "plain_label")
+    var_col <- which(base::colnames(tb) == "Variables")
+    if (length(var_col) == 1) {
+      ..left <- seq_len(var_col - 1)
+      ..right <- var_col + seq_len(ncol(tb) - var_col)
+      tb <- cbind(tb[..left], Variables = vn,
+                  Labels = tb[["Variables"]],
+                  tb[..right])
+      if (!missing(descs)) {
+        if (is.null(names(descs))) {
+          descs <- c(descs[..left],
+                     "Variables",
+                     "Labels",
+                     descs[..right])
+        } else {
+          descs <- c(descs[..left],
+                     Variables = "Variables",
+                     Labels = "Labels",
+                     descs[..right])
+        }
+      }
+    }
+    attr(tb, "is_html_escaped") <- ..is_html_escaped
+    attr(tb, "description") <- ..description
+    attr(tb[["Variables"]], "plain_label") <- ..plain_label
+
+  }
 
   # rotate ----
   if (rotate_for_one_row && nrow(tb) == 1) {   #TODO: maybe the description is lost here

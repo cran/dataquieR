@@ -11,7 +11,7 @@
 #'
 #' @seealso [StackOverflow](https://stackoverflow.com/a/57086284)
 #'
-#' @keywords internal
+#' @noRd
 #'
 #' @examples
 #' \dontrun{

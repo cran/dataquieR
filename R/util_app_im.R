@@ -17,7 +17,7 @@
 #'
 #'
 #' @seealso [pro_applicability_matrix]
-#' @keywords internal
+#' @noRd
 
 util_app_im <- function(x, dta) {
   if (MISSING_LIST %in% names(x)) {

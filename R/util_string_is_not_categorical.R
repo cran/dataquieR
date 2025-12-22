@@ -14,7 +14,7 @@
 #'
 #' @return TRUE or FALSE
 #'
-#' @keywords internal
+#' @noRd
 util_string_is_not_categorical <- function(vec) {
   vec <- vec[!util_empty(vec)]
   if (length(vec) == 0) {

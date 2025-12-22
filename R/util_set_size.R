@@ -9,10 +9,11 @@
 #'
 #' @family reporting_functions
 #' @concept figure
-#' @keywords internal
+#' @noRd
 util_set_size <- function(p, width_em = NA_integer_, height_em = NA_integer_) {
-  if (!ggplot2::is.ggplot(p)) {
-    util_error("Internal error, p should be a ggplot object")
+  if (!util_is_gg(p)) {
+    util_error("Internal error, p should be a ggplot object, not: %s",
+               util_pretty_vector_string(class(p)))
   }
   attr(p, "width_em") <- width_em
   attr(p, "height_em") <- height_em

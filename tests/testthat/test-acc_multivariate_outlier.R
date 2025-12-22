@@ -3,7 +3,7 @@ test_that("acc_multivariate_outlier works with 3 args", {
   skip_if_translated()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -26,7 +26,7 @@ test_that("acc_multivariate_outlier works with 3 args", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_multivariate_outlier(variable_group = c("v00014", "v00006"),
                          study_data = study_data, meta_data = meta_data,
@@ -60,7 +60,7 @@ test_that("acc_multivariate_outlier works with label_col", {
   skip_on_cran() # slow and tested elsewhere
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -85,7 +85,7 @@ test_that("acc_multivariate_outlier works with label_col", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_multivariate_outlier(variable_group = c("CRP_0", "GLOBAL_HEALTH_VAS_0"),
                                label_col = LABEL,
@@ -127,11 +127,11 @@ test_that("acc_multivariate_outlier works with min-max-scaling", {
   skip_on_cran() # slow and tested elsewhere
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
-  expect_message(
+  expect_message2(
     res1 <-
       acc_multivariate_outlier(variable_group = c("CRP_0", "GLOBAL_HEALTH_VAS_0"),
                                label_col = LABEL,

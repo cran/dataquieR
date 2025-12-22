@@ -18,6 +18,7 @@
   </clipPath>
 </defs>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+<rect x='0.00' y='0.00' width='720.00' height='576.00' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
 </g>
 <defs>
   <clipPath id='cpMTM4LjA1fDcxNC41Mnw3MS42MHw0ODUuODA='>
@@ -64,7 +65,7 @@
 <rect x='186.09' y='73.88' width='480.39' height='22.76' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
-<text transform='translate(426.29,66.67) rotate(-90)' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='31.29px' lengthAdjust='spacingAndGlyphs'>MATCH</text>
+<text transform='translate(432.34,66.67) rotate(-90)' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='31.29px' lengthAdjust='spacingAndGlyphs'>MATCH</text>
 <text x='133.12' y='475.59' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='70.03px' lengthAdjust='spacingAndGlyphs'>EDUCATION_0</text>
 <text x='133.12' y='452.83' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='70.03px' lengthAdjust='spacingAndGlyphs'>EDUCATION_1</text>
 <text x='133.12' y='430.07' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='63.36px' lengthAdjust='spacingAndGlyphs'>FAM_STAT_0</text>

@@ -2,7 +2,7 @@ test_that("acc_univariate_outlier works without label_col", {
   skip_on_cran() # slow, errors obvious
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -15,7 +15,7 @@ test_that("acc_univariate_outlier works without label_col", {
   set.seed(234325)
   sd1$v00014 <- rnorm(nrow(sd1), sd = 0.01)
   sd1 <- sd1[sd1$v00014 < 0.02 & sd1$v00014 > -0.02, ]
-  expect_message(
+  expect_message2(
     no_ol_det <- acc_univariate_outlier(resp_vars = "v00014", study_data = sd1,
                                         meta_data = meta_data, max_non_outliers_plot = 0),
     regexp =
@@ -28,13 +28,13 @@ test_that("acc_univariate_outlier works without label_col", {
     perl = TRUE
   )
 
-  expect_message(invisible(
+  expect_message2(invisible(
     acc_univariate_outlier(resp_vars = "v00014", study_data = study_data,
                            meta_data = meta_data, n_rules = cars)),
     regexp =
       "The formal n_rules is not an integer between 1 and 4, default .4. is used.")
 
-  expect_message(invisible(
+  expect_message2(invisible(
     acc_univariate_outlier(resp_vars = "v00014", study_data = study_data,
                            meta_data = meta_data,
                            max_non_outliers_plot = 100)),
@@ -42,7 +42,7 @@ test_that("acc_univariate_outlier works without label_col", {
       paste("For .+v00014.+, 100 from 2633 non-outlier data values",
             "were sampled to avoid large plots."))
 
-  expect_message(invisible(
+  expect_message2(invisible(
     acc_univariate_outlier(resp_vars = "v00014", study_data = study_data,
                            meta_data = meta_data,
                            max_non_outliers_plot = -42)),
@@ -55,7 +55,7 @@ test_that("acc_univariate_outlier works without label_col", {
   md1$JUMP_LIST <- "|"
   md1$MISSING_LIST <- "|"
 
-  expect_message(
+  expect_message2(
     expect_error(invisible(
       acc_univariate_outlier(study_data = sd1,
                              meta_data = md1)),
@@ -76,7 +76,7 @@ test_that("acc_univariate_outlier works without label_col", {
 
   md0 <- meta_data
   md0$DATA_TYPE[[1]] <- NA
-  expect_message(
+  expect_message2(
     expect_warning(
       invisible(
         acc_univariate_outlier(study_data = study_data,
@@ -136,7 +136,7 @@ test_that("acc_univariate_outlier works with label_col", {
   skip_if_translated()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -153,8 +153,8 @@ test_that("acc_univariate_outlier works with label_col", {
                              study_data = study_data,
                              meta_data = md0, label_col = LABEL)
   } %>%
-    expect_message("Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+string.+does not have an allowed type.+integer.+float.+", perl = TRUE) %>%
-    expect_message("Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+", perl = TRUE) %>%
+    expect_message2("Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+string.+does not have an allowed type.+integer.+float.+", perl = TRUE) %>%
+    expect_message2("Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+", perl = TRUE) %>%
     expect_warning("I've predicted the.+DATA_TYPE.+from the.+study_data", perl = TRUE) %>%
     expect_warning("resp_vars.+USR_SOCDEM_0.+were excluded", perl = TRUE) %>%
     expect_warning("resp_vars.+USR_SOCDEM_0.+were excluded", perl = TRUE)
@@ -166,8 +166,8 @@ test_that("acc_univariate_outlier works with label_col", {
                              meta_data = md0, label_col = LABEL,
                              exclude_roles = "XXX")
     } %>%
-    expect_message("Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+string.+does not have an allowed type.+integer.+float.+", perl = TRUE) %>%
-    expect_message("Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+", perl = TRUE) %>%
+    expect_message2("Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+string.+does not have an allowed type.+integer.+float.+", perl = TRUE) %>%
+    expect_message2("Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+", perl = TRUE) %>%
     expect_warning("Specified VARIABLE_ROLE not in meta_data. No exclusion applied.") %>%
     expect_warning(".*predicted.+DATA_TYPE.*", perl = TRUE) %>%
     expect_warning("resp_vars.+USR_SOCDEM_0.+were excluded", perl = TRUE) %>%
@@ -193,24 +193,24 @@ test_that("acc_univariate_outlier works with label_col", {
     expect_warning(paste("For the variables",
                          ".*predicted.+DATA_TYPE.*from the .study_data."),
                    perl = TRUE) %>%
-    expect_message(paste(
+    expect_message2(paste(
       "Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+string.+does",
       "not have an allowed type.+integer.+float.+"
     ), perl = TRUE) %>%
-    expect_message(paste(
+    expect_message2(paste(
       "Argument.+resp_vars.+Variable.+USR_SOCDEM_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+"
     ), perl = TRUE) %>%
-    expect_message(paste(
+    expect_message2(paste(
       "Argument.+resp_vars.+Variable.+SEX_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+"
     ), perl = TRUE) %>%
-    expect_message(paste("Argument.+resp_vars.+Variable.+CENTER_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+"
+    expect_message2(paste("Argument.+resp_vars.+Variable.+CENTER_0.+nominal.+does not have an allowed scale level.+interval.+ratio.+"
     ), perl = TRUE) %>%
-    expect_message(paste("Study variables.+AGE_0.+have",
+    expect_message2(paste("Study variables.+AGE_0.+have",
                          "been excluded."), perl = TRUE)
 
   sd0 <- study_data
   sd0$v00014 <- NA_integer_
-  expect_message(
+  expect_message2(
     #    expect_warning(
     expect_error(
       res1 <-
@@ -239,14 +239,14 @@ test_that("acc_univariate_outlier works with label_col", {
 
   sd0 <- study_data
   sd0$v00014 <- NA
-  expect_message(
+  expect_message2( # no data left v14(crp0) wird rausgworfen, weil in diesem test NA gesetzt. komsich: je nach option ist sie dann noch in den resp_vars oder nicht.
     expect_error(
       res1 <-
         acc_univariate_outlier(resp_vars = c("CRP_0", "AGE_0"),
                                study_data = sd0,
                                meta_data = meta_data, label_col = LABEL,
                                exclude_roles = c("intro", "process")),
-      regexp = "No suitable response variables left.",
+      regexp = "No data left, aborting.",
       perl = TRUE
     ),
     regexp = sprintf("(%s|%s)",

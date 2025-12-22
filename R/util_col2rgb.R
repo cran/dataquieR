@@ -4,7 +4,7 @@
 #'
 #' @return character vector with colors using `HTML` hexadecimal encoding, e..g,
 #'         "#ff0000" for "red"
-#' @keywords internal
+#' @noRd
 util_col2rgb <- function(colors) {
   with_space <- grepl(" ", colors, fixed = TRUE)
   res <- colors

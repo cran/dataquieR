@@ -5,6 +5,7 @@
 #'
 #' @return boolean
 #'
+#' @noRd
 util_has_no_group_vars <- function(resp_vars,
                                    label_col = LABEL,
                                    meta_data = "item_level") {

@@ -488,7 +488,7 @@ acc_univariate_outlier <- function(resp_vars = NULL,
           resp_vars_match_label_col_only = TRUE,
           label_class = "SHORT")
       if (length(unique(ds_i$variable)) == 1 && .called_in_pipeline) {
-        p_i <- ggplot(ds_i, aes(x = variable, y = value)) +
+        p_i <- util_create_lean_ggplot(ggplot(ds_i, aes(x = variable, y = value)) +
           geom_jitter(data = ds_i,
                       position = position_jitter(width = 0.3, height = 0.03),
                       aes(color = Rules, alpha = 0.5, size =
@@ -498,9 +498,12 @@ acc_univariate_outlier <- function(resp_vars = NULL,
           scale_alpha(guide = "none") +
           xlab("") + ylab("") +
           theme_minimal() +
-          theme(axis.text.x = element_blank())
+          theme(axis.text.x = element_blank()),
+          ds_i = ds_i,
+          disc_cols = disc_cols)
       } else {
-        p_i <- ggplot(ds_i, aes(x = variable, y = value)) +
+        p_i <- util_create_lean_ggplot(
+          ggplot(ds_i, aes(x = variable, y = value)) +
           geom_jitter(data = ds_i,
                       position = position_jitter(width = 0.3, height = 0.03),
                       aes(color = Rules, alpha = 0.5, size =
@@ -510,10 +513,12 @@ acc_univariate_outlier <- function(resp_vars = NULL,
           facet_wrap(vars(variable), scales = "free") +
           scale_alpha(guide = "none") +
           xlab("") + ylab("") +
-          theme_minimal()
+          theme_minimal(),
+          ds_i = ds_i,
+          disc_cols = disc_cols)
       }
     } else {
-      p_i <- ggplot() +
+      p_i <- util_create_lean_ggplot(ggplot() +
         annotate("text", x = 0, y = 0, label =
                    sprintf("No outliers detected for %s", dQuote(i))) +
         theme(
@@ -529,7 +534,8 @@ acc_univariate_outlier <- function(resp_vars = NULL,
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           plot.background = element_blank()
-        )
+        ),
+        i = i)
     }
 
     # Define min and max values in plot for size hint

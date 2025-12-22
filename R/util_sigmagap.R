@@ -11,7 +11,7 @@
 #'
 #' @family outlier_functions
 #' @concept outlier
-#' @keywords internal
+#' @noRd
 
 util_sigmagap <- function(x) {
 

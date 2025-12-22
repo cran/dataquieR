@@ -3,7 +3,7 @@
 #' @return named vector of labels, names are categories (e.g, "1" to "5")
 #'         values are labels
 #' @family summary_functions
-#' @keywords internal
+#' @noRd
 util_get_labels_grading_class <- function() {
 
   rsts <- util_get_ruleset_formats()

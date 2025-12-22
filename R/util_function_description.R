@@ -4,7 +4,7 @@
 #'
 #' @return the description
 #'
-#' @keywords internal
+#' @noRd
 util_function_description <- function(fname) {
   # def <-
   #   util_map_labels(fname,

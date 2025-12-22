@@ -10,10 +10,10 @@
 #'                      distribution of the time variable's data points.
 #'
 #' @return a sequence of points in datetime format
-#' @keywords internal
+#' @noRd
 util_optimize_sequence_across_time_var <- function(time_var_data,
                                                    n_points,
-                                                   prop_grid = 0.5) {
+                                                   prop_grid = 0.5) { # TODO EK: Please adjust for time-only
   util_expect_scalar(n_points,
                      check_type = util_is_numeric_in(min = 3,
                                                      whole_num = TRUE,
@@ -43,7 +43,7 @@ util_optimize_sequence_across_time_var <- function(time_var_data,
     # the earliest observed time point to the last one.
     # This sequence is stored in `tp_round_seq`. The number of time points
     # equals the number given in `n_equ_spaced`.
-    tp_round_seq <- suppressWarnings(as.POSIXct(
+    tp_round_seq <- suppressWarnings(util_parse_date(
       seq(from = min(tp_seq),
           to = max(tp_seq),
           by = secs)))
@@ -68,7 +68,7 @@ util_optimize_sequence_across_time_var <- function(time_var_data,
             if (secs <= 0) {
               secs <- 1
             }
-            suppressWarnings(as.POSIXct(
+            suppressWarnings(util_parse_date(
               tp_round_seq[tp_i] + c(0, seq_len(tp_tab$n_add[tp_i])) * secs))
           } else {
             tp_round_seq[tp_i]

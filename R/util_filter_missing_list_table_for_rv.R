@@ -21,7 +21,7 @@
 #'
 #' @family missing_functions
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 util_filter_missing_list_table_for_rv <- function(table, rv, rv2 = rv) {
   util_expect_scalar(rv, check_type = is.character)
   util_expect_scalar(rv2, check_type = is.character)

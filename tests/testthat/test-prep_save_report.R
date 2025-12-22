@@ -1,5 +1,6 @@
 test_that("prep_save_report correctly saves a report with correct parameters", {
   skip_on_cran() # slow, parallel, ...
+  skip_if_not_installed("stringdist")
 
   # Define a temporary file path for the test
   tmp_file <- tempfile(fileext = ".gz")
@@ -11,7 +12,7 @@ test_that("prep_save_report correctly saves a report with correct parameters", {
   # Create example report
   prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx")
 
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <- prep_get_data_frame("item_level")
 
   sd0 <- study_data[, 1:5]

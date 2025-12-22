@@ -56,7 +56,8 @@ to \code{TRUE}, too.}
 \item{.internal}{\link{logical} internally called, modify caller's environment.}
 }
 \value{
-\code{ds1} the study data with mapped column names
+\code{ds1} the study data with mapped column names, \code{invisible()}, if
+not \code{.internal}
 }
 \description{
 This function ensures, that a data frame \code{ds1} with suitable variable

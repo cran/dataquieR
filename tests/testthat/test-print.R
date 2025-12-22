@@ -1,20 +1,65 @@
 test_that("print.dataquieR_resultset2 works", {
-  skip_on_cran() # slow, deprecated
-  skip_if_not_installed("withr")
-  withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
-                   dataquieR.ERRORS_WITH_CALLER = TRUE,
-                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
-                   dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  skip_on_cran() # slow test
-  skip_if_not_installed("flexsiteboard")
-  # FIXME: Impelement!!
+  skip_on_cran() # slow
+  skip_if_not_installed("stringdist")
+  prep_purge_data_frame_cache()
+  study_data <- head(
+    prep_get_data_frame(
+      "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE),
+    50)
+
+  r <- dq_report2(study_data = study_data, resp_vars = "SBP_0",
+                            meta_data_v2 =
+               "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx",
+                            cores = NULL,
+                            dimensions = "Integrity")
+
+  expect_warning(
+    print(r, cores = 3, view = FALSE, dir = tempfile()),
+    regexp = "Internal problem.+should be an integer below.+in the context.+"
+  )
+
+  expect_warning(print(r, cores = list(mode = "socket",
+                        logging = FALSE,
+                        cpus = 2,
+                        load.balancing = TRUE),
+        view = FALSE, dir = tempfile()),
+        regexp = "Internal problem.+should be an integer below.+in the context.+"
+  )
+
+  skip_if_not_installed("parallel")
+  cl <- parallel::makePSOCKcluster(1)
+  withr::defer(parallel::stopCluster(cl))
+  expect_warning(print(r, cores = cl, view = FALSE, dir = tempfile()),
+                 regexp = "Internal problem.+should be an integer below.+in the context.+"
+  )
+
+  r <- dq_report2(study_data = study_data, resp_vars = "SBP_0",
+                  meta_data_v2 =
+                    "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx",
+                  filter_indicator_functions = "acc_margins",
+                  cores = NULL,
+                  dimensions = "Integrity")
+  expect_error({
+    print(r)
+  }, regexp = ".*results at all\\.")
+
+  r <- dq_report2(study_data = study_data, resp_vars = "SBP_0",
+                  meta_data_v2 =
+                    "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx",
+                  filter_indicator_functions = "con_inadmissible_categorical",
+                  cores = NULL,
+                  dimensions = "Consistency")
+  expect_error({
+    print(r)
+  }, regexp = "Report is empty, no results at all.*Applicability")
+
 })
 
 test_that("class ReportSummaryTable", {
   skip_on_cran()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   sd1 <- study_data
   md1 <- meta_data
   code_labels <- prep_get_data_frame(
@@ -131,6 +176,7 @@ test_that("class ReportSummaryTable", {
   }
   expect_warning(fkt2(item_miss_emtpy$ReportSummaryTable,
        size_max = 42000, size_min = 0), regexp = "Empty result")
+  skip_if_not_installed("DT")
   fkt2(item_miss_combined, size_min = 50000,
        size_max = 80000)
   fkt2(item_missa$ReportSummaryTable, size_min = 40000,
@@ -168,15 +214,7 @@ test_that("class ReportSummaryTable", {
 
 test_that("print.interval works", {
   skip_on_cran()
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
-  withr::local_timezone("Europe/Berlin")
+  require_english_locale_and_berlin_tz()
   expect_output(
     print(util_parse_interval("(1;)")),
     "(1;Inf)",
@@ -212,14 +250,18 @@ test_that("print.interval works", {
 test_that("print.ReportSummaryTable works when called within the pipeline with duplicated labels for the plot, which are not the primary labels for the report", {
   skip_on_cran() # slow test
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  skip_if_not_installed("stringdist")
+  skip_if_not_installed("DT")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   md0 <- meta_data
   md0$STUDY_SEGMENT <- NULL
   md0$LABEL[26:27] <- "EDUCATION"
-  dq <- dq_report2(study_data = study_data, item_level = md0, cores = NULL,
-                   label_col = "LONG_LABEL",
-                   filter_indicator_functions = "com_item_miss")
+  suppressWarningsMatching(
+    dq <- dq_report2(study_data = study_data, item_level = md0, cores = NULL,
+                     label_col = "LONG_LABEL",
+                     filter_indicator_functions = "com_item_miss"),
+    "Unique labels are required")
   # check that the VAR_NAMES attribute exists and is correct
   exp_vn <- prep_map_labels(x = c("EDUCATION_0", "EDUCATION_1"),
                             item_level = md0,
@@ -246,9 +288,13 @@ test_that("print.ReportSummaryTable works when called within the pipeline with d
   expect_false(
     inherits(try(dq[, "com_item_missingness", "ReportSummaryTable"]), "try-error")
   )
-  expect_false(
-    inherits(try(print(dq[, "com_item_missingness", "ReportSummaryTable"])), "try-error")
-  )
+  suppressWarningsMatching({
+    expect_false(
+      inherits(try(print(dq[, "com_item_missingness", "ReportSummaryTable"])),
+               "try-error")
+    )
+  }, regexps = ".*not being part of one of the segments.*")
+
   dq_rst <- dq[c("EDUCATION_0", "EDUCATION_1"), "com_item_missingness", "ReportSummaryTable"]
   expect_false(
     inherits(try(print(dq_rst)), "try-error")
@@ -260,9 +306,10 @@ test_that("print.ReportSummaryTable works when called within the pipeline with d
     inherits(try(print(dq_rst[[1]])), "try-error")
   )
   # check that the expected axis labels appear in the figure
-  exp_lab <- exp_vn
-  names(exp_lab) <- rep("EDUCATION", 2)
-  exp_lab <- paste(names(exp_lab), paste0("(", exp_lab, ")"))
+#  exp_lab <- exp_vn
+#  names(exp_lab) <- rep("EDUCATION", 2)
+  exp_lab <- c("v00018: EDUCATION", "v01018: EDUCATION")
+#  exp_lab <- paste(names(exp_lab), paste0("(", exp_lab, ")"))
   dq_rst_plot <- ggplot_build(print(dq_rst$ReportSummaryTable))
   expect_true(
     identical(dq_rst_plot$layout$panel_params[[1]]$x$get_labels(),

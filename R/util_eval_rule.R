@@ -7,7 +7,8 @@
 #' @param ds1 the study data as prepared by `prep_prepare_dataframes`
 #' @param meta_data the metadata
 #' @param use_value_labels map columns with `VALUE_LABELS` as factor variables
-#' @param replace_limits [logical] replace hard limit violations by `NA`
+#' @param replace_limits [logical] replace hard limit violations by `NA`, implies
+#'                                 `replace_missing_by = NA`
 #' @param replace_missing_by [enum] LABEL | INTERPRET | NA . Missing codes should
 #'                                  be replaced by the missing labels, the
 #'                                  `AAPOR` codes from the missing table or
@@ -18,7 +19,7 @@
 #'
 #' @family redcap
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_eval_rule <- function(rule, ds1, meta_data = "item_level",
                            use_value_labels,
                            replace_missing_by = "NA",
@@ -349,9 +350,13 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
   # intersect(colnames(ds2), all.vars(rule))
   # to reduce the number of warning messages (i.e., do not throw a warning for
   # variables which are not used in the rule)
+  enclos <- new.env(parent = redcap_rule_env)
+  enclos[["[meta_data]"]] <- meta_data # something, redcap cannot refert to, ensured by its strange name
+  enclos[["[label_col]"]] <- label_col # something, redcap cannot refert to, ensured by its strange name
+  # add metadata here
   res <- eval(expr = rule,
               envir = ds2,
-              enclos = redcap_rule_env)
+              enclos = enclos)
   if (is.character(res)) {
     res <- readr::parse_guess(res)
   }

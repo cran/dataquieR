@@ -6,7 +6,7 @@
 #' @param my_storr_factory a function creating the/a `storr_object`
 #'
 #' @return `storr`-object with the factory attribute and (hopefully) valid.
-#' @keywords internal
+#' @noRd
 util_storr_factory <- function(my_storr_object, my_storr_factory) {
   if (!missing(my_storr_object) && is.null(my_storr_object)) {
     return(NULL)
@@ -31,25 +31,28 @@ util_storr_factory <- function(my_storr_object, my_storr_factory) {
   if (!inherits(my_storr_object, "storr")) {
     util_error("storr factory should return a storr object")
   }
-  if (util_is_try_error(try(my_storr_object$list(), silent = TRUE))) {
-    try(my_storr_object$driver$reconnect(), silent = TRUE)
-  }
-  if (util_is_try_error(try(my_storr_object$list(), silent = TRUE))) {
-    my_storr_object <- my_storr_factory()
+  is_rds <- identical(try(my_storr_object$driver$type(), silent = TRUE),
+                        "rds")
+  if (!is_rds) {
+    rlang::warn(
+      "storr classes other than RDS not yet supported, expect errors.",
+      .frequency = "regularly", .frequency_id = rlang::hash(my_storr_factory))
+    # for RDS, the following does not typically happen
+    if (util_is_try_error(try(my_storr_object$list_hashes(), silent = TRUE))) {
+      try(my_storr_object$driver$reconnect(), silent = TRUE)
+    }
+    if (util_is_try_error(try(my_storr_object$list_hashes(), silent = TRUE))) {
+      my_storr_object <- my_storr_factory()
+    }
   }
   if (!inherits(my_storr_object, "storr")) {
     util_error("storr factory should return a storr object")
   }
-  if (util_is_try_error(try(my_storr_object$list(), silent = TRUE))) {
+  if (!is_rds &&
+      util_is_try_error(try(my_storr_object$list_hashes(), silent = TRUE))) {
     util_error("storr object not working")
   }
   attr(my_storr_object, "storr_factory") <- my_storr_factory
-  if (!identical(try(my_storr_object$driver$type(), silent = TRUE),
-            "rds")) {
-    rlang::warn(
-      "storr classes other than RDS not yet supported, expect errors.",
-      .frequency = "regularly", .frequency_id = rlang::hash(my_storr_factory))
-  }
   my_storr_object
 }
 
@@ -60,7 +63,7 @@ util_storr_factory <- function(my_storr_object, my_storr_factory) {
 #' @param my_storr_factory a function returning a `storr` object
 #'
 #' @return a `storr` object
-#' @keywords internal
+#' @noRd
 util_storr_object <- function(my_storr_factory = function() {
   storr::storr_environment()
 }) {
@@ -73,7 +76,7 @@ util_storr_object <- function(my_storr_factory = function() {
 #'
 #' @return the `storr` object holding the results or `NULL`, if the report
 #'         lives in the memory, only
-#' @keywords internal
+#' @noRd
 util_get_storr_object_from_report <- function(r) {
   my_storr_object <- attr(r, "my_storr_object")
   storr_factory <- attr(my_storr_object, "storr_factory")
@@ -82,12 +85,12 @@ util_get_storr_object_from_report <- function(r) {
 
 #' Fix a `storr` object, if it features the factory-attribute
 #'
-#' @seealso [util_storr_factory()]
+#' @seealso `util_storr_factory()`
 #'
 #' @param my_storr_object a `storr`-object
 #'
 #' @return a (hopefully) working `storr_object`
-#' @keywords internal
+#' @noRd
 util_fix_storr_object <- function(my_storr_object) {
   storr_factory <- attr(my_storr_object, "storr_factory")
   util_storr_factory(my_storr_object, storr_factory)

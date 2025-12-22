@@ -1,3 +1,96 @@
+#' Mark a `dataquieR_result` for a special HTML layout
+#'
+#' The layout information is used by `util_pretty_print()` when wrapping
+#' the rendered result into the outer `div.dataquieR_result`.  Currently
+#' supported layouts are `"default"` (legacy behavior) and
+#' `"2-columns-fig-left"` (plot and summary table combined in a single
+#' result, shown side by side).
+#'
+#' @param dqr [dataquieR_result] object to tag.
+#' @param layout [character] one of `"default"`, `"1-column-fig-top"`
+#'                           (this is the default)
+#'                           or `"2-columns-fig-left"`.
+#'
+#' @return `dqr`, invisibly, with the attribute `dq_layout` set.
+#' @noRd
+util_mark_result_layout <- function(dqr,
+                                    layout = c("default",
+                                               "1-column-fig-top",
+                                               "2-columns-fig-left")) {
+  layout <- match.arg(layout)
+  attr(dqr, "dq_layout") <- layout
+  invisible(dqr)
+}
+
+#' Get the layout tag of a `dataquieR_result`
+#'
+#' @param dqr [dataquieR_result].
+#'
+#' @return [character] layout name, `"default"` if unset.
+#' @noRd
+util_get_result_layout <- function(dqr) {
+  layout <- attr(dqr, "dq_layout", exact = TRUE)
+  if (is.null(layout)) {
+    layout <- "default"
+    fn <- attr(dqr, "function_name")
+    if (length(fn) == 1 && is.character(fn)) {
+      lt <- suppressWarnings(try(
+        unique(util_get_concept_info("implementations",
+                                     get("function_R") == fn, "layout",
+                                     drop = TRUE)),
+        silent = TRUE))
+      if (length(lt == 1) && is.character(lt)) {
+        layout <- lt
+      }
+    }
+  }
+  layout
+}
+
+#' Wrap inner HTML into a `dataquieR_result` container
+#'
+#' This helper centralizes the construction of the outer
+#' `div.dataquieR_result` element.  It keeps legacy data attributes and
+#' allows attaching additional CSS classes.
+#'
+#' @param inner `shiny.tag|shiny.tag.list` inner HTML to wrap.
+#' @param nm [character] value for the `data-nm` attribute.
+#' @param dqr [dataquieR_result] the original result object (used for
+#'   the stored call).
+#' @param errors [character] error messages.
+#' @param warnings [character] warning messages.
+#' @param messages [character] additional messages.
+#' @param extra_classes [character] optional vector of extra CSS
+#'   classes to add to the `dataquieR_result` container.
+#'
+#' @return `shiny.tag` `div.dataquieR_result`.
+#' @noRd
+util_wrap_dqr_result <- function(inner,
+                                 nm,
+                                 dqr,
+                                 errors,
+                                 warnings,
+                                 messages,
+                                 extra_classes = NULL) {
+  cll <- attr(dqr, "call")
+  if (is.language(cll)) {
+    cll <- deparse(cll)
+  }
+
+  classes <- c("dataquieR_result", extra_classes)
+  classes <- classes[!is.na(classes) & nzchar(classes)]
+  classes <- paste(classes, collapse = " ")
+
+  htmltools::div(
+    title = "", # hover text already suppressed in legacy code
+    class = classes,
+    `data-call` = paste0(cll, collapse = "\n"),
+    `data-stderr` = paste(errors, warnings, messages, collapse = "\n"),
+    `data-nm` = nm,
+    inner
+  )
+}
+
 #' Convert single `dataquieR` result to an `htmltools` compatible object
 #'
 #' @param dqr [dataquieR_result] an output (indicator) from `dataquieR`
@@ -12,17 +105,19 @@
 #' @param use_plot_ly [logical] use `plotly`
 #' @param dir [character] output directory for potential `iframes`.
 #' @param ... further arguments passed through, if applicable
+#' @param is_ssi [logical] use this is a result for the `SSI` part of the report
 #'
 #' @return `htmltools` compatible object with rendered `dqr`
 #'
-#' @keywords internal
+#' @noRd
 util_pretty_print <- function(dqr, nm, is_single_var,
                               meta_data,
                               label_col,
                               use_plot_ly,
                               dir,
-                              ...
-                              ) { # TODO: ensure that in square2 alias names do not have points
+                              ...,
+                              is_ssi = FALSE
+                        ) { # TODO: ensure that in square2 alias names do not have points
   variable_name_context <- FALSE
 
   if (use_plot_ly) {
@@ -65,7 +160,10 @@ util_pretty_print <- function(dqr, nm, is_single_var,
           level = 10
         )
       }
-      dqr <- dqr[remaining_slots]
+      for (.slot in setdiff(names(dqr), remaining_slots)) {
+        dqr[[.slot]] <- NULL
+      }
+      # dqr <- dqr[remaining_slots] loosses attrbiutes
     }
 
     slot <- # stores the name of the result object returned by the indicator function being displayed
@@ -137,21 +235,21 @@ util_pretty_print <- function(dqr, nm, is_single_var,
                           .nm <- nm
                         }
                         util_pretty_print(list(SummaryPlot = pl_i),
-                                                      nm =
+                                          nm =
                                             paste0(.nm, ".", pl_nm),
-                                            #paste0("", head(names(pl_nm), 1)), # avoid the same name, iframe FIG_.html won't work, if > 1
-                                                      is_single_var = TRUE,
-                                                      meta_data = data.frame(),
-                                                      label_col = VAR_NAMES,
-                                                      use_plot_ly = use_plot_ly,
-                                                      dir = dir, ...)
-                        })
+                                          #paste0("", head(names(pl_nm), 1)), # avoid the same name, iframe FIG_.html won't work, if > 1
+                                          is_single_var = TRUE,
+                                          meta_data = data.frame(),
+                                          label_col = VAR_NAMES,
+                                          use_plot_ly = use_plot_ly,
+                                          dir = dir, ...)
+                      })
           x <- lapply(x, function(p) {
             htmltools::span(style = "float:left;", p)
           })
           x <- htmltools::tagList(c(x,
-                                           list(htmltools::br(style =
-                                                                "clear: both;"))))
+                                    list(htmltools::br(style =
+                                                         "clear: both;"))))
         } else {
           if (length(x) == 1) {
             x <- x[[1]] # take the single plot from PLotList
@@ -177,12 +275,28 @@ util_pretty_print <- function(dqr, nm, is_single_var,
           level_names <- attr(x, "level_names")
           if (!!length(level_names)) {
             val <- level_names[as.character(val)]
+            x <- htmltools::p(sprintf("%s for %s is",
+                                      sQuote(cats),
+                                      dQuote(vars)),
+                              htmltools::strong(htmltools::em(val))
+            )
+          } else if ("N" %in% colnames(x)) {
+            x <- htmltools::p(sprintf("%s for %s is",
+                                      sQuote(cats),
+                                      dQuote(vars)),
+                              htmltools::strong(htmltools::em(val)),
+                              "(",
+                              scales::percent(val/x$N),
+                              ") out of",
+                              x$N
+            )
+          } else { # TODO: May be unreachable
+            x <- htmltools::p(sprintf("%s for %s is",
+                                      sQuote(cats),
+                                      dQuote(vars)),
+                              htmltools::strong(htmltools::em(val))
+            )
           }
-          x <- htmltools::p(sprintf("%s for  %s is",
-                            sQuote(cats),
-                            dQuote(vars)),
-                            htmltools::strong(htmltools::em(val))
-                            )
         } else {
           x <- util_validate_report_summary_table(x,
                                                   meta_data = meta_data,
@@ -190,11 +304,17 @@ util_pretty_print <- function(dqr, nm, is_single_var,
           x <- print.ReportSummaryTable(x, view = FALSE, ...) # convert to ggplot
         }
       }
+      x <- dq_lazy_unwrap(x)
+      if (inherits(x, "dq_lazy_ggplot")) x <- prep_realize_ggplot(x)
       if (inherits(x, "ggplot") || inherits(x, "ggmatrix") ||
+          inherits(x, "util_pairs_ggplot_panels") ||
+          inherits(x, "svg_plot_proxy") ||
           "PlotlyPlot" %in% names(dqr) ||
           inherits(x, "ggplot_built")) {
         if (inherits(x, "ggplot") || inherits(x, "ggmatrix") ||
-           inherits(x, "ggplot_built")) {
+            inherits(x, "util_pairs_ggplot_panels") ||
+            inherits(x, "svg_plot_proxy") ||
+            inherits(x, "ggplot_built")) {
           ggthumb <- x;
         } else {
           ggthumb <- NULL
@@ -226,23 +346,68 @@ util_pretty_print <- function(dqr, nm, is_single_var,
                                               r = 200,
                                               b = 100)
             )
-            x <- plotly::config(x,
+            x <- plotly::config(x, # TODO: generalize and combine with util_plot_figure_plotly
                                 responsive = TRUE,
                                 autosizable = TRUE,
                                 fillFrame = TRUE,
+                                displaylogo = FALSE,
+                                modeBarButtonsToRemove = list("toImage"),
                                 modeBarButtonsToAdd =
                                   list(
+                                    list(
+                                      name = "Save as image",
+                                      icon = htmlwidgets::JS("Plotly.Icons.camera"),
+                                      click = htmlwidgets::JS(paste(sep = "\n",
+                                                                    "function(gd) {",
+                                                                    "  plotlyDL(gd)",
+                                                                    "}"))
+                                    ),
                                     list(
                                       name = "Restore initial Size",
                                       icon =
                                         htmlwidgets::JS("PlotlyIconshomeRED()"),
                                       click =
-                                        htmlwidgets::JS("togglePlotlyWindowZoom"))))
-
+                                        htmlwidgets::JS(
+                                          paste(sep = "\n",
+                                                "function() {",
+                                                "   if (togglePlotlyWindowZoom instanceof Function) {",
+                                                "     togglePlotlyWindowZoom()",
+                                                "   }",
+                                                "}"
+                                          )
+                                        )),
+                                    list(
+                                      name = "Print plot",
+                                      icon = htmlwidgets::JS("PlotlyIconsprinter()"),
+                                      click = htmlwidgets::JS(paste(sep = "\n",
+                                                                    "function(gd) {",
+                                                                    "  plotlyPrint(gd)",
+                                                                    "}"))
+                                    ),
+                                    list(
+                                      name = "Download as PDF",
+                                      icon = htmlwidgets::JS("PlotlyIconspdf()"),
+                                      click = htmlwidgets::JS(paste(sep = "\n",
+                                                                    "function(gd) {",
+                                                                    "  downloadPlotlyAsPDF(gd, {orientation: 'landscape', dpi: 300});",
+                                                                    "}"))
+                                    ))
+            )
+            util_ensure_suggested("htmlwidgets",
+                                  goal = "Creating the Print Dialog for Plotly")
+            x <- htmlwidgets::onRender(x, "
+                          function(el, x) {
+                            if (typeof injectPlotlyPrintDialog === 'function') {
+                              injectPlotlyPrintDialog();
+                            }
+                          }
+                        ")
           },
           warning = function(cond) { # suppress a waning caused by ggplotly for barplots
             if (startsWith(conditionMessage(cond),
-                           "'bar' objects don't have these attributes: 'mode'")) {
+                           "'bar' objects don't have these attributes: 'mode'") ||
+                startsWith(conditionMessage(cond),
+                           "'box' objects don't have these attributes: 'mode'")) {
               invokeRestart("muffleWarning")
             }
             if (any(grepl("the mode", conditionMessage(cond)))) {
@@ -251,7 +416,9 @@ util_pretty_print <- function(dqr, nm, is_single_var,
           },
           message = function(cond) { # suppress a waning caused by ggplotly for barplots
             if (startsWith(conditionMessage(cond),
-                           "'bar' objects don't have these attributes: 'mode'")) {
+                           "'bar' objects don't have these attributes: 'mode'") ||
+                startsWith(conditionMessage(cond),
+                           "'box' objects don't have these attributes: 'mode'")) {
               invokeRestart("muffleMessage")
             }
             if (any(grepl("the mode", conditionMessage(cond)))) {
@@ -293,20 +460,6 @@ util_pretty_print <- function(dqr, nm, is_single_var,
                           "Please file a feature request."),
                     paste(dQuote(class(x)), collapse = ", ")))
         }
-        cll <- attr(dqr, "call")
-        if (is.language(cll)) {
-          cll <- deparse(cll)
-        }
-        x <- htmltools::div(
-          title = #htmltools::htmlEscape( # this is the text for the hover messages
-            "", # paste(errors, warnings, messages, collapse = "\n"),
-          #attribute = TRUE),
-          class = "dataquieR_result",
-          `data-call` = paste0(cll, collapse = "\n"),
-          `data-stderr` = paste(errors, warnings, messages, collapse = "\n"),
-          `data-nm` = nm,
-          x
-        )
       } else {
         x <- NULL
       }
@@ -342,11 +495,11 @@ util_pretty_print <- function(dqr, nm, is_single_var,
     # add variable name to pages that are not single_vars and display multiple variable in same page
     if (!is_single_var && all(grepl(".", nm, fixed = TRUE))) {
       href <- htmltools::tagGetAttribute(util_generate_anchor_link(name = nm,
-                                order_context =
-                                  ifelse(
-                                    is_single_var,
-                                    "indicator", # link to the other world
-                                    "variable")), attr = "href")
+                                                                   order_context =
+                                                                     ifelse(
+                                                                       is_single_var,
+                                                                       "indicator", # link to the other world
+                                                                       "variable")), attr = "href")
       var_label <- sub("^[^\\.]*\\.", "", nm)
       caption <- var_label
       if (caption != "[ALL]") {
@@ -431,26 +584,63 @@ util_pretty_print <- function(dqr, nm, is_single_var,
                           "Please file a feature request."),
                     paste(dQuote(class(y)), collapse = ", ")))
         }
-        cll <- attr(dqr, "call")
-        if (is.language(cll)) {
-          cll <- deparse(cll)
-        }
-        y <- htmltools::div(
-          title = #htmltools::htmlEscape( # this is the text for the hover messages
-            "", # paste(errors, warnings, messages, collapse = "\n"),
-          #attribute = TRUE),
-          class = "dataquieR_result",
-          `data-call` = paste0(cll, collapse = "\n"),
-          `data-stderr` = paste(errors, warnings, messages, collapse = "\n"),
-          `data-nm` = nm,
-          y
-        )
       } else {
         y <- NULL
       }
     } else {
       y <- NULL
     }
+    if (is_ssi) {
+      anchor <- NULL
+      link <- NULL
+    }
+
+    ## NEW: decide how to wrap x and y into dataquieR_result containers
+    layout <- util_get_result_layout(dqr)
+
+    if (!is.null(x) && !is.null(y) &&
+        exists("x_is_plot") && x_is_plot &&
+        identical(layout, "2-columns-fig-left")) {
+
+      combined_inner <- htmltools::div(
+        class = "dq-plot-table-grid",
+        htmltools::div(class = "dq-plot-cell", x),
+        htmltools::div(class = "dq-table-cell", y)
+      )
+
+      x <- util_wrap_dqr_result(
+        combined_inner,
+        nm = nm,
+        dqr = dqr,
+        errors = errors,
+        warnings = warnings,
+        messages = messages,
+        extra_classes = "dq-plot-table-result"
+      )
+      y <- NULL
+    } else {
+      if (!is.null(x)) {
+        x <- util_wrap_dqr_result(
+          x,
+          nm = nm,
+          dqr = dqr,
+          errors = errors,
+          warnings = warnings,
+          messages = messages
+        )
+      }
+      if (!is.null(y)) {
+        y <- util_wrap_dqr_result(
+          y,
+          nm = nm,
+          dqr = dqr,
+          errors = errors,
+          warnings = warnings,
+          messages = messages
+        )
+      }
+    }
+
     x <- htmltools::tagList(anchor = anchor, link = link, caption, x, y)
     # the link is most easily added here, but still in the wrong position, so later it must be moved
   }
@@ -472,8 +662,8 @@ preferred_slots <- c("ReportSummaryTable",
 # preferred order of the content of the report
 preferred_summary_slots <- c("SummaryData",
                              "OtherData", "ResultData",
-                     "SummaryTable",
-                     "DataframeData", "DataframeTable", "SegmentData",
-                     "SegmentTable", "OtherTable",
-                     "VariableGroupData", "VariableGroupTable")
+                             "SummaryTable",
+                             "DataframeData", "DataframeTable", "SegmentData",
+                             "SegmentTable", "OtherTable",
+                             "VariableGroupData", "VariableGroupTable")
 

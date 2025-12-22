@@ -13,15 +13,13 @@ test_that("util_check_group_levels works", {
 
     dim(util_check_group_levels(ds1, "CENTER_0"))
 
-    expect_message(
-      expect_equal(
-        nrow(util_check_group_levels(ds1, "USR_BP_0", min_obs_in_subgroup = 400)),
-        448)
-    )
+    expect_equal(
+      nrow(util_check_group_levels(ds1, "USR_BP_0", min_obs_in_subgroup = 400)),
+      448)
   }
   environment(f) <- environment(acc_margins)
-  f(
+  expect_message2(f(
     study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
     label_col = LABEL
-  )
+  ))
 })

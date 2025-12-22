@@ -16,7 +16,7 @@
 #' - 4 not applicable because of not suitable data type
 #'
 #' @seealso [pro_applicability_matrix]
-#' @keywords internal
+#' @noRd
 
 util_app_sos <- function(x, dta) {
   if ("DISTRIBUTION" %in% names(x)) {

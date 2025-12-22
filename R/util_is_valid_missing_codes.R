@@ -4,7 +4,7 @@
 #'
 #' @return `TRUE` or `FALSE`
 #' @family robustness_functions
-#' @keywords internal
+#' @noRd
 util_is_valid_missing_codes <- function(x) {
   # TODO: Use it everywhere, where we still have literally defined checks, currently.
   if (suppressWarnings(all(na.rm = TRUE,
@@ -12,7 +12,11 @@ util_is_valid_missing_codes <- function(x) {
     return(TRUE)
   }
   if (all(na.rm = TRUE, is.na(x) == suppressWarnings(
-    is.na(lubridate::as_datetime(x))))) {
+    is.na(util_parse_date(x))))) {
+    return(TRUE)
+  }
+  if (all(na.rm = TRUE, is.na(x) == suppressWarnings(
+    is.na(util_parse_time(x))))) {
     return(TRUE)
   }
   return(FALSE)

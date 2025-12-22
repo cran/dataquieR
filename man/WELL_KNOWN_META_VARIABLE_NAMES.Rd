@@ -27,6 +27,7 @@
 \alias{KEY_OBSERVER}
 \alias{KEY_DEVICE}
 \alias{TIME_VAR}
+\alias{TIME_VAR_END}
 \alias{KEY_DATETIME}
 \alias{PART_VAR}
 \alias{STUDY_SEGMENT}
@@ -61,9 +62,13 @@
 \alias{STANDARDIZED_VOCABULARY_TABLE}
 \alias{DATAFRAMES}
 \alias{ENCODING}
+\alias{UNIVARIATE_OUTLIER_CHECKTYPE}
+\alias{N_RULES}
+\alias{EXTENDED_DATA_TYPE}
+\alias{COMPUTED_VARIABLE_ROLE}
 \title{Well-known metadata column names, names of metadata columns}
 \format{
-An object of class \code{list} of length 58.
+An object of class \code{list} of length 63.
 }
 \usage{
 WELL_KNOWN_META_VARIABLE_NAMES
@@ -108,6 +113,7 @@ environment directly, i.e. they are available directly by their names too:
 \item \link{KEY_OBSERVER}
 \item \link{KEY_DEVICE}
 \item \link{TIME_VAR}
+\item \link{TIME_VAR_END}
 \item \link{KEY_DATETIME}
 \item \link{PART_VAR}
 \item \link{STUDY_SEGMENT}
@@ -142,6 +148,10 @@ environment directly, i.e. they are available directly by their names too:
 \item \link{STANDARDIZED_VOCABULARY_TABLE}
 \item \link{DATAFRAMES}
 \item \link{ENCODING}
+\item \link{UNIVARIATE_OUTLIER_CHECKTYPE}
+\item \link{N_RULES}
+\item \link{EXTENDED_DATA_TYPE}
+\item \link{COMPUTED_VARIABLE_ROLE}
 }
 }
 \examples{
@@ -151,10 +161,13 @@ print(WELL_KNOWN_META_VARIABLE_NAMES$VAR_NAMES)
 \seealso{
 \link{meta_data_segment} for \code{STUDY_SEGMENT}
 
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_Item_Level_Metadata.html}{online}
+
 Other UNITS: 
 \code{\link{UNITS}},
 \code{\link{UNIT_IS_COUNT}},
 \code{\link{UNIT_PREFIXES}},
+\code{\link{UNIT_PREFIX_FACTORS}},
 \code{\link{UNIT_SOURCES}}
 }
 \concept{UNITS}

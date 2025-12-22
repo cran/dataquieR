@@ -1,7 +1,7 @@
 #' All indicator functions of `dataquieR`
 #' @return [character] names of all indicator functions
 #'
-#' @keywords internal
+#' @noRd
 util_all_ind_functions <- function() {
   all_inds <-
     lapply(paste0(names(dims), '_'),

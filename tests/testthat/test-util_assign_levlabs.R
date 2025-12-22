@@ -2,7 +2,7 @@ test_that("util_assign_levlabs works", {
   skip_on_cran()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   vname <- "v50000"
      labelled_var <-
        dataquieR:::util_assign_levlabs(

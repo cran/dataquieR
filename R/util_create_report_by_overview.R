@@ -11,17 +11,20 @@
 #'                                           strata_column
 #' @param subgroup [character] optional, to define subgroups of cases
 #' @param mod_label [list] `util_ensure_label()` info
+#' @param disable_plotly [logical] do not use `plotly`, even if installed
 #' @return an overview of all `dataquieR` reports created with `dq_report_by`
+#' @noRd
 util_create_report_by_overview <- function(output_dir,
                                            strata_column,
                                            segment_column,
                                            strata_column_label,
                                            subgroup,
-                                           mod_label) {
+                                           mod_label,
+                                           disable_plotly = FALSE) {
   # prepare the path of the output_dir with the / at the end
   out_dir <- output_dir
   if (!endsWith(out_dir, .Platform$file.sep)) {
-    out_dir <- paste0(out_dir, "/")
+    out_dir <- paste0(out_dir, .Platform$file.sep)
   }
 
   # create a summary of summaries
@@ -210,17 +213,27 @@ util_create_report_by_overview <- function(output_dir,
     util_render_table_dataquieR_summary(summary_all,
                                         folder_of_report = vars_reportlocation,
                                         var_uniquenames = vars_originalnames) #this is null if there are no multiple strata
-  Plot_TBSummaries <- plot(summary_all, dont_plot = TRUE)
+  Plot_TBSummaries <- plot(summary_all, dont_plot = TRUE, disable_plotly =
+                             disable_plotly)
 
-  #Create an all_ids file
+  # Create an all_ids file
   all_ids_overall <- lapply(sum_names, function(x) {
     name_folder <- gsub("(report_summary_)(.*)\\.RDS", "\\2", x)
-    path_all_ids_file <- paste0(out_dir, "report_", name_folder,
-                               "/.report/anchor_list.RDS")
+
+    path_all_ids_file <- file.path(out_dir, paste0("report_", name_folder),
+                                   ".report", "anchor_list.RDS")
+    if (!file.exists(path_all_ids_file)) {
+      util_warning(
+        "Cannot read %s for %s -- Internal error, sorry. Please report",
+        dQuote(path_all_ids_file),
+        dQuote(x))
+      return(character(0))
+    }
+
     temp_file <- readRDS(path_all_ids_file)
     temp_file <- temp_file[startsWith(temp_file, "VAR_")]
-    temp_file <- paste0("report_", name_folder,
-                        "/.report/", temp_file)
+    temp_file <- file.path(paste0("report_", name_folder),
+                        ".report", temp_file)
     temp_file <- list(temp_file)
     return(temp_file)
   })

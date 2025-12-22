@@ -17,7 +17,7 @@
 #'   - `CODE_LABEL`: A label describing the reason for the missing value
 #'   - `RULE`: A rule in `REDcap` style (see, e.g.,
 #'   [`REDcap` help](https://help.redcap.ualberta.ca/help-and-faq/project-best-practices/data-quality/example-data-quality-rules),
-#'   [`REDcap` how-to](https://www.ctsi.ufl.edu/files/2017/06/Calculated-Fields-%E2%80%93-REDCap-How.pdf)), and
+#'   [`REDcap` how-to](https://docs.google.com/document/d/1l3nGBgqqPKi5PtMe75g7q0dny8QzGMd_/edit?tab=t.0)), and
 #'   [`REDcap` branching logic](https://www.iths.org/wp-content/uploads/REDCap-Branching-Logic-2017-202.pdf)
 #'   that describes cases for the missing
 #' @param overwrite [logical] Also insert missing codes, if the values are not

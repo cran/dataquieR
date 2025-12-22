@@ -4,7 +4,7 @@
 #'
 #' @return `invisible(NULL)`
 #'
-#' @keywords internal
+#' @noRd
 util_hide_file_windows <- function(fn) {
   if (.Platform$OS.type != "windows") return();
   fn <- normalizePath(fn)

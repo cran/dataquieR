@@ -17,7 +17,7 @@
 #'
 #' @family data_management
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_rbind <- function(..., data_frames_list = list()) {
   data_frames_list <- c(list(...), data_frames_list)
   data_frames_list <- data_frames_list[!vapply(data_frames_list, is.null,

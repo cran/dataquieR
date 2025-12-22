@@ -10,7 +10,7 @@
 #'
 #' @family metadata_management
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 
 
 util_get_var_att_names_of_level <- function(level, cumulative = TRUE) {

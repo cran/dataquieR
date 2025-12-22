@@ -10,7 +10,7 @@
 #' @seealso  [base::Extract]
 #' @export
 #'
-#' @keywords internal
+#' @noRd
 `[.dataquieR_result` <- function(x, ...) {
   r <- NextMethod()
   attr(r, "error") <- attr(x, "error")
@@ -37,14 +37,14 @@
 #' @seealso  [base::Extract]
 #' @export
 #'
-#' @keywords internal
+#' @noRd
 `[[.dataquieR_result` <- function(x, ...) {
   r <- NextMethod()
   if (is.null(r)) {
     r <- list()
     class(r) <- union("dataquieR_NULL", class(r))
   }
-  if (!inherits(x, "ggplot")) {
+  if (!util_is_gg(x)) {
     attr(r, "error") <- attr(x, "error")
     attr(r, "message") <- attr(x, "message")
     attr(r, "warning") <- attr(x, "warning")
@@ -67,5 +67,5 @@
 #' @seealso  [base::Extract]
 #' @export
 #'
-#' @keywords internal
+#' @noRd
 `$.dataquieR_result` <- `[[.dataquieR_result`

@@ -8,7 +8,8 @@
 #'                                       with labels of variables
 #' @param max_len [integer] the maximum label length to return, if not possible
 #'                          w/o causing ambiguous labels, the labels may still
-#'                          be longer
+#'                          be longer. For `label_class == "LONG"`, it defaults
+#'                          to `200`, while for `label_class == "SHORT"` to `30`
 #' @param label_class [enum] SHORT | LONG. which sort of label
 #'                           according to the metadata model should be returned
 #' @param label_lang [character] optional language suffix, if available in
@@ -48,9 +49,9 @@ prep_get_labels <- function(
     resp_vars,
     item_level = "item_level",
     label_col,
-    max_len = MAX_LABEL_LEN,
+    max_len,
     label_class = c("SHORT", "LONG"),
-    label_lang = getOption("dataquieR.lang", ""),
+    label_lang = getOption("dataquieR.lang", dataquieR.lang_default),
     resp_vars_are_var_names_only = FALSE,
     resp_vars_match_label_col_only = FALSE,
     meta_data = item_level,
@@ -79,12 +80,20 @@ prep_get_labels <- function(
     "auto", "FALSE", "TRUE"
   ))
 
+  label_class <- util_match_arg(label_class)
+  util_expect_scalar(label_class)
+  if (missing(max_len)) {
+    if (label_class == "SHORT") {
+      max_len <- MAX_LABEL_LEN
+    } else {
+      max_len <- MAX_LONG_LABEL_LEN
+    }
+  }
+
   util_expect_scalar(max_len,
                      check_type = util_is_numeric_in(min = 1,
                                                      whole_num = TRUE,
                                                      finite = TRUE))
-  label_class <- util_match_arg(label_class)
-  util_expect_scalar(label_class)
   if (!missing(label_col)) {
     util_expect_scalar(label_col,
                        check_type = is.character,
@@ -120,6 +129,17 @@ prep_get_labels <- function(
   util_expect_data_frame(
     meta_data,
     col_names = VAR_NAMES)
+
+  # this function does not need missing stuff and this would slow down
+  # prep_meta_data_v1_to_item_level_meta_data
+  meta_data[[MISSING_LIST]] <- NULL
+  meta_data[[MISSING_LIST_TABLE]] <- NULL
+  meta_data[[JUMP_LIST]] <- NULL
+  meta_data[[VALUE_LABELS]] <- NULL
+  meta_data <- prep_meta_data_v1_to_item_level_meta_data(meta_data =
+                                                           meta_data,
+                                                         verbose = FALSE,
+                                                         label_col = label_col)
 
   if (missing(resp_vars)) {
     resp_vars <- meta_data[[VAR_NAMES]]
@@ -203,7 +223,8 @@ prep_get_labels <- function(
     return(setNames(nm = resp_vars))
   }
 
-  uel <- util_ensure_label(meta_data[meta_data[[VAR_NAMES]] %in% vns, ,  FALSE],
+  uel <- .util_ensure_label(meta_data[meta_data[[VAR_NAMES]] %in% vns,
+                                     c(VAR_NAMES, to),  FALSE],
                     label_col = to,
                     max_label_len = max_len)
 

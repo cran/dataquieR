@@ -5,7 +5,7 @@
 #' @return `s` with `"` replaced by `&quot;`
 #'
 #' @concept reporting
-#' @keywords internal
+#' @noRd
 
 util_html_attr_quote_escape <- function(s) {
   gsub('"', "&quot;", s, fixed = TRUE)

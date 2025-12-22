@@ -9,7 +9,7 @@
 #'
 #' @return [data.frame] having all known special things removed
 #'
-#' @keywords internal
+#' @noRd
 util_cast_off <- function(df, symb, .dont_cast_off_cols = FALSE) {
   if (missing(symb)) {
     symb <- as.character(substitute(df))
@@ -47,7 +47,7 @@ util_cast_off <- function(df, symb, .dont_cast_off_cols = FALSE) {
   #   #   mostattributes(cl) <- NULL
   #   #   cl
   #   # } else if (lubridate::is.timepoint(cl)) {
-  #   #   # lubridate::as_datetime(cl)
+  #   #   # util_parse_date(cl)
   #   #   mostattributes(cl) <- NULL
   #   #   cl
   #   # } else {
@@ -71,6 +71,16 @@ util_cast_off <- function(df, symb, .dont_cast_off_cols = FALSE) {
         return(util_data_type_conversion(cl, type = dt))
       }
     }, SIMPLIFY = FALSE)
+
+    li <-
+      lapply(li, function(x) {
+        if (is.list(x) &&
+            all(vapply(x, inherits, "hms", FUN.VALUE = logical(1)))) {
+          hms::as_hms(unlist(x, use.names = FALSE))
+        } else {
+          x
+        }
+      })
 
     df <- do.call(data.frame,
                   c(list(

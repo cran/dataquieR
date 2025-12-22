@@ -20,7 +20,7 @@
 #'
 #' @family data_management
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 util_study_var2factor <- function(resp_vars = NULL, study_data,
                                   meta_data = "item_level", # TODO: make a prep, see util_assign_levlabs, make it work also for VALUE_LABELS, not only for missing codes, optionally. Default should be FALSE or all existing calls need to be edited to turn off this feature. Maybe, the prep is just a copy of the util with modified defaults, as in  progress <- other_function; formals(progress)$is_rstudio <- force(is_rstudio)
                                   label_col = LABEL,        # TODO: This is now available in prep_prepare_dataframes(.apply_factor_metadata = ) or prep_prepare_dataframes(.apply_factor_metadata_inadm = )

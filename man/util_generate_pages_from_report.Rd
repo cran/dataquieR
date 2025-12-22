@@ -52,12 +52,6 @@ save(report, file = "report_v2_short.RData")
 }
 
 }
-\seealso{
-Other html: 
-\code{\link{util_dashboard_table}()},
-\code{\link{util_extract_all_ids}()},
-\code{\link{util_get_hovertext}()}
-}
 \concept{html}
 \concept{process}
 \keyword{internal}

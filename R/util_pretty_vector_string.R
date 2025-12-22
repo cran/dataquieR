@@ -8,7 +8,7 @@
 #'
 #' @family string_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_pretty_vector_string <- function(v, quote = dQuote, n_max = length(v)) {
   util_expect_scalar(
     v,

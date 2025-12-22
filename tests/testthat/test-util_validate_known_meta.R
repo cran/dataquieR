@@ -35,7 +35,7 @@ test_that("util_validate_known_meta works", {
        regexp = paste("Some missing codes are not numeric"),
        perl = TRUE),
      regexp = paste("Suspicious .+MISSING_LIST.+:",
-                    "not numeric/date/assignment"),
+                    "not numeric/date/time/assignment"),
      perl = TRUE)
 
     md1 <- meta_data
@@ -45,7 +45,7 @@ test_that("util_validate_known_meta works", {
       regexp = paste("Some missing codes are not numeric"),
       perl = TRUE),
       regexp = paste("Suspicious .+MISSING_LIST.+:",
-                     "not numeric/date/assignment"),
+                     "not numeric/date/time/assignment"),
       perl = TRUE)
 
     md1 <- meta_data

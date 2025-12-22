@@ -6,10 +6,13 @@
 #'                                Hint: Only data frames supported, no URL
 #'                                or file names.
 #' @param .dont_cast_off_cols [logical] internal use, only
+#' @param guess_character [logical] guess a data type for character columns
+#'                                  based on the values
 #'
 #' @return vector of data types
 #' @export
 #' @importFrom stats setNames
+#' @seealso [prep_robust_guess_data_type()]
 #'
 #' @examples
 #' \dontrun{
@@ -17,7 +20,12 @@
 #' }
 prep_datatype_from_data <-
   function(resp_vars = colnames(study_data), study_data,
-           .dont_cast_off_cols = FALSE) {
+           .dont_cast_off_cols = FALSE,
+           guess_character = getOption("dataquieR.guess_character",
+                                       default =
+                                         dataquieR.guess_character_default
+           )) {
+  util_expect_scalar(guess_character, check_type = is.logical)
   if (!missing(resp_vars) && is.data.frame(resp_vars) && missing(study_data)) {
     study_data <- resp_vars
     resp_vars <- colnames(study_data)
@@ -53,7 +61,8 @@ prep_datatype_from_data <-
   types <- vapply(setNames(nm = resp_vars), FUN.VALUE = character(1),
                   function(variable) {
     if (variable %in% colnames(study_data)) {
-      r <- prep_dq_data_type_of(study_data[[variable]])
+      r <- prep_dq_data_type_of(study_data[[variable]],
+                                guess_character = guess_character)
       if (length(r) == 0) {
         r <- DATA_TYPES$STRING
       }

@@ -16,7 +16,8 @@
 #'                                  if selected, then also the study data will
 #'                                  be updated and returned.
 #' @param guess_missing_codes [logical] try to guess missing codes from the data
-#'
+#' @param guess_character [logical] guess a data type for character columns
+#'                                  based on the values
 #' @return a meta_data data frame or a list with study data and metadata, if
 #'         `convert_factors == TRUE`.
 #' @export
@@ -33,7 +34,13 @@ prep_study2meta <- function(study_data, level = c(
                             convert_factors = FALSE,
                             guess_missing_codes =
                               getOption("dataquieR.guess_missing_codes",
-                                        dataquieR.guess_missing_codes_default)) {
+                                        dataquieR.guess_missing_codes_default),
+                            guess_character =
+                              getOption("dataquieR.guess_character",
+                                        default =
+                                          dataquieR.guess_character_default
+                            )) {
+  util_expect_scalar(guess_character, check_type = is.logical)
   withr::local_options(list(dataquieR.fix_column_type_on_read = TRUE))
   with_dataframe_environment(
     util_expect_data_frame(study_data, keep_types = TRUE) # prep_robust_guess_data_type
@@ -62,14 +69,15 @@ prep_study2meta <- function(study_data, level = c(
   }
 
   datatypes <- prep_datatype_from_data(resp_vars = var_names, study_data =
-                                         study_data)
+                                         study_data, guess_character =
+                                         guess_character)
 
   missing_list <-
     mapply(function(x, dt, cn) {
       if (dt %in% c(DATA_TYPES$INTEGER, DATA_TYPES$FLOAT)) {
         mcs <-
           unique(sort(suppressWarnings(as.numeric(x[
-            util_looks_like_missing(x)]))))
+            util_looks_like_missing(as.numeric(x))]))))
         r <- paste(mcs, collapse = SPLIT_CHAR)
         if (length(mcs) > 0)
           util_message(
@@ -173,6 +181,14 @@ prep_study2meta <- function(study_data, level = c(
   }
 
   if (convert_factors) {
+    # TODO: work with VALUE_LABEL_TABLE
+    valuelabels <- prep_valuelabels_from_data(resp_vars = var_names,
+                                              study_data = study_data)
+    # data type should then be integer for codes
+    datatypes[names(which(vapply(study_data, is.factor,
+                                 FUN.VALUE = logical(1))))] <-
+      DATA_TYPES$INTEGER
+    res$DATA_TYPE <- unname(datatypes)
     res <- list(
       MetaData = res,
       ModifiedStudyData = valuelabels[["ModifiedStudyData"]]

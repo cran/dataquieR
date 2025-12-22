@@ -25,13 +25,17 @@
 #'                                               be used for the report. If
 #'                                               of length zero, no filtering
 #'                                               is performed.
+#' @param checkpoint_resumed [logical] if using a `storr_factory` and the back-
+#'                                     end there is already filled
+#'                                     compute all missing result and add them
+#'                                     to the back-end.
 #' @inheritParams dq_report2
 #'
 #' @return a [dataquieR_resultset2]. Can be printed creating a RMarkdown-report.
 #'
 #' @family reporting_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_evaluate_calls <-
   function(all_calls,
            study_data,
@@ -46,36 +50,48 @@ util_evaluate_calls <-
            debug_parallel,
            mode = c("default", "futures", "queue", "parallel"),
            mode_args,
-           my_storr_object = NULL) {
+           my_storr_object = NULL,
+           checkpoint_resumed,
+           dt_adjust = as.logical(getOption("dataquieR.dt_adjust",
+                                               dataquieR.dt_adjust_default))) {
+
+    conds <- NULL # integrity issues outside the pipeline are collected here
 
     my_storr_object <- util_fix_storr_object(my_storr_object)
 
     function_names <- vapply(lapply(all_calls, `[[`, 1), as.character,
                              FUN.VALUE = character(1))
 
-
-    if (!is.null(my_storr_object)) {
-      # if (inherits(my_storr_object$driver, "driver_thor")) {
-      #   util_error( # IDEA: if we would write whenever we collect results and increase progress, we would not write concurrently to the storr.
-      #     c("CAVEAT: LMDB databases (as used by the package thor) are",
-      #       "not supported because of known issues with file-locking"))
-      # }
-      my_storr_object$set(NO_SHARED_STORR, TRUE) # will be deleted during computation
-      # https://stackoverflow.com/a/74509506 -- be as robust as possible for local database backends
-      for (slot in names(all_calls)) {
-        invisible(util_eval_to_dataquieR_result(init = TRUE,
-          quote({util_error(paste("No result available for unkown reasons",
-                                  "(out of memory? try to reduce the number",
-                                  "of parallel running jobs using the",
-                                  "`cores` argument)"))}),
-          filter_result_slots = ".*", nm = slot,
-          my_storr_object = my_storr_object,
-          function_name = function_names[[slot]],
-          my_call = all_calls[[slot]]))
-      }
-      my_storr_object$flush_cache()
-
+    if (!is.null(my_storr_object) && checkpoint_resumed) {
+      all_calls_cp <- all_calls[setdiff(names(all_calls),
+                                        my_storr_object$list(namespace =
+                                                               util_get_storr_stat_namespace(my_storr_object)))]
+    } else {
+      all_calls_cp <- all_calls
     }
+
+    # if (!is.null(my_storr_object)) {
+    #   # if (inherits(my_storr_object$driver, "driver_thor")) {
+    #   #   util_error( # IDEA: if we would write whenever we collect results and increase progress, we would not write concurrently to the storr.
+    #   #     c("CAVEAT: LMDB databases (as used by the package thor) are",
+    #   #       "not supported because of known issues with file-locking"))
+    #   # }
+    #   my_storr_object$set(NO_SHARED_STORR, TRUE) # will be deleted during computation
+    #   # https://stackoverflow.com/a/74509506 -- be as robust as possible for local database backends
+    #   invisible(lapply(names(all_calls_cp), function(slot) {
+    #     invisible(util_eval_to_dataquieR_result(init = TRUE,
+    #       quote({util_error(paste("No result available for unkown reasons",
+    #                               "(out of memory? try to reduce the number",
+    #                               "of parallel running jobs using the",
+    #                               "`cores` argument)"))}),
+    #       filter_result_slots = ".*", nm = slot,
+    #       my_storr_object = my_storr_object,
+    #       function_name = function_names[[slot]],
+    #       my_call = all_calls_cp[[slot]]))
+    #   }))
+    #   my_storr_object$flush_cache()
+    #
+    # }
 
     if (length(mode_args) > 0) {
       if (!is.list(mode_args) || is.null(names(mode_args)) ||
@@ -101,7 +117,8 @@ util_evaluate_calls <-
     r <- list()
     util_ensure_suggested("parallel")
     util_setup_rstudio_job(
-      "Computing dq_report2, parallel computation")
+      "Computing dq_report2, parallel computation",
+      n = length(all_calls))
 
     progress_msg("Cluster setup", "initializing parallel mode, if applicable")
 
@@ -131,7 +148,7 @@ util_evaluate_calls <-
       q <- NULL
     }
 
-    if (length(all_calls) > 0) {
+    if (length(all_calls_cp) > 0) {
       if (is.null(q)) {
         if (!is.null(cores)) {
           if (inherits(cores, "cluster")) {
@@ -169,19 +186,42 @@ util_evaluate_calls <-
         oldO <- options(parallelMap.show.info = FALSE)
         on.exit(options(oldO), add = TRUE)
 
-        parlib <- parallelMap::parallelLibrary
+        parlib <- function(lib) {
+          suppressMessages(suppressPackageStartupMessages(
+            parallelMap::parallelLibrary(lib, show.info = FALSE)))
+        }
+        parloadNS <- function(lib) {
+          .exp <- substitute({
+            suppressMessages(suppressPackageStartupMessages(
+              loadNamespace(lib)))
+            invisible(NULL)
+          })
+          parexp(".exp")
+          par_eval_q(eval(.exp))
+        }
         parexp <- parallelMap::parallelExport
         par_eval_q <- function(expr) {
-          do.call(
-            parallel::clusterEvalQ,
-            list(cl = NULL, substitute(expr))
-          )
+          if (is.null(parallel::getDefaultCluster())) {
+            eval(expr)
+          } else {
+            do.call(
+              parallel::clusterEvalQ,
+              list(cl = NULL, substitute(expr))
+            )
+          }
         }
 
       } else {
+        parloadNS <- function(lib) {
+          q$workerEval(function(lib) {
+            suppressMessages(suppressPackageStartupMessages(
+              loadNamespace(lib)))
+          }, list(lib = lib))
+        }
         parlib <- function(lib) {
           q$workerEval(function(lib) {
-            require(lib, character.only = TRUE)
+            suppressMessages(suppressPackageStartupMessages(
+              require(lib, quietly = TRUE, character.only = TRUE)))
           }, list(lib = lib))
         }
         parexp <- function(...) {
@@ -196,30 +236,79 @@ util_evaluate_calls <-
 
       progress_msg("Cluster setup: initializing parallel mode, if applicable", "loading library")
 
-      parlib(utils::packageName())
+      if (suppressWarnings(util_ensure_suggested("pkgload", err = FALSE,
+                                                 goal =
+                                                 "not really needed"))) {
+        dev_package <- pkgload::is_dev_package(utils::packageName())
+      } else {
+        dev_package <- FALSE
+      }
 
-      progress_msg("Cluster setup: initializing parallel mode, if applicable",
-                   "consolidating data types...")
+      if (dev_package && !is.null(parallel::getDefaultCluster())) {
+        .d <- system.file(package = utils::packageName())
+        .exp <- substitute({
+          pkgload::load_all(path = .d)
+          invisible(NULL)
+        })
+        parexp(".exp")
+        par_eval_q(eval(.exp))
+      } else {
+        if (!is.null(parallel::getDefaultCluster())) {
+          parlib(utils::packageName())
+        }
+      }
+      parloadNS("hms")
 
-      ## Adjust data type and compute int_data_type_matrix before
+      ..e <- environment()
+      conds <- list()
 
-      withr::with_options(list(dataquieR.testdebug = TRUE), # TODO: Find an internal solution to suppress convenience argument fillers and printers
-        int_datatype_matrix_res <- int_datatype_matrix(
-          study_data = study_data,
-          meta_data = meta_data,
-          label_col = label_col
-        )
-      )
+      suppressWarnings(suppressMessages(withCallingHandlers({
+
+        if (dt_adjust) {
+          progress_msg("Cluster setup: initializing parallel mode, if applicable",
+                       "consolidating data types 1...")
+
+          ## Adjust data type and compute int_data_type_matrix before
+
+          withr::with_options(list(dataquieR.testdebug = TRUE), # TODO: Find an internal solution to suppress convenience argument fillers and printers
+                              int_datatype_matrix_res <- int_datatype_matrix(
+                                study_data = study_data,
+                                meta_data = meta_data,
+                                label_col = label_col
+                              )
+          )
+        } else {
+          withr::with_options(list(dataquieR.testdebug = TRUE), # TODO: Find an internal solution to suppress convenience argument fillers and printers
+            int_datatype_matrix_res <- int_datatype_matrix(
+              study_data = study_data[1, , FALSE],
+              meta_data = meta_data,
+              label_col = label_col
+            )
+          )
+        }
+
+      },
+      condition = function(cnd) {
+        ..e$conds <- c(..e$conds, list(cnd))
+      })))
+
+      conds <- unique(conds[vapply(lapply(conds, attr, "integrity_indicator"),
+                                   length, FUN.VALUE = integer(1)) == 1]) # IDEA: Don't discard "other" conditions, except such with non-matching var_name-attribute, see also my_conds below.
+
 
       old_.dq2_globs.called_in_pipeline <- .dq2_globs$.called_in_pipeline
       .dq2_globs$.called_in_pipeline <- TRUE
       on.exit(.dq2_globs$.called_in_pipeline <-
                 old_.dq2_globs.called_in_pipeline, add = TRUE)
 
-      study_data <- util_adjust_data_type(
-        study_data = study_data,
-        meta_data = meta_data,
-        relevant_vars_for_warnings = NULL)
+      if (dt_adjust) {
+        progress_msg("Cluster setup: initializing parallel mode, if applicable",
+                     "consolidating data types 2...")
+        study_data <- util_adjust_data_type(
+          study_data = study_data,
+          meta_data = meta_data,
+          relevant_vars_for_warnings = NULL)
+      }
 
       progress_msg("Cluster setup: initializing parallel mode, if applicable", "exporting data")
 
@@ -239,7 +328,8 @@ util_evaluate_calls <-
 
       progress_msg("Cluster setup: initializing parallel mode, if applicable", "exporting other caches")
 
-      if (getOption("dataquieR.precomputeStudyData", default = FALSE)) {
+      if (getOption("dataquieR.precomputeStudyData",
+                    default = dataquieR.precomputeStudyData_default)) {
         cache_as_list <- as.list(.cache[[".cache"]])
         study_data_cache <- as.list(.study_data_cache)
       } else {
@@ -293,8 +383,10 @@ util_evaluate_calls <-
       currentCpus <- parallelMap::parallelGetOptions()$settings$cpus
 
       worker <- util_eval_to_dataquieR_result
-      formals(worker)$filter_result_slots = filter_result_slots
+      formals(worker)$filter_result_slots <- filter_result_slots
       force(formals(worker)$filter_result_slots)
+      formals(worker)$checkpoint_resumed <- checkpoint_resumed
+      force(formals(worker)$checkpoint_resumed)
 
       if (parallelMap::parallelGetOptions()$settings$mode == "local") {
         environment(worker) <- new.env(parent = asNamespace(utils::packageName()))
@@ -310,7 +402,7 @@ util_evaluate_calls <-
 
       if (mode == "futures") { # have/use futures
         r <- util_parallel_futures(
-          all_calls = all_calls,
+          all_calls = all_calls_cp,
           n_nodes = n_nodes,
           progress = progress,
           worker = worker,
@@ -333,12 +425,12 @@ util_evaluate_calls <-
             step <- 15
           }
         }
-        r <- q$compute_report(all_calls = all_calls,
+        r <- q$compute_report(all_calls = all_calls_cp,
                               worker = worker,
                               step = step)
       } else {
         r <- util_parallel_classic(
-          all_calls = all_calls,
+          all_calls = all_calls_cp,
           n_nodes = n_nodes,
           progress = progress,
           worker = worker,
@@ -347,15 +439,23 @@ util_evaluate_calls <-
         )
       }
 
-      util_message(
-        sprintf("%s [%s], %s", Sys.time(), "INFO",
-                "DQ -- done")
-      ) # TODO: Use RStudio job if available
+      if (!dynGet(".is_testing", ifnotfound = FALSE)) {
+        util_message(
+          sprintf("%s [%s], %s", Sys.time(), "INFO",
+                  "DQ -- done")
+        ) # TODO: Use RStudio job if available
+      }
     }
+
+    r_with_already_computed_r <- setNames(r[names(all_calls)], names(all_calls))
+    r_with_already_computed_r[setdiff(names(all_calls), names(r))] <- NA
+
+    r <- r_with_already_computed_r
 
     my_storr_object <- util_fix_storr_object(my_storr_object)
 
     if (!is.null(my_storr_object) && length(unclass(r)) > 0 &&
+        length(all_calls_cp) > 0 &&
         my_storr_object$exists(NO_SHARED_STORR) &&
         identical(my_storr_object$get(NO_SHARED_STORR), TRUE)
         ) {
@@ -366,6 +466,8 @@ util_evaluate_calls <-
     progress_msg("Computation", "finalizing report")
 
     # old <- class(r)
+    attr(r, "all_calls") <- all_calls
+
     class(r) <- union(dataquieR_resultset_class2,
                       "square_results")
     attr(r, "my_storr_object") <- my_storr_object
@@ -382,46 +484,45 @@ util_evaluate_calls <-
 
     if (!is.null(my_storr_object)) {
       my_storr_object$flush_cache()
-      missing_objects <- setdiff(names(r), my_storr_object$list())
-      for (mo in missing_objects) {
-        invisible(util_eval_to_dataquieR_result(
-            quote({util_error(paste("No result available for unkown reasons",
-                             "(out of memory? try to reduce the number",
-                             "of parallel running jobs using the",
-                             "`cores` argument)"))}),
-            filter_result_slots = ".*", nm = mo,
-            my_storr_object = my_storr_object,
-            function_name = function_names[[mo]],
-            my_call = all_calls[[mo]]))
-      }
+      # missing_objects <- setdiff(names(r), my_storr_object$list())
+      # invisible(lapply(missing_objects, function(mo) {
+      #   invisible(util_eval_to_dataquieR_result(
+      #       quote({util_error(paste("No result available for unkown reasons",
+      #                        "(out of memory? try to reduce the number",
+      #                        "of parallel running jobs using the",
+      #                        "`cores` argument)"))}),
+      #       filter_result_slots = ".*", nm = mo,
+      #       my_storr_object = my_storr_object,
+      #       function_name = function_names[[mo]],
+      #       my_call = all_calls[[mo]], checkpoint_resumed = FALSE))
+      # }))
     } else {
-      r[] <- mapply(function_names, all_calls, r, attr(all_calls, "cn"),
-                    i = seq_len(length(function_names)),
-                    i_n = length(function_names),
-                    SIMPLIFY = FALSE,
-                    FUN = function(nm, cl, r, cn, i, i_n) {
-        # util_message("Fixing %s -- %d of %d", sQuote(nm), i, i_n) # FIXME: SLOW
-        # added to fix bug in unexpected crashing single jobs.
-        if (is.null(r)) {
-           r <-
-             util_eval_to_dataquieR_result(
-               quote({util_error(paste("No result available for unkown reasons",
-                                "(out of memory? try to reduce the number",
-                                "of parallel running jobs using the",
-                                "`cores` argument)"))}),
-               filter_result_slots = ".*", nm = nm,
-               function_name = nm,
-               my_call = cl)
-        }
-
-        # now done directly, when result is computed:
-        # attr(r, "function_name") <- nm --> util_eval_to_dataquieR_result
-        # attr(r, "cn") <- cn
-        # attr(r, "call") <- cl
-        ########################################
-
-        r
-      })
+      # r[] <- mapply(function_names, all_calls, r, attr(all_calls, "cn"),
+      #               i = seq_len(length(function_names)),
+      #               i_n = length(function_names),
+      #               SIMPLIFY = FALSE,
+      #               FUN = function(nm, cl, r, cn, i, i_n) {
+      #   # util_message("Fixing %s -- %d of %d", sQuote(nm), i, i_n) # FIXME: SLOW
+      #   # added to fix bug in unexpected crashing single jobs.
+      #   # if (is.null(r)) {
+      #   #    r <-
+      #   #      util_eval_to_dataquieR_result(
+      #   #        quote({util_error(paste("No result available for unkown reasons",
+      #   #                         "(out of memory? try to reduce the number",
+      #   #                         "of parallel running jobs using the",
+      #   #                         "`cores` argument)"))}),
+      #   #        filter_result_slots = ".*", nm = nm,
+      #   #        function_name = nm, checkpoint_resumed = FALSE,
+      #   #        my_call = cl)
+      #   # }
+      #
+      #   # now done directly, when result is computed:
+      #   # attr(r, "function_name") <- nm --> util_eval_to_dataquieR_result
+      #   # attr(r, "cn") <- cn
+      #   # attr(r, "call") <- cl
+      #   ########################################
+      #   r
+      # })
     }
 
     # do after itdm, see below:
@@ -482,25 +583,58 @@ util_evaluate_calls <-
           attr(res, "error") <- NULL
           attr(res, "warning") <- NULL
           attr(res, "message") <- NULL
+          if (!dt_adjust) {
+            attr(res, "error") <- list(attr(try(util_error(
+              c("data type check was disabled",
+                "(argument dt_adjust or option dataquieR.dt_adjust)"),
+              applicability_problem = TRUE),
+              silent = TRUE), "condition"))
+            attr(res, "error")[[1]]$trace <- NULL
+            res$SummaryTable <- NULL
+            res$SummaryData <- NULL
+            res$ReportSummaryTable <- NULL
+            class(res) <- union("dataquieR_NULL", class(res))
+          } else {
+            res$SummaryTable <-
+              int_datatype_matrix_res$SummaryTable[
+                int_datatype_matrix_res$SummaryTable$Variables == lab,
+                , FALSE
+              ]
 
-          res$SummaryTable <-
-            int_datatype_matrix_res$SummaryTable[
-              int_datatype_matrix_res$SummaryTable$Variables == lab,
-              , FALSE
-            ]
+            res$SummaryData <-
+              int_datatype_matrix_res$SummaryData[
+                int_datatype_matrix_res$SummaryData$Variables == lab,
+                , FALSE
+              ]
 
-          res$SummaryData <-
-            int_datatype_matrix_res$SummaryData[
-              int_datatype_matrix_res$SummaryData$Variables == lab,
-              , FALSE
-            ]
+            res$ReportSummaryTable <- NULL
+            res$ReportSummaryTable <-
+              int_datatype_matrix_res$ReportSummaryTable[
+                int_datatype_matrix_res$ReportSummaryTable$Variables == lab,
+                , FALSE
+              ]
+          }
+          my_conds <- conds[vapply(conds, function(cnd) {
+            (identical(attr(cnd, "varname"), lab)) ||
+              (is.null(cnd))
+          }, FUN.VALUE = logical(1))]
 
-          res$ReportSummaryTable <- NULL
-          res$ReportSummaryTable <-
-            int_datatype_matrix_res$ReportSummaryTable[
-              int_datatype_matrix_res$ReportSummaryTable$Variables == lab,
-              , FALSE
-            ]
+          if (length(my_conds) > 0) {
+            for (cnd in my_conds) {
+              if (inherits(cnd, "error")) {
+                attr(res, "error") <- c(attr(res, "error"),
+                                        list(cnd))
+              }
+              if (inherits(cnd, "warning")) {
+                attr(res, "warning") <- c(attr(res, "warning"),
+                                          list(cnd))
+              }
+              if (inherits(cnd, "message")) {
+                attr(res, "message") <- c(attr(res, "message"),
+                                          list(cnd))
+              }
+            }
+          }
 
           res
         })
@@ -745,6 +879,9 @@ util_evaluate_calls <-
     attr(r, "study_data_dimnames") <- dimnames(study_data)
     attr(r, "cn") <- attr(all_calls, "cn")
     attr(r, "rn") <- attr(all_calls, "rn")
+    attr(r, "integrity_issues_before_pipeline") <- conds
+
+    attr(r, "dt_adjust") <- dt_adjust
 
     # class is to be compatible with Square2 -----
 

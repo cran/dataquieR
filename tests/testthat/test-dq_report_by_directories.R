@@ -1,5 +1,8 @@
 test_that("dq_report_by works with input and output dir", {
-  skip_if_not_installed("withr")
+  skip_if_not_installed("DT")
+  skip_if_not_installed("markdown")
+  skip_if_not_installed("stringdist")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -9,7 +12,7 @@ test_that("dq_report_by works with input and output dir", {
   target <- withr::local_tempdir("testdqareportby_v2")
   target <- gsub('\\\\','/', target)
   sd1 <- head(
-    prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData"),
+    prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE),
     n = 10)
 
   library(rio)
@@ -23,7 +26,7 @@ test_that("dq_report_by works with input and output dir", {
 
   target1 <- file.path(target, "test01")
 
-  expect_message(dq_report_by(study_data = "data_origin.RData",
+  expect_message2(dq_report_by(study_data = "data_origin.RData",
                               input_dir = target,
                               dimensions = "int",
                               cores = NULL,

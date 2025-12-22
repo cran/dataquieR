@@ -11,7 +11,7 @@
 #'
 #' @family html
 #' @concept reporting
-#' @keywords internal
+#' @noRd
 util_get_hovertext <- function(x) {
   f <- system.file(paste0("hovertext", ".rds"), package = "dataquieR")
   if (exists(f, .concept_chache, mode = "list")) {

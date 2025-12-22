@@ -29,3 +29,6 @@ checks \code{it} times, the majority of the detected datatype determines the
 guessed data type.
 }
 
+\seealso{
+\code{\link[=prep_datatype_from_data]{prep_datatype_from_data()}}
+}

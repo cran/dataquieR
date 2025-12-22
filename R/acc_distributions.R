@@ -196,8 +196,14 @@ acc_distributions <- function(resp_vars = NULL,
 
   # Which variables are of type 'datetime'?
   is_datetime_var <- vapply(resp_vars, function(rv) {
-    meta_data[["DATA_TYPE"]][meta_data[[label_col]] == rv] ==
-      DATA_TYPES$DATETIME
+    meta_data[["DATA_TYPE"]][meta_data[[label_col]] == rv] %in%
+      c(DATA_TYPES$DATETIME)
+  }, FUN.VALUE = logical(1))
+
+  # Which variables are of type 'time'?
+  is_time_var <- vapply(resp_vars, function(rv) {
+    meta_data[["DATA_TYPE"]][meta_data[[label_col]] == rv] %in%
+      c(DATA_TYPES$TIME)
   }, FUN.VALUE = logical(1))
 
   # data quality indicator checks ----------------------------------------------
@@ -349,29 +355,22 @@ acc_distributions <- function(resp_vars = NULL,
 
     if (plot_histogram) {
       # histogram --------------------------------------------------------------
-      # compute bin breaks
-      bin_breaks <- suppressMessages(util_optimize_histogram_bins(
-        x = ds1[[rv]],
-        nbins_max = 100
-      ))
-      breaks_x <- bin_breaks[[1]]
+      .dt <- ds1[, rv, drop = FALSE]
+      rv_datetime <- is_datetime_var[rv]
+      rv_time <- is_time_var[rv]
+      p <- util_create_lean_ggplot(
+        util_histogram(plot_data = .dt,
+                       is_datetime = rv_datetime,
+                       is_time = rv_time) +
+          xlab(lb),
+        .dt = .dt,
+        rv_datetime = rv_datetime,
+        lb = lb,
+        rv_time = rv_time
+      )
 
-      # plot histogram
-      p <- ggplot(data = ds1[, rv, drop = FALSE], aes(x = .data[[rv]])) +
-        geom_histogram(breaks = breaks_x,
-                       fill = col_bars,
-                       color = col_bars)
-
-      if (!is_datetime_var[[rv]]) {
-        p <- p + scale_x_continuous(expand = expansion(mult = 0.1),
-                                    name = lb)
-      } else {
-        p <- p + ggplot2::scale_x_datetime(expand = expansion(mult = 0.1),
-                                           name = lb)
-      }
-
-      obj1<- ggplot2::ggplot_build(p)
-      no_char_y <- max(nchar(obj1$data[[1]]$ymax))
+      obj1 <- ggplot2::ggplot_build(p)
+      no_char_y <- max(nchar(util_gg_get(obj1, "data")[[1]]$ymax))
       no_char_x <- 4
 
     } else {
@@ -396,10 +395,10 @@ acc_distributions <- function(resp_vars = NULL,
                          fill_var = "col",
                          colors = unique(plot_data[, "col"]),
                          relative = FALSE, show_numbers = FALSE, flip = FALSE)
-      p <- p + xlab(lb)
+      p <- p %lean+% util_create_lean_ggplot(xlab(lb), lb = lb)
 
-      obj1<- ggplot2::ggplot_build(p)
-      no_char_y <- max(nchar(obj1$data[[1]]$ymax))
+      obj1 <- ggplot2::ggplot_build(p)
+      no_char_y <- max(nchar(util_gg_get(obj1, "data")[[1]]$ymax))
       no_char_x <- max(nchar(lvls))
     }
 
@@ -411,17 +410,21 @@ acc_distributions <- function(resp_vars = NULL,
         ll <- rvs_meta$Range[[rv]][["low"]]
         ll <- ifelse(is.infinite(ll), NA, ll)
         if (!is.na(ll)) {
-          p <- p + geom_vline(xintercept = ll,
+          p <- p %lean+% util_create_lean_ggplot(geom_vline(xintercept = ll,
                               linetype = 2,
-                              col = blue_red[1])
+                              col = blue_red[1]),
+                              ll = ll,
+                              blue_red = blue_red)
         }
         # upper limit
         ul <- rvs_meta$Range[[rv]][["upp"]]
         ul <- ifelse(is.infinite(ul), NA, ul)
         if (!is.na(ul)) {
-          p <- p + geom_vline(xintercept = ul,
+          p <- p %lean+% util_create_lean_ggplot(geom_vline(xintercept = ul,
                               linetype = 2,
-                              col = blue_red[1])
+                              col = blue_red[1]),
+                              blue_red = blue_red,
+                              ul = ul)
         }
         # add mean or median as line
         loc_val <- dq_check_list[[rv]][["values_from_data"]]
@@ -432,53 +435,92 @@ acc_distributions <- function(resp_vars = NULL,
           } else {
             loc_col <- blue_red[2]
           }
-          p <- p + geom_vline(xintercept = loc_val,
-                              col = loc_col)
+          p <- p %lean+% util_create_lean_ggplot(geom_vline(xintercept = loc_val,
+                              col = loc_col),
+                              loc_col = loc_col,
+                              loc_val = loc_val)
         }
       }
       # proportions
       if (dq_param == "proportion" & rv %in% rvs_with_meta) {
         # add lines for each category (if available)
-        for (pp in seq_along(rvs_meta$Range[[rv]])) {
-          if (inherits(rvs_meta$Range[[rv]][[pp]], "interval")) {
-            if (is.factor(ds1[[rv]])) {
-              pp_num <- pp
+        # Create a list of small data frames, one per interval category
+        x1 <- NULL # to
+        x2 <- NULL # make
+        y1 <- NULL # R CMD check
+        y2 <- NULL # happy
+        segments_list <- lapply(
+          seq_along(rvs_meta$Range[[rv]]),
+          function(pp) {
+            interval_pp <- rvs_meta$Range[[rv]][[pp]]
+            if (!inherits(interval_pp, "interval")) return(NULL)
+
+            # Determine numeric position for this category
+            pp_num <- if (is.factor(ds1[[rv]])) {
+              pp
             } else {
-              pp_num <- as.numeric(names(rvs_meta$Range[[rv]])[pp])
+              as.numeric(names(rvs_meta$Range[[rv]])[pp])
             }
-            # lower limit
-            ll <- rvs_meta$Range[[rv]][[pp]][["low"]]
-            ll <- ifelse(is.infinite(ll), NA, ll)
-            if (!is.na(ll)) {
-              pp_coord <- data.frame(x1 = pp_num - 0.5,
-                                     x2 = pp_num + 0.5,
-                                     y1 = ll / 100 * nrow(ds1),
-                                     y2 = ll / 100 * nrow(ds1))
-              p <- p + geom_segment(aes(x = .data[["x1"]],
-                                        xend = .data[["x2"]],
-                                        y = .data[["y1"]],
-                                        yend = .data[["y2"]]),
-                                    data = pp_coord,
-                                    linetype = 2,
-                                    col = blue_red[1])
+
+            # Collect lower and upper limit frames
+            out <- list()
+
+            ll <- interval_pp[["low"]]
+            if (!is.infinite(ll) && !is.na(ll)) {
+              out[[length(out) + 1]] <- data.frame(
+                x1 = pp_num - 0.5,
+                x2 = pp_num + 0.5,
+                y1 = ll  / 100 * nrow(ds1),
+                y2 = ll  / 100 * nrow(ds1)
+              )
             }
-            # upper limit
-            ul <- rvs_meta$Range[[rv]][[pp]][["upp"]]
-            ul <- ifelse(is.infinite(ul), NA, ul)
-            if (!is.na(ul)) {
-              pp_coord <- data.frame(x1 = pp_num - 0.5,
-                                     x2 = pp_num + 0.5,
-                                     y1 = ul / 100 * nrow(ds1),
-                                     y2 = ul / 100 * nrow(ds1))
-              p <- p + geom_segment(aes(x = .data[["x1"]],
-                                        xend = .data[["x2"]],
-                                        y = .data[["y1"]],
-                                        yend = .data[["y2"]]),
-                                    data = pp_coord,
-                                    linetype = 2,
-                                    col = blue_red[1])
+
+            ul <- interval_pp[["upp"]]
+            if (!is.infinite(ul) && !is.na(ul)) {
+              out[[length(out) + 1]] <- data.frame(
+                x1 = pp_num - 0.5,
+                x2 = pp_num + 0.5,
+                y1 = ul  / 100 * nrow(ds1),
+                y2 = ul  / 100 * nrow(ds1)
+              )
             }
+
+            # Return a single data frame or NULL if nothing to draw
+            if (length(out) == 0) return(NULL)
+            util_rbind(data_frames_list = out)
           }
+        )
+
+        # Remove NULL entries and combine into one data frame
+        segments_list <- Filter(Negate(is.null), segments_list)
+        all_segments  <- if (length(segments_list) > 0) {
+          util_rbind(data_frames_list = segments_list)
+        } else {
+          NULL
+        }
+
+        # If we have any segment data, add them in one lean call
+        if (!is.null(all_segments)) {
+          p <- p %lean+% util_create_lean_ggplot(
+            {
+              # Add all segments in one geom_segment layer
+              geom_segment(
+                aes(
+                  x    = x1,
+                  xend = x2,
+                  y    = y1,
+                  yend = y2
+                ),
+                data     = all_segments,
+                linetype = 2,
+                col      = blue_red[1]
+              )
+            },
+            all_segments = all_segments,
+            aes          = ggplot2::aes,
+            blue_red = blue_red,
+            geom_segment = ggplot2::geom_segment
+          )
         }
       }
     }
@@ -486,11 +528,10 @@ acc_distributions <- function(resp_vars = NULL,
     fli <- util_coord_flip(p = p, ref_env = ref_env)
     is_flipped <- inherits(fli, "CoordFlip")
 
-    p <- p +
-      fli +
+    p <- util_lazy_add_coord(p, fli) %lean+%
       # TODO: estimate w and h, if p is not using discrete axes
-      ylab("") +
-      theme_minimal() +
+      ylab("") %lean+%
+      theme_minimal() %lean+%
       theme(
         title = txtspec,
         axis.text.x = txtspec,
@@ -523,15 +564,17 @@ acc_distributions <- function(resp_vars = NULL,
     if (!is.null(plot_list[[resp_vars]])) {
       obj1 <- ggplot2::ggplot_build(plot_list[[resp_vars]])
       #in case of ecdf
-      if (length(obj1$layout$facet_params$.possible_columns) == 2) {
+      if (length(util_gg_get(obj1, "layout")$facet_params$.possible_columns) == 2) {
         min_bar_height <- 0
         max_bar_height <- 0
         range_bar <- 400 #an intermediate size plot in height
       } else {
         # in case of a single ditribution plot
-        min_bar_height <- min(util_rbind(data_frames_list = obj1$data)$ymax,
+        min_bar_height <- min(util_rbind(data_frames_list =
+                                           util_gg_get(obj1, "data"))$ymax,
                               na.rm = TRUE)
-        max_bar_height <- max(util_rbind(data_frames_list = obj1$data)$ymax,
+        max_bar_height <- max(util_rbind(data_frames_list =
+                                           util_gg_get(obj1, "data"))$ymax,
                               na.rm = TRUE)
         range_bar <- max_bar_height - min_bar_height
 
@@ -543,17 +586,19 @@ acc_distributions <- function(resp_vars = NULL,
         }
       }
 
-      rotated <- unique(util_rbind(data_frames_list = obj1$data)$flipped_aes)
+      rotated <- unique(util_rbind(data_frames_list =
+                                     util_gg_get(obj1, "data"))$flipped_aes)
       rotated <-  rotated[!is.na(rotated)]
       if (inherits(ds1[[resp_vars]], "POSIXct")) {
         number_of_bars <- 10
       } else {
-        #    number_of_bars <- nrow(util_rbind(data_frames_list = obj1$data))
+        #    number_of_bars <- nrow(util_rbind(data_frames_list =
+        # util_gg_get(obj1, "data")$data))
         #fix number in case of acc_distrib_prop o loc
         #    if (check_param == "proportion" || check_param == "location") {
         #      number_of_bars <- nrow(obj1$data[[1]])
         #    }
-        number_of_bars <- nrow(obj1$data[[1]])
+        number_of_bars <- nrow(util_gg_get(obj1, "data")[[1]])
 
         # fix number in case there are categories not listed in the obj1,
         # example OBS_BP_0 in ship example data
@@ -714,6 +759,14 @@ acc_distributions_only <- function(resp_vars = NULL,
                intrinsic_applicability_problem = TRUE)
   }
 
+  scl_lvl <- meta_data[[SCALE_LEVEL]][meta_data[[label_col]] == resp_vars]
+  if (.called_in_pipeline && scl_lvl %in% c(SCALE_LEVELS$NOMINAL, SCALE_LEVELS$ORDINAL)) {
+    util_error("%s is already in a distribution plot (cat.) figure",
+               dQuote(resp_vars),
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = TRUE)
+  }
+
   acc_distributions(
     resp_vars = resp_vars, study_data = study_data,
     meta_data = meta_data, label_col = label_col,
@@ -724,10 +777,10 @@ acc_distributions_only <- function(resp_vars = NULL,
 
 #' @family plotly_shims
 #' @concept plotly_shims
-#' @keywords internal
+#' @noRd
 util_as_plotly_acc_distributions <- function(res, ...) {
   if (length(res$SummaryPlotList) != 1) {
-    return(plotly::ggplotly(ggplot2::ggplot() +
+    return(util_ggplotly(ggplot2::ggplot() +
                               ggplot2::annotate("text", x = 0, y = 0,
                                                 label =
   sprintf(paste("Internal error: I should  have exactly 1 result, if",
@@ -756,6 +809,6 @@ util_as_plotly_acc_distributions <- function(res, ...) {
 
   res$SummaryPlot <- res$SummaryPlotList[[1]]
 
-  py <- plotly::ggplotly(res$SummaryPlot, ...)
+  py <- util_ggplotly(res$SummaryPlot, ...)
   plotly::layout(py, xaxis = list(tickangle = "auto"))
 }

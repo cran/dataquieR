@@ -1,13 +1,13 @@
 test_that("acc_margins works without label_col", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -57,7 +57,7 @@ test_that("acc_margins works without label_col", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "SEX_0",
                 label_col = LABEL),
@@ -67,13 +67,19 @@ test_that("acc_margins works without label_col", {
     perl = TRUE
   )
 
-  expect_message( # float
+  expect_message2( # float
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 label_col = LABEL)
   )
 
-  expect_message( # float
+  expect_message2( # float util_margins_lm
+    acc_margins(resp_vars = "CRP_0", study_data = study_data,
+                meta_data = meta_data, group_vars = "DEV_NO_0",
+                label_col = LABEL, threshold_type = "none")
+  )
+
+  expect_message2( # float
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
                 threshold_value = data.frame(l = letters, L = LETTERS),
@@ -90,14 +96,20 @@ test_that("acc_margins works without label_col", {
   # test function for different scale levels, with and without sorting
   # 1. nominal (dichotomized or not)
   md$SCALE_LEVEL[md$LABEL == "MEAT_CONS_0"] <- SCALE_LEVELS$NOMINAL
-  expect_message(
+  expect_message2( #util_margins_bin
     res2 <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
                         meta_data = md, group_vars = "CENTER_0",
                         label_col = LABEL, dichotomize_categorical_resp = TRUE)
   )
   expect_false(
     inherits(try(ggplot_build(res2$SummaryPlot)), "try-error"))
-  expect_message(
+  expect_message2(  #util_margins_bin
+    res2_new <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
+                        meta_data = md, group_vars = "CENTER_0",
+                        label_col = LABEL, dichotomize_categorical_resp = TRUE,
+                        threshold_type = "none")
+  )
+  expect_message2(
     res2b <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
                          meta_data = md, group_vars = "CENTER_0",
                          label_col = LABEL, dichotomize_categorical_resp = TRUE,
@@ -106,6 +118,13 @@ test_that("acc_margins works without label_col", {
   expect_false(
     inherits(try(ggplot_build(res2b$SummaryPlot)), "try-error"))
 
+  #util_margins_bin binary
+  expect_message2(
+    res2b_bin <- acc_margins(resp_vars = "PREGNANT_0", study_data = study_data,
+                         meta_data = md, group_vars = "USR_SOCDEM_0",
+                         label_col = LABEL)
+  )
+
   # should also work if some levels of the grouping variable did detect only
   # a single category
   sd1 <- study_data
@@ -113,7 +132,7 @@ test_that("acc_margins works without label_col", {
       md$VAR_NAMES[md$LABEL == "MEAT_CONS_0"]] <- 0
   sd1[which(sd1[, md$VAR_NAMES[md$LABEL == "CENTER_0"]] == 4),
       md$VAR_NAMES[md$LABEL == "MEAT_CONS_0"]] <- 1
-  expect_message(
+  expect_message2( #util_margins_bin
     res2c <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = sd1,
                          meta_data = md, group_vars = "CENTER_0",
                          label_col = LABEL, dichotomize_categorical_resp = TRUE)
@@ -122,7 +141,7 @@ test_that("acc_margins works without label_col", {
     inherits(try(ggplot_build(res2c$SummaryPlot)), "try-error"))
 
   # variant if the response variable is not being dichotomized
-  res2d <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
+  res2d <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,  #util_margins_nom
                        meta_data = md, group_vars = "CENTER_0",
                        label_col = LABEL, dichotomize_categorical_resp = FALSE)
   expect_false(
@@ -136,7 +155,7 @@ test_that("acc_margins works without label_col", {
 
   # 2. ordinal (linear model or ordinal regression)
   md$SCALE_LEVEL[md$LABEL == "MEAT_CONS_0"] <- SCALE_LEVELS$ORDINAL
-  expect_message(
+  expect_message2( #util_margins_lm
     res3 <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
                         meta_data = md, group_vars = "CENTER_0",
                         label_col = LABEL, sort_group_var_levels = TRUE,
@@ -144,7 +163,7 @@ test_that("acc_margins works without label_col", {
   )
   expect_false(
     inherits(try(ggplot_build(res3$SummaryPlot)), "try-error"))
-  expect_message(
+  expect_message2( #util_margins_lm
     res3b <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
                          meta_data = md, group_vars = "CENTER_0",
                          label_col = LABEL, sort_group_var_levels = FALSE,
@@ -154,14 +173,16 @@ test_that("acc_margins works without label_col", {
   expect_false(
     inherits(try(ggplot_build(res3b$SummaryPlot)), "try-error"))
 
-  expect_message(
+  skip_if_not_installed("ordinal")
+
+  expect_message2( #util_margins_ord
     res3c <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
                          meta_data = md, group_vars = "CENTER_0",
                          label_col = LABEL, cut_off_linear_model_for_ord = NULL)
   )
   expect_false(
     inherits(try(ggplot_build(res3c$SummaryPlot)), "try-error"))
-  expect_message(
+  expect_message2( #util_margins_ord
     res3d <- acc_margins(resp_vars = "MEAT_CONS_0", study_data = study_data,
                          meta_data = md, group_vars = "CENTER_0",
                          label_col = LABEL, cut_off_linear_model_for_ord = NULL,
@@ -172,7 +193,7 @@ test_that("acc_margins works without label_col", {
 
   # 3. Poisson model
   md$SCALE_LEVEL[md$LABEL == "N_INJURIES_0"] <- SCALE_LEVELS$INTERVAL
-  expect_message(
+  expect_message2( #util_margins_poi
     res4 <- acc_margins(resp_vars = "N_INJURIES_0", study_data = study_data,
                         meta_data = md, group_vars = "USR_SOCDEM_0",
                         label_col = LABEL, sort_group_var_levels = TRUE,
@@ -180,7 +201,7 @@ test_that("acc_margins works without label_col", {
   )
   expect_false(
     inherits(try(ggplot_build(res4$SummaryPlot)), "try-error"))
-  expect_message(
+  expect_message2( #util_margins_poi
     res4b <- acc_margins(resp_vars = "N_INJURIES_0", study_data = study_data,
                          meta_data = md, group_vars = "USR_SOCDEM_0",
                          label_col = LABEL, sort_group_var_levels = FALSE,
@@ -188,6 +209,14 @@ test_that("acc_margins works without label_col", {
   )
   expect_false(
     inherits(try(ggplot_build(res4b$SummaryPlot)), "try-error"))
+
+  expect_message2( #util_margins_poi
+    res4b_new <- acc_margins(resp_vars = "N_INJURIES_0", study_data = study_data,
+                         meta_data = md, group_vars = "USR_SOCDEM_0",
+                         label_col = LABEL, sort_group_var_levels = FALSE,
+                         include_numbers_in_figures = TRUE,
+                         threshold_type = "none")
+  )
 
   expect_error(
     res1 <-
@@ -197,7 +226,7 @@ test_that("acc_margins works without label_col", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_margins(resp_vars = "v00014", study_data = study_data,
                   meta_data = meta_data, group_vars = "v00016",
@@ -208,7 +237,7 @@ test_that("acc_margins works without label_col", {
             "and is set to 5 instead.")
   )
 
-  expect_message(
+  expect_message2(
       res1 <-
         acc_margins(resp_vars = "v00014", study_data = study_data,
                   meta_data = meta_data, group_vars = "v00016"),
@@ -241,19 +270,19 @@ test_that("acc_margins works without label_col", {
       na.rm = TRUE))), 0
   )
 
-  expect_identical(colnames(res1$SummaryTable), c("Variables", "FLG_acc_ud_loc", "PCT_acc_ud_loc"))
+  expect_identical(colnames(res1$SummaryTable), c("Variables"))
 })
 
 test_that("acc_margins works with label_col", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -284,7 +313,7 @@ suppressWarnings(expect_error(
   perl = TRUE
 ))
 
-expect_message(
+expect_message2(
   res1 <-
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -305,7 +334,7 @@ expect_message(
   perl = TRUE
 )
 
-expect_message(
+expect_message2(
   res1 <-
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -323,7 +352,7 @@ expect_message(
   perl = TRUE
 )
 
-expect_message(
+expect_message2(
   res1 <-
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -342,7 +371,7 @@ expect_message(
   perl = TRUE
 )
 
-expect_message(
+expect_message2(
   res1 <-
     acc_margins(resp_vars = "CRP_0", study_data = study_data,
                 meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -359,7 +388,7 @@ expect_message(
   perl = TRUE
 )
 
-expect_message(
+expect_message2(
     res1 <-
       acc_margins(resp_vars = "CRP_0", study_data = study_data,
                   meta_data = meta_data, group_vars = "DEV_NO_0",
@@ -386,7 +415,7 @@ expect_message(
       na.rm = TRUE))), 0
   )
 
-  expect_identical(colnames(res1$SummaryTable), c("Variables", "FLG_acc_ud_loc", "PCT_acc_ud_loc"))
+  expect_identical(colnames(res1$SummaryTable), c("Variables"))
 
   skip_on_cran()
   skip_if_not_installed("vdiffr")
@@ -402,14 +431,14 @@ expect_message(
 
 test_that("acc_margins works with co_vars", {
   skip_on_cran() # slow
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
                        dataquieR.WARNINGS_WITH_CALLER = TRUE,
                        dataquieR.MESSAGES_WITH_CALLER = TRUE)
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -680,6 +709,7 @@ test_that("acc_margins works with co_vars", {
   # TODO
   md1 <- meta_data
   md1$SCALE_LEVEL[md1$LABEL == "MEAT_CONS_0"] <- SCALE_LEVELS$ORDINAL
+  skip_if_not_installed("ordinal")
   expect_error(
     res8_ord <- acc_margins(resp_vars = "MEAT_CONS_0",
                             group_vars = "CENTER_0",

@@ -2,7 +2,7 @@ test_that("acc_end_digits works with 2 args", {
   skip_on_cran() # slow, errors obvious
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -12,7 +12,7 @@ test_that("acc_end_digits works with 2 args", {
     regexp = "Argument resp_vars is NULL",
     perl = TRUE
   )
-  expect_message(
+  expect_message2(
     res1 <-
       acc_end_digits(resp_vars = "v00014", study_data = study_data,
                      meta_data = meta_data),
@@ -45,11 +45,11 @@ test_that("acc_end_digits works with label_col", {
   skip_on_cran() # slow, errors obvious
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
-  expect_message(
+  expect_message2(
     res1 <-
       acc_end_digits(resp_vars = "CRP_0", study_data = study_data,
                      meta_data = meta_data, label_col = LABEL),
@@ -83,11 +83,11 @@ test_that("acc_end_digits works image check", {
   # TODO: skip_if_not(capabilities()["long.double"])
   skip_if_not_installed("vdiffr")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
-  expect_message(
+  expect_message2(
     res1 <-
       acc_end_digits(resp_vars = "CRP_0",
                      study_data = study_data, meta_data = meta_data,
@@ -109,7 +109,7 @@ test_that("acc_end_digits is robust", {
   skip_on_cran() # slow, errors obvious
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)

@@ -4,7 +4,7 @@
 #'
 #' @return [list] with all properties
 #'
-#' @keywords internal
+#' @noRd
 util_init_respum_tab <- function(x) {
   my_cols <- c("#7f0000", "#b30000", "#d7301f", "#ef6548", "#fc8d59",
                "#fdbb84", "#fdd49e", "#fee8c8", "#2166AC")

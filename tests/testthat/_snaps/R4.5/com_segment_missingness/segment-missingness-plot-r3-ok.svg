@@ -18,6 +18,7 @@
   </clipPath>
 </defs>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+<rect x='0.00' y='0.00' width='720.00' height='576.00' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
 </g>
 <defs>
   <clipPath id='cpMTI0LjI1fDYyNy43N3wyMi43OHw1MzAuNzY='>
@@ -42,16 +43,16 @@
 <rect x='376.01' y='225.97' width='228.87' height='101.60' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
 <rect x='376.01' y='327.57' width='228.87' height='101.60' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #D7301F;' />
 <rect x='376.01' y='429.16' width='228.87' height='101.60' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
-<text x='261.57' y='77.38' text-anchor='middle' style='font-size: 11.04px; font-family: sans;' textLength='19.02px' lengthAdjust='spacingAndGlyphs'>0 %</text>
-<text x='261.57' y='178.97' text-anchor='middle' style='font-size: 11.04px; font-family: sans;' textLength='34.37px' lengthAdjust='spacingAndGlyphs'>5.95 %</text>
-<text x='261.57' y='280.57' text-anchor='middle' style='font-size: 11.04px; font-family: sans;' textLength='34.37px' lengthAdjust='spacingAndGlyphs'>3.65 %</text>
-<text x='261.57' y='382.17' text-anchor='middle' style='font-size: 11.04px; font-family: sans;' textLength='40.51px' lengthAdjust='spacingAndGlyphs'>12.52 %</text>
-<text x='261.57' y='483.76' text-anchor='middle' style='font-size: 11.04px; font-family: sans;' textLength='19.02px' lengthAdjust='spacingAndGlyphs'>0 %</text>
-<text x='490.44' y='77.38' text-anchor='middle' style='font-size: 11.04px; font-family: sans;' textLength='19.02px' lengthAdjust='spacingAndGlyphs'>0 %</text>
-<text x='490.44' y='178.97' text-anchor='middle' style='font-size: 11.04px; font-family: sans;' textLength='34.37px' lengthAdjust='spacingAndGlyphs'>4.92 %</text>
-<text x='490.44' y='280.57' text-anchor='middle' style='font-size: 11.04px; font-family: sans;' textLength='34.37px' lengthAdjust='spacingAndGlyphs'>4.04 %</text>
-<text x='490.44' y='382.17' text-anchor='middle' style='font-size: 11.04px; font-family: sans;' textLength='40.51px' lengthAdjust='spacingAndGlyphs'>10.18 %</text>
-<text x='490.44' y='483.76' text-anchor='middle' style='font-size: 11.04px; font-family: sans;' textLength='19.02px' lengthAdjust='spacingAndGlyphs'>0 %</text>
+<text x='261.57' y='77.37' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='18.96px' lengthAdjust='spacingAndGlyphs'>0 %</text>
+<text x='261.57' y='178.96' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='34.25px' lengthAdjust='spacingAndGlyphs'>5.95 %</text>
+<text x='261.57' y='280.56' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='34.25px' lengthAdjust='spacingAndGlyphs'>3.65 %</text>
+<text x='261.57' y='382.15' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='40.37px' lengthAdjust='spacingAndGlyphs'>12.52 %</text>
+<text x='261.57' y='483.75' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='18.96px' lengthAdjust='spacingAndGlyphs'>0 %</text>
+<text x='490.44' y='77.37' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='18.96px' lengthAdjust='spacingAndGlyphs'>0 %</text>
+<text x='490.44' y='178.96' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='34.25px' lengthAdjust='spacingAndGlyphs'>4.92 %</text>
+<text x='490.44' y='280.56' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='34.25px' lengthAdjust='spacingAndGlyphs'>4.04 %</text>
+<text x='490.44' y='382.15' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='40.37px' lengthAdjust='spacingAndGlyphs'>10.18 %</text>
+<text x='490.44' y='483.75' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='18.96px' lengthAdjust='spacingAndGlyphs'>0 %</text>
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
 <text x='119.32' y='482.99' text-anchor='end' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='101.24px' lengthAdjust='spacingAndGlyphs'>PART_QUESTIONNAIRE</text>

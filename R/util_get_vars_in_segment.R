@@ -9,7 +9,7 @@
 #'
 #' @family metadata_management
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 
 
 util_get_vars_in_segment <- function(segment, meta_data = "item_level",

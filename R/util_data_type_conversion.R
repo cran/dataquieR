@@ -8,8 +8,18 @@
 #'
 #' @return the transformed values (if possible)
 #'
-#' @keywords internal
+#' @noRd
 util_data_type_conversion <- function(x, type) {
+  if (is.factor(x)) {
+    if (isTRUE(as.logical(getOption("dataquieR.old_factor_handling",
+                                    dataquieR.old_factor_handling_default)))) {
+      # This is for backwards compatibility, but it may be more user friendly to
+      # omit this in both adjust_data_type functions
+      # noop
+    } else {
+      x <- as.character(x)
+    }
+  }
   # look-up list about how to convert
   converts <- setNames(
     list(
@@ -23,13 +33,15 @@ util_data_type_conversion <- function(x, type) {
       # as.integer may fail for too large integer numbers
       as.numeric,
       as.character,
-      lubridate::as_datetime
+      util_parse_date,
+      util_as_time_only
     ),
     nm = c(
       DATA_TYPES$INTEGER,
       DATA_TYPES$FLOAT,
       DATA_TYPES$STRING,
-      DATA_TYPES$DATETIME
+      DATA_TYPES$DATETIME,
+      DATA_TYPES$TIME
     )
   )
 

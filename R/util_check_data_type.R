@@ -13,6 +13,7 @@
 #' @param check_conversion_stable [logical] do not distinguish convertible
 #'                                          from convertible, but with issues
 #' @param robust_na [logical] treat white-space-only-values as `NA`
+#' @param vname [character] variable name being checked -- for error messages.
 #'
 #' @return if `return_percentages`: if not `check_convertible`, the percentage
 #'                                of mismatches instead of logical value,
@@ -35,11 +36,12 @@
 #'
 #' @family data_management
 #' @concept data_management
-#' @keywords internal
+#' @noRd
 util_check_data_type <- function(x, type, check_convertible = FALSE,
                                  threshold_value = 0, return_percentages =
                                    FALSE, check_conversion_stable = FALSE,
-                                 robust_na = FALSE) {
+                                 robust_na = FALSE,
+                                 vname = "data") {
   # FIXME: SLOW!!
   hash_id <-
     rlang::hash(list(x,
@@ -54,6 +56,22 @@ util_check_data_type <- function(x, type, check_convertible = FALSE,
   if (exists(hash_id, .cache[[".cache"]])) {
     return(get(hash_id, .cache[[".cache"]]))
   }
+  if (is.list(x) &&
+      any(not_1 <- vapply(x, length, FUN.VALUE = integer(1)) != 1)) {
+    varname <- NULL
+    if (!missing(vname)) {
+      varname <- vname
+      vname <- dQuote(vname)
+    }
+    util_message(
+      "Found %d inconsistent data values in %s (length <> 1). Removed.",
+      sum(not_1),
+      vname,
+      integrity_indicator = "int_vfe_inhom",
+      varname = varname
+      )
+    x[not_1] <- NA
+  }
   if (robust_na) {
     empty <- util_empty
   } else {
@@ -64,13 +82,15 @@ util_check_data_type <- function(x, type, check_convertible = FALSE,
       util_is_integer,
       is.numeric,
       is.character,
-      lubridate::is.timepoint
+      lubridate::is.timepoint,
+      util_is_time_only
     ),
     nm = c(
       DATA_TYPES$INTEGER,
       DATA_TYPES$FLOAT,
       DATA_TYPES$STRING,
-      DATA_TYPES$DATETIME
+      DATA_TYPES$DATETIME,
+      DATA_TYPES$TIME
     )
   )
 

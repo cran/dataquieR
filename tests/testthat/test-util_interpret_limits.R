@@ -1,18 +1,18 @@
 test_that("posix offset is 1970-01-01 01:00:00 CET)", {
   skip_on_cran()
-  skip_if_not_installed("withr")
-  withr::local_timezone("CET")
+
+  require_english_locale_and_berlin_tz()
   expect_equal(as.POSIXct(as.numeric(as.POSIXct("1975-12-16 03:46:00 CET")),
                           origin = min(as.POSIXct(Sys.Date()), 0)),
                as.POSIXct("1975-12-16 03:46:00 CET"))
 })
 test_that("util_interpret_limits works", {
-  skip_if_not_installed("withr")
+
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
-  withr::local_timezone("CET")
+  require_english_locale_and_berlin_tz()
   meta <- prep_create_meta(
     VAR_NAMES = 1:26,
     DATA_TYPE = c(rep(DATA_TYPES$INTEGER, 13), rep(DATA_TYPES$FLOAT, 9),
@@ -23,7 +23,7 @@ test_that("util_interpret_limits works", {
   expect_error(util_interpret_limits(meta), regexp =
                  "No column containing the term LIMIT")
   meta[[WELL_KNOWN_META_VARIABLE_NAMES$HARD_LIMITS]] <- NA
-  expect_message(util_interpret_limits(meta), regexp =
+  expect_message2(util_interpret_limits(meta), regexp =
                    "HARD_LIMITS has no defined intervals and is omitted.")
   meta[[WELL_KNOWN_META_VARIABLE_NAMES$HARD_LIMITS]] <- "xx"
   expect_warning(util_interpret_limits(meta), regexp =

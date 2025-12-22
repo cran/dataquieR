@@ -11,10 +11,22 @@ dataquieR_resultset_class2 <- "dataquieR_resultset2"
 #' @param my_storr_object the `storr` object
 #'
 #' @return the namespace name
-#' @keywords internal
+#' @noRd
 util_get_storr_att_namespace <- function(my_storr_object) {
   r <- my_storr_object$default_namespace
   r <- paste0(r, ".attributes")
+  r
+}
+
+#' Get namespace for computation status
+#'
+#' @param my_storr_object the `storr` object
+#'
+#' @return the namespace name
+#' @noRd
+util_get_storr_stat_namespace <- function(my_storr_object) {
+  r <- my_storr_object$default_namespace
+  r <- paste0(r, ".status")
   r
 }
 
@@ -23,7 +35,7 @@ util_get_storr_att_namespace <- function(my_storr_object) {
 #' @param my_storr_object the `storr` object
 #'
 #' @return the namespace name
-#' @keywords internal
+#' @noRd
 util_get_storr_summ_namespace <- function(my_storr_object) {
   r <- my_storr_object$default_namespace
   r <- paste0(r, ".summary")
@@ -38,12 +50,40 @@ util_get_storr_summ_namespace <- function(my_storr_object) {
 #' @return the `dataquieR` result object
 #' @export
 `[[.dataquieR_resultset2` <- function(x, el) {
-
   my_storr_object <- util_get_storr_object_from_report(x)
 
   if (is.null(my_storr_object)) {
     # default
-    return(NextMethod())
+    all_calls <- attr(x, "all_calls")
+
+    r <- NextMethod()
+
+    if (is.raw(r)) {
+      r <- util_decompress(r)
+    }
+
+    r_names <- names(x)
+
+    if (is.numeric(el) && suppressWarnings(as.integer(el) == as.numeric(el)) &&
+        el > 0 && el <= length(r_names)) {
+      slot <- r_names[[el]]
+    } else if (is.character(el)) {
+      slot <- el
+    } else {
+      r <- NULL
+    }
+    if (slot %in% names(all_calls))
+      r <- util_fix_dataquieR_result(r = r,
+                                     slot = slot,
+                                     cl = all_calls[[slot]])
+    if (is.raw(r)) {
+      if (isTRUE(attr(x, "raw"))) { # attr raw is set by .access_dq_rs2, if only storr part of this is needed
+        return(r)
+      }
+      r <- util_decompress(r)
+    }
+
+    return(r)
   }
 
   stopifnot(inherits(my_storr_object, "storr"))
@@ -53,11 +93,61 @@ util_get_storr_summ_namespace <- function(my_storr_object) {
 
   if (is.numeric(el) && suppressWarnings(as.integer(el) == as.numeric(el)) &&
       el > 0 && el <= length(r_names)) {
-    return(my_storr_object$get(r_names[[el]]))
+    slot <- r_names[[el]]
+    r <- NULL
+    if (my_storr_object$exists(slot)) {
+      r <- my_storr_object$get(slot)
+      if (is.raw(r)) {
+        if (isTRUE(attr(x, "raw"))) { # attr raw is set by .access_dq_rs2, if only storr part of this is needed
+          return(r)
+        }
+        r <- util_decompress(r)
+      }
+    }
+    if (!inherits(r, "dataquieR_result")) {
+      all_calls <- attr(x, "all_calls")
+
+      r <- util_fix_dataquieR_result(r = r,
+                                     slot = slot,
+                                     cl = all_calls[[slot]])
+      if (is.raw(r)) {
+        if (isTRUE(attr(x, "raw"))) { # attr raw is set by .access_dq_rs2, if only storr part of this is needed
+          return(r)
+        }
+        r <- util_decompress(r)
+      }
+
+    }
+    return(r)
   } else if (el %in% r_names) {
-    return(my_storr_object$get(el))
+    slot <- el
+    r <- NULL
+    if (my_storr_object$exists(slot)) {
+      r <- my_storr_object$get(slot)
+      if (is.raw(r)) {
+        if (isTRUE(attr(x, "raw"))) { # attr raw is set by .access_dq_rs2, if only storr part of this is needed
+          return(r)
+        }
+        r <- util_decompress(r)
+      }
+    }
+    if (!inherits(r, "dataquieR_result")) {
+      all_calls <- attr(x, "all_calls")
+
+      r <- util_fix_dataquieR_result(r = r,
+                                     slot = slot,
+                                     cl = all_calls[[slot]])
+
+      if (is.raw(r)) {
+        if (isTRUE(attr(x, "raw"))) { # attr raw is set by .access_dq_rs2, if only storr part of this is needed
+          return(r)
+        }
+        r <- util_decompress(r)
+      }
+    }
+    return(r)
   } else {
-    util_error("element not found")
+    return(NULL)
   }
 }
 
@@ -104,6 +194,15 @@ util_get_storr_summ_namespace <- function(my_storr_object) {
 #' @export
 `[[<-.dataquieR_resultset2` <- function(x, el, value) { # TODO: verify class of value
 
+  if (is.null(value)) {
+    value <- list()
+    class(value) <- "dataquieR_NULL"
+  }
+
+  if (is.null(x[[el]])) {
+    util_error("Extending reports is not supported.")
+  }
+
   my_storr_object <- util_get_storr_object_from_report(x)
 
   if (is.null(my_storr_object)) {
@@ -124,7 +223,7 @@ util_get_storr_summ_namespace <- function(my_storr_object) {
     my_storr_object$set(el, value = value)
     return(x)
   } else {
-    util_error("element not found, extending reports not yet supported")
+    util_error("element not found, extending reports not yet supported, sorry")
   }
 }
 
@@ -186,8 +285,18 @@ as.list.dataquieR_resultset2 <- function(x, ...) {
     # default
     return(NextMethod())
   } else {
+    if (!getOption("dataquieR.convert_to_list_for_lapply",
+                  dataquieR.convert_to_list_for_lapply_default) &&
+        identical(rlang::env_parent(rlang::caller_env()),
+                  asNamespace("base")) && # called from base, likely *apply
+        rlang::call_name(rlang::caller_call()) %in% c("lapply",
+                                                      "vapply",
+                                                      "sapply")
+        ) { # no conversion needed, interface already compatible with list()
+      return(x)
+    }
     util_warning("as.list is inefficient for dataquieR_resultset2 objects",
-            immediate. = TRUE)
+            immediate = TRUE)
     # print(rlang::trace_back())
     lapply(x, identity)
   }
@@ -199,29 +308,6 @@ as.list.dataquieR_resultset2 <- function(x, ...) {
 #' @aliases .dataquieR_resultset2
 #' @importFrom methods new
 dataquieR_resultset2 <- methods::setClass("dataquieR_resultset2")
-
-suppressMessages({
-  methods::setMethod('vapply', signature(X="dataquieR_resultset2"),
-            function(X, FUN, FUN.VALUE, ..., USE.NAMES = TRUE) {
-              vapply(setNames(nm = names(X)), function(nm) {
-                FUN(X[[nm]], ...)
-              }, FUN.VALUE = FUN.VALUE, USE.NAMES = USE.NAMES)
-            })
-
-  methods::setMethod('lapply', signature(X="dataquieR_resultset2"),
-            function(X, FUN, ...) {
-              lapply(setNames(nm = names(X)), function(nm) {
-                FUN(X[[nm]], ...)
-              })
-            })
-
-  methods::setMethod('sapply', signature(X="dataquieR_resultset2"),
-            function(X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE) {
-              sapply(setNames(nm = names(X)), function(nm) {
-                FUN(X[[nm]], ...)
-              }, simplify = simplify, USE.NAMES = USE.NAMES)
-            })
-})
 
 #' Change the back-end of a report
 #'
@@ -369,6 +455,8 @@ prep_load_report_from_backend <- function(
 #' @param res the result slot, must be unique
 #' @param drop drop, if length is 1
 #' @param els used, if in list-mode with named argument
+#' @param as_raw retrieve the result maybe as compressed `raw` `util_compress()`
+#'               serialized object
 #'
 #' @return a list with results, depending on `drop` and the number of results,
 #'         the list may contain all requested results in sub-lists. The order
@@ -376,13 +464,13 @@ prep_load_report_from_backend <- function(
 #'
 #' @export
 `[.dataquieR_resultset2` <- function(x, row, col, res, drop = FALSE,
-                                     els = row) {
+                                     els = row, as_raw = FALSE) {
   util_stop_if_not(inherits(x, "dataquieR_resultset2"))
 
   if (identical(rlang::call_args_names(sys.call()), c("", "")) ||
       identical(rlang::call_args_names(sys.call()), c("", "els"))) {
     # list mode
-    return(.access_dq_rs2(x, els))
+    return(.access_dq_rs2(x, els, as_raw = as_raw))
   }
 
   cn <- attr(x, "cn")
@@ -409,7 +497,7 @@ prep_load_report_from_backend <- function(
 
   matches <- row_matches & col_matches
 
-  r <- .access_dq_rs2(x, matches)
+  r <- .access_dq_rs2(x, matches, as_raw = as_raw)
   rcn <- cn[matches]
   rrn <- rn[matches]
   if (!missing(col)) {
@@ -436,7 +524,7 @@ prep_load_report_from_backend <- function(
     want_combine <- FALSE
   }
 
-  if (want_combine) {
+  if (!as_raw && want_combine) {
     r <- r[!vapply(r, function(rs) {
       all(vapply(rs, is.null, FUN.VALUE = logical(1)))
     }, FUN.VALUE = logical(1))]
@@ -479,16 +567,38 @@ prep_load_report_from_backend <- function(
 #'
 #' @param x the `dataquieR_resultset2`
 #' @param els the selector (character, number or logical)
+#' @param as_raw retrieve the result maybe as compressed `raw` `util_compress()`
+#'               serialized object
 #'
 #' @return the sub-list of `x`
-#' @keywords internal
-.access_dq_rs2 <- function(x, els) {
+#' @noRd
+.access_dq_rs2 <- function(x, els, as_raw = FALSE) {
+  my_storr_object <- util_get_storr_object_from_report(x)
+
+  # if (is.null(my_storr_object)) {}
+  # if (is.raw(r)) {
+  #   r <- util_decompress(r)
+  # }
+
+  if (!as_raw) {
+    .classit <- identity
+  } else {
+    if (is.null(my_storr_object)) {
+      .classit <- unclass # THIS WONT WORK, IF STORR_FACTORY HAS BEEN SET
+    } else {
+      .classit <- function(x) {
+        # [[ behaves differently if attr raw is set
+        attr(x, "raw") <- TRUE
+        x
+      }
+    }
+  }
   if (is.character(els)) {
-    lapply(setNames(nm = els), function(el) x[[el]])
+    lapply(setNames(nm = els), function(el) .classit(x)[[el]])
   } else if (is.numeric(els)) {
-    lapply(setNames(nm = names(x)[els]), function(el) x[[el]])
+    lapply(setNames(nm = names(x)[els]), function(el) .classit(x)[[el]])
   } else if (is.logical(els)) {
-    Recall(x, which(els))
+    Recall(x, which(els), as_raw = as_raw)
   } else {
     util_error(
       c("Access to report can use numbers, logical vectors or names as index,",
@@ -505,7 +615,7 @@ prep_load_report_from_backend <- function(
 #' @param value `dataquieR_result` to write
 #'
 #' @return the modified `x`
-#' @keywords internal
+#' @noRd
 `.access_dq_rs2<-` <- function(x, els, value) {
   if (is.logical(els)) {
     els <- which(els)
@@ -526,4 +636,26 @@ prep_load_report_from_backend <- function(
         "but not %s"), util_pretty_vector_string(class(els)))
   }
   return(x)
+}
+
+#' Ensure `dataquieR` result of class `dataquieR_result`
+#'
+#' @param r `object` hopefully of class `dataquieR_result`
+#' @param slot [character] name of the result in the report
+#' @param cl [call] call that should have produced the result
+#'
+#' @returns `r`, if valid, otherwise an error result
+#' @noRd
+util_fix_dataquieR_result <- function(r, slot, cl) {
+  if (!inherits(r, "dataquieR_result")) {
+    r <- util_eval_to_dataquieR_result(init = TRUE,
+                                       quote({util_error(paste("No result available for unkown reasons",
+                                                               "(out of memory? try to reduce the number",
+                                                               "of parallel running jobs using the",
+                                                               "`cores` argument)"))}),
+                                       nm = slot,
+                                       function_name = rlang::call_name(cl),
+                                       my_call = cl)
+  }
+  return(r)
 }

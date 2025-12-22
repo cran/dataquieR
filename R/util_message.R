@@ -14,5 +14,5 @@
 #'
 #' @family condition_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_message <- util_condition_constructor_factory("message")

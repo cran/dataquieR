@@ -314,7 +314,7 @@ acc_shape_or_scale <- function(resp_vars,
   grading_cols <- c("#2166AC", "#B2182B")
   names(grading_cols) <- c("0", "1")
 
-  p1 <- ggplot(df1, aes(x = INTERVALS, y = PROB)) +
+  p1 <- util_create_lean_ggplot(ggplot(df1, aes(x = INTERVALS, y = PROB)) +
     theme_minimal() +
     geom_bar(aes(fill = GRADING), stat = "identity") +
     scale_fill_manual(values = grading_cols, guide = "none") +
@@ -337,13 +337,20 @@ acc_shape_or_scale <- function(resp_vars,
                                  linewidth = 1)
     } + {
       if (end_digits) xlab("End digits")
-    } + scale_color_manual(values = c("#E69F00"), guide = "none")
+    } + scale_color_manual(values = c("#E69F00"), guide = "none"),
+    df1 = df1,
+    grading_cols = grading_cols,
+    end_digits = end_digits,
+    x2 = x2,
+    y_line = y_line,
+    dist = dist,
+    df2 = df2)
 
   p1 <- p1 + theme(legend.position = "none",
                    axis.text.y = element_text(size = 10),
                    axis.text.x = element_text(size = 10)) # also suppresses the legend in the ggplotly figure
   fli <- util_coord_flip(p = p1)
-  p1 <- p1 + fli # TODO: estimate w and h, since p is not using discrete axes
+  p1 <- util_lazy_add_coord(p1, fli) # TODO: estimate w and h, since p is not using discrete axes
   is_flipped <- inherits(fli, "CoordFlip")
   p1 <- util_set_size(p1);
   #Put the old SummaryData table (that was not organized one row per variable)

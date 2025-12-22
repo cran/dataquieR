@@ -1,7 +1,8 @@
 test_that("prep_combine_report_summaries works", {
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_on_cran()
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  skip_if_not_installed("stringdist")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
   sd0 <- study_data[, 1:6]
   sd0$v00012 <- study_data$v00012

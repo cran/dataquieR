@@ -9,11 +9,14 @@ con_limit_deviations(
   study_data,
   label_col,
   item_level = "item_level",
+  meta_data_cross_item = "cross-item_level",
   limits = NULL,
   flip_mode = "noflip",
   return_flagged_study_data = FALSE,
   return_limit_categorical = TRUE,
   meta_data = item_level,
+  cross_item_level,
+  `cross-item_level`,
   meta_data_v2,
   show_obs = TRUE
 )
@@ -28,6 +31,8 @@ with labels of variables}
 
 \item{item_level}{\link{data.frame} the data frame that contains metadata
 attributes of study data}
+
+\item{meta_data_cross_item}{\link{meta_data_cross}}
 
 \item{limits}{\link{enum} HARD_LIMITS | SOFT_LIMITS | DETECTION_LIMITS. what
 limits from metadata to check for}
@@ -49,6 +54,8 @@ for categorical variables}
 
 \item{meta_data}{\link{data.frame} old name for \code{item_level}}
 
+\item{cross_item_level}{\link{data.frame} alias for \code{meta_data_cross_item}}
+
 \item{meta_data_v2}{\link{character} path to workbook like metadata file, see
 \code{\link{prep_load_workbook_like_file}} for details.
 \strong{ALL LOADED DATAFRAMES WILL BE PURGED},
@@ -57,6 +64,8 @@ if you specify \code{meta_data_v2}.}
 
 \item{show_obs}{\link{logical} Should (selected) individual observations be marked
 in the figure for continuous variables?}
+
+\item{`cross-item_level`}{\link{data.frame} alias for \code{meta_data_cross_item}}
 }
 \value{
 a list with:

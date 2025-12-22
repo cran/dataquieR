@@ -14,7 +14,7 @@
 #' - 4 not applicable because of not suitable data type
 #'
 #' @seealso [pro_applicability_matrix]
-#' @keywords internal
+#' @noRd
 
 util_app_ed <- function(x, dta) {
   if ("DECIMALS" %in% names(x)) {

@@ -1,6 +1,6 @@
 test_that("prep_study2meta works", {
   skip_on_cran() # slow, rarely used, since w/o metdata, reports are not really informative
-  skip_if_not_installed("withr")
+  
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
@@ -34,6 +34,8 @@ test_that("prep_study2meta works", {
                           LOCATION_RANGE = NA_character_,
                           LOCATION_METRIC = NA_character_,
                           PROPORTION_RANGE = NA_character_,
+                          UNIVARIATE_OUTLIER_CHECKTYPE = NA_character_,
+                          N_RULES = NA_character_,
                           CO_VARS = NA_character_,
                           LONG_LABEL = colnames(cars),
                           MISSING_LIST = SPLIT_CHAR,
@@ -80,6 +82,8 @@ test_that("prep_study2meta handles tibbles correctly", {
                           LOCATION_RANGE = NA_character_,
                           LOCATION_METRIC = NA_character_,
                           PROPORTION_RANGE = NA_character_,
+                          UNIVARIATE_OUTLIER_CHECKTYPE = NA_character_,
+                          N_RULES = NA_character_,
                           MISSING_LIST = SPLIT_CHAR,
                           JUMP_LIST = NA_character_,
                           stringsAsFactors = FALSE,
@@ -121,6 +125,8 @@ test_that("prep_study2meta handles tibbles correctly", {
                           LOCATION_RANGE = NA_character_,
                           LOCATION_METRIC = NA_character_,
                           PROPORTION_RANGE = NA_character_,
+                          UNIVARIATE_OUTLIER_CHECKTYPE = NA_character_,
+                          N_RULES = NA_character_,
                           MISSING_LIST = SPLIT_CHAR,
                           JUMP_LIST = NA_character_,
                           stringsAsFactors = FALSE,
@@ -132,7 +138,7 @@ test_that("prep_study2meta works on study_data", {
   skip_on_cran() # slow, rarely used, since w/o metdata, reports are not really informative
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   study_data <- study_data[, order(colnames(study_data)), FALSE]
   meta_data <- meta_data[order(meta_data$VAR_NAMES), , FALSE]
   meta_data[meta_data$LABEL %in% c("SBP_0", "DBP_0", "ARM_CIRC_0", "BSG_0"),
@@ -214,6 +220,8 @@ test_that("prep_study2meta works on study_data", {
       LOCATION_RANGE = NA_character_,
       LOCATION_METRIC = NA_character_,
       PROPORTION_RANGE = NA_character_,
+      UNIVARIATE_OUTLIER_CHECKTYPE = NA_character_,
+      N_RULES = NA_character_,
       MISSING_LIST = c(
         SPLIT_CHAR,
         SPLIT_CHAR,

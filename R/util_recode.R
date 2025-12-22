@@ -16,7 +16,7 @@
 #'
 #' @family mapping
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_recode <- function(values, mapping_table, from, to, default = NULL) {
   util_expect_scalar(values,
                      allow_more_than_one = TRUE,

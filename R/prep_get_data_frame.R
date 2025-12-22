@@ -114,6 +114,24 @@ prep_get_data_frame <- function(data_frame_name,
     # nocov end
   }
 
+  # Special case speed-up
+  if ("grading_rulesets" == data_frame_name &&
+      !exists(data_frame_name,
+                 envir = .dataframe_environment(),
+                 mode = "list")) {
+    data_frame_name <- system.file("grading_rulesets.xlsx",
+                                   package = "dataquieR")
+  }
+  # Special case speed-up
+  if ("grading_formats" == data_frame_name &&
+      !exists(data_frame_name,
+              envir = .dataframe_environment(),
+              mode = "list")) {
+    data_frame_name <- system.file("grading_formats.xlsx",
+                                   package = "dataquieR")
+  }
+
+
   # Special case of ship.RDS not present in the package anymore
   if (grepl(sprintf("^ship_meta_v2(\\s*\\%s.*)?$", SPLIT_CHAR), data_frame_name) ) {
     util_stop_if_not(
@@ -210,6 +228,9 @@ prep_get_data_frame <- function(data_frame_name,
   }
 
   if (all(startsWith(
+    data_frame_name,
+    "https://pfau.qihs.uni-greifswald.de/dfg_website_rendered/extdata/fortests/")
+    | startsWith(
     data_frame_name,
     "https://dataquality.qihs.uni-greifswald.de/extdata/"))) {
     # trust our own example files

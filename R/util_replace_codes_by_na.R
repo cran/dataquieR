@@ -16,7 +16,7 @@
 #'
 #' @family missing_functions
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 util_replace_codes_by_NA <- function(study_data, meta_data = "item_level",
                                      split_char = SPLIT_CHAR,
                                      sm_code = NULL) {
@@ -77,8 +77,10 @@ util_replace_codes_by_NA <- function(study_data, meta_data = "item_level",
       if (!lubridate::is.timepoint(l)) {
         return(x)
       }
-      x <- lubridate::force_tz(x)
-      l <- lubridate::force_tz(l)
+      x <- as.POSIXct(round(as.POSIXct(x), units = "secs"))
+      x <- lubridate::with_tz(lubridate::force_tz(x))
+      l <- as.POSIXct(round(as.POSIXct(l), units = "secs"))
+      l <- lubridate::with_tz(lubridate::force_tz(l))
     } else if (lubridate::is.timepoint(l)) {
       return(x)
     }

@@ -16,7 +16,7 @@
 #'
 #' @family process_functions
 #' @concept string
-#' @keywords internal
+#' @noRd
 util_extract_matches <- function(data, pattern) {
   util_expect_scalar(pattern)
   util_expect_scalar(data,

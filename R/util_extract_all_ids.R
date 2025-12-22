@@ -4,7 +4,7 @@
 #'
 #' @return a character vector with valid targets
 #' @family html
-#' @keywords internal
+#' @noRd
 util_extract_all_ids <- function(pages) {
   all_ids <- lapply(lapply(pages, .util_extract_all_ids_from_htmltools), unlist)
   all_ids <- lapply(all_ids, unname)

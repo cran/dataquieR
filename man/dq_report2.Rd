@@ -18,6 +18,8 @@ dq_report2(
   dimensions = c("Completeness", "Consistency"),
   cores = list(mode = "socket", logging = FALSE, cpus = util_detect_cores(),
     load.balancing = TRUE),
+  ignore_empty_vars = getOption("dataquieR.ignore_empty_vars",
+    dataquieR.ignore_empty_vars_default),
   specific_args = list(),
   advanced_options = list(),
   author = prep_get_user_name(),
@@ -39,7 +41,11 @@ dq_report2(
   segment_level,
   dataframe_level,
   item_computation_level,
-  .internal = rlang::env_inherits(rlang::caller_env(), parent.env(environment()))
+  .internal = rlang::env_inherits(rlang::caller_env(), parent.env(environment())),
+  checkpoint_resumed = getOption("dataquieR.resume_checkpoint",
+    dataquieR.resume_checkpoint_default),
+  name_of_study_data,
+  dt_adjust = as.logical(getOption("dataquieR.dt_adjust", dataquieR.dt_adjust_default))
 )
 }
 \arguments{
@@ -82,12 +88,17 @@ Completeness should be included, if Consistency is
 included, and Consistency should be included, if Accuracy
 is included to avoid misleading detections of e.g. missing
 codes as outliers, please refer to the data quality concept
-for more details. Integrity is always included.}
+for more details. Integrity is always included.
+If dimensions is equal to NULL or "all", all dimensions
+will be covered.}
 
 \item{cores}{\link{integer} number of cpu cores to use or a named list with
 arguments for \link[parallelMap:parallelStart]{parallelMap::parallelStart} or NULL,
 if parallel has already been started by the caller.
 Can also be a cluster.}
+
+\item{ignore_empty_vars}{\link{enum} TRUE | FALSE | auto. See
+\link{dataquieR.ignore_empty_vars}.}
 
 \item{specific_args}{\link{list} named list of arguments specifically for one of
 the called functions, the of the list elements
@@ -176,6 +187,22 @@ use it anyways -- unsupported, so far!}
 
 \item{.internal}{\link{logical} internal use, only.}
 
+\item{checkpoint_resumed}{\link{logical} if using a \code{storr_factory} and the back-
+end there is already filled, and if
+\code{amend} is missing or set to \code{TRUE},
+compute all missing result and add them
+to the back-end.}
+
+\item{name_of_study_data}{\link{character} name for study data inside the report,
+internal use.}
+
+\item{dt_adjust}{\link{logical} whether to trust data types in the study data. if
+\code{TRUE}, data types are checked based on the
+metadata and later casted to the declared type.
+if your data source is already typed, this can
+be turned off to speed up computations.
+see \link{dataquieR.dt_adjust}}
+
 \item{`cross-item_level`}{\link{data.frame} alias for \code{meta_data_cross_item}}
 }
 \value{
@@ -188,31 +215,6 @@ Generate a full DQ report, v2
 \details{
 See \link{dq_report_by} for a way to generate stratified or splitted reports
 easily.
-}
-\examples{
-\dontrun{
-prep_load_workbook_like_file("inst/extdata/meta_data_v2.xlsx")
-meta_data <- prep_get_data_frame("item_level")
-meta_data_cross <- prep_get_data_frame("cross-item_level")
-x <- dq_report2("study_data", dimensions = NULL, label_col = "LABEL")
-xx <- pbapply::pblapply(x, util_eval_to_dataquieR_result, env = environment())
-xx <- pbapply::pblapply(tail(x), util_eval_to_dataquieR_result, env = environment())
-xx <- parallel
-cat(vapply(x, deparse1, FUN.VALUE = character(1)), sep = "\n", file = "all_calls.txt")
-rstudioapi::navigateToFile("all_calls.txt")
-eval(x$`acc_multivariate_outlier.Blood pressure checks`)
-
-prep_load_workbook_like_file("meta_data_v2")
-rules <- tibble::tribble(
-  ~resp_vars,  ~RULE,
-  "BMI", '[BODY_WEIGHT_0]/(([BODY_HEIGHT_0]/100)^2)',
-  "R", '[WAIST_CIRC_0]/2/[pi]', # in m^3
-  "VOL_EST", '[pi]*([WAIST_CIRC_0]/2/[pi])^2*[BODY_HEIGHT_0] / 1000', # in l
- )
-prep_load_workbook_like_file("ship_meta_v2")
-prep_add_data_frames(computed_items = rules)
-r <- dq_report2("ship", dimensions = NULL, label_col = "LABEL")
-}
 }
 \seealso{
 \itemize{

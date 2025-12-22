@@ -28,7 +28,7 @@
 #'
 #' @family io
 #' @concept data_frame
-#' @keywords internal
+#' @noRd
 
 util_expect_data_frame <- function(x, col_names, convert_if_possible,
                                    custom_errors,

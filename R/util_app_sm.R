@@ -13,7 +13,7 @@
 #' - 3 data type matches and applicable
 #'
 #' @seealso [pro_applicability_matrix]
-#' @keywords internal
+#' @noRd
 
 util_app_sm <- function(x, dta) {
   if (all(c(PART_VAR, STUDY_SEGMENT) %in% names(x))) {

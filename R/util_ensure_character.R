@@ -5,7 +5,7 @@
 #'                        in case of a conversion error
 #' @param error_msg error message to be  displayed, if conversion was not
 #'                  possible
-#' @param ... additional arguments passed to [util_error] or [util_warning]
+#' @param ... additional arguments passed to `util_error` or `util_warning`
 #'            respectively in case of an error, and if an `error_msg` has
 #'            been passed
 #'
@@ -13,7 +13,7 @@
 #'
 #' @family robustness_functions
 #' @concept robustness
-#' @keywords internal
+#' @noRd
 util_ensure_character <- function(x, error = FALSE, error_msg, ...) {
   if (missing(error_msg)) {
     error_msg <-

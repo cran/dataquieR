@@ -7,7 +7,7 @@
 #'
 #' @family process_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_attach_attr <- function(x, ...) {
   atts <- list(...)
   attributes(x)[names(atts)] <- atts

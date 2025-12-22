@@ -40,9 +40,11 @@ util_first_arg_study_data_or_resp_vars <- function() {
       if (!missing_first_arg) {
         first_arg_val <- get(first_arg_nm, rlang::caller_env())
         if (is.data.frame(first_arg_val) ||
-            first_arg_val %in% prep_list_dataframes() ||
+            isTRUE(try(first_arg_val %in% prep_list_dataframes(),
+                       silent = TRUE)) ||
             is.data.frame(try(prep_get_data_frame(first_arg_val,
-                                                  column_names_only = TRUE),
+                                                  column_names_only = TRUE,
+                                                  keep_types = TRUE),
                               silent = TRUE))) {
           args <- rlang::call_args(cl)[-1]
 
@@ -81,8 +83,8 @@ util_maybe_eval_to_dataquieR_result <- function(my_call) {
   }
   my_call <- substitute(my_call)
   if (.called_in_pipeline || # TODO: in pipielines, the conditions are already collected, this may be change, later:
-      getOption("dataquieR.testdebug", FALSE) ||
-      getOption("dataquieR.dontwrapresults", FALSE) ||
+      getOption("dataquieR.testdebug", dataquieR.testdebug_default) ||
+      getOption("dataquieR.dontwrapresults", dataquieR.dontwrapresults_default) ||
       identical(Sys.getenv("TESTTHAT"), "true") ||
       recursive_call) {  # don't do, if in testthat runs, so that expect_condition still works.
     eval.parent(my_call)
@@ -99,7 +101,7 @@ util_maybe_eval_to_dataquieR_result <- function(my_call) {
     fn <- rlang::call_name(rlang::caller_call())
     .v <- try(eval(as.symbol("resp_vars"), envir = rlang::caller_env()),
               silent = TRUE)
-    if (!util_is_try_error(.v)) {
+    if (!util_is_try_error(.v) && !is.null(.v)) {
       nm <- paste0(.v, collapse = SPLIT_CHAR)
     } else {
       nm <- "[ALL]"
@@ -110,6 +112,7 @@ util_maybe_eval_to_dataquieR_result <- function(my_call) {
                                        function_name = fn,
                                   filter_result_slots = c(),
                                   env = parent.frame(),
+                                  checkpoint_resumed = FALSE,
                                   called_in_pipeline = FALSE) # dont handle stuff twice
     if (!util_is_try_error(.v))
       attr(call_to_attach, "entity_name") <- .v
@@ -139,7 +142,7 @@ preps <- quote({
   }
   #######
   if (!.called_in_pipeline && # TODO: in pipielines, the conditions are already collected, this may be change, later:
-      !getOption("dataquieR.testdebug", FALSE) &&
+      !getOption("dataquieR.testdebug", dataquieR.testdebug_default) &&
       !identical(Sys.getenv("TESTTHAT"), "true")) {  # don't do, if in testthat runs, so that expect_condition still works.
     my_call <- rlang::caller_call(2)
     if ("meta_data_v2" %in% names(formals()) &&
@@ -198,8 +201,8 @@ preps <- quote({
                                       env = environment()), silent = TRUE)
     if (util_is_try_error(my_call)) {
       if (.called_in_pipeline || # TODO: in pipielines, the conditions are already collected, this may be change, later:
-          getOption("dataquieR.testdebug", FALSE) ||
-          getOption("dataquieR.dontwrapresults", FALSE) ||
+          getOption("dataquieR.testdebug", dataquieR.testdebug_default) ||
+          getOption("dataquieR.dontwrapresults", dataquieR.dontwrapresults_default) ||
           identical(Sys.getenv("TESTTHAT"), "true")) {  # don't do, if in testthat runs, so that expect_condition still works.
         util_error(my_call)
       } else {
@@ -284,7 +287,7 @@ try({
     dev_package <- FALSE
   }
 
-  if (dev_package) {
+  if (dev_package && !is.null(parallel::getDefaultCluster())) {
     roxygenise_call <- 0
     called_from_rogygen <- FALSE
     while (!is.null(cl <- rlang::caller_call(roxygenise_call)) &&

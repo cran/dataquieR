@@ -9,7 +9,7 @@
 #'
 #' @family data_management
 #' @concept robustness
-#' @keywords internal
+#' @noRd
 util_table_of_vct <- function(Var1) {
   util_expect_scalar(Var1,
                      allow_more_than_one = TRUE,

@@ -11,8 +11,8 @@
 #' @family summary_functions
 #' @export
 prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If use_plotly is FALSE?
-                                                      meta_data = "item_level") {
-# FIXME: Amend prep_render_pie_chart_from_summaryclasses_ggplot2 to handle this also.
+                                                             meta_data = "item_level") {
+  # FIXME: Amend prep_render_pie_chart_from_summaryclasses_ggplot2 to handle this also.
   te <- topenv(parent.frame(1)) # see https://stackoverflow.com/a/27870803
   if (!(isNamespace(te) && getNamespaceName(te) == "dataquieR")) {
     lifecycle::deprecate_soft("2.1.0.9007",
@@ -35,8 +35,6 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
   groups <- unique(data[[grouped_by]])
 
   util_stop_if_not(length(groups) > 0)
-
-
 
   if (length(groups) > 1) {
     all_pys <- lapply(setNames(nm = groups), function(g) {
@@ -112,8 +110,6 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
   }
 
 
-
-
   if (all(is.na(data$class))) {
     return(htmltools::browsable(htmltools::HTML("")))
   }
@@ -127,7 +123,6 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
   )
 
   data <- data[order(data$class, -data$value, decreasing = TRUE), , FALSE]
-
   hoverinfo <- "label+percent+value"
 
   if ("note" %in% colnames(data)) {
@@ -146,11 +141,17 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
     #   type = 'sunburst'
     # )
   } else {
+    rotation_value <- 90
+    #order data frame "data"
+    data <- data[order(data$class),]
+
+
     py <- plotly::add_pie(plotly::plot_ly(data,
                                           height = 400,
                                           width = 400),
                           sort = FALSE,
-                          rotation = 90,
+                          direction = "clockwise",
+                          rotation = rotation_value,
                           labels = labs[
                             paste(data$class)],
                           values = data$value,
@@ -162,7 +163,6 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
                           showlegend = FALSE,
                           marker = list(
                             colors = py_colors[paste(data$class)]))
-
   }
 
   if (identical(grouped_by, "indicator_metric")) { # TODO: Hiearchical structure support
@@ -178,10 +178,10 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
       suff <- ""
     }
     title <- paste0(util_map_labels(fnms,
-                            util_get_concept_info("implementations"),
-                            to = "dq_report2_short_title",
-                            from = "function_R",
-                            ifnotfound = NA_character_), suff)
+                                    util_get_concept_info("implementations"),
+                                    to = "dq_report2_short_title",
+                                    from = "function_R",
+                                    ifnotfound = NA_character_), suff)
     subtitle <- "percentage of QA classes"
   } else if (identical(grouped_by, as.character(STUDY_SEGMENT))) { # TODO: Hiearchical structure support
     title <- groups
@@ -200,26 +200,84 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
     title <- groups
     subtitle <- "percentage of QA classes"
     #subtitle <- NULL
-#    util_error("Unkown grouping by %s", sQuote(grouped_by))
+    #    util_error("Unkown grouping by %s", sQuote(grouped_by))
   }
 
   subtitle <- paste(subtitle, sprintf(" -- %d of %d variables classified",
-                                        sum(data$value, na.rm = TRUE),
-                                        nrow(meta_data)
-                                      )) # TODO: Maybe, we should not compute this here, but earlier.
+                                      sum(data$value, na.rm = TRUE),
+                                      nrow(meta_data)
+  )) # TODO: Maybe, we should not compute this here, but earlier.
 
-   py <- plotly::layout(py,
-               title =
-                 list(
-                   text =
-                     as.character(htmltools::tagList(
-                       title,
-                       htmltools::tags$sup(subtitle)
-                     ))),
-               autosize = FALSE,  #maybe can cause trouble
-               margin = list(
-                 t = 50, r = 100, l = 100, b = 50)
-            )
+
+  #Define the space on top among the title and the plot conditionally
+  angles <- data$value / sum(data$value) * 360
+  cs1 <- cumsum(data$value / sum(data$value) * 360) #final limits in case started on top
+  cs1 <- cs1 + rotation_value # final limits in case started at rotation_value
+
+  lower_bound <- 345
+  upper_bound <- 360
+  values_in_range1 <- (cs1 >= lower_bound & cs1 <= upper_bound)
+  count_in_range1 <- sum(values_in_range1)
+
+  lower_bound <- 360
+  upper_bound <- 375
+  values_in_range2 <- (cs1 >= lower_bound & cs1 <= upper_bound)
+  count_in_range2 <- sum(values_in_range2)
+
+
+  #for bottom margin
+  lower_bound <- 150
+  upper_bound <- 180
+  values_in_range3 <- (cs1 >= lower_bound & cs1 <= upper_bound)
+  count_in_range3 <- sum(values_in_range3)
+
+  lower_bound <- 180
+  upper_bound <- 210
+  values_in_range3 <- (cs1 >= lower_bound & cs1 <= upper_bound)
+  count_in_range4 <- sum(values_in_range3)
+
+
+  #Define the values for white spaces around the plot
+  value_bottom_conditional <- 50
+  value_on_top_conditional <- 50
+
+  if(all(angles >= 60)) {
+    #All the text is inside the plot, no need for extra space at top or bottom
+    value_on_top_conditional <- 0
+    value_bottom_conditional <- 0
+  } else {
+    if (count_in_range1 >= 2 || count_in_range2 >= 2) {
+      value_on_top_conditional <- 170
+    } else {
+      value_on_top_conditional <- 60
+    }
+
+    if (count_in_range3 >= 2 || count_in_range4 >= 2) {
+      value_bottom_conditional <- 170
+    } else {
+      value_bottom_conditional <- 60
+    }
+  }
+
+  py <- plotly::layout(py,
+                       title =
+                         list(
+                           text =
+                             as.character(htmltools::tagList(
+                               title,
+                               htmltools::tags$sup(subtitle)
+                             )),
+                           y = 0.95,
+                           yref = "container"),
+                       autosize = FALSE,  #maybe can cause trouble
+                       margin = list(
+                         t = value_on_top_conditional,
+                         r = 100,
+                         l = 100,
+                         b = value_bottom_conditional)
+  )
+
+  py <- plotly::config(py, displaylogo = FALSE)
 
   py <- htmltools::span(
     title = groups,
@@ -227,8 +285,40 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
     py
   )
 
-  py <- htmltools::browsable(
-    py
-  )
+  py <- htmltools::browsable(py)
   return(py)
+
+
+#  py <- plotly::layout(py,
+                       #title =
+                       #  list(
+                       #    text =
+                       #      as.character(htmltools::tagList(
+                       #        title,
+                       #        htmltools::tags$sup(subtitle)
+                        #     )),
+                        #   y = 0.95,
+                        #   yref = "container"),
+#                       autosize = FALSE,  #maybe can cause trouble
+#                       margin = list(
+#                         t = value_on_top_conditional,
+#                         r = 100,
+#                         l = 100,
+#                         b = value_bottom_conditional)
+#  )
+
+#  py <-
+#    htmltools::div(htmltools::h4(title,
+#                                 style = "font-family: sans-serif; margin-bottom: 0; margin-top: 2;"),
+#                   htmltools::h5(subtitle,
+#                                 style = "font-family: sans-serif; margin-top: 0; margin-bottom: 0; "),
+#                   htmltools::div(py,
+#                                  style = "align-self: center;margin-top: 0; "),
+#                   style = "text-align: center; display: flex; flex-direction: column; align-item: center;",
+#                   title = groups,
+#                   `data-tippy-always-on` = "true")
+
+#  py <- htmltools::browsable(py)
+
+#  return(py)
 }

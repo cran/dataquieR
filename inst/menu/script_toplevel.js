@@ -194,6 +194,20 @@ $(function() {
       }, 120000);
     }
   });
+  $('div.infobutton').each(function(index, element) {
+    const template = element;
+    const btn = $('<button />');
+    btn.html('?').insertAfter(element);
+    tippy(btn[0], { // https://atomiks.github.io/tippyjs/v6/html-content/
+      content(reference) {
+        return template.outerHTML;
+      },
+      allowHTML: true,
+      trigger: 'click',
+      interactive: true,
+    });
+    $(element).hide();
+  })
   if ($("#_enabletippy").length == 1) {
     var handleEnableTippy = function() {
       tippyInstances.forEach(reference => {
@@ -487,7 +501,8 @@ $(function() {
                 'data-stderr': stderr,
                 on: {
                    mouseenter: function() {
-                     showTip(this.getAttribute("data-stderr").trim());
+                     showTip(this.getAttribute("data-stderr").trim(),
+                       delay = null);
                    },
                    mouseleave: function() {
                      messenger.hide()
@@ -615,7 +630,9 @@ function showTip(msg, delay = 10000) {
   }
   messenger.show();
   $("#messenger-msg").html(msg)
-  mh = window.setTimeout(messenger.hide, delay);
+  if (delay !== null) {
+    mh = window.setTimeout(messenger.hide, delay);
+  }
 }
 
 function hideTip() {
@@ -685,6 +702,7 @@ function sizeIframes(forceSetSizeToInit = false) {
       $(scaler_div).css({"height": ih})
       $(scaler_div).height($(scaler_div).height()) // trigger resize events for potly
     }
+
   })
 }
 
@@ -714,6 +732,22 @@ var highlight_menu = function(pattern) {
     console.log(e)
   }
 }
+
+function dismissContextMenu() {
+  document.querySelectorAll(".dataquieR_result").forEach(function (el) {
+    if (el._tippy && typeof el._tippy.hide === "function") {
+      el._tippy.hide();
+    }
+});
+}
+
+$(function() {
+  document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        dismissContextMenu()
+      }
+    });
+});
 
 var search_string = "";
 document.onkeyup = function(e) {
@@ -763,8 +797,86 @@ document.onkeyup = function(e) {
 
 function tglePy(et) {
   var iframeHTML = $(et).data('iframe');
+  var scaler = $(et).parent("div.scaler");
+  var initialh = scaler.attr("data-initialh");
+  var initialw = scaler.attr("data-initialw");
   $(et).replaceWith(iframeHTML);
+  if (scaler.length == 1) {
+    $(function() {
+      scaler.css('width', initialw.replace(/;$/, ""));
+      scaler.css('height', initialh.replace(/;$/, ""));
+    });
+  }
 }
+
+/* Debounced DataTables layout adjust in one or more result containers */
+var dtRebuildTimer = null;
+var dtRebuildPending = new Set();
+
+function scheduleDtRebuild(resultDiv) {
+  try {
+    if (!resultDiv) return;
+    dtRebuildPending.add(resultDiv);
+
+    if (dtRebuildTimer) clearTimeout(dtRebuildTimer);
+    dtRebuildTimer = setTimeout(function () {
+      try {
+        dtRebuildPending.forEach(function (container) {
+          adjustDtInResult(container);
+        });
+      } catch (e) {
+        console.log("DT adjust failed:", e);
+      } finally {
+        dtRebuildPending.clear();
+      }
+    }, 80);
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+
+/* Just adjust column widths / responsive / fixed header in all tables in a result */
+function adjustDtInResult(container) {
+  try {
+    if (!container) return;
+    var $container = $(container);
+
+    $container.find("table.myDT").each(function(_, tbl) {
+      try {
+        var $tbl = $(tbl);
+
+        // skip if table or its closest visible container is hidden or too narrow
+        if (!$tbl.is(":visible")) return;
+
+        var $wrap = $tbl.closest(".dq-table-cell, .table_result, .datatables.html-widget, .dataTables_wrapper");
+        var availWidth = $wrap.innerWidth();
+        if (!availWidth || !isFinite(availWidth) || availWidth < 30) {
+          // container effectively collapsed – don't adjust yet
+          return;
+        }
+
+        var dt = $tbl.DataTable();
+
+        dt.columns.adjust();
+        if (dt.responsive) dt.responsive.recalc();
+        if (dt.fixedHeader) dt.fixedHeader.adjust();
+        if (dt.fixedColumns && dt.fixedColumns().relayout) {
+          dt.fixedColumns().relayout();
+        }
+
+        // Helps with scrollY / body height recalculation
+        dt.draw(false);
+
+      } catch (e) {
+        // table not initialised yet; ignore
+      }
+    });
+  } catch (e) {
+    console.log("adjustDtInResult failed:", e);
+  }
+}
+
 
 function tglePyHandler() {
   if (event.which == 1) {
@@ -773,14 +885,48 @@ function tglePyHandler() {
   }
 }
 
+const initializedScalerDivs = new WeakSet();
+
 function resize_scaler_div(mutationList) { // if resize-handle was clicked, makt it an iframe
   for (const mutation of mutationList) {
+    const scalerdiv = mutation.target;
+
+    if (!initializedScalerDivs.has(scalerdiv)) {
+      initializedScalerDivs.add(scalerdiv);
+      var sdiv = $(scalerdiv);
+      var img  = sdiv.find("img");
+      if (img.length == 1) {
+
+        var initialh = sdiv.attr("data-initialh");
+        var initialw = sdiv.attr("data-initialw");
+
+        let w = img[0].naturalWidth;
+        let h = img[0].naturalHeight;
+
+
+        let iw = initialw.replace(/;$/, "");
+        let ih = initialh.replace(/;$/, "");
+
+        sdiv.css({ width: iw, height: ih });      // Bounding-Box setzen
+
+        let maxW = sdiv.width();                  // Pixel-Breite nach CSS
+        let maxH = sdiv.height();                 // Pixel-Höhe nach CSS
+        let scale = Math.min(maxW / w, maxH / h, 1);  // höchstens 1 ⇒ nie hochskalieren
+
+        sdiv.css({
+          width:  (w * scale) + "px",
+          height: (h * scale) + "px"
+        });
+      }
+      continue; // skip first (initial) call
+    }
+
     if (dataquieR.isReady()) { // not initial sizing
-      var scalerdiv = mutation.target;
-        var et = $(scalerdiv).find("img[data-iframe]")
-        if (et.length == 1) {
-          tglePy(et[0]);
-        }
+      if (window.dataquieR_single_result === true) return ;
+      const et = $(scalerdiv).find("img[data-iframe]");
+      if (et.length === 1) {
+        tglePy(et[0]);
+      }
     }
   }
 }
@@ -792,6 +938,82 @@ $(function() {
     observer.observe(obj);
   });
 })
+
+// React to scaler size changes (manual resize)
+const scalerResizeObserver = new ResizeObserver((entries) => {
+  for (const entry of entries) {
+    const scaler = entry.target;
+    const resultDiv = scaler.closest("div.dataquieR_result");
+    if (!resultDiv) continue;
+
+    // update plot/table layout for this scaler
+    updatePlotTableLayoutForScaler(scaler);
+
+    // debounce rebuilding/adapting datatables
+    scheduleDtRebuild(resultDiv);
+  }
+});
+
+function updatePlotTableLayoutForScaler(scaler_div) {
+  try {
+    var $scaler = $(scaler_div);
+
+    // container that has the plot+table grid
+    var $container = $scaler.closest(".dq-plot-table-result");
+    if ($container.length === 0) return;
+
+    // table cell and table / widget inside it
+    var $tableCell = $container.find(".dq-table-cell").first();
+    if ($tableCell.length === 0) return;
+
+    var $tableWrapper = $tableCell.find(".datatables.html-widget, table.myDT, table").first();
+    if ($tableWrapper.length === 0) return;
+
+    // available width for the table (the grid column width)
+    var availableWidth = $tableCell.innerWidth();
+    if (!availableWidth || !isFinite(availableWidth)) return;
+
+    // how much width the content actually wants
+    var requiredWidth = $tableWrapper[0].scrollWidth || 0;
+
+    // primary condition: does the table overflow its cell?
+    var tableTooNarrow = requiredWidth > availableWidth * 1.05; // 5% tolerance
+
+    // secondary condition: plot eats almost all width
+    var containerWidth = $container.width() || 0;
+    var plotWidth = $scaler.outerWidth(true) || 0;
+    var plotTooWide = (containerWidth > 0 && plotWidth / containerWidth > 0.66);
+
+    var shouldStack = tableTooNarrow || plotTooWide;
+
+    if (shouldStack) {
+      $container.addClass("dq-stack-table");
+    } else {
+      $container.removeClass("dq-stack-table");
+    }
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+
+// Observe all scaler-divs
+$(function() {
+  $("div.scaler").each(function(i, obj) {
+    scalerResizeObserver.observe(obj);
+  });
+  // Also react to browser window resizes
+  $(window).on("resize", function() {
+    // For each plot+table result, recompute layout based on available space
+    $(".dataquieR_result.dq-plot-table-result div.scaler").each(function(_, scaler) {
+      updatePlotTableLayoutForScaler(scaler);
+      var resultDiv = scaler.closest("div.dataquieR_result");
+      if (resultDiv) {
+        scheduleDtRebuild(resultDiv);
+      }
+    });
+  });
+});
 
 dataquieR = {
   isReady: function isDataquieReady() {

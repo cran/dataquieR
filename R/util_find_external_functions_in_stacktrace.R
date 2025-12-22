@@ -10,7 +10,7 @@
 #'
 #' @family condition_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_find_external_functions_in_stacktrace <-
   function(sfs = rev(sys.frames()),
            cls = rev(sys.calls())) {

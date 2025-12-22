@@ -1,5 +1,8 @@
 test_that("dq_report_by error_respvars", {
-  skip_if_not_installed("withr")
+  skip_if_not_installed("DT")
+  skip_if_not_installed("markdown")
+  skip_if_not_installed("stringdist")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -17,7 +20,7 @@ test_that("dq_report_by error_respvars", {
 
 
 
-  expect_message(dq_report_by(
+  expect_message2(dq_report_by(
     resp_vars = c("CENTER_0", "PSEUDO_ID",
                   "AGE_0", "SEX_0",
                   "ARM_CUFF_0",

@@ -7,7 +7,7 @@
 #'
 #' @return row-bound combined results
 #'
-#' @keywords internal
+#' @noRd
 util_combine_res <- function(all_of_f) {
 
   cn <- unique(unlist(lapply(all_of_f, attr, "cn")))
@@ -41,6 +41,8 @@ util_combine_res <- function(all_of_f) {
                  FUN.VALUE = logical(1)) # TODO: Do the same for segment and data frame level output
   SDs <- !vapply(lapply(all_of_f, `[[`, "SummaryData"), is.null,
                  FUN.VALUE = logical(1)) # TODO: Do the same for segment and data frame level output
+  RDs <- !vapply(lapply(all_of_f, `[[`, "ResultData"), is.null,
+                 FUN.VALUE = logical(1)) # TODO: Do the same for segment and data frame level output
   RSTs <- !vapply(lapply(all_of_f, `[[`, "ReportSummaryTable"), is.null,
                   FUN.VALUE = logical(1))
   NULLs <- vapply(all_of_f, inherits, "dataquieR_NULL",
@@ -67,6 +69,9 @@ util_combine_res <- function(all_of_f) {
   } else if (any(RSTs)) {
     RESs <- RSTs
     slot <- "ReportSummaryTable"
+  } else if (any(RDs)) {
+    RESs <- RDs
+    slot <- "ResultData"
   } else if (any(SDs)) {
     RESs <- SDs
     slot <- "SummaryData"

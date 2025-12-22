@@ -6,7 +6,7 @@
 \title{All available data types, mapped from their respective
 R types}
 \format{
-An object of class \code{list} of length 14.
+An object of class \code{list} of length 17.
 }
 \usage{
 DATA_TYPES_OF_R_TYPE

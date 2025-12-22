@@ -9,7 +9,8 @@
   ...,
   grouped_by = c("call_names", "indicator_metric"),
   dont_print = FALSE,
-  folder_of_report = NULL
+  folder_of_report = NULL,
+  vars_to_include = c("study")
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ or both c("call_names", "indicator_metric"). The last combination is the default
 object derived from \code{x}}
 
 \item{folder_of_report}{a named vector with the location of variable and call_names}
+
+\item{vars_to_include}{\code{"study"}, \code{"ssi"} or \code{c("study", "ssi")}. variables to include}
 }
 \value{
 invisible html object

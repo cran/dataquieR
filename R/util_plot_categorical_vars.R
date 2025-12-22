@@ -20,15 +20,21 @@
 #'
 #' @return a figure
 #'
-#'
+#' @noRd
 util_plot_categorical_vars <- function(resp_vars,
                                    group_vars = NULL,
                                    time_vars = NULL,
                                    study_data,
                                    meta_data,
-                                   n_cat_max = 6,
-                                   n_group_max = getOption("dataquieR.max_group_var_levels_in_plot", 20),
-                                   n_data_min = 20) {
+                                   n_cat_max =
+                                     getOption("dataquieR.max_cat_resp_var_levels_in_plot",
+                                               dataquieR.max_cat_resp_var_levels_in_plot_default),
+                                   n_group_max =
+                                     getOption("dataquieR.max_group_var_levels_in_plot",
+                                               dataquieR.max_group_var_levels_in_plot_default),
+                                   n_data_min =
+                                     getOption("dataquieR.min_time_points_for_cat_resp_var",
+                                               dataquieR.min_time_points_for_cat_resp_var_default)) {
   # preps and checks -----------------------------------------------------------
   util_expect_data_frame(study_data)
   util_expect_data_frame(meta_data)
@@ -178,9 +184,9 @@ util_plot_categorical_vars <- function(resp_vars,
     attr(pp, "as_plotly") <- "util_as_plotly_util_plot_categorical_vars"
     attr(pp, "dont_util_adjust_geom_text_for_plotly") <- TRUE
 
-    #Information for sizing
+    # Information for sizing
     obj1 <- ggplot2::ggplot_build(pp)
-    obj1_data <- obj1$data[[1]]
+    obj1_data <- util_gg_get(obj1, "data")[[1]]
     rotated <- unique(obj1_data$flipped_aes)
     rotated <-  rotated[!is.na(rotated)]
     number_of_bars <- nrow(obj1_data)
@@ -213,8 +219,8 @@ util_plot_categorical_vars <- function(resp_vars,
 }
 
 util_as_plotly_util_plot_categorical_vars <- function(res) {
-  py <- plotly::ggplotly(res$SummaryPlot)
-  pyb <- plotly::plotly_build(py)
+  py <- util_ggplotly(res$SummaryPlot)
+  pyb <- util_plotly_build(py)
   traces <- pyb$x$data
   # the color codes are defined in util_bar_plot
   black_bar_labs <-

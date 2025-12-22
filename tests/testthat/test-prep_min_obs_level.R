@@ -2,10 +2,10 @@ test_that("prep_min_obs_level works", {
   skip_on_cran() # function not used, yet
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   label_col <- LABEL
   prep_prepare_dataframes(.internal = TRUE)
-  expect_message(
+  expect_message2(
     x <- prep_min_obs_level(ds1,
                             group_vars = "USR_BP_0",
                             min_obs_in_subgroup = 50),
@@ -37,7 +37,7 @@ test_that("prep_min_obs_level works", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     expect_error(
       x <- prep_min_obs_level(ds1,
                               group_vars = letters,
@@ -52,7 +52,7 @@ test_that("prep_min_obs_level works", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     x <- prep_min_obs_level(ds1,
                             group_vars = "USR_BP_0",
                             min_obs_in_subgroup = NA),
@@ -67,7 +67,7 @@ test_that("prep_min_obs_level works", {
 
   ds1. <- ds1
   ds1.$USR_BP_0 <- NA
-  expect_message(
+  expect_message2(
     expect_error(
       x <- prep_min_obs_level(ds1.,
                               group_vars = "USR_BP_0",

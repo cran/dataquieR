@@ -9,7 +9,7 @@
 #'
 #' @family robustness_functions
 #' @concept robustness
-#' @keywords internal
+#' @noRd
 util_warn_unordered <- function(x, varname) {
   if (missing(varname)) varname <- as.character(substitute(x))
   if (sum(dim(x) != 1) > 1) {

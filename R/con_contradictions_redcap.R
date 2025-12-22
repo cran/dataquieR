@@ -129,9 +129,25 @@ con_contradictions_redcap <- function(study_data,
 
   # table of specified contradictions
   util_expect_data_frame(meta_data_cross_item, list(
+    CONTRADICTION_TERM = is.character
+  ))
+  if (!CHECK_LABEL %in% colnames(meta_data_cross_item)) {
+    if (nrow(meta_data_cross_item) > 0) {
+      meta_data_cross_item[[CHECK_LABEL]] <-
+        paste0("Check #", seq_len(nrow(meta_data_cross_item)))
+    } else {
+      meta_data_cross_item[[CHECK_LABEL]] <- character(0)
+    }
+
+  }
+  util_expect_data_frame(meta_data_cross_item, list(
     CONTRADICTION_TERM = is.character,
     CHECK_LABEL = is.character
   ))
+
+  meta_data_cross_item <-
+    meta_data_cross_item[!util_empty(
+      meta_data_cross_item[[CONTRADICTION_TERM]]), , FALSE]
 
   meta_data_cross_item <- util_normalize_cross_item(
     meta_data = meta_data,
@@ -281,31 +297,35 @@ con_contradictions_redcap <- function(study_data,
     result$OtherData$GRADING <- NULL
     result$OtherData <- util_make_data_slot_from_table_slot(result$OtherData)
 
-    cls_rx <- NULL
-    rm("cls_rx")
-    makeActiveBinding("cls_rx", util_make_cls_binding(rx,
-                                                      meta_data = meta_data),
-                      environment())
+    e <- new.env(parent = environment(con_contradictions_redcap))
+    e$rx <- rx
+    e$meta_data <- meta_data
+
+    cls_rx <- rlang::new_quosure(quote(
+      util_make_cls_binding(rx, meta_data = meta_data)), e)
 
     # Plot for summarized contradiction checks -----------------------------------------------------
     # TODO: work on the changes here and below with position = "top"
-    p <- ggplot(rx, aes(x = seq_along(CONTRADICTION_TYPE), y = PCT_con_con,
+    p <- util_create_lean_ggplot(
+      ggplot(rx, aes(x = seq_along(CONTRADICTION_TYPE), y = PCT_con_con,
                         fill = (if (!is.na(threshold_value)) {
                           as.ordered(GRADING)
                         } else {
-                          cls_rx
+                          !!cls_rx
                         }))) +
       geom_bar(stat = "identity") +
       theme_minimal() +
       scale_y_continuous(name = "(%)",
                          limits = (c(0, max(1.2 * suppressWarnings(
                            max(rx$PCT_con_con)),
-                           threshold_value))),
-                         expand = expansion(add = 0.5, mult = c(0, 0.1))) +
+                           threshold_value)))#,
+                         #expand = expansion(add = 0.5, mult = c(0, 0.1))
+                         ) +
       scale_x_continuous(breaks = seq_len(nrow(rx)),
-                         labels = rx[[CONTRADICTION_TYPE]],
-                         position = "top",
-                         trans = "reverse") +
+                         labels = rx[[CONTRADICTION_TYPE]]#,
+                         #position = "top",
+                         #trans = "reverse"
+                         ) +
       # xlab("Category of applied contradiction checks") +
       xlab("") +
       (if (!is.na(threshold_value)) {
@@ -322,10 +342,15 @@ con_contradictions_redcap <- function(study_data,
       coord_flip() + # TODO
       theme(axis.text.x = element_text(size = 10),
             axis.text.y.right = element_text(size = 10),
-            axis.text.y.left = element_blank(),
-            legend.title = element_blank())
+            axis.text.y.left = element_text(size = 10), #element_blank(),
+            legend.title = element_blank()),
+      rx = rx,
+      cls_rx = cls_rx,
+      threshold_value = threshold_value,
+      cols = cols
+    )
 
-    # p <- p + util_coord_flip(p = p) # TODO: estimate w and h, if p is not using discrete axes
+    # p <- p + util_coord_flip(p = p) # TODO: estimate w and h, if p is not using discrete axes util_lazy_add_coord(p, fli)
 
     # https://stackoverflow.com/a/51795017
     bp <- ggplot_build(p)
@@ -497,12 +522,17 @@ con_contradictions_redcap <- function(study_data,
     summary_df2 <- summary_df2[order(summary_df2[[CONTRADICTION_TYPE]],
                                      decreasing = TRUE), ]
 
-    cls_summary_df2 <- NULL
-    rm("cls_summary_df2")
-    makeActiveBinding("cls_summary_df2", util_make_cls_binding(summary_df2,
-                                                               meta_data =
-                                                                 meta_data),
-                      environment())
+    summary_df2_for_return <- summary_df2
+
+    summary_df2 <- summary_df2[rev(seq_len(nrow(summary_df2))), ]
+
+
+    e <- new.env(parent = environment(con_contradictions_redcap))
+    e$summary_df2 <- summary_df2
+    e$meta_data <- meta_data
+
+    cls_summary_df2 <- rlang::new_quosure(quote(
+      util_make_cls_binding(summary_df2, meta_data = meta_data)), e)
 
     ctype_pal <- setNames( # does not really depend on grading formats
       scales::pal_hue(h = c(0,360))(n =
@@ -514,13 +544,14 @@ con_contradictions_redcap <- function(study_data,
     ctype_pal[["EMPIRICAL"]] <- getOption("dataquieR.col_con_con_empirical",
                                         dataquieR.col_con_con_empirical_default)
     # Plot for all contradiction checks --------------------------------------------------------
-    p <- ggplot(summary_df2, aes(x = seq_along(CHECK_ID),
+    p <- util_create_lean_ggplot(
+      ggplot(summary_df2, aes(x = seq_along(CHECK_ID),
                                  y = PCT_con_con,
                                  color = CONTRADICTION_TYPE,
                                  fill = (if (!is.na(threshold_value)) {
                                    as.ordered(GRADING)
                                  } else {
-                                   cls_summary_df2
+                                   !!cls_summary_df2
                                  }))) +
       geom_bar(stat = "identity") +
       theme_minimal() +
@@ -530,11 +561,16 @@ con_contradictions_redcap <- function(study_data,
                          limits = c(0, max(1.2 * suppressWarnings(
                            max(summary_df2$PCT_con_con)),
                            threshold_value)),
-                         expand = expansion(add = 0.5, mult = c(0, 0.1))) +
+                         expand = expansion(
+                          # add = 0.5,
+                           mult = c(0, 0.1))
+                         ) +
       scale_x_continuous(breaks = seq_len(nrow(summary_df2)),
-                         labels = summary_df2$CHECK_LABEL,
-                         position = "top",
-                         trans = "reverse") +
+                         labels = summary_df2$CHECK_LABEL#,
+                       #  position = "top"
+                         #,
+                         #trans = "reverse"
+                         ) +
       ggplot2::scale_color_discrete(type = ctype_pal) +
       (if (!is.na(threshold_value)) {
         scale_fill_manual(values = cols, name = " ", guide = "none")
@@ -550,8 +586,14 @@ con_contradictions_redcap <- function(study_data,
       coord_flip() + # TODO
       theme(axis.text.x = element_text(size = 10),
             axis.text.y.right = element_text(size = 10),
-            axis.text.y.left = element_blank(),
-            legend.title = element_blank())
+            axis.text.y.left = element_text(size = 10), #element_blank(),
+            legend.title = element_blank()),
+      summary_df2 = summary_df2,
+      cls_summary_df2 = cls_summary_df2,
+      ctype_pal = ctype_pal,
+      threshold_value = threshold_value,
+      cols = cols
+    )
 
     if (!prod(dim(summary_df2))) {
       util_error("No contradiction check defined",
@@ -560,33 +602,38 @@ con_contradictions_redcap <- function(study_data,
     }
 
     # create Data Slot
-    summary_df3 <- summary_df2[, intersect(c(VARIABLE_LIST, CHECK_LABEL,
+    summary_df3 <- summary_df2_for_return[, intersect(c(VARIABLE_LIST, CHECK_LABEL,
                                              "NUM_con_con",
                                              "PCT_con_con",
                                              CONTRADICTION_TYPE,
-                                             "GRADING"), colnames(summary_df2))]
+                                             "GRADING"), colnames(summary_df2_for_return))]
     summary_df3 <- util_make_data_slot_from_table_slot(summary_df3)
 
     #add sizing information
     obj1 <- ggplot2::ggplot_build(p)
-    number_of_bars <- nrow(obj1$data[[1]])
+    number_of_bars <- nrow(util_gg_get(obj1, "data")[[1]])
     range <- max(c(
-      util_rbind(data_frames_list = obj1$data)$ymax,
-      util_rbind(data_frames_list = obj1$data)$yintercept
+      util_rbind(data_frames_list = util_gg_get(obj1, "data"))$ymax,
+      util_rbind(data_frames_list = util_gg_get(obj1, "data"))$yintercept
     ), na.rm = TRUE) -
       min(c(
-        util_rbind(data_frames_list = obj1$data)$ymax,
-        util_rbind(data_frames_list = obj1$data)$yintercept
+        util_rbind(data_frames_list = util_gg_get(obj1, "data"))$ymax,
+        util_rbind(data_frames_list = util_gg_get(obj1, "data"))$yintercept
       ), na.rm = TRUE)
 
     no_char_vars = max(c(0, nchar(summary_df2$CHECK_LABEL)))
-    no_char_numbers = max(c(0, nchar(round(obj1$data[[1]]$ymax,digits = 0)),
+    no_char_numbers = max(c(0, nchar(round(util_gg_get(obj1, "data")[[1]]$ymax,digits = 0)),
                           na.rm = TRUE))
 
+    summary_df2$VARIABLE_LIST_ORDER <- NULL # used only internally for
+                                            # computed variables.
+    summary_df2_for_return$VARIABLE_LIST_ORDER <-
+                                       NULL # used only internally for
+                                            # computed variables.
     # Output
     return(util_attach_attr(list(
       FlaggedStudyData = summary_df1,
-      VariableGroupTable = summary_df2,
+      VariableGroupTable = summary_df2_for_return,
       VariableGroupData = summary_df3,
       SummaryPlot = p
     ),
@@ -611,66 +658,92 @@ con_contradictions_redcap <- function(study_data,
   )) # nocov end
 }
 
-util_make_cls_binding <- function(rx, meta_data) {
-  function() {
-    # FIXME: Do not expect all metrics
-    grading_labs <- util_get_labels_grading_class()
-    grading_colors <- util_get_colors()
-    grading_colors["NA"] <- "#888888"
-    grading_rules <- util_get_rule_sets()[["0"]]
-    if (is.data.frame(grading_rules) &&
-        is.character(grading_labs) &&
-        length(grading_labs) > 0) {
-      rx$.orig_order <- seq_len(nrow(rx))
-      idvars <- intersect(c(VARIABLE_LIST, CHECK_LABEL, CONTRADICTION_TYPE,
-                            CHECK_ID, ".orig_order"),
-                          colnames(rx))
-      summ <- stats::reshape(data = rx,
-                             timevar = "indicator_metric",
-                             idvar = idvars,
-                             times = c("PCT_con_con",
-                                       "PCT_con_con_contc",
-                                       "PCT_con_con_contu",
-                                       "NUM_con_con",
-                                       "NUM_con_con_contc",
-                                       "NUM_con_con_contu"),
-                             varying = list(c("PCT_con_con",
-                                              "PCT_con_con_contc",
-                                              "PCT_con_con_contu",
-                                              "NUM_con_con",
-                                              "NUM_con_con_contc",
-                                              "NUM_con_con_contu")),
-                             v.names = "values_raw",
-                             direction = "long")
-      summ$call_names <- paste0("con_contradictions_redcap") # TODO: after exgtension of metadat model, handle a grading rule column in cross-item paste0("con_contradictions_redcap.", summ$CHECK_ID)
-      summ$function_name <- paste0("con_contradictions_redcap")
-      summ <- util_metrics_to_classes(summ, meta_data, entity = "CROSS_ITEM")
-      cls <- summ[, c(idvars, "class"), drop = FALSE]
-      cls <- unsplit(lapply(
-        split(cls, cls[, idvars]), FUN =
-          function(x) {
-            if (any(!is.na(as.numeric(x$class)))) {
-              x$class <- max(as.numeric(x$class), na.rm = TRUE)
-            } else {
-              x$class <- rep(NA_integer_, nrow(x))
-            }
-            x
-          }), cls[, idvars])
-      cls <- unique(cls)
-      rx <- merge(rx, cls, by = idvars)
-      # rx <- unique(rx) this changes the order
-      rx$class <- grading_colors[paste(rx$class)]
-      # rx$class <- factor(rx$class,
-      #                    ordered = TRUE,
-      #                    levels = unname(grading_colors),
-      #                    labels = grading_labs)
-      rx <- rx[order(rx[[".orig_order"]]), , FALSE]
-      rx$class
-    } else {
-      return(NA)
+util_reshape_for_cls_binding <- local({
+  cache_env <- new.env(parent = emptyenv())
+  function(rx, idvars) {
+    key <- rlang::hash(list(rx, idvars))
+    if (exists(key, envir = cache_env, inherits = FALSE)) {
+      return(get(key, envir = cache_env, inherits = FALSE))
     }
+    reshaped <-     stats::reshape(data = rx,
+                                           timevar = "indicator_metric",
+                           idvar = idvars,
+                                           times = c("PCT_con_con",
+                                                     "PCT_con_con_contc",
+                                                     "PCT_con_con_contu",
+                                                     "NUM_con_con",
+                                                     "NUM_con_con_contc",
+                                                     "NUM_con_con_contu"),
+                                           varying = list(c("PCT_con_con",
+                                                            "PCT_con_con_contc",
+                                                            "PCT_con_con_contu",
+                                                            "NUM_con_con",
+                                                            "NUM_con_con_contc",
+                                                            "NUM_con_con_contu")),
+                                           v.names = "values_raw",
+                                           direction = "long")
+    assign(key, reshaped, envir = cache_env)
+    reshaped
   }
-}
+})
+
+util_make_cls_binding <- local({
+  gg_cache_env <- new.env(parent = emptyenv())
+  function(rx, meta_data) {
+
+  rs <- util_get_rule_sets()
+  rf <- util_get_ruleset_formats()
+
+  key <- paste0("KEY_", rlang::hash(list(rs, rf, rx, meta_data)))
+  if (exists(key, envir = gg_cache_env)) {
+    return((get(key, envir = gg_cache_env)))
+  }
+
+  # FIXME: Do not expect all metrics
+  grading_labs <- util_get_labels_grading_class()
+  grading_colors <- util_get_colors()
+  grading_colors["NA"] <- "#888888"
+  grading_rules <- rs[["0"]]
+
+  if (is.data.frame(grading_rules) &&
+      is.character(grading_labs) &&
+      length(grading_labs) > 0) {
+    rx$.orig_order <- seq_len(nrow(rx))
+
+    idvars <- intersect(c(VARIABLE_LIST, CHECK_LABEL,
+                          CHECK_ID, ".orig_order"),
+                        colnames(rx))
+    summ <- util_reshape_for_cls_binding(rx, idvars)
+    summ$call_names <- paste0("con_contradictions_redcap") # TODO: after exgtension of metadat model, handle a grading rule column in cross-item paste0("con_contradictions_redcap.", summ$CHECK_ID)
+    summ$function_name <- paste0("con_contradictions_redcap")
+    summ <- util_metrics_to_classes(summ, meta_data, entity = "CROSS_ITEM")
+    cls <- summ[, c(idvars, "class"), drop = FALSE]
+    cls <- unsplit(lapply(
+      split(cls, cls[, idvars]), FUN =
+        function(x) {
+          if (any(!is.na(as.numeric(x$class)))) {
+            x$class <- max(as.numeric(x$class), na.rm = TRUE)
+          } else {
+            x$class <- rep(NA_integer_, nrow(x))
+          }
+          x
+        }), cls[, idvars])
+    cls <- unique(cls)
+    rx <- merge(rx, cls, by = idvars, sort = FALSE)
+    # rx <- unique(rx) this changes the order
+    rx$class <- grading_colors[paste(rx$class)]
+    # rx$class <- factor(rx$class,
+    #                    ordered = TRUE,
+    #                    levels = unname(grading_colors),
+    #                    labels = grading_labs)
+    rx <- rx[order(rx[[".orig_order"]]), , FALSE]
+    res <- rx$class
+  } else {
+    res <- NA
+  }
+  assign(key, res, envir = gg_cache_env)
+  return(res)
+}})
 
 util_scale_fill_dataquieR <- function(...) {
   r <- ggplot2::scale_fill_identity(
@@ -691,7 +764,7 @@ util_scale_fill_dataquieR <- function(...) {
 
 #' @family plotly_shims
 #' @concept plotly_shims
-#' @keywords internal
+#' @noRd
 util_as_plotly_con_contradictions_redcap <- function(res, ...) {
   if (!util_ensure_suggested("plotly", err = FALSE)) {
     return(htmltools::HTML("No Plotly"))
@@ -702,7 +775,7 @@ util_as_plotly_con_contradictions_redcap <- function(res, ...) {
   col_map["#888888"] <- "NA"
   # hline, no legnedn from .. or guide hidden --> no legend needed, legacy mode
   # with threshold
-  all_geoms <- lapply(res$SummaryPlot$layers, `[[`, "geom")
+  all_geoms <- lapply(util_gg_get(res$SummaryPlot, "layers"), `[[`, "geom")
   vlines <- vapply(all_geoms, inherits, "GeomVline",
                    FUN.VALUE = logical(1))
   hlines <- vapply(all_geoms, inherits, "GeomHline",
@@ -712,10 +785,10 @@ util_as_plotly_con_contradictions_redcap <- function(res, ...) {
   if (legacy_mode) { # no legend in gg, legend static, here
     if (any(vlines)) {
       all_geoms[vlines][[1]]$parameters
-      thr <- res$SummaryPlot$layers[vlines][[1]]$data$xintercept
+      thr <- util_gg_get(res$SummaryPlot, "layers")[vlines][[1]]$data$xintercept
     } else {
       all_geoms[hlines][[1]]$parameters
-      thr <- res$SummaryPlot$layers[hlines][[1]]$data$yintercept
+      thr <- util_gg_get(res$SummaryPlot, "layers")[hlines][[1]]$data$yintercept
     }
     col_map_yn <- c("1" = sprintf("> %.4g%%", thr),
                     "0" = sprintf("\u2264 %.4g%%", thr))

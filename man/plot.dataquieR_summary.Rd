@@ -4,7 +4,16 @@
 \alias{plot.dataquieR_summary}
 \title{Plot a \code{dataquieR} summary}
 \usage{
-\method{plot}{dataquieR_summary}(x, y, ..., filter, dont_plot = FALSE, stratify_by)
+\method{plot}{dataquieR_summary}(
+  x,
+  y,
+  ...,
+  filter,
+  dont_plot = FALSE,
+  stratify_by,
+  vars_to_include = "study",
+  disable_plotly = FALSE
+)
 }
 \arguments{
 \item{x}{the \code{dataquieR} summary, see \code{\link[=summary]{summary()}} and \code{\link[=dq_report2]{dq_report2()}}}
@@ -20,6 +29,10 @@
 object derived from \code{x}}
 
 \item{stratify_by}{column to stratify the summary, may be one string.}
+
+\item{vars_to_include}{\code{"study"}, \code{"ssi"} or \code{c("study", "ssi")}. variables to include}
+
+\item{disable_plotly}{\link{logical} do not use \code{plotly}, even if installed}
 }
 \value{
 invisible html object

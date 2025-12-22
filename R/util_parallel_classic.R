@@ -1,4 +1,4 @@
-#' @keywords internal
+#' @noRd
 util_parallel_classic <- function(all_calls,
                                   worker,
                                   n_nodes,
@@ -27,10 +27,12 @@ util_parallel_classic <- function(all_calls,
       slices <- slices[!is.na(slices)]
       if (length(all_calls))
         progress(100 * row / nrow(task_matrix))
-      util_message(
-        sprintf("%s [%s] %d of %d, %s", Sys.time(), "INFO",
-                row, nrow(task_matrix), "DQ")
-      ) # TODO: Use RStudio job if available
+      if (!dynGet(".is_testing", ifnotfound = FALSE)) {
+        util_message(
+          sprintf("%s [%s] %d of %d, %s", Sys.time(), "INFO",
+                  row, nrow(task_matrix), "DQ")
+        ) # TODO: Use RStudio job if available
+      }
       if (debug_parallel) {
         # TODO: log something about the current chunk
       }

@@ -4,20 +4,40 @@
       comb_sum
     Output
       $Data
-        STUDY_SEGMENT VAR_NAMES acc_varcomp_observer.ICC_acc_ud_loc
-      1        v20000    v00004                               0.100
-      2        v20000    v00005                               0.112
-        com_item_missingness.PCT_com_crm_mv
-      1                              14.63%
-      2                              15.20%
+         STUDY_SEGMENT VAR_NAMES acc_varcomp_observer.ICC_acc_ud_loc
+      1         v10000    v00000                                  NA
+      2         v10000    v00001                                  NA
+      3         v10000    v00002                                  NA
+      4         v10000    v00003                                  NA
+      5         v20000    v00004                               0.100
+      6         v20000    v00012                                  NA
+      11        v20000    v00005                               0.112
+         com_item_missingness.PCT_com_crm_mv
+      1                                0.00%
+      2                                0.00%
+      3                                2.00%
+      4                                2.00%
+      5                               14.63%
+      6                                7.50%
+      11                              15.20%
       
       $Table
-        STUDY_SEGMENT VAR_NAMES acc_varcomp_observer.ICC_acc_ud_loc
-      1        v20000    v00004                               0.100
-      2        v20000    v00005                               0.112
-        com_item_missingness.PCT_com_crm_mv
-      1                               14.63
-      2                               15.20
+         STUDY_SEGMENT VAR_NAMES acc_varcomp_observer.ICC_acc_ud_loc
+      1         v10000    v00000                                  NA
+      2         v10000    v00001                                  NA
+      3         v10000    v00002                                  NA
+      4         v10000    v00003                                  NA
+      5         v20000    v00004                               0.100
+      6         v20000    v00012                                  NA
+      11        v20000    v00005                               0.112
+         com_item_missingness.PCT_com_crm_mv
+      1                                 0.00
+      2                                 0.00
+      3                                 2.00
+      4                                 2.00
+      5                                14.63
+      6                                 7.50
+      11                               15.20
       
       $meta_data
         VAR_NAMES     LABEL DATA_TYPE

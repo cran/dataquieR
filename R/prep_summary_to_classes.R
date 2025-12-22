@@ -187,6 +187,15 @@ util_metrics_to_classes <- function(rs_table_long, meta_data, entity = "ITEM") {
                   classes <- lapply(classes, vapply, FUN.VALUE = logical(1),
                                     identity)
                   classes <- lapply(classes, which)
+                  if (
+                    any(vapply(classes, length, FUN.VALUE = integer(1))) > 1) {
+                    util_warning(
+                      c("Detected invalid grading rule with",
+                        "overlapping intervals. Choosing the worst class."),
+                      applicability_problem = TRUE
+                      )
+                    classes <- lapply(classes, tail, 1)
+                  }
                   classes_nrs <- lapply(classes, unname)
                   classes_nrs <- unlist(classes_nrs)
                   classes <- lapply(classes, names)

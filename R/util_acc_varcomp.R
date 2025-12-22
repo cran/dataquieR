@@ -71,7 +71,7 @@
 #' https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_varcomp.html
 #' )
 #'
-#' @keywords internal
+#' @noRd
 #'
 util_acc_varcomp <-
   function(resp_vars = NULL,

@@ -6,7 +6,7 @@ test_that("util_no_value_labels works", {
     expect_identical(util_no_value_labels("CENTER_0", meta_data = meta_data,
                                           label_col = LABEL, stop = FALSE,
                                           warn = FALSE), character(0))
-    expect_message(util_no_value_labels("CENTER_0", meta_data = meta_data,
+    expect_message2(util_no_value_labels("CENTER_0", meta_data = meta_data,
                                         label_col = LABEL, stop = FALSE,
                                         warn = TRUE),
       regexp = paste("The variables .+CENTER_0.+ are neither float",

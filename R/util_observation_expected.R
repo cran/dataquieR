@@ -25,7 +25,7 @@
 #'
 #' @family missing_functions
 #' @concept missing
-#' @keywords internal
+#' @noRd
 util_observation_expected <- # TODO: Support segment level metadata links to SEGMENT_PART_VARS
   function(rv, study_data, meta_data, label_col = LABEL,
            expected_observations =

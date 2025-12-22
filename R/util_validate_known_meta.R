@@ -10,7 +10,7 @@
 #'
 #' @family metadata_management
 #' @concept robustness
-#' @keywords internal
+#' @noRd
 util_validate_known_meta <- function(meta_data) {
   # TODO: use redcap parser instead, include tests for LOCATION columns and PROPORTIONS columns
   if (!VAR_NAMES %in% colnames(meta_data)) { # avoid errors in checks, if
@@ -229,13 +229,15 @@ util_validate_known_meta <- function(meta_data) {
                              any(is.na(v) != suppressWarnings(
                                  is.na(as.numeric(v))) &
                                    is.na(v) != suppressWarnings(
-                                     is.na(lubridate::as_datetime(v)))
+                                     is.na(util_parse_date(v))) &
+                                   is.na(v) != suppressWarnings(
+                                     is.na(util_parse_time(v)))
                                    )
                            })
       if (any(!util_empty(vl) & notnumdat & not_assign)) {
         env$error <- c(env$error,
                    sprintf(
-                     "Suspicious %s: not numeric/date/assignment: %s",
+                     "Suspicious %s: not numeric/date/time/assignment: %s",
                      sQuote(l),
                      paste(dQuote(unique(sort(
                        as.character(vl[!util_empty(vl) & notnumdat & not_assign])))),
@@ -293,7 +295,7 @@ util_validate_known_meta <- function(meta_data) {
 #' @return [character] uniquely abbreviated `initial`
 #' @family string_functions
 #' @concept string
-#' @keywords internal
+#' @noRd
 util_abbreviate_unique <- function(initial, max_value_label_len) {
   # TODO: use code from util_ensure_label for abbreviations
   no_dups <- !any(duplicated(initial))

@@ -142,16 +142,16 @@ acc_loess <- function(resp_vars,
                         getOption("dataquieR.max_group_var_levels_in_plot",
                                   dataquieR.max_group_var_levels_in_plot_default),
                       enable_GAM = getOption("dataquieR.GAM_for_LOESS",
-                                             dataquieR.GAM_for_LOESS.default),
+                                             dataquieR.GAM_for_LOESS_default),
                       exclude_constant_subgroups =
                         getOption("dataquieR.acc_loess.exclude_constant_subgroups",
-                                  dataquieR.acc_loess.exclude_constant_subgroups.default),
+                                  dataquieR.acc_loess.exclude_constant_subgroups_default),
                       min_bandwidth =
                         getOption("dataquieR.acc_loess.min_bw",
-                                  dataquieR.acc_loess.min_bw.default),
+                                  dataquieR.acc_loess.min_bw_default),
                       min_proportion =
                         getOption("dataquieR.acc_loess.min_proportion",
-                                  dataquieR.acc_loess.min_proportion.default)) {
+                                  dataquieR.acc_loess.min_proportion_default)) {
   # preps ----------------------------------------------------------------------
   util_maybe_load_meta_data_v2()
 

@@ -6,10 +6,10 @@
 #'
 #' @return x in back-ticks
 #'
-#' @seealso [util_backtickQuote]
+#' @seealso `util_backtickQuote`
 #' @family process_functions
 #' @concept data_management
-#' @keywords internal
+#' @noRd
 util_bQuote <- function(x) {
   if (length(x) == 0)
     return(character(0))

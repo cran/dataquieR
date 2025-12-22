@@ -14,7 +14,7 @@
 #' - 4 not applicable because of not suitable data type
 #'
 #' @seealso [pro_applicability_matrix]
-#' @keywords internal
+#' @noRd
 
 util_app_loess <- function(x, dta) {
   c1 <- rowSums(!is.na(x[, grep("^GROUP_VAR_", colnames(x),

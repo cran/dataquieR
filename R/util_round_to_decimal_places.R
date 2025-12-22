@@ -7,7 +7,7 @@
 #'
 #' @family data_management
 #' @concept data_management
-#' @keywords internal
+#' @noRd
 util_round_to_decimal_places <- function (x, digits = 3) {
   # check if x is numeric and is a vector
   util_expect_scalar(arg_name = x, allow_more_than_one = TRUE,

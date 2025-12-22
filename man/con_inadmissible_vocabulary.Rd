@@ -106,5 +106,5 @@ r
 }
 }
 \seealso{
-\href{https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_inadmissible_categorical.html}{Online Documentation}
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_inadmissible_categorical.html}{Online Documentation}
 }

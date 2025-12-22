@@ -15,5 +15,5 @@
 #'
 #' @family condition_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_warning <- util_condition_constructor_factory("warning")

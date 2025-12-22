@@ -216,9 +216,8 @@ con_contradictions <- function(resp_vars = NULL,
       GRADING = ordered(ifelse(unlist(rx) > threshold_value, 1, 0))
     )
     result$SummaryData <- rx
-
     # Plot for summarized contradiction checks -----------------------------------------------------
-    p <- ggplot(rx, aes(x = seq_len(nrow(rx)), y = percent,
+    p <- util_create_lean_ggplot(ggplot(rx, aes(x = seq_len(nrow(rx)), y = percent,
                         fill = as.ordered(GRADING))) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = cols, name = " ", guide = "none") +
@@ -238,9 +237,13 @@ con_contradictions <- function(resp_vars = NULL,
                 hjust = 0, vjust = 0.5) +
       coord_flip() + # TODO
       theme(axis.text.y.right = element_text(size = 14),
-            axis.text.y.left = element_blank())
+            axis.text.y.left = element_blank()),
+      rx = rx,
+      cols = cols,
+      threshold_value = threshold_value
+      )
 
-    # p <- p + util_coord_flip(p = p) # TODO: estimate w and h, if p is not using discrete axes
+    # p <- p + util_coord_flip(p = p) # TODO: estimate w and h, if p is not using discrete axes util_lazy_add_coord(p, fli)
 
     # https://stackoverflow.com/a/51795017
 #    bp <- ggplot_build(p)
@@ -400,7 +403,7 @@ con_contradictions <- function(resp_vars = NULL,
     x <- util_as_numeric(reorder(summary_df2[, 1], -summary_df2[, 1]))
     lbs <- as.character(reorder(summary_df2[, 9], -summary_df2[, 1]))
     # plot summary_df2
-    p <- ggplot(summary_df2, aes(x = x, y = .data[["Contradictions (%)"]],
+    p <- util_create_lean_ggplot(ggplot(summary_df2, aes(x = x, y = .data[["Contradictions (%)"]],
                                  fill =
                                     as.ordered(GRADING))) +
       geom_bar(stat = "identity") +
@@ -418,9 +421,14 @@ con_contradictions <- function(resp_vars = NULL,
                            sec_axis(~., breaks = x, labels = lbs)) + # TODO: checl ~ ??
       geom_hline(yintercept = threshold_value, color = "red", linetype = 2) +
       coord_flip() + # TODO
-      theme(text = element_text(size = 20))
+      theme(text = element_text(size = 20)),
+      summary_df2 = summary_df2,
+      threshold_value = threshold_value,
+      x = x,
+      lbs = lbs,
+      cols = cols)
 
-    # p <- p + util_coord_flip(p = p) # TODO: estimate w and h, if p is not using discrete axes
+    # p <- p + util_coord_flip(p = p) # TODO: estimate w and h, if p is not using discrete axes util_lazy_add_coord(p, fli)
 
     # create SummaryTable object
     st1 <- summary_df2

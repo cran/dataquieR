@@ -31,7 +31,8 @@ prep_deparse_assignments <- function(codes, labels = codes,
   if (mode == "numeric_codes" && (
     suppressWarnings(!all(
       is.na(as.numeric(codes)) == is.na(codes) |
-      is.na(lubridate::as_datetime(codes)) == is.na(codes)
+      is.na(util_parse_date(codes)) == is.na(codes) |
+      is.na(util_parse_time(codes)) == is.na(codes)
     )))) {
     util_error("All codes must be finite numeric or date/time values",
                applicability_problem = TRUE)

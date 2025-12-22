@@ -3,7 +3,7 @@
     list(MetaData = structure(list(VAR_NAMES = c("Sepal.Length", 
     "Sepal.Width", "Petal.Length", "Petal.Width", "Species"), LABEL = c("Sepal.Length", 
     "Sepal.Width", "Petal.Length", "Petal.Width", "Species"), DATA_TYPE = c("float", 
-    "float", "float", "float", "string"), SCALE_LEVEL = c("ratio", 
+    "float", "float", "float", "integer"), SCALE_LEVEL = c("ratio", 
     "ratio", "ratio", "ratio", "nominal"), UNIT = c(NA_character_, 
     NA_character_, NA_character_, NA_character_, NA_character_), 
         VALUE_LABELS = c(NA, NA, NA, NA, "1 = setosa | 2 = versicolor | 3 = virginica"
@@ -24,6 +24,9 @@
         NA_character_, NA_character_, NA_character_, NA_character_
         ), LOCATION_METRIC = c(NA_character_, NA_character_, NA_character_, 
         NA_character_, NA_character_), PROPORTION_RANGE = c(NA_character_, 
+        NA_character_, NA_character_, NA_character_, NA_character_
+        ), UNIVARIATE_OUTLIER_CHECKTYPE = c(NA_character_, NA_character_, 
+        NA_character_, NA_character_, NA_character_), N_RULES = c(NA_character_, 
         NA_character_, NA_character_, NA_character_, NA_character_
         ), MISSING_LIST = c("|", "|", "|", "|", "|"), JUMP_LIST = c(NA_character_, 
         NA_character_, NA_character_, NA_character_, NA_character_

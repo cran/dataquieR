@@ -24,9 +24,9 @@ with labels of variables}
 \item{rules}{\link{data.frame} with the columns:
 \itemize{
 \item \code{VAR_NAMES}: \link{VAR_NAMES} of the variable to compute
-\item \code{RULE}: A rule in \code{REDcap} style (see, e.g.,
+\item \code{COMPUTATION_RULE}: A rule in \code{REDcap} style (see, e.g.,
 \href{https://help.redcap.ualberta.ca/help-and-faq/project-best-practices/data-quality/example-data-quality-rules}{\code{REDcap} help},
-\href{https://www.ctsi.ufl.edu/files/2017/06/Calculated-Fields-\%E2\%80\%93-REDCap-How.pdf}{\code{REDcap} how-to}), and
+\href{https://docs.google.com/document/d/1l3nGBgqqPKi5PtMe75g7q0dny8QzGMd_/edit?tab=t.0}{\code{REDcap} how-to}), and
 \href{https://www.iths.org/wp-content/uploads/REDCap-Branching-Logic-2017-202.pdf}{\code{REDcap} branching logic}
 that defines, how to compute the new values
 }}

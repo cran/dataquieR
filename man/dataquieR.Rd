@@ -19,7 +19,9 @@ This package features the following \code{options()}:
 \item \link{dataquieR.ELEMENT_MISSMATCH_CHECKTYPE}
 \item \link{dataquieR.ERRORS_WITH_CALLER}
 \item \link{dataquieR.GAM_for_LOESS}
+\item \link{dataquieR.MAHALANOBIS_THRESHOLD}
 \item \link{dataquieR.MAX_LABEL_LEN}
+\item \link{dataquieR.MAX_LONG_LABEL_LEN}
 \item \link{dataquieR.MAX_VALUE_LABEL_LEN}
 \item \link{dataquieR.MESSAGES_WITH_CALLER}
 \item \link{dataquieR.MULTIVARIATE_OUTLIER_CHECK}
@@ -36,24 +38,48 @@ This package features the following \code{options()}:
 \item \link{dataquieR.acc_multivariate_outlier.scale}
 \item \link{dataquieR.col_con_con_empirical}
 \item \link{dataquieR.col_con_con_logical}
+\item \link{dataquieR.convert_to_list_for_lapply}
 \item \link{dataquieR.debug}
 \item \link{dataquieR.des_summary_hard_lim_remove}
 \item \link{dataquieR.dontwrapresults}
+\item \link{dataquieR.droplevels_ReportSummaryTable}
+\item \link{dataquieR.dt_adjust}
 \item \link{dataquieR.fix_column_type_on_read}
 \item \link{dataquieR.flip_mode}
 \item \link{dataquieR.force_item_specific_missing_codes}
 \item \link{dataquieR.force_label_col}
 \item \link{dataquieR.grading_formats}
 \item \link{dataquieR.grading_rulesets}
+\item \link{dataquieR.guess_character}
 \item \link{dataquieR.guess_missing_codes}
+\item \link{dataquieR.ignore_empty_vars}
 \item \link{dataquieR.lang}
+\item \link{dataquieR.lazy_plots}
+\item \link{dataquieR.lazy_plots_cache}
+\item \link{dataquieR.lazy_plots_gg_compatibility}
+\item \link{dataquieR.locale}
+\item \link{dataquieR.max_cat_resp_var_levels_in_plot}
 \item \link{dataquieR.max_group_var_levels_in_plot}
 \item \link{dataquieR.max_group_var_levels_with_violins}
 \item \link{dataquieR.min_obs_per_group_var_in_plot}
+\item \link{dataquieR.min_time_points_for_cat_resp_var}
 \item \link{dataquieR.non_disclosure}
+\item \link{dataquieR.old_factor_handling}
+\item \link{dataquieR.old_type_adjust}
+\item \link{dataquieR.precomputeStudyData}
+\item \link{dataquieR.print_block_load_factor}
+\item \link{dataquieR.resume_checkpoint}
+\item \link{dataquieR.resume_print}
 \item \link{dataquieR.scale_level_heuristics_control_binaryrecodelimit}
 \item \link{dataquieR.scale_level_heuristics_control_metriclevels}
+\item \link{dataquieR.study_data_cache_max}
+\item \link{dataquieR.study_data_cache_metrics}
+\item \link{dataquieR.study_data_cache_metrics_env}
+\item \link{dataquieR.study_data_cache_quick_fill}
+\item \link{dataquieR.study_data_colnames_case_sensitive}
 \item \link{dataquieR.testdebug}
+\item \link{dataquieR.traceback}
+\item \link{dataquieR.type_adjust_parallel}
 }
 }
 
@@ -78,7 +104,9 @@ Other options:
 \code{\link{dataquieR.ELEMENT_MISSMATCH_CHECKTYPE}},
 \code{\link{dataquieR.ERRORS_WITH_CALLER}},
 \code{\link{dataquieR.GAM_for_LOESS}},
+\code{\link{dataquieR.MAHALANOBIS_THRESHOLD}},
 \code{\link{dataquieR.MAX_LABEL_LEN}},
+\code{\link{dataquieR.MAX_LONG_LABEL_LEN}},
 \code{\link{dataquieR.MAX_VALUE_LABEL_LEN}},
 \code{\link{dataquieR.MESSAGES_WITH_CALLER}},
 \code{\link{dataquieR.MULTIVARIATE_OUTLIER_CHECK}},
@@ -95,26 +123,51 @@ Other options:
 \code{\link{dataquieR.acc_multivariate_outlier.scale}},
 \code{\link{dataquieR.col_con_con_empirical}},
 \code{\link{dataquieR.col_con_con_logical}},
+\code{\link{dataquieR.convert_to_list_for_lapply}},
 \code{\link{dataquieR.debug}},
 \code{\link{dataquieR.des_summary_hard_lim_remove}},
 \code{\link{dataquieR.dontwrapresults}},
+\code{\link{dataquieR.droplevels_ReportSummaryTable}},
+\code{\link{dataquieR.dt_adjust}},
 \code{\link{dataquieR.fix_column_type_on_read}},
 \code{\link{dataquieR.flip_mode}},
 \code{\link{dataquieR.force_item_specific_missing_codes}},
 \code{\link{dataquieR.force_label_col}},
 \code{\link{dataquieR.grading_formats}},
 \code{\link{dataquieR.grading_rulesets}},
+\code{\link{dataquieR.guess_character}},
 \code{\link{dataquieR.guess_missing_codes}},
+\code{\link{dataquieR.ignore_empty_vars}},
 \code{\link{dataquieR.lang}},
+\code{\link{dataquieR.lazy_plots}},
+\code{\link{dataquieR.lazy_plots_cache}},
+\code{\link{dataquieR.lazy_plots_gg_compatibility}},
+\code{\link{dataquieR.locale}},
+\code{\link{dataquieR.max_cat_resp_var_levels_in_plot}},
 \code{\link{dataquieR.max_group_var_levels_in_plot}},
 \code{\link{dataquieR.max_group_var_levels_with_violins}},
 \code{\link{dataquieR.min_obs_per_group_var_in_plot}},
+\code{\link{dataquieR.min_time_points_for_cat_resp_var}},
 \code{\link{dataquieR.non_disclosure}},
-\code{\link{dataquieR.progress_fkt}},
-\code{\link{dataquieR.progress_msg_fkt}},
+\code{\link{dataquieR.old_factor_handling}},
+\code{\link{dataquieR.old_type_adjust}},
+\code{\link{dataquieR.precomputeStudyData}},
+\code{\link{dataquieR.print_block_load_factor}},
+\code{\link{dataquieR.progress_fkt_default}},
+\code{\link{dataquieR.progress_msg_fkt_default}},
+\code{\link{dataquieR.resume_checkpoint}},
+\code{\link{dataquieR.resume_print}},
 \code{\link{dataquieR.scale_level_heuristics_control_binaryrecodelimit}},
 \code{\link{dataquieR.scale_level_heuristics_control_metriclevels}},
-\code{\link{dataquieR.testdebug}}
+\code{\link{dataquieR.study_data_cache_max}},
+\code{\link{dataquieR.study_data_cache_metrics}},
+\code{\link{dataquieR.study_data_cache_metrics_env}},
+\code{\link{dataquieR.study_data_cache_quick_fill}},
+\code{\link{dataquieR.study_data_colnames_case_sensitive}},
+\code{\link{dataquieR.testdebug}},
+\code{\link{dataquieR.traceback}},
+\code{\link{dataquieR.type_adjust_parallel}},
+\code{\link{progress_init_fkt}}
 }
 \author{
 \strong{Maintainer}: Stephan Struckmann \email{stephan.struckmann@uni-greifswald.de} (\href{https://orcid.org/0000-0002-8565-7962}{ORCID})

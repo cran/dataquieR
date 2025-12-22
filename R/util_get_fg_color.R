@@ -6,7 +6,7 @@
 #'
 #' @return black or white for each cl
 #' @seealso [`stackoverflow.com`](https://stackoverflow.com/a/24810681)
-#' @keywords internal
+#' @noRd
 util_get_fg_color <- function(cl) {
   cl <- col2rgb(util_col2rgb(cl), alpha = TRUE)
   brightness <- cl["red", ] * 0.299 + cl["green", ] * 0.587 +

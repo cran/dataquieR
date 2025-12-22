@@ -11,7 +11,13 @@ acc_cat_distributions(
   label_col,
   item_level = "item_level",
   meta_data = item_level,
-  meta_data_v2
+  meta_data_v2,
+  n_cat_max = getOption("dataquieR.max_cat_resp_var_levels_in_plot",
+    dataquieR.max_cat_resp_var_levels_in_plot_default),
+  n_group_max = getOption("dataquieR.max_group_var_levels_in_plot",
+    dataquieR.max_group_var_levels_in_plot_default),
+  n_data_min = getOption("dataquieR.min_time_points_for_cat_resp_var",
+    dataquieR.min_time_points_for_cat_resp_var_default)
 )
 }
 \arguments{
@@ -35,6 +41,15 @@ attributes of study data}
 \strong{ALL LOADED DATAFRAMES WILL BE PURGED},
 using \code{\link{prep_purge_data_frame_cache}},
 if you specify \code{meta_data_v2}.}
+
+\item{n_cat_max}{maximum number of categories to be displayed individually
+for the categorical variable (\code{resp_vars})}
+
+\item{n_group_max}{maximum number of categories to be displayed individually
+for the grouping variable (\code{group_vars}, devices / examiners)}
+
+\item{n_data_min}{minimum number of data points to create a time course plot
+for an individual category of the \code{resp_vars} variable}
 }
 \value{
 A \link{list} with:
@@ -44,7 +59,7 @@ A \link{list} with:
 }
 }
 \description{
-To complete
+This function creates distribution plots for categorical variables.
 
 \link{Descriptor}
 }

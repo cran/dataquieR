@@ -4,10 +4,12 @@
 \alias{print.master_result}
 \title{Print a \code{master_result} object}
 \usage{
-\method{print}{master_result}(x, ...)
+\method{print}{master_result}(x, template = "default", ...)
 }
 \arguments{
 \item{x}{the object}
+
+\item{template}{the template for the \code{iframes}, not used, so far.}
 
 \item{...}{not used}
 }

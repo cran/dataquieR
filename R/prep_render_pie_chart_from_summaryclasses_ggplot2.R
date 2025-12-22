@@ -1,11 +1,13 @@
 #' Create a `ggplot2` pie chart
 #'
+#' needs `htmltools`
+#'
 #' @param data data as returned by `prep_summary_to_classes` but
 #'             summarized by one column (currently, we support
 #'             `indicator_metric`, `STUDY_SEGMENT`, and `VAR_NAMES`)
 #' @param meta_data [meta_data]
 #'
-#' @return a [ggplot2::ggplot2] plot
+#' @return a `htmltools` compatible object or `NULL`, if package is missing
 #'
 #' @family summary_functions
 #' @export
@@ -17,26 +19,12 @@ prep_render_pie_chart_from_summaryclasses_ggplot2 <- function(data,
                               "prep_render_pie_chart_from_summaryclasses_ggplot2()",
                               "plot.dataquieR_summary()")
   }
+  if (!util_ensure_suggested(c("htmltools"), err = FALSE)) {
+    return(NULL)
+  }
 
   if (nrow(data) == 0) {
-    x <- ggplot() +
-              annotate("text", x = 0, y = 0, label = "Empty result.") +
-              theme(
-                axis.line = element_blank(),
-                axis.text.x = element_blank(),
-                axis.text.y = element_blank(),
-                axis.ticks = element_blank(),
-                axis.title.x = element_blank(),
-                axis.title.y = element_blank(),
-                legend.position = "none",
-                panel.background = element_blank(),
-                panel.border = element_blank(),
-                panel.grid.major = element_blank(),
-                panel.grid.minor = element_blank(),
-                plot.background = element_blank()
-              )
-            x <- util_set_size(x)
-            return(x)
+    return(htmltools::browsable(htmltools::HTML("")))
   }
 
   grouped_by <- setdiff(colnames(data), c("class", "value", "percent", "note"))
@@ -48,14 +36,46 @@ prep_render_pie_chart_from_summaryclasses_ggplot2 <- function(data,
   util_stop_if_not(length(groups) > 0)
 
   if (length(groups) > 1) {
-    return(lapply(setNames(nm = groups), function(g) {
+    all_pys <- lapply(setNames(nm = groups), function(g) {
       prep_render_pie_chart_from_summaryclasses_ggplot2(
         data[data[[grouped_by]] == g, , FALSE], meta_data = meta_data)
-    }))
+    })
+    ncols <- min(2, ceiling(sqrt(length(all_pys))))
+    nrows <- ceiling(length(all_pys) / ncols)
+
+    pys_matrix <- htmltools::tags$table(lapply(
+      seq_len(nrows),
+      function(rw) {
+        if ((rw - 1) * ncols + 1 <= length(all_pys)) { # current row needed?
+          cur_tr_as_list <- lapply(seq_len(ncols), function(rw, cl) {
+            wch <- (rw - 1) * ncols + cl
+            if (wch <= length(all_pys)) {
+              o <- htmltools::tags$td(all_pys[wch])
+            } else {
+              o <- htmltools::tags$td()
+            }
+            o
+          }, rw = rw)
+          do.call(htmltools::tags$tr, cur_tr_as_list)
+        } else { # should never be reached
+          NULL
+        }
+      }
+    ))
+
+    py <- pys_matrix
+
+    py <- htmltools::tags$table(py)
+    py <- htmltools::browsable(py)
+    return(py)
   }
 
   gg_colors <- util_get_colors()
   names(gg_colors) <- util_get_labels_grading_class()[names(gg_colors)]
+
+  if (all(is.na(data$class))) {
+    return(htmltools::browsable(htmltools::HTML("")))
+  }
 
   if (is.factor(data$class)) {
     data$class <- as.integer(gsub("^cat", "", data$class))
@@ -69,14 +89,17 @@ prep_render_pie_chart_from_summaryclasses_ggplot2 <- function(data,
   data <- data[order(data$class, -data$value, decreasing = TRUE), , FALSE]
 
 
-  p <- ggplot(data, aes(x = "",
+  p <- ggplot(data, aes(x = 1,
                         y = value,
-                        fill = class,
-                        label = scales::percent(value / sum(value)))
-              ) +
+                        fill = class)) +
     geom_bar(stat = "identity", width = 1) +
-    geom_text(position = ggplot2::position_stack(vjust = 0.5)) +
-    ggplot2::coord_polar("y", start = 0) +
+    geom_text(
+      aes(x = 1.1,
+          label = scales::percent(value / sum(value))),
+      position = ggplot2::position_stack(vjust = 0.5),
+      check_overlap = TRUE
+    ) +
+    ggplot2::coord_polar("y", start = 0, clip = "off") +
     scale_fill_manual(values = gg_colors) +
     ggplot2::theme_minimal() +
     ggplot2::theme(axis.line = ggplot2::element_blank(),
@@ -140,5 +163,8 @@ prep_render_pie_chart_from_summaryclasses_ggplot2 <- function(data,
     title, subtitle
   )
 
-  p
+  htmltools::plotTag(width = 400, height = 400,
+    p, alt = "A summary of data quality assessments"
+  )
+
 }

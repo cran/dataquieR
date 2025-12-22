@@ -26,7 +26,7 @@
 #'
 #' @family metadata_management
 #' @concept robustness
-#' @keywords internal
+#' @noRd
 
 
 util_validate_missing_lists <-
@@ -160,15 +160,18 @@ util_validate_missing_lists <-
       (
          is.na(suppressWarnings(as.numeric(names(parsed_lists)))) &
          suppressWarnings(vapply(lapply(
-           names(parsed_lists), lubridate::as_datetime), is.na,
-                FUN.VALUE = logical(1)))
+           names(parsed_lists), util_parse_date), is.na,
+                FUN.VALUE = logical(1))) &
+           suppressWarnings(vapply(lapply(
+             names(parsed_lists), util_parse_time), is.na,
+             FUN.VALUE = logical(1)))
       ) !=
       (is.na(names(parsed_lists)) |
       trimws(names(parsed_lists)) == "" |
       trimws(names(parsed_lists)) == "NA")
 
     if (!suppressWarnings && any(not_numbers)) {
-      util_warning(c("Some missing codes are not numeric or date. This is",
+      util_warning(c("Some missing codes are not numeric or date/time. This is",
                      "not supported yet: %s"),
                    paste(dQuote(names(parsed_lists[not_numbers])),
                          collapse = ", "),

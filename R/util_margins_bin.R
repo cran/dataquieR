@@ -41,6 +41,7 @@
 #'                     geom_count aes geom_vline geom_hline
 #' @import patchwork
 #'
+#' @noRd
 util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
                              threshold_type = NULL, threshold_value,
                              min_obs_in_subgroup = 5, min_obs_in_cat = 5,
@@ -187,89 +188,147 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   }
 
   # Plot 1: hybrid density/boxplot graph
-  p1 <- ggplot(data = ds1[, c("resp_var_adj", group_vars), drop = FALSE],
-               aes(x = .data[[group_vars]],
-                   y = round(.data[["resp_var_adj"]]))) +
-    geom_count(aes(alpha = 0.9), color = "gray") +
-    geom_pointrange(
-      data = res_df_plot, aes(
-        x = .data[[group_vars]],
-        y = margins,
-        ymin = LCL,
-        ymax = UCL,
-        color = as.factor(GRADING)#, n = sample_size
-      ),
-      shape = 18, linewidth = 1,
-      inherit.aes = FALSE,
-      fatten = 5
-    ) +
-    theme_minimal() +
-    labs(x = "", y = "") +
-    theme(
-      legend.position = "none", legend.title = element_blank(),
-      text = element_text(size = 16),
-      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-      plot.margin = ggplot2::unit(c(2, 0, 2, 0), "mm")
-    ) +
-    scale_colour_manual(values = warn_code) +
-    ggplot2::expand_limits(y = c(0, 1))
+  .ds00 <- ds1[, c("resp_var_adj", group_vars), drop = FALSE]
+  if (all(!is.finite(.ds00$resp_var_adj))) {
+    util_error("No data left.")
+  }
+
+  p1 <- util_create_lean_ggplot(ggplot(data = .ds00,
+                                       aes(x = .data[[group_vars]],
+                                           y = round(.data[["resp_var_adj"]]))) +
+                                  geom_count(aes(alpha = 0.9), color = "gray") +
+                                  geom_pointrange(data = res_df_plot, aes(
+                                    x = .data[[group_vars]],
+                                    y = margins,
+                                    ymin = LCL,
+                                    ymax = UCL,
+                                    color = as.factor(GRADING)),#, n = sample_size
+                                    shape = 18,
+                                    linewidth = 1,
+                                    inherit.aes = FALSE,
+                                    size = .5) +
+                                  theme_minimal() +
+                                  labs(x = "", y = "") +
+                                  theme(
+                                    legend.position = "none",
+                                    legend.title = element_blank(),
+                                    text = element_text(size = 16),
+                                    axis.text.x = element_text(angle = 90,
+                                                               vjust = 0.5,
+                                                               hjust = 1),
+                                    plot.margin = ggplot2::unit(c(2, 0, 2, 0),
+                                                                "mm")) +
+                                  scale_colour_manual(values = warn_code) +
+                                  ggplot2::expand_limits(y = c(0, 1)),
+                                .ds00 = .ds00,
+                                group_vars = group_vars,
+                                res_df_plot = res_df_plot,
+                                warn_code = warn_code)
 
     if (include_numbers_in_figures) {
-      p1 <- p1 +
-        geom_text(data = summary_ds,
-                  aes(x = summary_ds[, group_vars],
-                      y = max(round(ds1[, "resp_var_adj", drop = FALSE])) + 0.3,
-                      label = sample_size),
-                  hjust = 0.5, angle = 90) +
-        annotate("text",
-                 x = 0.5,
-                 y = max(round(ds1[, "resp_var_adj", drop = FALSE])) + 0.3,
-                 label = "N")
+      .ds01 <- ds1[, "resp_var_adj", drop = FALSE]
+      .ds02 <- summary_ds[, group_vars]
+
+      p1 <- util_create_lean_ggplot(p1 +
+                                      geom_text(data = summary_ds,
+                                                aes(x = .ds02,
+                                                    y = max(round(.ds01)) + 0.3,
+                                                    label = sample_size),
+                                                hjust = 0.5,
+                                                angle = 90) +
+                                      annotate("text",
+                                               x = 0.5,
+                                               y = max(round(.ds01)) + 0.3,
+                                               label = "N"),
+                                    p1 = p1,
+                                    summary_ds = summary_ds,
+                                    .ds01 = .ds01,
+                                    .ds02 = .ds02,
+                                    sample_size = sample_size)
     }
 
   if (threshold_type != "none") {
-    p1 <-
-      p1 +
-      geom_hline(yintercept = pars[2], color = "red") +
-      geom_hline(yintercept = pars[-2], color = "red", linetype = 2)
+    p1 <- util_create_lean_ggplot(p1 +
+                                    geom_hline(yintercept = pars[2],
+                                               color = "red") +
+                                    geom_hline(yintercept = pars[-2],
+                                               color = "red",
+                                               linetype = 2),
+                                  p1 = p1,
+                                  pars = pars)
+
   } else {
-    p1 <-
-      p1 +
-      geom_hline(yintercept = pars[2], color = "red")
+    p1 <- util_create_lean_ggplot(p1 +
+                                    geom_hline(yintercept = pars[2],
+                                               color = "red"),
+                                  p1 = p1,
+                                  pars = pars)
   }
 
   # Plot 2: overall distributional plot flipped on y-axis of plot 1
-  get_y_scale <- ggplot(ds1[, "resp_var_adj", drop = FALSE],
-                        aes(x = round(.data[["resp_var_adj"]]))) +
-    geom_density(alpha = 0.35)
-  aty <- mean(range(ggplot_build(get_y_scale)$data[[1]]$y))
+  .ds01 <- ds1[, "resp_var_adj", drop = FALSE]
+  get_y_scale <-
+    util_create_lean_ggplot(ggplot(.ds01,
+                                   aes(x = round(.data[["resp_var_adj"]]))) +
+                              geom_density(alpha = 0.35),
+                            .ds01 = .ds01)
 
-  p2 <- ggplot(ds1[, "resp_var_adj", drop = FALSE],
-               aes(round(.data[["resp_var_adj"]]))) +
-    geom_density(alpha = 0.35) +
-    coord_flip() +
-    theme_minimal() +
-    labs(x = NULL, y = NULL) +
-    ggplot2::xlim(c(min(min(round(ds1[, "resp_var_adj", drop = FALSE])), pars),
-                    max(max(round(ds1[, "resp_var_adj", drop = FALSE])) + 0.3,
-                        pars + offs))) +
-    theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-          text = element_text(size = 16),
-          plot.margin = ggplot2::unit(c(0, 2, 0, 2), "mm")) +
-    ggplot2::expand_limits(x = c(0, 1))
+  build <- ggplot2::ggplot_build(get_y_scale)
+  data1 <- util_gg_get(build, "data")[[1]]
+  yvals <- util_gg_get(data1, "y")
+
+  aty <- mean(range(yvals))
+
+
+  p2 <- util_create_lean_ggplot(ggplot(.ds01,
+                                       aes(round(.data[["resp_var_adj"]]))) +
+                                  geom_density(alpha = 0.35) +
+                                  coord_flip() + # util_lazy_add_coord(p, fli)
+                                  theme_minimal() +
+                                  labs(x = NULL, y = NULL) +
+                                  ggplot2::xlim(c(min(min(round(.ds01)), pars),
+                                                  max(max(round(.ds01)) + 0.3,
+                                                      pars + offs))) +
+                                  theme(axis.text.y = element_blank(),
+                                        axis.text.x = element_blank(),
+                                        text = element_text(size = 16),
+                                        plot.margin =
+                                          ggplot2::unit(c(0, 2, 0, 2), "mm")) +
+                                  ggplot2::expand_limits(x = c(0, 1)),
+                                .ds01 = .ds01,
+                                pars = pars,
+                                offs = offs)
 
   if (threshold_type != "none") {
-    p2 <-
-      p2 +
-      annotate(geom = "text", x = pars + offs, y = aty, label = parn) +
-      geom_vline(xintercept = pars[2], color = "red") +
-      geom_vline(xintercept = pars[-2], color = "red", linetype = 2)
+    p2 <- util_create_lean_ggplot(p2 +
+                                    annotate(geom = "text",
+                                             x = pars + offs,
+                                             y = aty,
+                                             label = parn) +
+                                    geom_vline(xintercept = pars[2],
+                                               color = "red") +
+                                    geom_vline(xintercept = pars[-2],
+                                               color = "red",
+                                               linetype = 2),
+                                  p2 = p2,
+                                  pars = pars,
+                                  offs = offs,
+                                  aty = aty,
+                                  parn = parn)
+
   } else {
-    p2 <-
+    p2 <- util_create_lean_ggplot(
       p2 +
-      annotate(geom = "text", x = pars + offs, y = aty,
-               label = c("", parn[2], "")) +
-      geom_vline(xintercept = pars[2], color = "red")
+        annotate(geom = "text",
+                 x = pars + offs,
+                 y = aty,
+                 label = c("", parn[2], "")) +
+        geom_vline(xintercept = pars[2], color = "red"),
+      p2 = p2,
+      pars = pars,
+      offs = offs,
+      aty = aty,
+      parn = parn)
   }
 
   if (is.null(caption)) {
@@ -278,14 +337,19 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
 
   # combine plots and add the title
   res_plot <- # TODO: For all patchwork-calls, add information to reproduce the layout in plot.ly
-    p1 +
-    p2 +
-    plot_layout(nrow = 1,
-                widths = c(5, 1)
-    ) +
-    plot_annotation(title = title,
-                    subtitle = adjusted_hint,
-                    caption = caption)
+    util_create_lean_ggplot(
+      p1 +
+        p2 +
+        plot_layout(nrow = 1,
+                    widths = c(5, 1)) +
+        plot_annotation(title = title,
+                        subtitle = adjusted_hint,
+                        caption = caption),
+      p1 = p1,
+      p2 = p2,
+      title = title,
+      adjusted_hint = adjusted_hint,
+      caption = caption)
 
   # output ---------------------------------------------------------------------
   return(list("plot_data" = res_df, "plot" = res_plot))

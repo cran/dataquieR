@@ -1,6 +1,6 @@
 test_that("prep_prepare_dataframes works", {
   skip_on_cran()
-  skip_if_not_installed("withr")
+  
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -37,7 +37,7 @@ test_that("prep_prepare_dataframes works", {
   environment(acc_test3) <- asNamespace("dataquieR")
   environment(acc_test4) <- asNamespace("dataquieR")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -517,7 +517,7 @@ test_that("prep_prepare_dataframes works", {
   )
 
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -565,7 +565,7 @@ test_that("prep_prepare_dataframes works", {
   if (exists("study_data")) rm(study_data)
   expect_error(err_test3(meta_data = meta_data),
                regexp = "Need study data as a data frame")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   md99 <- meta_data
   err_test4 <- function(resp_variable, aux_variable,
                         time_variable, co_variables,

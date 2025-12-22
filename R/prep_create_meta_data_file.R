@@ -60,9 +60,11 @@ prep_create_meta_data_file <- function(file_name,
       )
     }
   }
-  mdl <- util_rio_import_list("https://dataquality.ship-med.uni-greifswald.de/extdata/meta_data_v2.xlsx",
+  mdl <- util_rio_import_list("https://dataquality.qihs.uni-greifswald.de/extdata/meta_data_v2.xlsx",
                               keep_types = FALSE)
-
+  old_mlts <- unique(mdl[["item_level"]][[MISSING_LIST_TABLE]])
+  old_id_rft <- unique(c(mdl$segment_level$SEGMENT_ID_REF_TABLE,
+                         mdl$dataframe_level$DF_ID_REF_TABLE))
   if (!missing(study_data)) {
     old_cache <- prep_list_dataframes()
     mdl[["item_level"]] <-
@@ -85,9 +87,14 @@ prep_create_meta_data_file <- function(file_name,
     new_cache <- prep_list_dataframes()
     rm(list = setdiff(new_cache, old_cache), envir = .dataframe_environment())
   }
+  mdl[old_mlts] <- NULL
+  mdl[old_id_rft] <- NULL
+  for (sheet in
+       setdiff(grep("_level$", value = TRUE, names(mdl)), c("item_level"))) {
+    mdl[[sheet]] <- mdl[[sheet]][FALSE, , FALSE]
+  }
 
-  e <- try(rio::export(mdl,
-                            file = file_name),
+  e <- try(rio::export(mdl, file = file_name),
            silent = TRUE)
   if (inherits(e, "try-error")) {
     util_error("Could not write %s: %s",

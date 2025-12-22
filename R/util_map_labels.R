@@ -2,7 +2,7 @@
 #'
 #' @family mapping
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 util_map_labels <- function(x, meta_data = "item_level",
                             to = LABEL, from = VAR_NAMES, ifnotfound,
                             warn_ambiguous = FALSE) {

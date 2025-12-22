@@ -16,15 +16,15 @@ function -- an argument that refers variables.
 In general for the table .variable_arg_roles, the suffix _var means one
 variable allowed,
 while _vars means more than one. The default  sets of arguments
-for \link{util_correct_variable_use}/\link{util_correct_variable_use2} are defined
+for \code{util_correct_variable_use}/\code{util_correct_variable_use2} are defined
 from the point of usage, e.g. if it could be, that NAs are in
 the list of variable names, the function should be able to remove certain
 response variables
 from the output and not disallow them by setting \code{allow_na} to \code{FALSE}.
 }
 \seealso{
-\code{\link[=util_correct_variable_use]{util_correct_variable_use()}}
+\code{util_correct_variable_use()}
 
-\code{\link[=util_correct_variable_use2]{util_correct_variable_use2()}}
+\code{util_correct_variable_use2()}
 }
 \keyword{internal}

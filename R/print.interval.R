@@ -25,5 +25,22 @@ print.interval <- function(x, ...) {
     cat(as.character(x$upp))
   }
   if (x$inc_u) { cat("]") } else { cat(")") }
-  x
+  invisible(x)
+}
+
+#' `as.character` implementation for the class `interval`
+#'
+#' such objects, for now, only occur in `RECCap` rules, so this function
+#' is meant for internal use, mostly -- for now.
+#'
+#' @param x `interval` objects to convert
+#' @param ... not used yet
+#'
+#' @seealso base::as.character
+#'
+#' @return interval as character
+#' @export
+as.character.interval <- function(x, ...) {
+  r <- util_suppress_output(capture.output(print.interval(x, ...)))
+  r
 }

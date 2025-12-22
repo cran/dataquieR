@@ -9,7 +9,7 @@
 #'
 #' @family data_management
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
  util_replace_hard_limit_violations <- function(study_data,
                                                 meta_data,
                                                 label_col) {
@@ -71,7 +71,8 @@
      if (inherits(int, "interval") && (prep_dq_data_type_of(col) %in%
                                         c(DATA_TYPES$INTEGER,
                                           DATA_TYPES$FLOAT,
-                                          DATA_TYPES$DATETIME))) {
+                                          DATA_TYPES$DATETIME,
+                                          DATA_TYPES$TIME))) {
        outside <- !redcap_env$`in`(col, int)
        outside[is.na(outside)] <- FALSE
        col[outside] <- NA

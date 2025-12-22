@@ -6,10 +6,9 @@
 #'
 #' @return `ggplot` object, but rendered (no original data included)
 #'
-#' @keywords internal
+#' @noRd
 util_plot2svg_object <- function(expr, w = 21.2, h = 15.9, sizing_hints) {
   util_ensure_suggested("grImport2")
-  util_ensure_suggested("ggpubr")
   util_ensure_suggested("rsvg")
   orig_sizing_hints <- sizing_hints
   if (!is.null(sizing_hints)) {
@@ -41,10 +40,7 @@ util_plot2svg_object <- function(expr, w = 21.2, h = 15.9, sizing_hints) {
     # ))
     # class(res) <- "dataquieR_undisclosed_figure"
     raw <- grImport2::readPicture(tmpfil)
-    res <- ggpubr::as_ggplot(grImport2::pictureGrob(raw, clip = "off", distort = TRUE,
-                                                    width = w,
-                                                    height = h,
-                                                    default.units = "cm"))
+    res <- util_svg_plot_proxy(tmpfil)
     attr(res, "sizing_hints") <- orig_sizing_hints
     return(res)
   })
@@ -58,10 +54,9 @@ util_plot2svg_object <- function(expr, w = 21.2, h = 15.9, sizing_hints) {
 #'
 #' @return `ggplot` object, but rendered (no original data included)
 #'
-#' @keywords internal
+#' @noRd
 util_plotly2svg_object <- function(plotly, w = 21.2, h = 15.9, sizing_hints) { # FIXME: Also for thumbnails, if not ggplot exists.
   util_ensure_suggested("grImport2")
-  util_ensure_suggested("ggpubr")
   util_ensure_suggested("rsvg")
   util_ensure_suggested("plotly")
   util_ensure_suggested("reticulate")
@@ -110,15 +105,7 @@ util_plotly2svg_object <- function(plotly, w = 21.2, h = 15.9, sizing_hints) { #
     .svg <- gsub("<svg ", '<svg preserveAspectRatio="none" ', .svg, fixed = TRUE)
     # writeLines(.svg, tmpfil)
     rsvg::rsvg_svg(charToRaw(paste0(.svg, collapse = "\n")), tmpfil)
-    # res <- as.environment(list(
-    #   x = magick::image_read_svg(tmpfil, width = w, height = h)
-    # ))
-    # class(res) <- "dataquieR_undisclosed_figure"
-    raw <- grImport2::readPicture(tmpfil)
-    res <- ggpubr::as_ggplot(grImport2::pictureGrob(raw, clip = "off", distort = TRUE,
-                                                    width = w,
-                                                    height = h,
-                                                    default.units = "cm"))
+    res <- util_svg_plot_proxy(tmpfil)
     attr(res, "sizing_hints") <- orig_sizing_hints
     return(res)
   })
@@ -129,9 +116,38 @@ util_plotly2svg_object <- function(plotly, w = 21.2, h = 15.9, sizing_hints) { #
 #' @param x the object to check
 #'
 #' @return `TRUE` or `FALSE`
-#' @keywords internal
+#' @noRd
 util_is_svg_object <- function(x) {
-  ggplot2::is.ggplot(x) &&
-    all(vapply(lapply(x$layers, `[[`, "geom"),
-               inherits, "GeomDrawGrob", FUN.VALUE = logical(1)))
+  inherits(x, "svg_plot_proxy") || (
+    util_is_gg_plot(x) &&
+      all(vapply(lapply(x$layers, `[[`, "geom"),
+                 inherits, "GeomDrawGrob", FUN.VALUE = logical(1)))
+  )
+}
+
+util_svg_plot_proxy <- function(svg_file) {
+  svg_raw <-
+    charToRaw(paste(readLines(svg_file, warn = FALSE), collapse = "\n"))
+  structure(list(svg = svg_raw),
+            class = "svg_plot_proxy")
+}
+
+#' @exportS3Method grid::grid.draw
+grid.draw.svg_plot_proxy <- function(x, ...) {
+  util_ensure_suggested("grImport2")
+
+  tmp_svg <- tempfile(fileext = ".svg")
+  on.exit(unlink(tmp_svg), add = TRUE)
+  writeBin(x$svg, tmp_svg)
+
+  pic <- grImport2::readPicture(tmp_svg)
+  grob <- grImport2::pictureGrob(pic, clip = "off", distort = TRUE)
+  grid::grid.draw(grob)
+}
+
+#' @export
+print.svg_plot_proxy <- function(x, ...) {
+  grid::grid.newpage()
+  grid::grid.draw(x)
+  invisible(x)
 }

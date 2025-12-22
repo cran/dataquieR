@@ -6,15 +6,17 @@
 #'
 #' @family plotly
 #' @concept reporting
-#' @keywords internal
+#' @noRd
 util_adjust_geom_text_for_plotly <- function(plotly) {
   util_ensure_suggested("plotly")
   util_stop_if_not(inherits(plotly, "plotly"))
   withCallingHandlers(
-    pyb <- plotly::plotly_build(plotly),
+    pyb <- util_plotly_build(plotly),
     warning = function(cond) { # suppress a waning caused by ggplotly for barplots
       if (startsWith(conditionMessage(cond),
-                     "'bar' objects don't have these attributes: 'mode'")) {
+                     "'bar' objects don't have these attributes: 'mode'") ||
+          startsWith(conditionMessage(cond),
+                     "'box' objects don't have these attributes: 'mode'")) {
         invokeRestart("muffleWarning")
       }
       if (any(grepl("the mode", conditionMessage(cond)))) {
@@ -23,7 +25,9 @@ util_adjust_geom_text_for_plotly <- function(plotly) {
     },
     message = function(cond) { # suppress a waning caused by ggplotly for barplots
       if (startsWith(conditionMessage(cond),
-                     "'bar' objects don't have these attributes: 'mode'")) {
+                     "'bar' objects don't have these attributes: 'mode'") ||
+          startsWith(conditionMessage(cond),
+                     "'box' objects don't have these attributes: 'mode'")) {
         invokeRestart("muffleMessage")
       }
       if (any(grepl("the mode", conditionMessage(cond)))) {
@@ -49,12 +53,13 @@ util_adjust_geom_text_for_plotly <- function(plotly) {
   mode_text[!no_mode] <-
     vapply(mode[!no_mode], `==`, "text", FUN.VALUE = logical(1))
 
-  # TODO: for ggvenn, we would need textposition = "middle center" - get from hjust and vjust in $hovertext of pyb$x?
   withCallingHandlers(
     plotly::style(pyb, textposition = "right", traces = mode_text & type_scatter),
     warning = function(cond) { # suppress a waning caused by ggplotly for barplots
       if (startsWith(conditionMessage(cond),
-                     "'bar' objects don't have these attributes: 'mode'")) {
+                     "'bar' objects don't have these attributes: 'mode'") ||
+          startsWith(conditionMessage(cond),
+                     "'box' objects don't have these attributes: 'mode'")) {
         invokeRestart("muffleWarning")
       }
       if (any(grepl("the mode", conditionMessage(cond)))) {
@@ -63,7 +68,9 @@ util_adjust_geom_text_for_plotly <- function(plotly) {
     },
     message = function(cond) { # suppress a waning caused by ggplotly for barplots
       if (startsWith(conditionMessage(cond),
-                     "'bar' objects don't have these attributes: 'mode'")) {
+                     "'bar' objects don't have these attributes: 'mode'") ||
+          startsWith(conditionMessage(cond),
+                     "'box' objects don't have these attributes: 'mode'")) {
         invokeRestart("muffleMessage")
       }
       if (any(grepl("the mode", conditionMessage(cond)))) {

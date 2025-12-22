@@ -2,7 +2,7 @@ test_that("com_unit_missingness works", {
   skip_on_cran()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   r <- com_unit_missingness(study_data, item_level = meta_data,
                             label_col = LABEL,
                        id_vars = "PSEUDO_ID", strata_vars = "CENTER_0")

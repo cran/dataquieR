@@ -356,29 +356,35 @@ pro_applicability_matrix <- function(study_data,
   ref_env <- environment()
 
   plot_me <- function(m) {
-    ggplot(m, aes(
-      x = IMPLEMENTATION, y = VARIABLES,
-      fill = APP_SCORE
-    )) +
-      geom_tile(colour = "white", linewidth = 0.8) + # https://github.com/tidyverse/ggplot2/issues/5051
-      scale_fill_manual(values = colcode, name = " ") +
-      {
-        if (split_segments) facet_wrap(~STUDY_SEGMENT,
-                                       scales = "free_y")# TODO: check ~
-      } +
-      theme_minimal() +
-      scale_x_discrete(position = "top") +
-      xlab("") +
-      guides(fill = guide_legend(
-        ncol = 1, nrow = length(colcode),
-        byrow = TRUE
+    fli <- util_coord_flip(ref_env = ref_env)
+    util_create_lean_ggplot(
+      ggplot(m, aes(
+        x = IMPLEMENTATION, y = VARIABLES,
+        fill = APP_SCORE
       )) +
-      theme(
-        legend.position = "bottom",
-        axis.text.x = element_text(angle = 90, hjust = 0),
-        axis.text.y = element_text(size = 10)#,
-        #aspect.ratio = ratio
-      ) + util_coord_flip(ref_env = ref_env)
+        geom_tile(colour = "white", linewidth = 0.8) + # https://github.com/tidyverse/ggplot2/issues/5051
+        scale_fill_manual(values = colcode, name = " ") +
+        {
+          if (split_segments) facet_wrap(~STUDY_SEGMENT,
+                                         scales = "free_y")# TODO: check ~
+        } +
+        theme_minimal() +
+        scale_x_discrete(position = "top") +
+        xlab("") +
+        guides(fill = guide_legend(
+          ncol = 1, nrow = length(colcode),
+          byrow = TRUE
+        )) +
+        theme(
+          legend.position = "bottom",
+          axis.text.x = element_text(angle = 90, hjust = 0),
+          axis.text.y = element_text(size = 10)#,
+          #aspect.ratio = ratio
+        ) + fli,
+      m = m,
+      colcode = colcode,
+      split_segments = split_segments,
+      fli = fli)
   }
 
   p <- plot_me(app_matrix_long)

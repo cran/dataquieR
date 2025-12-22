@@ -7,16 +7,73 @@
 #'                               attributes of study data
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
-#' @param max_label_len [integer] maximum length for the labels, defaults to
-#'                                `r MAX_LABEL_LEN`.
 #'
 #' @return a list containing the study data, possibly with adapted column names,
 #'         the metadata, possibly with adapted labels, and a string and a
 #'         table informing about the changes
 #'
-#' @keywords internal
+#' @noRd
+util_ensure_label <- function(meta_data, label_col) { # TODO: Add somehow also to util_validate_known_meta, after VAR_NAMES are not changed any more
+  util_stop_if_not(label_col %in% colnames(meta_data))
+  if (grepl("^LONG_", label_col)) {
+    max_label_len <- MAX_LONG_LABEL_LEN
+  } else {
+    max_label_len <- MAX_LABEL_LEN
+  }
+  res <- .util_ensure_label(meta_data = meta_data,
+                            label_col = label_col,
+                            max_label_len = max_label_len)
+  for (lc in setdiff(unique(intersect(colnames(meta_data), c(
+    LABEL,
+    LONG_LABEL,
+    grep("^LABEL_", colnames(meta_data), value = TRUE),
+    grep("^LONG_LABEL_", colnames(meta_data), value = TRUE)
+    ))), label_col)) {
+    if (grepl("^LONG_", lc)) {
+      max_label_len <- MAX_LONG_LABEL_LEN
+    } else {
+      max_label_len <- MAX_LABEL_LEN
+    }
+    cur_res <- .util_ensure_label(meta_data = meta_data,
+                       label_col = lc,
+                       max_label_len = max_label_len)
+    if (lc == VAR_NAMES) {
+      lc <- cur_res$label_col
+      if (label_col == VAR_NAMES) {
+        res$label_col <- cur_res$label_col
+      }
+    }
+    res$meta_data[[lc]] <-
+      cur_res$meta_data[[lc]]
+    if (!grepl(cur_res$label_modification_text,
+               res$label_modification_text,
+               fixed = TRUE)) {
+      res$label_modification_text = paste0(
+        res$label_modification_text,
+        cur_res$label_modification_text,
+        collapse = "\n"
+      )
+      res$label_modification_table <-
+        rbind(res$label_modification_table,
+              cur_res$label_modification_table)
+    }
+  }
+  res
+}
 
-util_ensure_label <- function(meta_data, label_col,
+#' Utility function ensuring valid labels and variable names -- internal version
+#'
+#' really shortens only label-col
+#'
+#' @param max_label_len [integer] maximum length for the labels, defaults to
+#'                                `r MAX_LABEL_LEN`.
+#' @return a list containing the study data, possibly with adapted column names,
+#'         the metadata, possibly with adapted labels, and a string and a
+#'         table informing about the changes
+#'
+#' @noRd
+#' @inheritParams util_ensure_label
+.util_ensure_label <- function(meta_data, label_col,
                               max_label_len = MAX_LABEL_LEN) { # TODO: Add somehow also to util_validate_known_meta, after VAR_NAMES are not changed any more
   util_expect_scalar(label_col, check_type = is.character)
   util_expect_data_frame(meta_data, col_names = c(label_col, VAR_NAMES))
@@ -50,6 +107,7 @@ util_ensure_label <- function(meta_data, label_col,
   modified_label <- original$meta_data[[original$label_col]]
   label_modification_text <- NULL
   label_modification_table <- data.frame(
+    "Label-Column" = rep(original$label_col, N_label),
     "Original label" = original$meta_data[[original$label_col]],
     "Modified label" = vector(mode = "character", length = N_label),
     "Reason" = vector(mode = "character", length = N_label),
@@ -103,6 +161,7 @@ util_ensure_label <- function(meta_data, label_col,
   }
 
   # check for duplicated labels ------------------------------------------------
+
   if (any(duplicated(modified_label))) {
     dupl_lab <- unique(modified_label[which(duplicated(modified_label))])
     if (length(dupl_lab) > 0) {
@@ -117,6 +176,16 @@ util_ensure_label <- function(meta_data, label_col,
       )
     }
     mod_lab_before <- modified_label
+
+    dps <- util_duplicated_inclding_first(modified_label)
+    if (any(dps)) {
+      # original$meta_data[[original$label_col]]
+      modified_label[dps] <- paste0(original$meta_data[[VAR_NAMES]][dps],
+                                    ": ",
+                                    modified_label[dps])
+    }
+
+    dupl_lab <- unique(modified_label[which(duplicated(modified_label))])
 
     for (ll in dupl_lab) {
       ii <- which(modified_label == ll)
@@ -211,6 +280,9 @@ util_ensure_label <- function(meta_data, label_col,
       new_label <- unname(my_abbreviate(modified_label[ind_long_label],
                                      minlength = max_label_len))
     }
+    if (any(nchar(new_label) > max_label_len)) {
+      new_label <- substr(new_label, 1, max_label_len)
+    }
     label_modification_table$Reason[ind_long_label] <- trimws(
       paste(label_modification_table$Reason[ind_long_label],
             "The label is too long.")
@@ -280,11 +352,12 @@ util_ensure_label <- function(meta_data, label_col,
     meta_data[[label_col]] <- modified_label
   }
 
-  label_modification_table[, 2] <- modified_label
+  label_modification_table[, "Modified label"] <- modified_label
   # only show entries with modifications
   label_modification_table <- label_modification_table[which(
-    label_modification_table[, 1] != label_modification_table[, 2] |
-      !util_empty(label_modification_table[, 3])
+    label_modification_table[, "Original label"] !=
+      label_modification_table[, "Modified label"] |
+      !util_empty(label_modification_table[, "Reason"])
   ), ]
 
   return(list(meta_data = meta_data,

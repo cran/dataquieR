@@ -11,11 +11,11 @@
 #' @return matrix of flags
 #'
 #' @seealso [prep_min_obs_level]
-#' @seealso [util_check_group_levels]
+#' @seealso `util_check_group_levels()`
 #'
 #' @family robustness_functions
 #' @concept data_management
-#' @keywords internal
+#' @noRd
 util_observations_in_subgroups <- function(x, rvs) {
   if (dim(x)[1] == 0) {
     x[1, ] <- t(rep(NA, length(x)))

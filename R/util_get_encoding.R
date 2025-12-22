@@ -3,6 +3,7 @@
 #' @inheritParams .template_function_indicator
 #'
 #' @return named vector of valid encoding strings matching `resp_vars`
+#' @noRd
 util_get_encoding <- function(resp_vars = colnames(study_data),
                               study_data,
                               label_col,

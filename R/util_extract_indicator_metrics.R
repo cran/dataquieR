@@ -3,7 +3,7 @@
 #' @param Table [data.frame], a table
 #'
 #' @family summary_functions
-#' @keywords internal
+#' @noRd
 #'
 #' @return [data.frame] columns with indicator metrics from `Table`
 util_extract_indicator_metrics <- function(Table) {

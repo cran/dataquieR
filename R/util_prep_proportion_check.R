@@ -16,7 +16,7 @@
 #'
 #' @family lookup_functions
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 
 util_prep_proportion_check <- function(resp_vars,
                                        meta_data,

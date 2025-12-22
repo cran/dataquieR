@@ -10,7 +10,7 @@
 #'
 #' @family robustness_functions
 #' @concept data_management
-#' @keywords internal
+#' @noRd
 
 
 util_check_one_unique_value <- function(x) {

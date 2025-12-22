@@ -24,7 +24,7 @@
 #'
 #' @family metadata_management
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_dist_selection <- function(study_data, val_lab = lifecycle::deprecated()) {
   if (lifecycle::is_present(val_lab)) {
     # Signal the deprecation to the user

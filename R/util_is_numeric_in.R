@@ -1,13 +1,13 @@
 #' Create a predicate function to check for certain numeric properties
 #'
-#' useful, e.g., for [util_expect_data_frame] and [util_expect_scalar]. The
+#' useful, e.g., for `util_expect_data_frame()` and `util_expect_scalar()`. The
 #' generated function returns on `TRUE` or `FALSE`, even if called with a
 #' vector.
 #'
 #' @param min if given, minimum for numeric values
 #' @param max if given, maximum for numeric values
 #' @param whole_num if TRUE, expect a whole number
-#' @param set if given, a set, the value must be in (see [util_match_arg])
+#' @param set if given, a set, the value must be in (see `util_match_arg()`)
 #' @param finite Are `Inf` and `-Inf` invalid values? (FALSE by default)
 #'
 #' @return a function that checks an `x` for the properties.
@@ -24,7 +24,7 @@
 #'
 #' @family robustness_functions
 #' @concept data_management
-#' @keywords internal
+#' @noRd
 util_is_numeric_in <- function(min = -Inf,
                                max = +Inf,
                                whole_num = FALSE,

@@ -67,7 +67,10 @@ int_encoding_errors <- function(resp_vars = NULL,
 
   if (util_is_try_error(meta_data) || nrow(meta_data) == 0) {
     meta_data <- data.frame(
-      VAR_NAMES = colnames(study_data)
+      VAR_NAMES = colnames(study_data),
+      DATA_TYPE = prep_datatype_from_data(resp_vars = colnames(study_data),
+                                          study_data =
+                                            study_data)
     )
     meta_data[[label_col]] <- meta_data[[VAR_NAMES]]
   }

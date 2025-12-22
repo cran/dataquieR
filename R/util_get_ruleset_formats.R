@@ -1,7 +1,7 @@
 #' Get formats for `DQ` categories
 #'
 #' @family summary_functions
-#' @keywords internal
+#' @noRd
 #'
 #' @return [data.frame] columns: `categories` (e.g., "1" to "5"),
 #'   `color` (e.g., "33 102 172", "67 147 195", "227 186 20", "214 96 77",
@@ -26,7 +26,9 @@ util_get_ruleset_formats <- function() {
       pkgload::is_dev_package("dataquieR")) {
     if (util_is_try_error(try(silent = TRUE,
       shipped_ruleset_formats <- pkgload::package_file("inst",
-                                                    "grading_formats.xlsx")))) {
+                                                    "grading_formats.xlsx",
+                                                    path = find.package(
+                                                      "dataquieR"))))) {
       rlang::warn(sprintf(
         "Could not find package source, trying to use %s from installed package",
         sQuote("grading_formats.xlsx")

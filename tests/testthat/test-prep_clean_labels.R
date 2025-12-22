@@ -8,13 +8,13 @@ test_that("prep_clean_labels works", {
         "body surface (\\u33A1)"
       )
   )
-  expect_message(
+  expect_message2(
     expect_equal(prep_clean_labels(meta_data1$LABEL),
                  c("syst_Blood_pressure_mmHg_1", "st_heart_frequency_in_MHz",
                    "body_surface_u33A1_")),
     regexp = "Adjusted labels to be valid variable names."
   )
-  expect_message(
+  expect_message2(
     expect_equal(prep_clean_labels("LABEL", meta_data1),
                structure(list(LABEL = c("syst_Blood_pressure_mmHg_1",
                                         "st_heart_frequency_in_MHz",
@@ -33,7 +33,7 @@ test_that("prep_clean_labels works", {
   expect_error(print(prep_clean_labels(meta_data2$LABEL, no_dups = TRUE)),
                    regexp = "Have duplicates in desired variable labels"
   )
-  expect_message(
+  expect_message2(
     expect_equal(prep_clean_labels(meta_data2$LABEL, no_dups = FALSE),
                c("syst_Blood_pressure_mmHg_1", "syst_Blood_pressure_mmHg_1",
                  "body_surface_u33A1_")),

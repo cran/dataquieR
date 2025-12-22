@@ -11,7 +11,7 @@
 #'
 #' @family summary_functions
 #' @concept reporting
-#' @keywords internal
+#' @noRd
 util_get_message_for_result <- function(result,
                                    aspect = c("applicability", "error",
                                               "anamat", "indicator_or_descriptor"),

@@ -9,11 +9,11 @@
 #'
 #' @return augments metadata by interpretable limit columns
 #'
-#' @seealso [util_validate_known_meta]
+#' @seealso `util_validate_known_meta()`
 #' @family parser_functions
 #' @concept robustness
-#' @keywords internal
-util_interpret_limits <- function(mdata) { # TODO: Use the redcap parser, instead
+#' @noRd
+util_interpret_limits <- function(mdata) { # TODO: Use the redcap parser, instead!!
 
   report_generation_time <- as.character(Sys.time())
 
@@ -72,14 +72,32 @@ util_interpret_limits <- function(mdata) { # TODO: Use the redcap parser, instea
                        if (xs1 %in% c("", "Inf", "+Inf", "-Inf", "today")) {
                          a <- TRUE
                        } else {
-                         a <- !inherits(try(as.POSIXct(xs1), silent = TRUE),
+                         a <- !inherits(try(suppressWarnings(util_parse_date(xs1,
+                                                                             optional = FALSE)),
+                                            silent = TRUE),
                                         "try-error")
+                         if (!a) {
+                           # also accept time-only (hms) limits
+                           a <- !inherits(try(suppressWarnings(util_parse_time(xs1,
+                                                                               optional = FALSE)),
+                                              silent = TRUE),
+                                          "try-error")
+                         }
                        }
                        if (xs2 %in% c("", "Inf", "+Inf", "-Inf", "today")) {
                          b <- TRUE
                        } else {
-                         b <- !inherits(try(as.POSIXct(xs2), silent = TRUE),
+                         b <- !inherits(try(suppressWarnings(util_parse_date(xs2,
+                                                                             optional = FALSE)),
+                                            silent = TRUE),
                                         "try-error")
+                         if (!b) {
+                           # also accept time-only (hms) limits
+                           b <- !inherits(try(suppressWarnings(util_parse_time(xs2,
+                                                                               optional = FALSE)),
+                                              silent = TRUE),
+                                          "try-error")
+                         }
                        }
                        a && b
                      })
@@ -111,18 +129,29 @@ util_interpret_limits <- function(mdata) { # TODO: Use the redcap parser, instea
 
       # extract values
       X_LOWER <- (gsub(X[, "1"],
-        replacement = "",
-        pattern = "[\\(|\\[]",
-        perl = TRUE
+                       replacement = "",
+                       pattern = "[\\(|\\[]",
+                       perl = TRUE
       ))
       X_UPPER <- (gsub(X[, "2"],
-        replacement = "",
-        pattern = "[\\)|\\]]",
-        perl = TRUE
+                       replacement = "",
+                       pattern = "[\\)|\\]]",
+                       perl = TRUE
       ))
       ## date
       date_vars <- X[[DATA_TYPE]] == DATA_TYPES$DATETIME
       date_vars[is.na(date_vars)] <- FALSE
+
+      # --- detect time-only (hms) style limits (heuristic if no explicit TIME type) ---
+      has_colon_lower <- grepl(":", X_LOWER, fixed = TRUE)
+      has_colon_upper <- grepl(":", X_UPPER, fixed = TRUE)
+      looks_like_date_lower <- grepl("\\b\\d{4}[-/]\\d{2}[-/]\\d{2}\\b", X_LOWER)
+      looks_like_date_upper <- grepl("\\b\\d{4}[-/]\\d{2}[-/]\\d{2}\\b", X_UPPER)
+      time_vars <- (!date_vars) & ((has_colon_lower | has_colon_upper) &
+                                     !(looks_like_date_lower | looks_like_date_upper))
+      time_vars[is.na(time_vars)] <- FALSE
+      # If you have DATA_TYPES$TIME, you could also OR it in:
+      # time_vars <- (X[[DATA_TYPE]] == DATA_TYPES$TIME) | time_vars
 
       IS_LOWER_INF <- grepl(perl = TRUE, ignore.case = TRUE,
                             "^\\s*[\\+\\-]?\\s*Inf\\s*$", X_LOWER[date_vars])
@@ -145,19 +174,42 @@ util_interpret_limits <- function(mdata) { # TODO: Use the redcap parser, instea
 
       # extract values
       X$LOWER[date_vars] <- suppressWarnings(
-        as.numeric(as.POSIXct(X_LOWER[date_vars],
-                                                  optional = TRUE)))
+        as.numeric(util_parse_date(X_LOWER[date_vars], optional = TRUE)))
       X$UPPER[date_vars] <- suppressWarnings(
-        as.numeric(as.POSIXct(X_UPPER[date_vars],
-                                                  optional = TRUE)))
+        as.numeric(util_parse_date(X_UPPER[date_vars], optional = TRUE)))
 
       X$LOWER[date_vars][IS_LOWER_INF] <- suppressWarnings(
         as.numeric(VAL_LOWER_INF))
       X$UPPER[date_vars][IS_UPPER_INF] <- suppressWarnings(
         as.numeric(VAL_UPPER_INF))
 
-      X$LOWER[!date_vars] <- suppressWarnings(as.numeric(X_LOWER[!date_vars]))
-      X$UPPER[!date_vars] <- suppressWarnings(as.numeric(X_UPPER[!date_vars]))
+      # --- time-only (hms) limits: interpret as seconds since midnight ---
+      if (any(time_vars)) {
+        IS_LOWER_INF_T <- grepl(perl = TRUE, ignore.case = TRUE,
+                                "^\\s*[\\+\\-]?\\s*Inf\\s*$", X_LOWER[time_vars])
+        IS_UPPER_INF_T <- grepl(perl = TRUE, ignore.case = TRUE,
+                                "^\\s*[\\+\\-]?\\s*Inf\\s*$", X_UPPER[time_vars])
+        IS_LOWER_NOW_T <- grepl(perl = TRUE, ignore.case = TRUE,
+                                "^\\s*today\\s*$", X_LOWER[time_vars])
+        IS_UPPER_NOW_T <- grepl(perl = TRUE, ignore.case = TRUE,
+                                "^\\s*today\\s*$", X_UPPER[time_vars])
+
+        # normalize empty/Inf/today to NA for time-only
+        X_LOWER[time_vars][trimws(X_LOWER[time_vars]) == ""] <- NA
+        X_UPPER[time_vars][trimws(X_UPPER[time_vars]) == ""] <- NA
+        X_LOWER[time_vars][IS_LOWER_INF_T | IS_LOWER_NOW_T] <- NA
+        X_UPPER[time_vars][IS_UPPER_INF_T | IS_UPPER_NOW_T] <- NA
+
+        lower_t <- suppressWarnings(util_parse_time(X_LOWER[time_vars], optional = TRUE))
+        upper_t <- suppressWarnings(util_parse_time(X_UPPER[time_vars], optional = TRUE))
+
+        X$LOWER[time_vars] <- suppressWarnings(as.numeric(lower_t))
+        X$UPPER[time_vars] <- suppressWarnings(as.numeric(upper_t))
+      }
+
+      # numeric (everything else)
+      X$LOWER[!date_vars & !time_vars] <- suppressWarnings(as.numeric(X_LOWER[!date_vars & !time_vars]))
+      X$UPPER[!date_vars & !time_vars] <- suppressWarnings(as.numeric(X_UPPER[!date_vars & !time_vars]))
 
       damaged_lower_limit <- ((!is.na(X_LOWER) & X_LOWER != "") &
                                 is.na(X$LOWER))
@@ -213,8 +265,8 @@ util_interpret_limits <- function(mdata) { # TODO: Use the redcap parser, instea
         paste0("INCL_", paste0(pv[i], "_LIMIT_LOW")),
         paste0("INCL_", paste0(pv[i], "_LIMIT_UP"))
       )
-# --> for dates, use as.POSIXct(X$UPPER, origin = min(Sys.time(), 0))
-#     to translate back.
+      # --> for dates, use as.POSIXct(X$UPPER, origin = min(Sys.time(), 0))
+      #     to translate back.
 
       mdata_ext <- merge(mdata_ext, X, by = "VAR_NAMES", all.x = TRUE)
     }

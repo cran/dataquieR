@@ -94,7 +94,7 @@ acc_multivariate_outlier <- function(variable_group = NULL,
                                      multivariate_outlier_check = TRUE) { # TODO: see univ.out to select criteria to use
 
   # preps ----------------------------------------------------------------------
-  util_expect_scalar(multivariate_outlier_check,
+   util_expect_scalar(multivariate_outlier_check,
                      check_type = is.logical)
   if (.called_in_pipeline && !multivariate_outlier_check) {
     util_error("No multivariate outliers requested",
@@ -189,12 +189,24 @@ acc_multivariate_outlier <- function(variable_group = NULL,
   # map metadata to study data
   prep_prepare_dataframes(.replace_hard_limits = TRUE)
 
+#  needed_scale <- paste0("interval", SPLIT_CHAR, "ratio")
+#  if (COMPUTED_VARIABLE_ROLE %in% colnames(meta_data)) {
+ #   if (#one of the variables inside variable_group   ??
+ #     %in% meta_data$COMPUTED_VARIABLE_ROLE) {
+ #     needed_scale <- paste0(needed_scale, SPLIT_CHAR, "ordinal")
+ #   }
+#  }
+
+
   util_correct_variable_use("variable_group",
     allow_more_than_one = TRUE,
     allow_any_obs_na = TRUE,
     need_type = "integer | float",
     need_scale = "interval | ratio"
   )
+
+
+
 
   if (length(variable_group) == 1) {
     util_error("Need at least two variables for multivariate outliers.",
@@ -396,24 +408,33 @@ acc_multivariate_outlier <- function(variable_group = NULL,
   names(.s) <- levels(ds2plot$Rules)
 
   # PLOT
-  p <- ggplot(ds2plot, aes(x = factor(variable, levels = variable_group),
-                           y = value, colour = Rules,
-                           group = .data[[id_vars]],
-                           label = .data$orig_value)) +
-    geom_path(aes(alpha = Rules, linewidth = Rules), position = "identity") +
-    scale_color_manual(values = disc_cols) +
-    geom_point(aes(alpha = Rules)) +
-    scale_alpha_manual(values = .a) +
-    discrete_scale("linewidth", # deprecated since ggplot 3.6.0: "outlier_rules_scale",
-                            palette = function(n) {
-                              c(0.05, 0.2, 0.3, 0.4, 0.5)
-                            }) +
-    xlab("") + ylab("") +
-    theme_minimal()
+  p <- util_create_lean_ggplot(
+    ggplot(ds2plot, aes(x = factor(variable, levels = variable_group),
+                        y = value, colour = Rules,
+                        group = .data[[id_vars]],
+                        label = .data$orig_value)) +
+      geom_path(aes(alpha = Rules,
+                    linewidth = Rules),
+                position = "identity") +
+      scale_color_manual(values = disc_cols) +
+      geom_point(aes(alpha = Rules)) +
+      scale_alpha_manual(values = .a) +
+      discrete_scale("linewidth", # deprecated since ggplot 3.6.0: "outlier_rules_scale",
+                     palette = function(n) {
+                       c(0.05, 0.2, 0.3, 0.4, 0.5)
+                     }) +
+      xlab("") + ylab("") +
+      theme_minimal(),
+    ds2plot = ds2plot,
+    variable_group = variable_group,
+    id_vars = id_vars,
+    disc_cols = disc_cols,
+    .a = .a)
 
   if (scale) {
-    p <- p +
-      scale_y_continuous(breaks = c(0, 1), labels = c("min", "max"))
+    p <- p + util_create_lean_ggplot(
+                                   scale_y_continuous(breaks = c(0, 1),
+                                                      labels = c("min", "max")))
   }
 
   # Information for sizing
@@ -480,8 +501,6 @@ acc_multivariate_outlier <- function(variable_group = NULL,
   }
 
   ##########################################
-
-
   return(list(FlaggedStudyData = ds1plot,
               SummaryTable = SummaryTable,  # TODO: VariableGroupTable, maybe other functions, too?
               SummaryData = SummaryData,  # TODO: VariableGroupTable, maybe other functions, too?

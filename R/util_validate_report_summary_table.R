@@ -7,7 +7,7 @@
 #' @param label_col [variable attribute] the name of the column in the metadata
 #'                                       with labels of variables
 #' @return [data.frame] maybe fixed `ReportSummaryTable`
-#' @keywords internal
+#' @noRd
 util_validate_report_summary_table <- function(tb, meta_data, label_col) {
   util_expect_data_frame(tb, c("Variables", "N"))
   # test, all columns except Variables numeric

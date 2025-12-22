@@ -1,5 +1,8 @@
 test_that("dq_report_by works with content m", {
-  skip_if_not_installed("withr")
+  skip_if_not_installed("DT")
+  skip_if_not_installed("markdown")
+  skip_if_not_installed("stringdist")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -9,7 +12,7 @@ test_that("dq_report_by works with content m", {
     # TODO: test with all sorts of _by calls and on windows
     target <- withr::local_tempdir("testdqareportby")
 
-    study_data <- head(prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData"), 100)
+    study_data <- head(prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE), 100)
 
 
     #Added a new grading ruleset
@@ -23,12 +26,13 @@ test_that("dq_report_by works with content m", {
                                                         NA,
                                                         NA,
                                                         NA,
+                                                        NA,
                                                         "[0; 0]",
                                                         "(0; 100]")
 
     prep_add_data_frames(grading_rulesets = default_grading_ruleset)
 
-    expect_message(dq_report_by(study_data = study_data,
+    expect_message2(dq_report_by(study_data = study_data,
                  dimensions = "int",
                  cores = NULL,
                  segment_column = STUDY_SEGMENT,

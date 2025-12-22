@@ -7,34 +7,26 @@
 #'
 #' @family missing_functions
 #' @concept robustness
-#' @keywords internal
+#' @noRd
 util_is_na_0_empty_or_false <- function(x) { # TODO: generic?
+  cs <- paste0("util_is_na_0_empty_or_false.", rlang::hash(x))
+  if (exists(cs, envir = .study_data_cache)) { # TODO: maybe RAM intensive?
+    return(get(cs, envir = .study_data_cache))
+  }
+  if (inherits(x, "hms")) { # maybe more general: !is.vector(x)
+    x <- util_as_character(x)
+  }
   y <- x
   class(y) <- "logical"
   attributes(y) <- NULL
   y[] <- FALSE
   y[is.na(x)] <- TRUE
-  y[!(trimws(x) %in% c("true", "TRUE", "T", "t", "+", ""))] <- TRUE
-  idx <- !!suppressWarnings(as.numeric(x))
+  y[(trimws(x) %in% c("false", "FALSE", "F", "f", "-", ""))] <- TRUE
+  idx <- !suppressWarnings(as.numeric(x))
   idx[is.na(idx)] <- FALSE
-  y[idx] <- FALSE
+  y[idx] <- TRUE
   y <- as.logical(y)
+  assign(cs, y, envir = .study_data_cache)
   return(y)
 }
 
-# xxx <- function(x) {
-#   vapply(x, FUN.VALUE = logical(1), FUN = function(y) {
-#     if (is.na(y)) {
-#       return(TRUE)
-#     }
-#     if (is.character(y) && trimws(y) %in% c("true", "TRUE", "T", "t", "+")) {
-#       return(TRUE)
-#     }
-#     ny <- suppressWarnings(as.numeric(y))
-#     if (!is.na(ny)) {
-#       return(!ny)
-#     }
-#     return(FALSE)
-#   })
-#
-# }

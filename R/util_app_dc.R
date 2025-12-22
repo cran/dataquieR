@@ -14,7 +14,7 @@
 #' - 4 not applicable because of not suitable data type
 #'
 #' @seealso [pro_applicability_matrix]
-#' @keywords internal
+#' @noRd
 
 util_app_dc <- function(x, dta) {
   aa <- paste0(dta, 1)

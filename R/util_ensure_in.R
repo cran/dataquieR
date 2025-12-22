@@ -16,7 +16,7 @@
 #'
 #' @family robustness_functions
 #' @concept robustness
-#' @keywords internal
+#' @noRd
 util_ensure_in <- function(x, set, err_msg, error = FALSE, applicability_problem = NA) {
   util_expect_scalar(error, check_type = is.logical)
   if (missing(err_msg)) {

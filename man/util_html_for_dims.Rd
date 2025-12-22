@@ -29,7 +29,7 @@ by this factor.}
 }
 \value{
 list of arguments for \code{append_single_page()} defined locally in
-\code{\link[=util_generate_pages_from_report]{util_generate_pages_from_report()}}.
+\code{util_generate_pages_from_report()}.
 }
 \description{
 Create a dynamic dimension related page for the report

@@ -9,7 +9,7 @@
 #' @return value of the symbol, if available, `NULL` otherwise
 #'
 #' @family condition_functions
-#' @keywords internal
+#' @noRd
 util_find_indicator_function_in_callers <- function(symbol = "resp_vars") {
   n <- 1
   found <- FALSE

@@ -21,7 +21,7 @@
 #' @param escape_all_content [logical] if `TRUE`, treat `tb` and `hover_texts`
 #'                                     using some `HTML` escaping function
 #'
-#' @seealso [util_html_table()]
+#' @seealso `util_html_table()`
 #'
 #' @return `htmltools` compatible object
 #' @examples
@@ -34,7 +34,7 @@
 #' htmltools::browsable(util_formattable(tb[, -1]))
 #' }
 #'
-#' @keywords internal
+#' @noRd
 util_formattable <- function(tb,
                              min_val = min(tb, na.rm = TRUE),
                              max_val = max(tb, na.rm = TRUE),

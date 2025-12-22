@@ -9,7 +9,7 @@
 }
 \arguments{
 \item{x}{\link{list} a dataquieR result from \link{dq_report2} or
-\link{util_eval_to_dataquieR_result}}
+\code{util_eval_to_dataquieR_result}}
 
 \item{...}{passed to print. Additionally, the argument \code{slot} may be passed
 to print only specific sub-results.}
@@ -21,5 +21,5 @@ see print
 Print a \link{dataquieR} result returned by \link{dq_report2}
 }
 \seealso{
-\code{\link[=util_pretty_print]{util_pretty_print()}}
+\code{util_pretty_print()}
 }

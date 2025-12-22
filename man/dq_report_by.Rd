@@ -27,6 +27,8 @@ dq_report_by(
   advanced_options = list(),
   storr_factory = NULL,
   amend = FALSE,
+  checkpoint_resumed = getOption("dataquieR.resume_checkpoint",
+    dataquieR.resume_checkpoint_default),
   ...,
   output_dir = NULL,
   input_dir = NULL,
@@ -192,6 +194,12 @@ ends may nevertheless work, yet, they are not tested.}
 \item{amend}{\link{logical} if there is already data in.\code{storr_factory},
 use it anyways -- unsupported, so far!}
 
+\item{checkpoint_resumed}{\link{logical} if using a \code{storr_factory} and the back-
+end there is already filled, and if
+\code{amend} is missing or set to \code{TRUE},
+compute all missing result and add them
+to the back-end.}
+
 \item{...}{arguments to be passed through to \link{dq_report} or \link{dq_report2}}
 
 \item{output_dir}{\link{character} if given, the output is not returned but saved
@@ -225,8 +233,10 @@ written to the path \code{output_dir}}
 \item{`cross-item_level`}{\link{data.frame} alias for \code{meta_data_cross_item}}
 }
 \value{
-\code{\link[=invisible]{invisible()}}. named \link{list} of named \link{list}s of \link{dq_report2} reports
-or, if \code{output_dir} has been specified, \code{invisible(NULL)}
+A named \link{list} of named \link{list}s of \link{dq_report2} reports, returned
+invisibly unless \code{view = TRUE}. If \code{output_dir} is given, the result
+is still returned (invisibly), and optionally opened in a browser
+(\code{view = TRUE}, \code{also_print = TRUE}).
 }
 \description{
 Generate a stratified full DQ report

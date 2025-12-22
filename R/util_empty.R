@@ -5,7 +5,7 @@
 #'
 #' @family robustness_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_empty <- function(x) {
   xx <- "not_empty"
   if (util_is_try_error(try(xx <- trimws(x), silent = TRUE))) {

@@ -17,7 +17,7 @@ des_summary(
 )
 }
 \arguments{
-\item{resp_vars}{\link{variable} the name of the measurement variable}
+\item{resp_vars}{\link{variable} the name of the measurement variables}
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
@@ -37,7 +37,8 @@ if you specify \code{meta_data_v2}.}
 
 \item{hard_limits_removal}{\link{logical} if TRUE values outside hard limits are
 removed from the data before calculating
-descriptive statistics. The default is FALSE}
+descriptive statistics.
+The default is FALSE}
 
 \item{...}{arguments to be passed to all called indicator functions if
 applicable.}
@@ -59,15 +60,10 @@ TODO
 }
 \examples{
 \dontrun{
-prep_load_workbook_like_file("meta_data_v2")
-xx <- des_summary(study_data = "study_data", meta_data =
-                   prep_get_data_frame("item_level"))
-util_html_table(xx$SummaryData)
-util_html_table(des_summary(study_data = prep_get_data_frame("study_data"),
-                   meta_data = prep_get_data_frame("item_level"))$SummaryData)
-
+xx <- des_summary(study_data = "study_data", meta_data_v2 = "meta_data_v2")
+xx$SummaryData
 }
 }
 \seealso{
-\href{https://dataquality.qihs.uni-greifswald.de/VIN_des_impl_summary.html}{Online Documentation}
+\href{https://dataquality.qihs.uni-greifswald.de/VIN_des_summary.html}{Online Documentation}
 }

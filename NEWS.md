@@ -1,3 +1,87 @@
+# dataquieR 2.8.2
+
+* disabled slow tests
+
+# dataquieR 2.8.1
+
+* small fixes
+
+# dataquieR 2.8.0
+
+* Improved memory performance
+* Improved parallel rendering
+* Reduced internal documentation size
+* Documentation typos fixed; documentation improved and streamlined
+* Several test improvements; more robust handling of suggested packages
+* Removed bundled `jsPDF` HTML dependency; `visNetwork` is now suggested instead  
+  (saves ~356 KB installed size)
+* Various bug fixes related to new `S7` rendering
+* Improved handling of `options()`
+* `dq_report_by()` no longer errors if `plotly` is missing but disables
+  `plotly` functionality gracefully
+* Improved metadata page rendering
+
+## Major internal change (may imply breaking changes)
+
+* `ggplot2` objects are now returned as lightweight promises (`dq_lazy_ggplot`)
+  to avoid serializing large `S7` objects  
+  * If required, materialize explicitly via `prep_realize_ggplot(p)`
+  * This reduces RAM demands but may require adaptation in downstream plot
+    processing
+  * If necessary, memory usage caused by `S7` compatibility can be reduced via  
+    `options(dataquieR.lazy_plots_gg_compatibility = "FALSE")`, which may
+    require more frequent calls to `prep_realize_ggplot()`
+
+* If you use saved report objects created with older
+  `ggplot2` / `patchwork` versions, they may stop working. Either
+  recompute them or temporarily downgrade:
+```r
+remotes::install_version("patchwork", version = "1.3.0")
+remotes::install_version("ggplot2", version = "3.5.2")
+```
+  This workaround is only intended for restoring compatibility with
+  previously saved report objects. No guarantee is given and you use it
+  at your own risk. For long-term use, we recommend recomputing the
+  reports with current package versions.
+
+## Other noteworthy changes
+
+### Indicators, analytics & semantics
+* Added complex limits for `cross-item_level` metadata  
+  (`HARD_LIMITS`, `SOFT_LIMITS`, `DETECTION_LIMITS`).  
+  If both complex and item-level limits exist, complex limits take precedence
+* Work in progress: Added careless responding measures (new **Scales** menu), 
+  including:  
+  maximum long string, missing responses per participant,  
+  intra-individual response variability, response times, completion speed,  
+  Mahalanobis distance
+* Removed indicator `PCT_acc_ud_loc` from `acc_margins()` and grading rulesets
+* Removed metric `FLG_acc_ud_loc` from `acc_margins()`
+
+### Rendering, tables & plots
+* Improved `des_summary()`:
+  * restructured and more robust
+  * column `"No. categories/Freq. table"` split into  
+    `"No. categories (incl. NAs)"` and `"Level_freq"`
+  * column `"Variables"` renamed `"Variable_names"`  
+    (previous content now in attribute `plain_label`)
+* Factors are no longer converted to integers; they are converted to `character`
+  first (controlled via option `dataquieR.old_factor_handling`)
+* Correlation plots no longer depend on `GGally`
+* Proper and consistent date/time parsing
+* Better control over visibility of unused heatmap levels
+* Improved thumbnail handling and table variable columns
+
+### Performance, robustness & infrastructure
+* Parallel rendering now more stable
+* Reduced RAM demands
+* Improved JavaScript utilities for handling results
+* More robust rendering in general
+* Improved error detection for inadmissible values in group variables with
+  `VALUE_LABELS`
+* Experimental `prep_init_parallel_print()` removed (no longer needed)
+
+
 # dataquieR 2.5.1
 
 * News

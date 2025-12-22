@@ -9,9 +9,14 @@
 #' @param ... additional arguments for [rio::import]
 #'
 #' @return [data.frame] as in [rio::import]
-#' @keywords internal
+#' @noRd
 util_rio_import <- function(fn, keep_types, ...) {
-  .util_rio_import_lambda(fn, keep_types, lambda = rio::import, ...)
+  r <- .util_rio_import_lambda(fn, keep_types, lambda = rio::import, ...)
+  .util_warn_on_possible_study_data_read_with_keep_types_false_or_vv(
+    r,
+    fn = fn,
+    keep_types = keep_types)
+  r
 }
 
 #' Import list of data frames
@@ -25,13 +30,113 @@ util_rio_import <- function(fn, keep_types, ...) {
 #' @param ... additional arguments for [rio::import_list]
 #'
 #' @return [list] as in [rio::import_list]
-#' @keywords internal
+#' @noRd
 #'
 util_rio_import_list <- function(fn, keep_types, ...) {
-  .util_rio_import_lambda(fn, keep_types, lambda = rio::import_list, ...)
+  r <- .util_rio_import_lambda(fn, keep_types, lambda = rio::import_list, ...)
+  .util_warn_on_possible_study_data_read_with_keep_types_false_or_vv(
+    r,
+    fn = fn,
+    keep_types = keep_types)
+  r
 }
 
-.util_rio_import_lambda <- function(fn, keep_types, lambda, ...) { # FIXME: Detect invalid utf-8 codes and remove such. use readr::guess_encoding()??
+.util_warn_on_possible_study_data_read_with_keep_types_false_or_vv <-
+  function(x, fn, keep_types, sheet = "", segments = character(0)) {
+  segments <- unique(c(segments, unlist(eapply(.dataframe_environment(),
+                                               function(df0) {
+                                                 if (!is.data.frame(df0)) return(character(0))
+                                                 df0[, intersect(colnames(df0), c(KEY_STUDY_SEGMENT, STUDY_SEGMENT))]
+                                               }))))
+  other_allowed_names <- sort(c(
+    "indicator_metric",
+    "Description",
+    paste0("dqi_cat_", 1:20),
+    "category",
+    "label",
+    "color",
+    "ID",
+    "Metadata sheet",
+    "Column name",
+    "Definition",
+    "Use in dataquieR reporting"
+  ))
+  if (keep_types) { # expecting study data
+    if (!is.data.frame(x)) {
+      segments <- unique(c(segments, unlist(lapply(x, function(df0) {
+        if (!is.data.frame(df0)) return(character(0))
+        df0[, intersect(colnames(df0), c(KEY_STUDY_SEGMENT, STUDY_SEGMENT))]
+      }))))
+      segments <- segments[!util_empty(segments)]
+      mapply(SIMPLIFY = FALSE,
+             x = x,
+             sheet = names(x),
+             FUN =
+            .util_warn_on_possible_study_data_read_with_keep_types_false_or_vv,
+             MoreArgs = list(
+               fn = fn,
+               keep_types = TRUE,
+               segments = segments
+            )
+      )
+    } else {
+      ratio <- sum(vapply(colnames(x), # of known metadata column names
+                   function(cn) {
+                     exists(cn,
+                            envir = getNamespace("dataquieR"),
+                            inherits = FALSE) || cn %in% c(other_allowed_names,
+                                                           segments)
+                   }, FUN.VALUE = logical(1))) / ncol(x)
+      if (ratio >= .8) { # >= 80% well known metadata names
+        util_message(c("%s: Found many (%g %%) column names that look like",
+                       "meta data but %s was set to %s -- did you read",
+                       "the file keeping column types on purpose, this",
+                       "is not suitable for metadata. Colunm names: %s"),
+                     dQuote(fn),
+                     100 * ratio, sQuote("keep_types"), dQuote(keep_types),
+                     util_pretty_vector_string(colnames(x)))
+      }
+    }
+  } else { # expecting metadata
+    if (!is.data.frame(x)) {
+      segments <- unique(c(segments, unlist(lapply(x, function(df0) {
+        if (!is.data.frame(df0)) return(character(0))
+        df0[, intersect(colnames(df0), c(KEY_STUDY_SEGMENT, STUDY_SEGMENT))]
+      }))))
+      segments <- segments[!util_empty(segments)]
+      mapply(SIMPLIFY = FALSE,
+             x = x,
+             sheet = names(x),
+             FUN =
+            .util_warn_on_possible_study_data_read_with_keep_types_false_or_vv,
+             MoreArgs = list(
+               fn = fn,
+               keep_types = FALSE,
+               segments = segments
+             )
+      )
+    } else {
+      ratio <- sum(vapply(colnames(x), # of known metadata column names
+                   function(cn) {
+                     exists(cn,
+                            envir = getNamespace("dataquieR"),
+                            inherits = FALSE) || cn %in% c(other_allowed_names,
+                                                           segments)
+                   }, FUN.VALUE = logical(1))) / ncol(x)
+      if (ratio < .05) { # < 5% well known metadata names
+        util_message(c("%s: Found only few (%g %%) column names that look like",
+                       "meta data but %s was set to %s -- did you read",
+                       "the file as text-only on purpose, this",
+                       "is not suitable for study data. Colunm names: %s"),
+                     dQuote(fn),
+                     100 * ratio, sQuote("keep_types"), dQuote(keep_types),
+                     util_pretty_vector_string(colnames(x)))
+      }
+    }
+  }
+}
+
+.util_rio_import_lambda <- function(fn, keep_types, lambda, ...) { # TODO: Detect invalid utf-8 codes and remove such. use readr::guess_encoding()??
   withr::local_options(list("datatable.na.strings" = c("NA",
                                                        "-",
                                                        "",
@@ -78,8 +183,12 @@ util_rio_import_list <- function(fn, keep_types, ...) {
   }
   need_read_as_text <-
     (!keep_types || file_type_needs_type_adjust)
+  warns1 <- new.env(parent = emptyenv())
+  warns1$warns <- list()
+  warns2 <- new.env(parent = emptyenv())
+  warns2$warns <- list()
   r <- suppressWarnings(suppressMessages(
-    util_suppress_output(try(lambda(fn, ...), silent = TRUE))))
+    util_suppress_output(try(lambda(fn, ...), silent = TRUE), warns = warns1)))
   if (need_read_as_text && !util_is_try_error(r)) {
     .rio_res_is_not_null <- function(rx, .is_list) {
       if (.is_list) {
@@ -91,7 +200,7 @@ util_rio_import_list <- function(fn, keep_types, ...) {
     }
     r2 <- util_suppress_output(suppressMessages(suppressWarnings(
       try(lambda(fn, ..., col_types = col_types,
-                      colClasses = "character"), silent = TRUE))))
+                    colClasses = "character"), silent = TRUE))), warns = warns2)
     if (!util_is_try_error(r2) && .rio_res_is_not_null(r2,
                                                        .is_list = is_list)) {
       r <- r2
@@ -142,6 +251,21 @@ util_rio_import_list <- function(fn, keep_types, ...) {
         util_pretty_vector_string(e$trouble_cols, n_max = 5))
     }
   }
+  is_excel <- endsWith(tolower(fn), ".xls") || endsWith(tolower(fn), ".xlsx")
+  if (isTRUE(keep_types) && is_excel) {
+    if (is_list) {
+      r <- lapply(r, .util_convert_time_only_cols_df)
+    } else {
+      r <- .util_convert_time_only_cols_df(r)
+    }
+  }
+  all_warns <- c(warns1$warns,
+                 warns2$warns)
+  if (length(all_warns) > 0) {
+    all_warns <- lapply(all_warns, conditionMessage)
+    util_warning("Could not correctly read %s: %s",
+                 fn, util_pretty_vector_string(all_warns, n_max = 4))
+  }
   r
 }
 
@@ -173,5 +297,42 @@ util_rio_import_list <- function(fn, keep_types, ...) {
                             "fmt", drop = TRUE];
   formats_with_weird_types
 })
+
+# Detect whether a POSIXct vector is an Excel "time-only" column
+.util_is_excel_time_only <- function(x) {
+  if (!inherits(x, "POSIXct")) return(FALSE)
+  if (all(is.na(x))) return(FALSE)
+  # Excel time-only values are datetimes anchored at an origin date
+  # (Windows origin 1899-12-30/31; macOS origin 1904-01-01)
+  ux <- unique(as.Date(x, tz = "UTC"))
+  origins <- as.Date(c("1899-12-30", "1899-12-31", "1904-01-01"))
+  # treat as time-only if ALL non-NA dates are one of the known origins
+  all(ux %in% origins)
+}
+
+# Convert POSIXct Excel time-only to hms (or difftime fallback)
+.util_posixct_to_hms <- function(x) {
+  secs <- suppressWarnings(as.numeric(x)) %% (24 * 3600)
+  secs[is.na(x)] <- NA_real_
+  if (requireNamespace("hms", quietly = TRUE)) {
+    return(hms::as_hms(secs))
+  } else {
+    # fallback to difftime if hms isn't available
+    return(structure(secs, class = "difftime", units = "secs"))
+  }
+}
+
+# Convert all time-only columns in a data.frame
+.util_convert_time_only_cols_df <- function(dfr) {
+  if (!is.data.frame(dfr) || !ncol(dfr)) return(dfr)
+  for (cn in names(dfr)) {
+    x <- dfr[[cn]]
+    if (.util_is_excel_time_only(x)) {
+      dfr[[cn]] <- .util_posixct_to_hms(x)
+    }
+  }
+  dfr
+}
+
 
 # FIXME: If I read the files with robust data types, int_datatype_somehing cannot run, so find a way to read it as string, first.

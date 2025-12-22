@@ -24,7 +24,7 @@
 #'
 #' @family robustness_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_ensure_suggested <- function(pkg, goal =
                                     ifelse(
                                       is.null(

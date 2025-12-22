@@ -7,10 +7,10 @@
 #'               (error, applicability error)
 #' @param ... not used
 #'
-#' @return a category, see [util_as_cat()]
+#' @return a category, see `util_as_cat()`
 #'
 #' @family summary_functions
-#' @keywords internal
+#' @noRd
 util_get_category_for_result <- function(result, aspect =
                                         c("applicability", "error",
                                           "anamat", "indicator_or_descriptor"),

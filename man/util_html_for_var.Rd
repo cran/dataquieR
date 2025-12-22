@@ -5,17 +5,22 @@
 \title{Create a dynamic single variable page for the report}
 \usage{
 util_html_for_var(
-  report,
+  results,
   cur_var,
   use_plot_ly,
   template,
   note_meta = c(),
   rendered_repsum,
-  dir
+  dir,
+  meta_data,
+  label_col,
+  dims_in_rep,
+  clls_in_rep,
+  function_alias_map
 )
 }
 \arguments{
-\item{report}{\link{dataquieR_resultset2} a \code{dq_report2} report}
+\item{results}{\link{list} a list of subsets of the report matching \code{cur_var}}
 
 \item{cur_var}{\link{character} variable name for single variable pages}
 
@@ -33,7 +38,7 @@ util_html_for_var(
 }
 \value{
 list of arguments for \code{append_single_page()} defined locally in
-\code{\link[=util_generate_pages_from_report]{util_generate_pages_from_report()}}.
+\code{util_generate_pages_from_report()}.
 }
 \description{
 Create a dynamic single variable page for the report

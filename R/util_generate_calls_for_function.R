@@ -16,7 +16,7 @@
 #'
 #' @family reporting_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_generate_calls_for_function <-
   function(fkt,
            meta_data,

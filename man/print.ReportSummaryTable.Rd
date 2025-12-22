@@ -11,6 +11,8 @@
   fillContainer = FALSE,
   displayValues = FALSE,
   view = TRUE,
+  drop = getOption("dataquieR.droplevels_ReportSummaryTable",
+    dataquieR.droplevels_ReportSummaryTable_default),
   ...,
   flip_mode = "auto"
 )
@@ -30,6 +32,9 @@ values}
 
 \item{view}{\link{logical} if \code{view} is \code{FALSE}, do not print but return the
 output, only}
+
+\item{drop}{\link{logical} if \code{drop} is \code{FALSE}, keep unused levels,
+see \link{dataquieR.droplevels_ReportSummaryTable}}
 
 \item{...}{not used, yet}
 

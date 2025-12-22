@@ -18,6 +18,7 @@
   </clipPath>
 </defs>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+<rect x='0.00' y='0.00' width='720.00' height='576.00' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
 </g>
 <defs>
   <clipPath id='cpNzUuMjZ8NzE0LjUyfDcxLjYwfDQ4NS44MA=='>
@@ -36,7 +37,7 @@
 <rect x='128.54' y='81.46' width='532.71' height='98.62' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
-<text transform='translate(394.89,66.67) rotate(-90)' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='31.29px' lengthAdjust='spacingAndGlyphs'>MATCH</text>
+<text transform='translate(400.95,66.67) rotate(-90)' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='31.29px' lengthAdjust='spacingAndGlyphs'>MATCH</text>
 <text x='70.33' y='430.07' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='32.24px' lengthAdjust='spacingAndGlyphs'>CRP_0</text>
 <text x='70.33' y='331.45' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='32.25px' lengthAdjust='spacingAndGlyphs'>BSG_0</text>
 <text x='70.33' y='232.83' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='52.26px' lengthAdjust='spacingAndGlyphs'>DEV_NO_0</text>

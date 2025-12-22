@@ -26,7 +26,7 @@
 #'
 #' @family missing_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_count_expected_observations <- function(resp_vars, study_data, meta_data,
                                              label_col = LABEL,
                                              expected_observations =

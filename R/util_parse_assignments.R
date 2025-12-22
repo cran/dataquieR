@@ -37,7 +37,7 @@
 #'
 #' @family parser_functions
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 util_parse_assignments <- function(text, split_char = SPLIT_CHAR,
                                    multi_variate_text = FALSE, # Dont change default here, many calls of this function rely on a non-list-result
                                    split_on_any_split_char = FALSE
@@ -46,6 +46,9 @@ util_parse_assignments <- function(text, split_char = SPLIT_CHAR,
     if (all(util_empty(text))) {
       text <- NA_character_
     } else {
+      if (is.list(text)) {
+        text <- unlist(text, recursive = TRUE, use.names = FALSE)
+      }
       text <- paste0(text, collapse = "\n")
     }
   }
@@ -77,6 +80,10 @@ util_parse_assignments <- function(text, split_char = SPLIT_CHAR,
     }
   }
   res <- lapply(text, function(x) {
+    if (is.list(x)) {
+      x <- paste(unlist(x, recursive = TRUE, use.names = FALSE),
+                 collapse = "\n")
+    }
     if (use_regexp) {
       split <- sprintf("[%s]", paste0(gsub("[", "\\[", fixed = TRUE,
                                            gsub("]", "\\]", fixed = TRUE,
@@ -117,7 +124,8 @@ util_parse_assignments <- function(text, split_char = SPLIT_CHAR,
                   }
                   r
                 })
-  if (getOption("dataquieR.VALUE_LABELS_htmlescaped", FALSE)) {
+  if (getOption("dataquieR.VALUE_LABELS_htmlescaped",
+                dataquieR.VALUE_LABELS_htmlescaped_default)) {
     util_ensure_suggested(
       "textutils",
       "use the option(dataquieR.VALUE_LABELS_htmlescaped = TRUE) ")

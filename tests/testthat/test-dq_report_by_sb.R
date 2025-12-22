@@ -1,5 +1,8 @@
 test_that("dq_report_by works with subgroup", {
-  skip_if_not_installed("withr")
+  skip_if_not_installed("DT")
+  skip_if_not_installed("markdown")
+  skip_if_not_installed("stringdist")
+
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
                        dataquieR.WARNINGS_WITH_CALLER = TRUE,
@@ -9,10 +12,10 @@ test_that("dq_report_by works with subgroup", {
   # TODO: test with all sorts of _by calls and on windows
   target <- withr::local_tempdir("testdqareportby")
 
-  sd1 <- head(prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData"),
+  sd1 <- head(prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE),
               20)
 
-  expect_message(dq_report_by(meta_data_v2 = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx",
+  expect_message2(dq_report_by(meta_data_v2 = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx",
                               study_data = sd1,
                               output_dir = !!file.path(target, "sb"),
                               also_print = TRUE,
@@ -26,7 +29,7 @@ test_that("dq_report_by works with subgroup", {
                               subgroup = "[v00003] == 56",
                               dimensions = "Integrity"))
 
-  expect_message(dq_report_by(meta_data_v2 = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx",
+  expect_message2(dq_report_by(meta_data_v2 = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx",
                               study_data = sd1,
                               also_print = FALSE,
                               cores = NULL,

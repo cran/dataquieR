@@ -6,7 +6,7 @@
 \alias{.meta_data_env}
 \title{\code{.meta_data_env} -- an environment for easy metadata access}
 \format{
-An object of class \code{environment} of length 8.
+An object of class \code{environment} of length 9.
 }
 \usage{
 .meta_data_env
@@ -15,7 +15,7 @@ An object of class \code{environment} of length 8.
 used by the dq_report2-pipeline
 }
 \seealso{
-\link{meta_data_env_id_vars} \link{meta_data_env_co_vars}
-\link{meta_data_env_time_vars} \link{meta_data_env_group_vars}
+\code{meta_data_env_id_vars()} \code{meta_data_env_co_vars()}
+\code{meta_data_env_time_vars()} \code{meta_data_env_group_vars()}
 }
 \keyword{internal}

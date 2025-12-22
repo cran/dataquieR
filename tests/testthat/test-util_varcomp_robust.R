@@ -1,4 +1,5 @@
 test_that("util_varcomp_robust works", {
+  skip_if_not_installed("rankICC")
   skip_on_cran()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx")

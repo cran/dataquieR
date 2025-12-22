@@ -1,10 +1,10 @@
 if (requireNamespace("vdiffr", quietly = TRUE) &&
     packageVersion("vdiffr") >= "1.0.8" &&
     "variant" %in% names(formals(vdiffr::expect_doppelganger))) {
-  expect_doppelganger2 <- vdiffr::expect_doppelganger
-  formals(expect_doppelganger2)$variant <- prep_get_variant()
+  .expect_doppelganger2 <- vdiffr::expect_doppelganger
+  formals(.expect_doppelganger2)$variant <- prep_get_variant()
 } else { # here, the variant formal was missing.
-  expect_doppelganger2 <- function (title, fig, path = deprecated(), ...,
+  .expect_doppelganger2 <- function (title, fig, path = deprecated(), ...,
                                     writer = write_svg,
                                     cran = FALSE, variant =
                                       prep_get_variant())
@@ -48,4 +48,9 @@ if (requireNamespace("vdiffr", quietly = TRUE) &&
   if (requireNamespace("vdiffr", quietly = TRUE)) {
     environment(expect_doppelganger2) <- asNamespace("vdiffr")
   }
+}
+expect_doppelganger2 <- function(title, fig, ...) {
+  if (util_is_gg(fig))
+    fig <- prep_realize_ggplot(fig)
+  .expect_doppelganger2(title, fig, ...)
 }

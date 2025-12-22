@@ -13,7 +13,7 @@
 #'
 #' @family robustness_functions
 #' @concept string
-#' @keywords internal
+#' @noRd
 util_match_arg <- function(arg, choices, several_ok = FALSE, error = TRUE) {
 #TODO: util_expect_scalar check_type = as.character
   if (missing(arg)) {

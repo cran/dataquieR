@@ -59,8 +59,8 @@ int_all_datastructure_segment <- function(study_data,
 
   id_vars_list <- lapply(setNames(meta_data_segment[[SEGMENT_ID_VARS]], # TODO: use the constants everywhere: meta_data_segment[[SEGMENT_ID_VARS]], not ...$SEGMENT_ID_VARS
                                   nm = meta_data_segment[[STUDY_SEGMENT]]),
-    util_parse_assignments,
-    multi_variate_text = TRUE
+                         util_parse_assignments,
+                         multi_variate_text = TRUE
   )
   id_vars_list_vector <- lapply(id_vars_list, unlist, recursive = TRUE)
 
@@ -74,24 +74,24 @@ int_all_datastructure_segment <- function(study_data,
   # subset metadata with entries
   meta_data_record_count_0 <-
     meta_data_segment[!util_empty(meta_data_segment[[SEGMENT_RECORD_COUNT]]), ,
-      drop = FALSE]
+                      drop = FALSE]
 
   unexp_records_out <- NULL # TODO: capture errors form the next all and put them to the matrices
   try(silent = TRUE, {
     unexp_records_out <- withr::with_options(list(
       dataquieR.testdebug = TRUE), int_unexp_records_segment(
-      study_segment = meta_data_record_count_0[[STUDY_SEGMENT]],
-      data_record_count = meta_data_record_count_0[[SEGMENT_RECORD_COUNT]],
-      study_data = study_data, meta_data = meta_data, label_col = label_col))
-    })
+        study_segment = meta_data_record_count_0[[STUDY_SEGMENT]],
+        data_record_count = meta_data_record_count_0[[SEGMENT_RECORD_COUNT]],
+        study_data = study_data, meta_data = meta_data, label_col = label_col))
+  })
 
 
   # 2. Unexpected data record set ----
   # subset metadata with entries
   meta_data_record_set_1 <-
     meta_data_segment[!util_empty(meta_data_segment[[SEGMENT_RECORD_CHECK]]), ,
-    drop = FALSE
-  ]
+                      drop = FALSE
+    ]
 
   unexp_records_id_out <- NULL # TODO: capture errors form the next all and put them to the matrices
   try(silent = TRUE, {
@@ -119,44 +119,44 @@ int_all_datastructure_segment <- function(study_data,
 
     duplicate_ids_out <- withr::with_options(list(
       dataquieR.testdebug = TRUE), int_duplicate_ids(
-      level = "segment",
-      id_vars_list = id_vars_list_vector[meta_data_dup_ids_1[[STUDY_SEGMENT]]],
-      study_segment = meta_data_dup_ids_1[[STUDY_SEGMENT]],
-      repetitions = meta_data_dup_ids_1[[SEGMENT_UNIQUE_ID]],
-      study_data = study_data,
-      meta_data = meta_data,
-      label_col = label_col
-    ))})
+        level = "segment",
+        id_vars_list = id_vars_list_vector[meta_data_dup_ids_1[[STUDY_SEGMENT]]],
+        study_segment = meta_data_dup_ids_1[[STUDY_SEGMENT]],
+        repetitions = meta_data_dup_ids_1[[SEGMENT_UNIQUE_ID]],
+        study_data = study_data,
+        meta_data = meta_data,
+        label_col = label_col
+      ))})
 
 
   # 4. Duplicates: content ----
   meta_data_dup_rows_1 <-
     meta_data_segment[!util_empty(meta_data_segment[[SEGMENT_UNIQUE_ROWS]]), ,
-    drop = FALSE
-  ]
+                      drop = FALSE
+    ]
 
   meta_data_dup_rows_1 <-
     meta_data_dup_rows_1[
       trimws(tolower(meta_data_dup_rows_1[[SEGMENT_UNIQUE_ROWS]])) ==
-                           "no_id" |
-                           !util_is_na_0_empty_or_false(
-      meta_data_dup_rows_1[[SEGMENT_UNIQUE_ROWS]]), ,
-    drop = FALSE
-  ]
+        "no_id" |
+        !util_is_na_0_empty_or_false(
+          meta_data_dup_rows_1[[SEGMENT_UNIQUE_ROWS]]), ,
+      drop = FALSE
+    ]
 
   duplicate_rows_out <- NULL # TODO: capture errors form the next all and put them to the matrices
   try(silent = TRUE, {
     duplicate_rows_out <- withr::with_options(list(
       dataquieR.testdebug = TRUE), int_duplicate_content(
-      level = "segment",
-      identifier_name_list = meta_data_dup_rows_1[[STUDY_SEGMENT]],
-      study_data = study_data,
-      meta_data = meta_data,
-      label_col = label_col,
-      id_vars_list = id_vars_list_vector[meta_data_dup_rows_1[[STUDY_SEGMENT]]],
-      unique_rows = setNames(meta_data_dup_rows_1[[SEGMENT_UNIQUE_ROWS]],
-                             nm = meta_data_dup_rows_1[[STUDY_SEGMENT]])
-    ))
+        level = "segment",
+        identifier_name_list = meta_data_dup_rows_1[[STUDY_SEGMENT]],
+        study_data = study_data,
+        meta_data = meta_data,
+        label_col = label_col,
+        id_vars_list = id_vars_list_vector[meta_data_dup_rows_1[[STUDY_SEGMENT]]],
+        unique_rows = setNames(meta_data_dup_rows_1[[SEGMENT_UNIQUE_ROWS]],
+                               nm = meta_data_dup_rows_1[[STUDY_SEGMENT]])
+      ))
   })
 
   # X. Unexpected data element set ----
@@ -166,8 +166,8 @@ int_all_datastructure_segment <- function(study_data,
     out_int_sts_element <-
       withr::with_options(list(
         dataquieR.testdebug = TRUE), int_sts_element_segment(study_data = study_data,
-                              label_col = label_col,
-                              meta_data = meta_data)$SegmentTable)
+                                                             label_col = label_col,
+                                                             meta_data = meta_data)$SegmentTable)
 
     out_int_sts_element$GRADING <-
       ifelse(out_int_sts_element$NUM_int_sts_element == 0, 0, 1)
@@ -189,35 +189,18 @@ int_all_datastructure_segment <- function(study_data,
                           })]
 
   out_int_sts_elementData <- out_int_sts_element
-  # unexp_element_set_outData$`Data frame` <- TODO: here not needed: Both are currently Segment, why not STUDY_SEGMENT
-  #   unexp_element_set_outData[[DF_NAME]]
-  # unexp_element_set_outData[[DF_NAME]] <- NULL
-  # TODO: Further map names here, later only from the technical table?
+  # (both already keyed by "Segment"; no DF_NAME swap needed here)
+
+  # Translate indicator metric-like columns via helper; keep unknowns (e.g., "Segment") unchanged
   cn <- colnames(out_int_sts_elementData)
-  cn_pref <- vapply(strsplit(cn, "_"), `[[`, 1, FUN.VALUE = character(1))
-  cn_suff <- vapply(lapply(strsplit(cn, "_"), tail, -1), paste,
-                    collapse = "_", FUN.VALUE = character(1))
-  cn_pref <-
-    util_recode(
-      cn_pref,
-      util_get_concept_info("abbreviationMetrics"),
-      "Abbreviation",
-      "Metrics",
-      NA_character_
+  if (length(cn) > 0) {
+    colnames(out_int_sts_elementData) <- util_translate_indicator_metrics(
+      cn,
+      short = FALSE,
+      long  = TRUE,
+      ignore_unknown = TRUE
     )
-
-  cn_suff <-
-    util_recode(
-      cn_suff,
-      util_get_concept_info("dqi"),
-      "abbreviation",
-      "Name",
-      NA_character_
-    )
-
-
-  colnames(out_int_sts_elementData)[!is.na(cn_pref) & !is.na(cn_suff)] <-
-    paste0(cn_suff, ": ", cn_pref)[!is.na(cn_pref) & !is.na(cn_suff)]
+  }
 
   resultData <- list(
     int_sts_countre = unexp_records_out$SegmentData,
@@ -231,10 +214,13 @@ int_all_datastructure_segment <- function(study_data,
     rownames(resultData[[n]]) <- NULL
   }
 
+  dqi <- util_get_concept_info("dqi")
+  dqi <- dqi[!util_empty(dqi$abbreviation) & !util_empty(dqi$Name), , FALSE]
+
   names(resultData) <-
     util_recode(
       names(resultData),
-      util_get_concept_info("dqi"),
+      dqi,
       "abbreviation",
       "Name",
       names(resultData)
@@ -243,37 +229,34 @@ int_all_datastructure_segment <- function(study_data,
   SegmentTable <- util_merge_data_frame_list(result, "Segment") # TODO: why Segment and not STUDY_SEGMENT?!
   cn <- colnames(SegmentTable)
   cn[startsWith(cn, "GRADING.")] <- gsub("^GRADING\\.", "GRADING_",
-                                     cn[startsWith(cn, "GRADING.")])
+                                         cn[startsWith(cn, "GRADING.")])
   colnames(SegmentTable) <- cn
 
   # SegmntData <- util_merge_data_frame_list(resultData, "Segment")
-
 
   SegmentData1 <- util_make_data_slot_from_table_slot(SegmentTable)
   if ("resp_vars" %in% colnames(SegmentTable)) {
     SegmentData1$`Unexp. Variables` <- SegmentTable$resp_vars
   }
 
-  #Create the df
-  SegmentData<- data.frame(Segment = SegmentData1$Segment)
-  #Only if content is present, merge columns
+  # Create the df
+  SegmentData <- data.frame(Segment = SegmentData1$Segment)
+  # Only if content is present, merge columns
   if(!is.null(SegmentData1$`Unexpected data record count (Number)`)){
     SegmentData$`Unexpected data record count N (%)` <- util_paste0_with_na(SegmentData1$`Unexpected data record count (Number)`, " (",
-                                                               SegmentData1$`Unexpected data record count (Percentage (0 to 100))`, ")")
+                                                                            SegmentData1$`Unexpected data record count (Percentage (0 to 100))`, ")")
   }
-
   SegmentData$`Unexpected data record count (Grading)`<- SegmentData1$`Unexpected data record count (Grading)`
 
   if(!is.null(SegmentData1$`Unexpected data record set (Number)`)){
     SegmentData$`Unexpected data record set N (%)` <- util_paste0_with_na(SegmentData1$`Unexpected data record set (Number)`, " (",
-                                                 SegmentData1$`Unexpected data record set (Percentage (0 to 100))`, ")")
+                                                                          SegmentData1$`Unexpected data record set (Percentage (0 to 100))`, ")")
   }
   SegmentData$`Unexpected data record set (Grading)`<- SegmentData1$`Unexpected data record set (Grading)`
 
-
-   if(!is.null(SegmentData1$`Duplicates (Number)`)){
+  if(!is.null(SegmentData1$`Duplicates (Number)`)){
     SegmentData$`Duplicates N (%)` <- util_paste0_with_na(SegmentData1$`Duplicates (Number)`, " (",
-                                               SegmentData1$`Duplicates (Percentage (0 to 100))`, ")")
+                                                          SegmentData1$`Duplicates (Percentage (0 to 100))`, ")")
   }
   SegmentData$`Duplicates (Grading)`<- SegmentData1$`Duplicates (Grading)`
 
@@ -283,7 +266,7 @@ int_all_datastructure_segment <- function(study_data,
 
   if (!is.null(SegmentData1$`Unexpected data element set (Number)`)){
     SegmentData$`Unexpected data element set N (%)` <- util_paste0_with_na(SegmentData1$`Unexpected data element set (Number)`, " (",
-                                                  SegmentData1$`Unexpected data element set (Percentage (0 to 100))`, ")")
+                                                                           SegmentData1$`Unexpected data element set (Percentage (0 to 100))`, ")")
   }
   SegmentData$`Unexpected data element set (Grading)`<- SegmentData1$`Unexpected data element set (Grading)`
 

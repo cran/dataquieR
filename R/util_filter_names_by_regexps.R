@@ -12,7 +12,7 @@
 #'
 #' @family string_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_filter_names_by_regexps <- function(collection, regexps) {
 
   if (is.null(names(collection))) {

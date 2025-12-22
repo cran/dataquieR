@@ -11,8 +11,7 @@
 #'
 #' @family lookup_functions
 #' @concept metadata_management
-#' @keywords internal
-
+#' @noRd
 util_prep_location_check <- function(resp_vars,
                                      meta_data,
                                      report_problems = c("error", "warning",

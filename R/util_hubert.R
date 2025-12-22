@@ -9,7 +9,7 @@
 #'
 #' @family outlier_functions
 #' @concept outlier
-#' @keywords internal
+#' @noRd
 
 util_hubert <- function(x) {
   lth <- robustbase::adjboxStats(x, doScale = FALSE)$stats[1]

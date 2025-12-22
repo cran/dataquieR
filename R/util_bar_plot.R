@@ -21,6 +21,7 @@
 #'
 #' @return a bar plot
 #'
+#' @noRd
 util_bar_plot <- function(plot_data, cat_var, num_var, relative = FALSE,
                           show_numbers = TRUE,
                           fill_var = NULL, colors = "#2166AC",
@@ -28,11 +29,18 @@ util_bar_plot <- function(plot_data, cat_var, num_var, relative = FALSE,
                           flip = FALSE) {
 
   # base plot
-  bar_plot <-
-    ggplot(plot_data, aes(x = .data[[cat_var]], y = .data[[num_var]])) +
-    theme_minimal() +
-    xlab("") +
-    ylab("")
+  bar_plot <- util_create_lean_ggplot(
+    ggplot(plot_data,
+           aes(x = .data[[cat_var]],
+               y = .data[[num_var]])) +
+      theme_minimal() +
+      xlab("") +
+      ylab(""),
+    plot_data = plot_data,
+    cat_var = cat_var,
+    num_var = num_var
+  )
+
   # color setup, adding the bars
   if (!is.null(fill_var)) {
     if (is.numeric(plot_data[[fill_var]])) {
@@ -47,35 +55,39 @@ util_bar_plot <- function(plot_data, cat_var, num_var, relative = FALSE,
     } else {
       scale_fill <- scale_fill_manual(values = colors, name = "")
     }
-    bar_plot <- bar_plot +
-      geom_bar(aes(fill = .data[[fill_var]]), stat = "identity", width = 0.8) +
-      scale_fill
+    bar_plot <- bar_plot %lean+%  util_create_lean_ggplot(
+        geom_col(aes(fill = .data[[fill_var]]),
+                 width = 0.8),
+      fill_var = fill_var
+    ) %lean+% scale_fill
   } else {
-    bar_plot <- bar_plot +
-      geom_bar(fill = colors[1], stat = "identity", width = 0.8)
+    bar_plot <- bar_plot %lean+% util_create_lean_ggplot(
+        geom_col(fill = colors[1],
+                 width = 0.8),
+      colors = colors
+    )
   }
   # y-axis setup, show numbers as percentages if needed
   if (relative) {
-    scale_y <- scale_y_continuous(labels = scales::percent,
-                                  expand = expansion(mult = c(0, 0.05)))
+    scale_y <- util_create_lean_ggplot(scale_y_continuous(labels = scales::percent,
+                                  expand = expansion(mult = c(0, 0.05))))
     num_labels <- paste0(round(plot_data[[num_var]] * 100, digits = 2), "%")
   } else {
-    scale_y <- scale_y_continuous(expand = expansion(mult = c(0, 0.05)))
+    scale_y <- util_create_lean_ggplot(scale_y_continuous(expand = expansion(mult = c(0, 0.05))))
     num_labels <- as.character(plot_data[[num_var]])
   }
-  bar_plot <- bar_plot +
-    scale_y
+  bar_plot <- bar_plot %lean+% scale_y
   # some layout options must be adapted to the orientation of the plot:
   # - larger font size for category labels
   # - no grid lines parallel to the bars
   # - position of numbers above/below or next to the bars
   if (!flip) {
-    scale_x <- scale_x_discrete(drop = FALSE,
-                                expand = expansion(add = 0.5, mult = 0.1))
-    ly <- theme(axis.text.x = element_text(size = 10),
+    scale_x <- util_create_lean_ggplot(scale_x_discrete(drop = FALSE,
+                                expand = expansion(add = 0.5, mult = 0.1)))
+    ly <- util_create_lean_ggplot(theme(axis.text.x = element_text(size = 10),
                 axis.text.y = element_text(size = 10),
                 panel.grid.major.x = element_blank(),
-                panel.grid.minor.x = element_blank())
+                panel.grid.minor.x = element_blank()))
     if (show_color_legend) {
       gui <- guides(fill = guide_legend(position = "right"))
     } else {
@@ -88,18 +100,18 @@ util_bar_plot <- function(plot_data, cat_var, num_var, relative = FALSE,
     horiz_just <- 0.5
     pos_labels <- ifelse(vert_just <= 0, "outside", "within")
   } else {
-    bar_plot <- bar_plot + coord_flip()
-    scale_x <- scale_x_discrete(limits = rev,
+    bar_plot <- util_lazy_add_coord(bar_plot, coord_flip())
+    scale_x <- util_create_lean_ggplot(scale_x_discrete(limits = rev,
                                 drop = FALSE,
-                                expand = expansion(add = 0.5, mult = 0.1))
-    ly <- theme(axis.text.y = element_text(size = 10),
+                                expand = expansion(add = 0.5, mult = 0.1)))
+    ly <- util_create_lean_ggplot(theme(axis.text.y = element_text(size = 10),
                 axis.text.x = element_text(size = 10),
             panel.grid.major.y = element_blank(),
-            panel.grid.minor.y = element_blank())
+            panel.grid.minor.y = element_blank()))
     if (show_color_legend) {
-      gui <- guides(fill = guide_legend(position = "bottom", byrow = TRUE))
+      gui <- util_create_lean_ggplot(guides(fill = guide_legend(position = "bottom", byrow = TRUE)))
     } else {
-      gui <- guides(fill = "none")
+      gui <- util_create_lean_ggplot(guides(fill = "none"))
     }
     # set up label positions
     vert_just <- 0.5
@@ -109,10 +121,7 @@ util_bar_plot <- function(plot_data, cat_var, num_var, relative = FALSE,
     pos_labels <- ifelse(horiz_just == 0, "outside", "within")
     num_labels <- paste0(" ", num_labels, " ")
   }
-  bar_plot <- bar_plot +
-    scale_x +
-    ly +
-    gui
+  bar_plot <- bar_plot %lean+% scale_x %lean+% ly %lean+% gui
 
   # color setup for labels on/next to the bars
   if (show_numbers) {
@@ -126,12 +135,17 @@ util_bar_plot <- function(plot_data, cat_var, num_var, relative = FALSE,
     # show label text in black or white, depending on the brightness of the background, https://stackoverflow.com/questions/11867545/change-text-color-based-on-brightness-of-the-covered-background-area, https://www.w3.org/TR/AERT/#color-contrast
     col_labels <- ifelse(pos_labels == "within" & brightness < 130,
                          "white", "black") # this is referred to by util_as_plotly_util_plot_categorical_vars
-    bar_plot <- bar_plot +
-      geom_text(label = num_labels,
-                vjust = vert_just,
-                hjust = horiz_just,
-                color = col_labels,
-                size = 3.5)
+    bar_plot <- bar_plot %lean+% util_create_lean_ggplot(
+                                          geom_text(label = num_labels,
+                                                    vjust = vert_just,
+                                                    hjust = horiz_just,
+                                                    color = col_labels,
+                                                    size = 3.5),
+                                        num_labels = num_labels,
+                                        vert_just = vert_just,
+                                        horiz_just = horiz_just,
+                                        col_labels = col_labels)
+
   }
   return(bar_plot)
 }

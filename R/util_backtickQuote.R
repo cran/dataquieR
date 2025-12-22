@@ -6,10 +6,10 @@
 #'
 #' @return quoted variable names
 #'
-#' @seealso [util_bQuote]
+#' @seealso `util_bQuote`
 #' @family process_functions
 #' @concept data_management
-#' @keywords internal
+#' @noRd
 util_backtickQuote <- function(x) {
   na <- is.na(x)
   res <- paste0("`", x, "`")

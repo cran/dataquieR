@@ -24,7 +24,7 @@
 #'
 #' @family missing_functions
 #' @concept missing
-#' @keywords internal
+#' @noRd
 util_all_intro_vars_for_rv <- function(rv, study_data, meta_data,
                                        label_col = LABEL,
                                        expected_observations =

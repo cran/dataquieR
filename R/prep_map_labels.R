@@ -19,7 +19,7 @@
 #' @param item_level [data.frame] metadata data frame, if, as a `dataquieR`
 #'                               developer, you do not have
 #'                               **item-level-metadata**, you should use
-#'                               [util_map_labels] instead to avoid consistency
+#'                               `util_map_labels()` instead to avoid consistency
 #'                               checks on for item-level `meta_data`.
 #' @param meta_data [data.frame] old name for `item_level`
 #' @param to [character] variable attribute to map to

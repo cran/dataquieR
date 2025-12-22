@@ -67,53 +67,69 @@ prep_acc_distributions_with_ecdf <- function(resp_vars = NULL,
                              label_col = label_col,
                              flip_mode = "noflip")
   p1 <- part1$SummaryPlotList[[resp_vars]]
-  xx <- ggplot_build(p1)$layout$panel_scales_x[[1]]$range$range
+  built   <- ggplot2::ggplot_build(p1)
+  layout  <- util_gg_get(built, "layout")
+  scalesx <- util_gg_get(layout, "panel_scales_x")[[1]]
+  rngobj  <- util_gg_get(scalesx, "range")
+  xx      <- util_gg_get(rngobj, "range")
   xx_exp <- xx
   xx_exp[1] <- xx_exp[1] - 0.05 * (xx_exp[2] - xx_exp[1])
   xx_exp[2] <- xx_exp[2] + 0.05 * (xx_exp[2] - xx_exp[1])
-  suppressMessages(p1 <- p1 +
-    xlim(xx_exp))
+  suppressMessages(
+    p1 <- p1 %lean+% util_create_lean_ggplot(
+      xlim(xx_exp),
+      xx_exp = xx_exp
+    )
+  )
   part2 <- acc_distributions_ecdf(resp_vars = resp_vars, group_vars = group_vars,
                                   study_data = study_data,
                                   label_col = label_col,
                                   meta_data = meta_data,
                                   n_group_max = n_group_max,
                                   n_obs_per_group_min = n_obs_per_group_min)
-  suppressMessages(p2 <- part2$SummaryPlotList[[resp_vars]] +
-    xlim(xx_exp))
+  p2prep <- part2$SummaryPlotList[[resp_vars]]
+  suppressMessages(
+    p2 <- p2prep + util_create_lean_ggplot(
+        xlim(xx_exp),
+      xx_exp = xx_exp
+    )
+  )
 
-  P <- p1 + p2 +
-    plot_layout(ncol = 1) +
-    plot_annotation(tag_levels = 'A')
+  P <-
+    p1 %lean+% p2 %lean+%
+      plot_layout(ncol = 1) %lean+%
+      plot_annotation(tag_levels = 'A')
 
   return(list(SummaryPlot = util_set_size(P)))
 }
 
 #' @family plotly_shims
 #' @concept plotly_shims
-#' @keywords internal
+#' @noRd
 util_as_plotly_prep_acc_distributions_with_ecdf <- function(res, ...) {
   if (length(res$SummaryPlot) != 1) {
-    return(plotly::ggplotly(ggplot2::ggplot() +
-                              ggplot2::annotate("text", x = 0, y = 0,
-                                                label =
-                                                  sprintf(paste("Internal error: I should  have exactly 1 result, if",
-                                                                "calling plotly for a dq_report2 otuput. I have %d."),
-                                                          length(res$SummaryPlot))) +
-                              theme(
-                                axis.line = element_blank(),
-                                axis.text.x = element_blank(),
-                                axis.text.y = element_blank(),
-                                axis.ticks = element_blank(),
-                                axis.title.x = element_blank(),
-                                axis.title.y = element_blank(),
-                                legend.position = "none",
-                                panel.background = element_blank(),
-                                panel.border = element_blank(),
-                                panel.grid.major = element_blank(),
-                                panel.grid.minor = element_blank(),
-                                plot.background = element_blank()
-                              )))
+    nres <- length(res$SummaryPlot)
+    return(util_ggplotly(util_create_lean_ggplot(ggplot2::ggplot() +
+                                                      ggplot2::annotate("text", x = 0, y = 0,
+                                                                        label =
+                                                                          sprintf(paste("Internal error: I should  have exactly 1 result, if",
+                                                                                        "calling plotly for a dq_report2 otuput. I have %d."),
+                                                                                  nres)) +
+                                                      theme(
+                                                        axis.line = element_blank(),
+                                                        axis.text.x = element_blank(),
+                                                        axis.text.y = element_blank(),
+                                                        axis.ticks = element_blank(),
+                                                        axis.title.x = element_blank(),
+                                                        axis.title.y = element_blank(),
+                                                        legend.position = "none",
+                                                        panel.background = element_blank(),
+                                                        panel.border = element_blank(),
+                                                        panel.grid.major = element_blank(),
+                                                        panel.grid.minor = element_blank(),
+                                                        plot.background = element_blank()
+                                                      ),
+                                                    nres = nres)))
   }
   res$SummaryPlot <-
     util_remove_dataquieR_result_class(res$SummaryPlot)
@@ -122,9 +138,9 @@ util_as_plotly_prep_acc_distributions_with_ecdf <- function(res, ...) {
   util_ensure_suggested("plotly")
 
   if (inherits(res$SummaryPlot, "patchwork")) {
-    py1 <- try(plotly::ggplotly(res$SummaryPlot[[1]],
+    py1 <- try(util_ggplotly(res$SummaryPlot[[1]],
                                 ...), silent = TRUE)
-    py2 <- try(plotly::ggplotly(res$SummaryPlot[[2]],
+    py2 <- try(util_ggplotly(res$SummaryPlot[[2]],
                                 ...), silent = TRUE)
     util_stop_if_not(!inherits(py1, "try-error"))
     util_stop_if_not(!inherits(py2, "try-error"))
@@ -159,7 +175,7 @@ util_as_plotly_prep_acc_distributions_with_ecdf <- function(res, ...) {
       nrows = 2,
       shareX = TRUE)
   } else {
-    py <- plotly::ggplotly(res$SummaryPlot, ...)
+    py <- util_ggplotly(res$SummaryPlot, ...)
     plotly::layout(py, xaxis = list(tickangle = "auto"))
   }
 }

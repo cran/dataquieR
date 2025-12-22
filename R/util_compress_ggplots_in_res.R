@@ -9,12 +9,12 @@
 #'
 #' @seealso [HERE](https://github.com/tidyverse/ggplot2/issues/3619#issuecomment-628021555)
 #'
-#' @keywords internal
+#' @noRd
 util_compress_ggplots_in_res <- function(r) {
   if (isTRUE(attr(r, "from_ReportSummaryTable"))) {
     return(NULL) # never store plots of reportsummarytables, because the original objects are already in the report
   }
-  if (ggplot2::is.ggplot(r)) {
+  if (util_is_gg_plot(r)) {
     r$plot_env <- emptyenv()
     # https://stackoverflow.com/questions/75698707/how-to-extract-variable-names-from-aes-mapping-in-r/75699079#75699079
     #mv <- unique(unlist(lapply(r$mapping, all.vars))) # does not work for quosures .data[["variable_name"]] - gives '.data' instead of 'variable_name'
@@ -53,11 +53,14 @@ util_compress_ggplots_in_res <- function(r) {
       }
     }
 
-
-    r$data <- r$data[, intersect(colnames(r$data), mv), drop = FALSE]
+    if ("data" %in% names(r) && !is.null(dim(r$data))) {
+      r$data <- r$data[, intersect(colnames(r$data), mv), drop = FALSE]
+    }
   } else if (is.list(r)) {
-    r[] <- lapply(r, util_compress_ggplots_in_res)
-    r[vapply(r, is.null, logical(1))] <- NULL
+    if (!inherits(r, "dq_lazy_ggplot")) {
+      r[] <- lapply(r, util_compress_ggplots_in_res)
+      r[vapply(r, is.null, logical(1))] <- NULL
+    }
   }
   return(r)
 }

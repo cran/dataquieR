@@ -1,7 +1,8 @@
 test_that("distribution plot works", { # acc_distributions.R ----
   skip_on_cran()
+  skip_if_not_installed("lobstr")
   skip_if_not_installed("vdiffr")
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
@@ -14,6 +15,7 @@ test_that("distribution plot works", { # acc_distributions.R ----
         label_col = LABEL)
 
     expect_doppelganger2("acc_distributions gr dbp0", r$SummaryPlotList$DBP_0)
+    expect_lt(lobstr::obj_size(r$SummaryPlotList$DBP_0), 15 * 1024 * 1024)
 
     r <-
       acc_distributions(
@@ -23,6 +25,7 @@ test_that("distribution plot works", { # acc_distributions.R ----
         label_col = LABEL)
 
     expect_doppelganger2("acc_distributions def edu0", r$SummaryPlotList$EDUCATION_0)
+    expect_lt(lobstr::obj_size(r$SummaryPlotList$EDUCATION_0), 15 * 1024 * 1024)
 
   })
 })
@@ -31,19 +34,13 @@ test_that("loess plot works", { # acc_loess.R ----
   # testthat::local_reproducible_output()
   # skip_on_travis() # vdiffr fails
   skip_on_cran()
+  skip_if_not_installed("lobstr")
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
-  skip_if_not_installed("withr")
+
   skip_if_not_installed("vdiffr")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  require_english_locale_and_berlin_tz()
 
   ({
     time_vars <- prep_map_labels("DBP_0", meta_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx|item_level", from = LABEL,
@@ -60,6 +57,7 @@ test_that("loess plot works", { # acc_loess.R ----
                   co_vars = "AGE_0")
 
     expect_doppelganger2("loess def dbp0", r$SummaryPlotList$DBP_0)
+    expect_lt(lobstr::obj_size(r$SummaryPlotList$DBP_0), 15 * 1024 * 1024)
 
     r <- acc_loess(resp_vars = "EDUCATION_0",
                    study_data = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
@@ -70,6 +68,7 @@ test_that("loess plot works", { # acc_loess.R ----
                    co_vars = "AGE_0")
 
     expect_doppelganger2("loess def edu0", r$SummaryPlotList$EDUCATION_0)
+    expect_lt(lobstr::obj_size(r$SummaryPlotList$EDUCATION_0), 15 * 1024 * 1024)
 
     r <-
       acc_loess(  resp_vars = "DBP_0",
@@ -82,6 +81,7 @@ test_that("loess plot works", { # acc_loess.R ----
                   co_vars = "AGE_0")
 
     expect_doppelganger2("loess fac dbp0", r$SummaryPlotList$DBP_0)
+    expect_lt(lobstr::obj_size(r$SummaryPlotList$DBP_0), 15 * 1024 * 1024)
 
     r <-
       acc_loess(  resp_vars = "EDUCATION_0",
@@ -94,15 +94,17 @@ test_that("loess plot works", { # acc_loess.R ----
                   co_vars = "AGE_0")
 
     expect_doppelganger2("loess fac edu0", r$SummaryPlotList$EDUCATION_0)
+    expect_lt(lobstr::obj_size(r$SummaryPlotList$EDUCATION_0), 15 * 1024 * 1024)
 
   })
 })
 
 test_that("margins plot works", { # acc_margins.R -----
   skip_on_cran()
+  skip_if_not_installed("lobstr")
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_if_not_installed("vdiffr")
-  skip_if_not_installed("withr")
+
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
   ({
     group_vars <- prep_map_labels("DBP_0",
@@ -119,6 +121,7 @@ test_that("margins plot works", { # acc_margins.R -----
                   sort_group_var_levels = FALSE)
 
     expect_doppelganger2("margins dbp0", r$SummaryPlot)
+    expect_lt(lobstr::obj_size(r$SummaryPlot), 15 * 1024 * 1024)
 
     prep_purge_data_frame_cache()
     skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
@@ -137,12 +140,13 @@ test_that("margins plot works", { # acc_margins.R -----
                   co_vars = "AGE_0")
 
     expect_doppelganger2("margins edu0", r$SummaryPlot)
+    expect_lt(lobstr::obj_size(r$SummaryPlot), 15 * 1024 * 1024)
   })
 })
 
 test_that("multivariate outlier plot works", { # acc_multivariate_outlier.R ----
   skip_on_cran()
-  skip_if_not_installed("withr")
+
   skip_if_not_installed("vdiffr")
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
@@ -158,6 +162,9 @@ test_that("multivariate outlier plot works", { # acc_multivariate_outlier.R ----
 
     expect_doppelganger2("acc_multivariate_outlier test 1",
                                 r$SummaryPlot)
+    skip_if(TRUE || R.version$major == "4" && R.version$minor == "5.1", message = "Strange size differences in lobstr on test containers with many, but not all R versions for this plot. No idea, but likely related with the FIXME at the end of this file.") # FIXME
+    skip_if_not_installed("lobstr")
+    expect_lt(lobstr::obj_size(r$SummaryPlot), 15 * 1024 * 1024)
 
   })
 })
@@ -165,7 +172,8 @@ test_that("multivariate outlier plot works", { # acc_multivariate_outlier.R ----
 
 test_that("shape or scale plot works", { # acc_shape_or_scale.R -----
   skip_on_cran()
-  skip_if_not_installed("withr")
+  skip_if_not_installed("lobstr")
+
   skip_if_not_installed("vdiffr")
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
@@ -178,13 +186,16 @@ test_that("shape or scale plot works", { # acc_shape_or_scale.R -----
         label_col = LABEL)
 
     expect_doppelganger2("shape or scale dbp0", r$SummaryPlot)
+    expect_lt(lobstr::obj_size(r$SummaryPlot), 15 * 1024 * 1024)
+
   })
 })
 
 test_that("univariate outlier plot works", { # acc_univariate_outlier.R ----
   skip_on_cran()
+  skip_if_not_installed("lobstr")
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
-  skip_if_not_installed("withr")
+
   skip_if_not_installed("vdiffr")
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
   withr::with_seed(32245253, {
@@ -197,6 +208,7 @@ test_that("univariate outlier plot works", { # acc_univariate_outlier.R ----
 
     expect_doppelganger2("acc_univariate_outlier.R DBP_0",
                                 r$SummaryPlotList$DBP_0)
+    expect_lt(lobstr::obj_size(r$SummaryPlotList$DBP_0), 15 * 1024 * 1024)
 
     # Argument “resp_vars”: Variable 'DEV_NO_0' (nominal) does not have an
     # allowed scale level (interval | ratio)
@@ -208,14 +220,15 @@ test_that("univariate outlier plot works", { # acc_univariate_outlier.R ----
 
 test_that("old contradiction plots work", { # con_contradictions.R ----
   skip_on_cran()
+  skip_if_not_installed("lobstr")
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_if_not_installed("vdiffr")
-  skip_if_not_installed("withr")
+
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
   ({
     check_table <- read.csv(
-        "https://dataquality.ship-med.uni-greifswald.de/extdata/contradiction_checks.csv",
+        "https://dataquality.qihs.uni-greifswald.de/extdata/contradiction_checks.csv",
       header = TRUE, sep = "#"
     )
     check_table[1, "tag"] <- "Logical"
@@ -242,7 +255,7 @@ test_that("old contradiction plots work", { # con_contradictions.R ----
     check_table[10, "tag"] <- "Empirical, Age-Related"
     label_col <- "LABEL"
     threshold_value <- 1
-    study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+    study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
     meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
     meta_data <- prep_scalelevel_from_data_and_metadata(meta_data = meta_data,
                                                         study_data = study_data)
@@ -257,12 +270,18 @@ test_that("old contradiction plots work", { # con_contradictions.R ----
       )
     expect_doppelganger2("con_contradictions by tag",
                                 r$SummaryPlot)
+    expect_lt(lobstr::obj_size(r$SummaryPlot), 15 * 1024 * 1024)
 
     expect_doppelganger2("con_contradictions logical age checks, only",
                                 r$`Logical, Age-Related`$SummaryPlot)
+    expect_lt(lobstr::obj_size(r$`Logical, Age-Related`$SummaryPlot),
+              15 * 1024 * 1024)
 
     expect_doppelganger2("con_contradictions all checks",
                                 r$all_checks$SummaryPlot)
+    expect_lt(lobstr::obj_size(r$all_checks$SummaryPlot),
+              15 * 1024 * 1024)
+
 
   })
 })
@@ -270,8 +289,9 @@ test_that("old contradiction plots work", { # con_contradictions.R ----
 test_that("redcap based contradiction plots work", { # con_contradictions_redcap.R ----
   skip_on_cran()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  skip_if_not_installed("lobstr")
   skip_if_not_installed("vdiffr")
-  skip_if_not_installed("withr")
+
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
   ({
@@ -287,12 +307,16 @@ test_that("redcap based contradiction plots work", { # con_contradictions_redcap
 
     expect_doppelganger2("con_contradictions rc by tag",
                                 r$SummaryPlot)
+    expect_lt(lobstr::obj_size(r$SummaryPlot), 15 * 1024 * 1024)
 
     expect_doppelganger2("con_contradictions rc logical checks, only",
                                 r$Other$LOGICAL$SummaryPlot)
+    expect_lt(lobstr::obj_size(r$Other$LOGICAL$SummaryPlot), 15 * 1024 * 1024)
 
     expect_doppelganger2("con_contradictions rc all checks",
                                 r$Other$all_checks$SummaryPlot)
+    expect_lt(lobstr::obj_size(r$Other$all_checks$SummaryPlot),
+              15 * 1024 * 1024)
 
   })
 })
@@ -300,8 +324,9 @@ test_that("redcap based contradiction plots work", { # con_contradictions_redcap
 test_that("limit deviation plots work", { # con_limit_deviations.R ----
   skip_on_cran()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  skip_if_not_installed("lobstr")
   skip_if_not_installed("vdiffr")
-  skip_if_not_installed("withr")
+
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
   set.seed(2012) # randomly scattered points should stay in their position for testing
 
@@ -366,30 +391,39 @@ test_that("limit deviation plots work", { # con_limit_deviations.R ----
 
     expect_doppelganger2("con_limit_deviations all sbp_0",
                                 r1$SummaryPlotList$SBP_0)
+    expect_lt(lobstr::obj_size(r1$SummaryPlotList$SBP_0), 15 * 1024 * 1024)
 
     expect_doppelganger2("con_limit_deviations all item",
                                 r1$SummaryPlotList$ITEM_1_0)
+    expect_lt(lobstr::obj_size(r1$SummaryPlotList$ITEM_1_0), 15 * 1024 * 1024)
 
     expect_doppelganger2("con_limit_deviations all quest_dt",
                                 r1$SummaryPlotList$QUEST_DT_0)
+    expect_lt(lobstr::obj_size(r1$SummaryPlotList$QUEST_DT_0), 15 * 1024 * 1024)
 
     expect_doppelganger2("con_limit_deviations low sbp_0",
                                 r2$SummaryPlotList$SBP_0)
+    expect_lt(lobstr::obj_size(r2$SummaryPlotList$SBP_0), 15 * 1024 * 1024)
 
     expect_doppelganger2("con_limit_deviations low item",
                                 r2$SummaryPlotList$ITEM_1_0)
+    expect_lt(lobstr::obj_size(r2$SummaryPlotList$ITEM_1_0), 15 * 1024 * 1024)
 
     expect_doppelganger2("con_limit_deviations low quest_dt",
                                 r2$SummaryPlotList$QUEST_DT_0)
+    expect_lt(lobstr::obj_size(r2$SummaryPlotList$QUEST_DT_0), 15 * 1024 * 1024)
 
     expect_doppelganger2("con_limit_deviations upp sbp_0",
                                 r3$SummaryPlotList$SBP_0)
+    expect_lt(lobstr::obj_size(r3$SummaryPlotList$SBP_0), 15 * 1024 * 1024)
 
     expect_doppelganger2("con_limit_deviations upp item",
                                 r3$SummaryPlotList$ITEM_1_0)
+    expect_lt(lobstr::obj_size(r3$SummaryPlotList$ITEM_1_0), 15 * 1024 * 1024)
 
     expect_doppelganger2("con_limit_deviations upp quest_dt",
                                 r3$SummaryPlotList$QUEST_DT_0)
+    expect_lt(lobstr::obj_size(r3$SummaryPlotList$QUEST_DT_0), 15 * 1024 * 1024)
 
 
   })
@@ -399,8 +433,9 @@ test_that("data type matrix and print.ReportSummaryTable plots work", {
   # int_datatype_matrix.R and print.ReportSummaryTable.R ----
   skip_on_cran()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  skip_if_not_installed("lobstr")
   skip_if_not_installed("vdiffr")
-  skip_if_not_installed("withr")
+
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
   ({
@@ -416,14 +451,21 @@ test_that("data type matrix and print.ReportSummaryTable plots work", {
 
     expect_doppelganger2("int_datatype_matrix",
                                 r$SummaryPlot)
+    expect_lt(lobstr::obj_size(r$SummaryPlot), 15 * 1024 * 1024)
 
     expect_doppelganger2("int_datatype_matrix segment v50000",
                                 r$DataTypePlotList$PART_QUESTIONNAIRE)
+    expect_lt(lobstr::obj_size(r$DataTypePlotList$PART_QUESTIONNAIRE),
+              15 * 1024 * 1024)
 
     expect_doppelganger2("int_datatype_matrix ReportSummaryTable",
                                 print(r$ReportSummaryTable,
                                       view = FALSE,
                                       dt = FALSE))
+    expect_lt(lobstr::obj_size(print(r$ReportSummaryTable,
+                                     view = FALSE,
+                                     dt = FALSE)),
+              15 * 1024 * 1024)
 
     e <- structure(list(Variables = "CENTER_0", N = 2940L), # continuous vs not continuous; fully empty
               row.names = c(NA,  -1L),
@@ -433,6 +475,10 @@ test_that("data type matrix and print.ReportSummaryTable plots work", {
                                 print(e,
                                       view = FALSE,
                                       dt = FALSE))
+    expect_lt(lobstr::obj_size(print(e,
+                                     view = FALSE,
+                                     dt = FALSE)),
+              15 * 1024 * 1024)
 
     cont <- data.frame(Variables = letters[1:10L], N = 2940L,
                        a = sin(1:10L),
@@ -445,15 +491,19 @@ test_that("data type matrix and print.ReportSummaryTable plots work", {
                                 print(cont,
                                       view = FALSE,
                                       dt = FALSE))
-
+    expect_lt(lobstr::obj_size(print(cont,
+                                     view = FALSE,
+                                     dt = FALSE)),
+              15 * 1024 * 1024)
   })
 })
 
 test_that("pro-applicability matrix plots work", { # pro_applicability_matrix.R ----
   skip_on_cran()
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  skip_if_not_installed("lobstr")
   skip_if_not_installed("vdiffr")
-  skip_if_not_installed("withr")
+
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
   ({
@@ -468,21 +518,29 @@ test_that("pro-applicability matrix plots work", { # pro_applicability_matrix.R 
 
     expect_doppelganger2("pro_applicability_matrix",
                                 r$ApplicabilityPlot)
+    expect_lt(lobstr::obj_size(r$ApplicabilityPlot), 15 * 1024 * 1024)
 
     expect_doppelganger2("pro_applicability_matrix segment v50000",
                                 r$ApplicabilityPlotList$PART_QUESTIONNAIRE)
+    expect_lt(lobstr::obj_size(r$ApplicabilityPlotList$PART_QUESTIONNAIRE),
+                               15 * 1024 * 1024)
 
     expect_doppelganger2("pro_applicability_matrix ReportSummaryTable",
                                 print(r$ReportSummaryTable,
                                       view = FALSE,
                                       dt = FALSE))
+    expect_lt(lobstr::obj_size(print(r$ReportSummaryTable,
+                                     view = FALSE,
+                                     dt = FALSE)), 15 * 1024 * 1024)
+
   })
 })
 
 test_that("heatmap with 1 threshold plots work", { # util_heatmap_1th.R ----
   skip_on_cran()
+  skip_if_not_installed("lobstr")
   skip_if_not_installed("vdiffr")
-  skip_if_not_installed("withr")
+
 
   withr::local_options(dataquieR.CONDITIONS_LEVEL_TRHESHOLD = Inf)
 
@@ -516,11 +574,19 @@ test_that("heatmap with 1 threshold plots work", { # util_heatmap_1th.R ----
 
     expect_doppelganger2("heatmap with 2 cat-vars but w/o strata vars",
                                 p1)
+    # FIXME: Enable after https://github.com/r-lib/lobstr/issues/48
+    # expect_lt(lobstr::obj_size(p1), 15 * 1024 * 1024)
 
     expect_doppelganger2("heatmap with 2 cat-vars but w/ strata vars",
                                 p2)
+    # FIXME: Enable after https://github.com/r-lib/lobstr/issues/48
+    # expect_lt(lobstr::obj_size(p2), 15 * 1024 * 1024)
 
     expect_doppelganger2("heatmap with 1 cat-var",
                                 p3)
+    # FIXME: Enable after https://github.com/r-lib/lobstr/issues/48
+    # expect_lt(lobstr::obj_size(p3), 15 * 1024 * 1024)
   })
+
+  # FIXME: @EK: Please add more plot tests for all flavors of plots, namely, distribution, margins, maybe loess (if some path through the function is missing)
 })

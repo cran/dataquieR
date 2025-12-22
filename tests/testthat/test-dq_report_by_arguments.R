@@ -1,5 +1,8 @@
 test_that("dq_report_by error_arguments_test", {
-  skip_if_not_installed("withr")
+  skip_if_not_installed("DT")
+  skip_if_not_installed("markdown")
+  skip_if_not_installed("stringdist")
+
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
                        dataquieR.WARNINGS_WITH_CALLER = TRUE,
@@ -24,7 +27,7 @@ test_that("dq_report_by error_arguments_test", {
   md0$STUDY_SEGMENT <- "STUDY"
 
 
-  expect_warning(dq_report_by(study_data = sd0,
+  expect_warning(expect_warning(dq_report_by(study_data = sd0,
                             meta_data = md0,
                             dimensions = "int",
                             cores = NULL,
@@ -33,7 +36,8 @@ test_that("dq_report_by error_arguments_test", {
                             meta_data_v2 = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx",
                             output_dir = !!file.path(target, "sm"),
                             also_print = TRUE),
-                 regexp = "No data available to create the report.+")
+                 regexp = "No data available to create the report.+"),
+                 regexp = ".*impossible condition.+")
 
   expect_warning(dq_report_by(study_data = sd0,
                               meta_data = md0,
@@ -58,7 +62,7 @@ test_that("dq_report_by error_arguments_test", {
                "strata_column is needed for selecting the strata", fixed = TRUE)
 
 
-  expect_message(dq_report_by(sd0,
+  expect_message2(dq_report_by(sd0,
                             meta_data = md0,
                             dimensions = "int",
                             cores = NULL,
@@ -181,7 +185,7 @@ test_that("dq_report_by error_arguments_test", {
                             also_print = TRUE),
                regexp = "Internal error: No value label.+strata_exclude")
 
-  expect_message(dq_report_by(sd0,
+  expect_message2(dq_report_by(sd0,
                             meta_data = md0,
                             dimensions = "int",
                             cores = NULL,
@@ -287,7 +291,7 @@ test_that("dq_report_by error_arguments_test", {
                             also_print = TRUE),
                regexp = "The strata_column provided does not correpond.+item_level_metadata")
 
-  expect_message(dq_report_by(study_data = c("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/ship.RDS",
+  expect_message2(dq_report_by(study_data = c("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/ship.RDS",
                                              "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData"),
                               meta_data_v2 ="https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx",
                               output_dir = !!file.path(target, "comb1"),
@@ -308,7 +312,7 @@ test_that("dq_report_by error_arguments_test", {
     "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData"),
     20)
 
-  expect_message(dq_report_by(resp_vars = c("v00000", "v00001", "v00002",
+  expect_message2(dq_report_by(resp_vars = c("v00000", "v00001", "v00002",
                                             "v00003", "v00004", "v00005",
                                             "v00006", "v00018"),
                               study_data = sd1,
@@ -351,7 +355,7 @@ test_that("dq_report_by error_arguments_test", {
   segl3$SEGMENT_UNIQUE_ROWS <- NA
   md3$MISSING_LIST_TABLE <- NA
 
-  expect_message(dq_report_by(sd3,
+  expect_message2(dq_report_by(sd3,
                               meta_data = md3,
                               meta_data_dataframe = df3,
                               meta_data_segment = segl3,
@@ -365,7 +369,7 @@ test_that("dq_report_by error_arguments_test", {
 
 
 df3$DF_NAME <- "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData"
-expect_message(dq_report_by(meta_data = md3,
+expect_message2(dq_report_by(meta_data = md3,
                             meta_data_dataframe = df3,
                             cores = NULL,
                             segment_select = "STUDY",
@@ -383,7 +387,7 @@ df3 <- rbind(df3,
                         DF_NAME = "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/ship.RDS"))
 
 
-expect_message(dq_report_by(meta_data = md3,
+expect_message2(dq_report_by(meta_data = md3,
                             meta_data_dataframe = df3,
                             cores = NULL,
                             segment_select = "STUDY",
@@ -391,7 +395,7 @@ expect_message(dq_report_by(meta_data = md3,
                             also_print = TRUE ))
 
 md3$REPORT_NAME <- c("A", "B")
-expect_message(dq_report_by(sd3,
+expect_message2(dq_report_by(sd3,
                             meta_data = md3,
                             dimensions = "int",
                             cores = NULL,
@@ -442,7 +446,7 @@ md1 <- md1[md1$VAR_NAMES %in% colnames(sd1), ]
 md1 <- md1[, !colnames(md1) %in% c("LABEL", "VARIABLE_ROLE")]
 md1$MISSING_LIST_TABLE <- NA
 
-expect_message(dq_report_by(study_data = sd1,
+expect_message2(dq_report_by(study_data = sd1,
                             meta_data = md1,
                             dimensions = "int",
                             cores = NULL,
@@ -451,7 +455,7 @@ expect_message(dq_report_by(study_data = sd1,
                             also_print = TRUE))
 
 #only segment_select, but from STUDY_SEGMENT
-expect_message(dq_report_by(study_data = sd1,
+expect_message2(dq_report_by(study_data = sd1,
                             meta_data = md1,
                             dimensions = "int",
                             cores = NULL,
@@ -471,7 +475,7 @@ expect_error(dq_report_by(study_data = sd1,
 
 
 #only segment_exclude, but from STUDY_SEGMENT
-expect_message(dq_report_by(study_data = sd1,
+expect_message2(dq_report_by(study_data = sd1,
                             meta_data = md1,
                             dimensions = "int",
                             cores = NULL,

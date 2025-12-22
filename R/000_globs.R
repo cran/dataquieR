@@ -36,6 +36,7 @@ dimensions = c("Completeness", "Consistency", "Accuracy")
 #'  - `string` for text/string/character data
 #'  - `float` for decimal/floating point numbers
 #'  - `datetime` for timepoints
+#'  - `time` for time of day
 #'
 #' ## Data Types of Function Arguments
 #' As function arguments, [dataquieR] uses additional type specifications:
@@ -61,8 +62,8 @@ dimensions = c("Completeness", "Consistency", "Accuracy")
 #'                   using [prep_map_labels]
 #'
 #' @seealso [integer] [string]
-#' @aliases integer string float datetime numeric enum
-#'          FLOAT INTEGER STRING DATETIME variable set
+#' @aliases integer string float datetime time numeric enum
+#'          FLOAT INTEGER STRING DATETIME TIME variable set
 #' @rawRd \alias{variable list}
 #'
 #' @export
@@ -70,7 +71,8 @@ DATA_TYPES <- list(
   INTEGER = "integer",
   STRING = "string",
   FLOAT = "float",
-  DATETIME = "datetime"
+  DATETIME = "datetime",
+  TIME = "time"
 )
 
 #' Scale Levels
@@ -122,11 +124,14 @@ DATA_TYPES_OF_R_TYPE <- list(
   POSIXt = DATA_TYPES$DATETIME,
   Date = DATA_TYPES$DATETIME,
   dates = DATA_TYPES$DATETIME,
+  times = DATA_TYPES$TIME,
+  hms = DATA_TYPES$TIME,
   times = DATA_TYPES$DATETIME,
-  chron = DATA_TYPES$DATETIME,
   double = DATA_TYPES$FLOAT,
   numeric = DATA_TYPES$FLOAT,
-  character = DATA_TYPES$STRING
+  character = DATA_TYPES$STRING,
+  ITime = DATA_TYPES$TIME,
+  time_of_day = DATA_TYPES$TIME
 )
 
 #' Variable roles can be one of the following:
@@ -150,6 +155,103 @@ VARIABLE_ROLES <- list(
   PROCESS = "process",
   SUPPRESS = "suppress"
 )
+
+#' @name MAXIMUM_LONG_STRING
+#' @title Cross-item level metadata attribute name
+#' @description
+#'
+#' TODO
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#' @family SSI
+NULL
+
+#' @name IRV
+#' @title Cross-item level metadata attribute name
+#' @description
+#'
+#' TODO
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#' @family SSI
+NULL
+
+#' @name TOTRESPT
+#' @title Cross-item level metadata attribute name
+#' @description
+#'
+#' TODO
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#' @family SSI
+NULL
+
+#' @name RELCOMPL_SPEED
+#' @title Cross-item level metadata attribute name
+#' @description
+#'
+#' TODO
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#' @family SSI
+NULL
+
+#' @name RESPT_PER_ITEM
+#' @title Cross-item level metadata attribute name
+#' @description
+#'
+#' TODO
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#' @family SSI
+NULL
+
+#' @name RELCOMPL_SPEED
+#' @title Cross-item level metadata attribute name
+#' @description
+#'
+#' TODO
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#' @family SSI
+NULL
+
+#' @name MISS_RESP
+#' @title Cross-item level metadata attribute name
+#' @description
+#'
+#' TODO
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#' @family SSI
+NULL
+
+
+#' @name COMPUTED_VARIABLE_ROLES
+#' @title `SSI` related Cross-item level metadata attribute names
+#' Computed Variable roles can be one of the following:
+#' @description
+#'
+#'   - `MAXIMUM_LONG_STRING` Social Science: Computed Indicator Variable,
+#'                           maximum long string
+#'   - `IRV` Social Science: Computed Indicator Variable, `IRV`
+#'   - `TOTRESPT` Social Science: Computed Indicator Variable, `TOTRESPT`
+#'   - `RESPT_PER_ITEM` Social Science: Computed Indicator Variable, `RESPT_PER_ITEM`
+#'   - `RELCOMPL_SPEED` Social Science: Computed Indicator Variable, `RELCOMPL_SPEED`
+#'   - `MISS_RESP` Social Science: Computed Indicator Variable, `MISS_RESP`
+#'   - `NA` Social Science: Computed Indicator Variable -- N/A
+#'
+#' @seealso [VARIABLE_ROLES]
+#' @family meta_data_cross
+#' @family SSI
+NULL
 
 #' Character used  by default as a separator in metadata such as
 #'           missing codes
@@ -218,6 +320,7 @@ VARATT_REQUIRE_LEVELS_ORDER <- c(
 #' @eval c("@aliases", paste(names(WELL_KNOWN_META_VARIABLE_NAMES)))
 #'
 #' @seealso [meta_data_segment] for `STUDY_SEGMENT`
+#' @seealso [online](https://dataquality.qihs.uni-greifswald.de/VIN_Item_Level_Metadata.html)
 #' @family UNITS
 #'
 #' @examples
@@ -273,6 +376,8 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
                            VARATT_REQUIRE_LEVELS$COMPATIBILITY),
   TIME_VAR = structure("TIME_VAR", var_att_required =
                              VARATT_REQUIRE_LEVELS$RECOMMENDED),
+  TIME_VAR_END = structure("TIME_VAR_END", var_att_required =
+                         VARATT_REQUIRE_LEVELS$OPTIONAL),
   KEY_DATETIME = structure("KEY_DATETIME", var_att_required =
                              VARATT_REQUIRE_LEVELS$COMPATIBILITY),
   PART_VAR = structure("PART_VAR", var_att_required =
@@ -345,10 +450,29 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
                            VARATT_REQUIRE_LEVELS$OPTIONAL),
   ENCODING = structure("ENCODING",
                          var_att_required =
-                           VARATT_REQUIRE_LEVELS$OPTIONAL)
+                           VARATT_REQUIRE_LEVELS$OPTIONAL),
+  UNIVARIATE_OUTLIER_CHECKTYPE = structure("UNIVARIATE_OUTLIER_CHECKTYPE",
+                                           var_att_required =
+                                             VARATT_REQUIRE_LEVELS$RECOMMENDED),
+  N_RULES = structure("N_RULES",
+                       var_att_required =
+                         VARATT_REQUIRE_LEVELS$RECOMMENDED),
+  EXTENDED_DATA_TYPE = structure("EXTENDED_DATA_TYPE", var_att_required =
+                                   VARATT_REQUIRE_LEVELS$OPTIONAL),
+  COMPUTED_VARIABLE_ROLE = structure("COMPUTED_VARIABLE_ROLE",
+                                     var_att_required =
+                                       VARATT_REQUIRE_LEVELS$TECHNICAL
+                                     )
 )
 
 .onAttach <- function(...) { # nocov start
+  # if (packageVersion("ggplot2") >= as.package_version("4.0.0")) {
+  #   packageStartupMessage(paste(
+  #     "ggplot2 >= 4.0.0 uses S7 classes, which can cause performance issues.",
+  #     "We are currently trying to address these, in doubt, try to downgrade",
+  #     "ggplot2, if you consider trouble after updating ggplot2"))
+  # }
+
   if (length(user_hints$l) > 0) {
     packageStartupMessage(paste(user_hints$l, collapse = "\n"))
   }
@@ -356,6 +480,45 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
 # nocov end
 
 .onLoad <- function(...) { # nocov start
+
+  to_set <-
+    grep("^dataquieR.*_default$", ls(asNamespace("dataquieR")), value = TRUE)
+
+  for (o in to_set) {
+    nm <- sub("_default$", "", o)
+    if (is.null(getOption(nm))) {
+      do.call("options", setNames(list(get(o, asNamespace("dataquieR"))),
+                                  nm = nm))
+    }
+  }
+
+  ## cowplot integration (only if installed)
+  if ((suppressWarnings(util_ensure_suggested("cowplot", err = FALSE)))) {
+    util_s3_register("cowplot::as_grob", "dq_lazy_ggplot_s7", as_grob.dq_lazy_ggplot_s7)
+    util_s3_register("cowplot::as_grob", "dq_lazy_ggplot",    as_grob.dq_lazy_ggplot)
+  }
+
+  ## plotly integration (only if installed)
+
+  if ((suppressWarnings(util_ensure_suggested("plotly", err = FALSE)))) {
+    util_s3_register("plotly::ggplotly",     "dq_lazy_ggplot", ggplotly.dq_lazy_ggplot)
+    util_s3_register("plotly::plotly_build", "dq_lazy_ggplot", plotly_build.dq_lazy_ggplot)
+    util_s3_register("plotly::ggplotly",     "dq_lazy_ggplot_s7", ggplotly.dq_lazy_ggplot_s7)
+    util_s3_register("plotly::plotly_build", "dq_lazy_ggplot_s7", plotly_build.dq_lazy_ggplot_s7)
+  }
+
+  if (packageVersion("ggplot2") >= as.package_version("3.5.2")) {
+    f <- get("is_ggplot",
+             envir = environment(ggplot2::ggplot))
+  } else {
+    f <- get("is.ggplot",
+             envir = environment(ggplot2::ggplot))
+
+  }
+  assign("util_is_gg_plot",
+         f,
+         environment(util_is_gg_plot))
+
   if (getRversion() >= "2.15.1") {
     utils::globalVariables(
       c(
@@ -425,6 +588,38 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
                     names(WELL_KNOWN_META_VARIABLE_NAMES))
   }
 
+  if (file.exists(system.file("ssi.rds", package = "dataquieR"))) {
+    local({
+      .ssi <- readRDS(system.file("ssi.rds", package = "dataquieR"))
+      COMPUTED_VARIABLE_ROLES <-
+        as.list(setNames(nm = .ssi$SSI_METRICS))
+      COMPUTED_VARIABLE_ROLES$`NA` <- "na"
+      assign("COMPUTED_VARIABLE_ROLES", COMPUTED_VARIABLE_ROLES,
+             asNamespace("dataquieR"))
+      for (name in names(COMPUTED_VARIABLE_ROLES)) {
+        if (exists(name, asNamespace("dataquieR")) &&
+            !is_dev_package("dataquieR")) {
+          util_warning("Variable %s is in dataquieR too!", name,
+                       applicability_problem = FALSE)
+        }
+        assign(name, COMPUTED_VARIABLE_ROLES[[name]],
+               asNamespace("dataquieR"))
+      }
+      if (!is_dev_package("dataquieR")) {
+        namespaceExport(asNamespace("dataquieR"),
+                        "COMPUTED_VARIABLE_ROLES")
+        namespaceExport(asNamespace("dataquieR"),
+                        setdiff(names(COMPUTED_VARIABLE_ROLES), "NA"))
+      }
+    })
+  }
+
+  if (is_dev_package("dataquieR") &&
+      exists("util_load_helpers") &&
+      is.function(get("util_load_helpers"))) {
+    get("util_load_helpers")()
+  }
+
   makeActiveBinding(".manual", function() {
     if (!length(ls(..manual))) {
       util_load_manual()
@@ -454,6 +649,12 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
   makeActiveBinding(".called_in_pipeline", function() {
     .dq2_globs$.called_in_pipeline
   }, environment(.onLoad))
+
+  makeActiveBinding("MAX_LONG_LABEL_LEN", function() {
+    min(.MAX_LABEL_LEN, getOption("dataquieR.MAX_LONG_LABEL_LEN",
+                                  dataquieR.MAX_LONG_LABEL_LEN_default),
+        na.rm = TRUE)
+  }, env = environment(.onLoad))
 
   makeActiveBinding("MAX_LABEL_LEN", function() {
     min(.MAX_LABEL_LEN, getOption("dataquieR.MAX_LABEL_LEN",
@@ -509,6 +710,8 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
              is.na(suppressWarnings(as.numeric(valud$def))), "symbol", TRUE]
     u <- u[!util_empty(u)]
     u <- setNames(nm = u)
+    attr(u, "def") <-
+      suppressWarnings(setNames(nm = valud$symbol, as.numeric(valud$def))[u])
     u
   }, env = asNamespace(packageName()))
 
@@ -540,14 +743,148 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
     get("p", envir = unit_env)
   }, env = asNamespace(packageName()))
 
+  makeActiveBinding("UNIT_PREFIX_FACTORS", function() {
+    if (!exists("pf", envir = unit_env)) {
+      if (!requireNamespace("xml2", quietly = TRUE)) { # for units
+        return(character(0))
+      }
+      ..pf <- suppressMessages(units::valid_udunits_prefixes())
+      pf <- suppressMessages(unique(
+        unname(unlist(..pf[, 1:3]))))
+      pf <- pf[!util_empty(pf)]
+      pf <- vapply(trimws(unlist(strsplit(pf, ",", fixed = TRUE))),
+                          function(pfx) {
+                            r <- ..pf[..pf[[1]] == pfx |
+                                   ..pf[[2]] == pfx |
+                                   ..pf[[3]] == pfx, "value", drop = TRUE]
+                            if (length(r) == 0) {
+                              r <- 0
+                            }
+                            r
+                          },
+                          FUN.VALUE = numeric(1))
+      pf <- pf[pf != 0]
+      dps <- duplicated(names(pf))
+      if (any(dps)) {
+        util_warning(
+          c("Removing duplicated unit prefixes %s from udunits. Please",
+            "verify, if your installation of the package units returns valid",
+            "prefixes."),
+          util_pretty_vector_string(sort(unique(names(pf)[dps])))
+        )
+        pf <- pf[!dps]
+      }
+      assign("pf",
+             pf,
+             envir =
+               unit_env)
+    }
+    get("pf", envir = unit_env)
+  }, env = asNamespace(packageName()))
+
   namespaceExport(asNamespace("dataquieR"),
                   c("UNITS", "UNIT_PREFIXES", "UNIT_SOURCES", "UNIT_IS_COUNT"))
+
+  suppressMessages({
+    # methods::setMethod('vapply', methods::signature(X="dataquieR_resultset2"),
+    #                    function(X, FUN, FUN.VALUE, ..., USE.NAMES = TRUE) {
+    #                      vapply(setNames(nm = names(X)), function(nm) {
+    #                        FUN(X[[nm]], ...)
+    #                      }, FUN.VALUE = FUN.VALUE, USE.NAMES = USE.NAMES)
+    #                    })
+    #
+    # methods::setMethod('lapply', methods::signature(X="dataquieR_resultset2"),
+    #                    function(X, FUN, ...) {
+    #                      lapply(setNames(nm = names(X)), function(nm) {
+    #                        FUN(X[[nm]], ...)
+    #                      })
+    #                    })
+    #
+    # methods::setMethod('sapply', methods::signature(X="dataquieR_resultset2"),
+    #                    function(X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE) {
+    #                      sapply(setNames(nm = names(X)), function(nm) {
+    #                        FUN(X[[nm]], ...)
+    #                      }, simplify = simplify, USE.NAMES = USE.NAMES)
+    #                    })
+
+    # methods::setMethod('vapply', methods::signature(X="dataquieR_resultset2"),
+    #                    function(X, FUN, FUN.VALUE, ..., USE.NAMES = TRUE) {
+    #                      vapply(setNames(nm = names(X)), function(nm) {
+    #                        FUN(X[[nm]], ...)
+    #                      }, FUN.VALUE = FUN.VALUE, USE.NAMES = USE.NAMES)
+    #                    }, where = globalenv())
+    #
+    # methods::setMethod('lapply', methods::signature(X="dataquieR_resultset2"),
+    #                    function(X, FUN, ...) {
+    #                      lapply(setNames(nm = names(X)), function(nm) {
+    #                        FUN(X[[nm]], ...)
+    #                      })
+    #                    }, where = globalenv())
+    #
+    # methods::setMethod('sapply', methods::signature(X="dataquieR_resultset2"),
+    #                    function(X, FUN, ..., simplify = TRUE, USE.NAMES = TRUE) {
+    #                      sapply(setNames(nm = names(X)), function(nm) {
+    #                        FUN(X[[nm]], ...)
+    #                      }, simplify = simplify, USE.NAMES = USE.NAMES)
+    #                    }, where = globalenv())
+
+
+    if (!inherits(try(as.environment("tools:rstudio"),
+                      silent = TRUE), "try-error") &&
+        exists(".rs.getNames", as.environment("tools:rstudio"))) {
+      # no need to load the full object just to fetch the names.
+      .dataquieR_orig_util_rs_get_names <- # FIXME: don't, if already done
+        get(".rs.getNames", as.environment("tools:rstudio"))
+      if (!is.null(attr(.dataquieR_orig_util_rs_get_names,
+                        ".dataquieR_orig_util_rs_get_names"))) {
+        .dataquieR_orig_util_rs_get_names <-
+          attr(.dataquieR_orig_util_rs_get_names,
+               ".dataquieR_orig_util_rs_get_names")
+      }
+      util_rs_get_names <- function(object) {
+        if (inherits(object, "dataquieR_resultset2")) {
+          r <- names(object)
+          if (!is.null(r))
+            attr(r, "meta") <- rep("", length(r))
+          return(r)
+        } else {
+          eval.parent(body(.dataquieR_orig_util_rs_get_names))
+        }
+      }
+      environment(util_rs_get_names) <-
+        environment(.dataquieR_orig_util_rs_get_names)
+      attr(.dataquieR_orig_util_rs_get_names,
+           ".dataquieR_orig_util_rs_get_names") <-
+        .dataquieR_orig_util_rs_get_names
+      attr(util_rs_get_names, ".dataquieR_orig_util_rs_get_names") <-
+        .dataquieR_orig_util_rs_get_names
+      assign(".dataquieR_orig_util_rs_get_names",
+             .dataquieR_orig_util_rs_get_names,
+             environment(util_rs_get_names))
+      assign(".rs.getNames", util_rs_get_names, as.environment("tools:rstudio"))
+    }
+  })
+
+  assign("MEM_COMPRESS_CAPABILITIES",
+         names(which(.util_mem_compress_capabilities())),
+         environment(.util_mem_compress_capabilities))
+
+  if (requireNamespace("S7", quietly = TRUE)) {
+    # register all S7 methods for the package (recommended by S7)
+    S7::methods_register()
+
+    # ensure your dq_lazy S7 class + operator methods exist in THIS session
+    suppressMessages(dq_lazy_register_s7())
+  }
+
 
 }
 # nocov end
 
+MEM_COMPRESS_CAPABILITIES <- "none"
+
 # name of the additional system missingness column in com_item_missingness
-.SM_LAB <- "ADDED: SysMiss"
+.SM_LAB <- "NAs (System missings)"
 
 #' Data frame with labels for missing- and jump-codes
 #' #' Metadata about value and missing codes
@@ -822,8 +1159,16 @@ DF_ID_VARS <- "DF_ID_VARS"
 #' @export
 DF_UNIQUE_ROWS <- "DF_UNIQUE_ROWS"
 
+#' Well known columns on the `item_computation_level` sheet
+#' @name meta_data_computation
+#' @family meta_data_cross
+#' @description
+#' Computation rules
+#' TODO
+#'
+NULL
 
-#' Well known columns on the `meta_data_cross-item` sheet
+#' Well known columns on the `cross-item_level` sheet
 #' @name meta_data_cross
 #' @seealso [check_table]
 #' @seealso [Online Documentation](https://dataquality.qihs.uni-greifswald.de/VIN_Cross_Item_Level_Metadata.html)
@@ -860,6 +1205,16 @@ NULL
 #' @family UNITS
 NULL
 
+#' Factors related to unit prefixes [units::valid_udunits_prefixes()]
+#'
+#' named `numeric` vector
+#'
+#' translates k, m, M, c, ... to 1000, 0.001, ...
+#'
+#' @name UNIT_PREFIX_FACTORS
+#' @family UNITS
+NULL
+
 #' Valid unit prefixes according to [units::valid_udunits_prefixes()]
 #'
 #' like k, m, M, c, ...
@@ -879,6 +1234,28 @@ NULL
 #'
 #' @export
 CHECK_LABEL <- "CHECK_LABEL"
+
+#' Cross-item level metadata attribute name
+#' TODO
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#' @export
+SCALE_NAME <- "SCALE_NAME"
+
+#' Cross-item level metadata attribute name
+#' TODO
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#' @export
+SCALE_ACRONYM <- "SCALE_ACRONYM"
+
+#' Cross-item level metadata attribute name
+#' TODO
+#' internal use, only
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#' @export
+VARIABLE_LIST_ORDER <- "VARIABLE_LIST_ORDER"
 
 #' Cross-item level metadata attribute name
 #'
@@ -905,7 +1282,7 @@ CHECK_ID <- "CHECK_ID"
 #' @family meta_data_cross
 #'
 #' @export
-VARIABLE_LIST <- "VARIABLE_LIST" # TODO: STS Add to 000_globs
+VARIABLE_LIST <- "VARIABLE_LIST"
 
 #' Cross-item level metadata attribute name
 #'
@@ -933,23 +1310,6 @@ CONTRADICTION_TERM <- "CONTRADICTION_TERM"
 #' @export
 CONTRADICTION_TYPE <- "CONTRADICTION_TYPE"
 
-#' Cross-item and item level metadata attribute name
-#'
-#' Select, how many violated outlier criteria make an observation an outlier,
-#' see [acc_multivariate_outlier].
-#'
-#' You can leave the cell empty, then, all applied checks must deem an
-#' observation an outlier to have it flagged. See
-#' [UNIVARIATE_OUTLIER_CHECKTYPE] and
-#' [MULTIVARIATE_OUTLIER_CHECKTYPE] for the selected outlier criteria.
-#'
-#' @seealso [meta_data_cross]
-#' @seealso [meta_data]
-#' @family meta_data_cross
-#'
-#' @export
-N_RULES <- "N_RULES" # TODO: STS add to WELL_KNOWN_META_VARIABLE_NAMES
-
 #' Cross-item level metadata attribute name
 #'
 #' Select, which outlier criteria to compute, see [acc_multivariate_outlier].
@@ -963,6 +1323,14 @@ N_RULES <- "N_RULES" # TODO: STS add to WELL_KNOWN_META_VARIABLE_NAMES
 #'
 #' @export
 MULTIVARIATE_OUTLIER_CHECKTYPE <- "MULTIVARIATE_OUTLIER_CHECKTYPE"
+
+#' Cross-item level metadata attribute name
+#'
+#' @seealso [meta_data_computation]
+#' @family meta_data_computation
+#'
+#' @export
+COMPUTATION_RULE = "COMPUTATION_RULE"
 
 #' Cross-item level metadata attribute name
 #'
@@ -981,18 +1349,23 @@ MULTIVARIATE_OUTLIER_CHECKTYPE <- "MULTIVARIATE_OUTLIER_CHECKTYPE"
 #' @export
 MULTIVARIATE_OUTLIER_CHECK <- "MULTIVARIATE_OUTLIER_CHECK"
 
-#' Item level metadata attribute name
+
+#' Cross-item level metadata attribute name
 #'
-#' Select, which outlier criteria to compute, see [acc_univariate_outlier].
+#' Select, whether to compute [acc_mahalanobis].
 #'
-#' You can leave the cell empty, then, all checks will apply. If you enter
-#' a set of methods, the maximum for [N_RULES] changes. See also
-#' [`MULTIVARIATE_OUTLIER_CHECKTYPE`].
+#' You can leave the cell empty, then the depends on the setting of the
+#' `option` [dataquieR.MULTIVARIATE_OUTLIER_CHECK]. If this column is missing,
+#' all this is the same as having all cells empty and
+#' `dataquieR.MULTIVARIATE_OUTLIER_CHECK` set to `"auto"`.
 #'
-#' @seealso [WELL_KNOWN_META_VARIABLE_NAMES]
+#' See also [`MULTIVARIATE_OUTLIER_CHECKTYPE`].
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
 #'
 #' @export
-UNIVARIATE_OUTLIER_CHECKTYPE <- "UNIVARIATE_OUTLIER_CHECKTYPE"  # TODO: STS add to WELL_KNOWN_META_VARIABLE_NAMES
+MAHALANOBIS_THRESHOLD <- "MAHALANOBIS_THRESHOLD"
 
 #' Cross-item level metadata attribute name
 #'
@@ -1066,7 +1439,8 @@ GOLDSTANDARD <- "GOLDSTANDARD"
 #' Cross-item level metadata attribute name
 #'
 #' For contradiction rules, the required pre-processing steps that can be given.
-#' TODO JM: MISSING_LABEL will not work for non-factor variables
+#' Note: `MISSING_LABEL`, `MISSING_INTERPRET` may not work for non-factor
+#' variables
 #'
 #' LABEL LIMITS MISSING_NA MISSING_LABEL MISSING_INTERPRET
 #'
@@ -1091,7 +1465,7 @@ CODE_INTERPRET <- "CODE_INTERPRET"
 #' @export
 CODE_CLASS <- "CODE_CLASS"
 
-# TODO
+# TODO Only existence of CODE_ORDER is checked, order not yet used
 #' Only existence is checked, order not yet used
 #' @export
 CODE_ORDER <- "CODE_ORDER"
@@ -1106,8 +1480,8 @@ CODE_CLASSES <- list(MISSING = "MISSING",
 #'
 #' order does matter, because it defines the order in the `dq_report2`.
 #'
-#' @seealso [util_html_for_var()]
-#' @seealso [util_html_for_dims()]
+#' @seealso `util_html_for_var()`
+#' @seealso `util_html_for_dims()`
 dims <- c(
   des = "Descriptive statistics",
   int = "Integrity",
@@ -1142,3 +1516,106 @@ with_pipeline <- withr::with_(new = FALSE,
     }
     res
   })
+
+without_pipeline <- withr::with_(new = FALSE,
+  function(x) {
+    res <- force(.dq2_globs$.called_in_pipeline)
+    if (missing(x)) {
+      .dq2_globs$.called_in_pipeline <- FALSE
+    } else {
+      .dq2_globs$.called_in_pipeline <- x
+    }
+    res
+  })
+
+.called_in_pipeline2 <- function() {
+  n <- 1L
+  repeat {
+    cl <- rlang::caller_call(n)
+    if (is.null(cl)) return(FALSE)  # End of call stack reached
+
+    if (identical(rlang::call_name(cl), "dq_report2")) {
+      # Try to resolve the actual function and its environment
+      fn <- rlang::caller_fn(n)
+      if (is.null(fn)) return(TRUE)  # If we can't resolve it, assume match
+      # is good
+
+      fn_env_top <- base::topenv(rlang::fn_env(fn))
+      # Accept both Namespace (normal case) and Package environment
+      # (e.g. devtools::load_all)
+      is_from_pkg <- identical(fn_env_top, rlang::ns_env("dataquieR")) ||
+        identical(rlang::env_name(fn_env_top), "package:dataquieR")
+      return(is_from_pkg)
+    }
+
+    n <- n + 1L  # Check next caller up the stack
+  }
+}
+
+dq_lazy_register_s7 <- function() {
+  if (.dq_lazy_state$s7_ready) return(invisible(TRUE))
+  if (!requireNamespace("S7", quietly = TRUE)) return(invisible(FALSE))
+
+  # Create an S7 wrapper class around your existing S3 lazy object
+  cls <- S7::new_class(
+    "dq_lazy_ggplot_s7",
+    properties = list(payload = S7::class_any)
+  )
+  .dq_lazy_state$s7_class <- cls
+
+  # Define S7 operator methods for the wrapper.
+  # NOTE: S7’s method-registration API is `S7::method()` in recent versions.
+  # We guard it so you get a clear error if the API name differs.
+  if (!exists("method", envir = asNamespace("S7"), inherits = FALSE)) {
+    stop("S7 is installed but S7::method() was not found; adjust registration for your S7 version.")
+  }
+
+  base_ops <- get("base_ops", envir = asNamespace("S7"))
+
+  S7::method(base_ops[["|"]], signature = list(cls, S7::class_any)) <- function(e1, e2) {
+    p1 <- prep_realize_ggplot(dq_lazy_unwrap(e1))
+    e2 <- dq_lazy_unwrap(e2)
+    if (inherits(e2, "dq_lazy_ggplot")) e2 <- prep_realize_ggplot(e2)
+    f <- get("|.ggplot", envir = asNamespace("patchwork"))
+    f(p1, e2)
+  }
+
+  S7::method(base_ops[["/"]], signature = list(cls, S7::class_any)) <- function(e1, e2) {
+    p1 <- prep_realize_ggplot(dq_lazy_unwrap(e1))
+    e2 <- dq_lazy_unwrap(e2)
+    if (inherits(e2, "dq_lazy_ggplot")) e2 <- prep_realize_ggplot(e2)
+    f <- get("/.ggplot", envir = asNamespace("patchwork"))
+    f(p1, e2)
+  }
+
+  S7::method(base_ops[["+"]], signature = list(cls, S7::class_any)) <- function(e1, e2) {
+    p1 <- prep_realize_ggplot(dq_lazy_unwrap(e1))
+    e2 <- dq_lazy_unwrap(e2)
+    if (inherits(e2, "dq_lazy_ggplot")) e2 <- prep_realize_ggplot(e2)
+    p1 + e2
+  }
+
+  S7::method(base_ops[["-"]], signature = list(cls, S7::class_any)) <- function(e1, e2) {
+    p1 <- prep_realize_ggplot(dq_lazy_unwrap(e1))
+    e2 <- dq_lazy_unwrap(e2)
+    if (inherits(e2, "dq_lazy_ggplot")) e2 <- prep_realize_ggplot(e2)
+    p1 - e2
+  }
+
+  S7::method(base_ops[["&"]], signature = list(cls, S7::class_any)) <- function(e1, e2) {
+    p1 <- prep_realize_ggplot(dq_lazy_unwrap(e1))
+    e2 <- dq_lazy_unwrap(e2)
+    if (inherits(e2, "dq_lazy_ggplot")) e2 <- prep_realize_ggplot(e2)
+    p1 & e2
+  }
+
+  S7::method(base_ops[["*"]], signature = list(cls, S7::class_any)) <- function(e1, e2) {
+    p1 <- prep_realize_ggplot(dq_lazy_unwrap(e1))
+    e2 <- dq_lazy_unwrap(e2)
+    if (inherits(e2, "dq_lazy_ggplot")) e2 <- prep_realize_ggplot(e2)
+    p1 * e2
+  }
+
+  .dq_lazy_state$s7_ready <- TRUE
+  invisible(TRUE)
+}

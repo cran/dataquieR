@@ -69,7 +69,7 @@ prep_expand_codes <- function(item_level = "item_level",
   expand <- function(cldf) {
     have_auto <- any(cldf$AUTO)
     my_labels <- cldf[!cldf$AUTO, CODE_LABEL, TRUE]
-    my_labels <- my_labels[!is.na(my_labels)]
+    my_labels <- trimws(my_labels[!is.na(my_labels)])
     if (length(unique(my_labels)) == 1) {
       if (!suppressWarnings && have_auto) {
         util_message("Expand label %s for all values coded with %s",
@@ -77,7 +77,7 @@ prep_expand_codes <- function(item_level = "item_level",
                      dQuote(unique(cldf$CODE_VALUE)),
                      applicability_problem = TRUE)
       }
-      cldf$CODE_LABEL <- my_labels
+      cldf$CODE_LABEL <- rep(unique(my_labels), nrow(cldf))
     }
     cldf
   }

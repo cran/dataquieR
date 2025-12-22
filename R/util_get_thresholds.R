@@ -6,7 +6,7 @@
 #' @return named list (names are `VAR_NAMES`, values are named vectors of
 #'         intervals, names in the vectors are the category numbers)
 #' @family summary_functions
-#' @keywords internal
+#' @noRd
 util_get_thresholds <- function(indicator_metric, meta_data) {
 
   vars <- meta_data[[VAR_NAMES]]

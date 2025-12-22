@@ -2,7 +2,7 @@ test_that("util_par_pmap works", {
   skip_on_cran() # slow and meant for parallel processing
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   plan <- dplyr::tribble(
     ~ x, ~ y,
     rnorm(1:10000), rnorm(1:10000),

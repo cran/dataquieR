@@ -1,5 +1,22 @@
 #' Pre-load a folder with named (usually more than) one table(s)
 #'
+#' The original purpose of this function is to load metadata, not study data.
+#' If you want to load study data, you should keep them in a different folder,
+#' then you can call this function once for the metadata and once for the study
+#' data but this time setting `keep_types = TRUE` to avoid all data being read
+#' as [character()].
+#'
+#' Note, that once loaded to the data frame cache, a file won't be read again,
+#' except you call [prep_purge_data_frame_cache()] or
+#' [prep_remove_from_cache()]. That is, if you call this function first, and
+#' [prep_get_data_frame()] later, of if `dataquieR` wants to read a file, e.g.,
+#' for [dq_report2()], the file will come from the cache in the way it was
+#' initially read in (`keep_types` may thus be used inadequately).
+#'
+#' By default, this function works not recursively, but you can tweak that by
+#' passing `...`-arguments passed through to the initially running
+#' [list.files()] function.
+#'
 #' These can thereafter be referred to by their names only. Such files are,
 #' e.g., spreadsheet-workbooks or `RData`-files.
 #'
@@ -9,7 +26,7 @@
 #' @param folder the folder name to load.
 #' @param keep_types [logical] keep types as possibly defined in the file.
 #'                             set `TRUE` for study data.
-#' @param ... arguments passed to []
+#' @param ... arguments passed to [list.files()]
 #'
 #' @return `invisible(the cache environment)`
 #' @export
@@ -31,6 +48,10 @@ prep_load_folder_with_metadata <- function(folder,
 # IDEA: Support iframes
   if (startsWith(folder, "https://") ||
       startsWith(folder, "http://")) {
+    util_ensure_suggested(
+      "rvest",
+      goal =
+        "read data from the internet using prep_load_folder_with_metadata()")
     fp <- tempfile()
     util_stop_if_not(!file.exists(fp))
     dir.create(fp)
@@ -108,8 +129,38 @@ prep_load_folder_with_metadata <- function(folder,
 
   fls <- list.files(folder,
                     full.names = TRUE,
+                    all.files = TRUE,
+                    no.. = TRUE,
+                    include.dirs = FALSE,
                     ...)
-
+  if (any(startsWith(basename(fls), "~$") &
+          (endsWith(basename(fls), ".xlsx") |
+           endsWith(basename(fls), ".xls")
+          ))) {
+    util_warning(
+      c("Found files that look like Excel",
+        "working copies https://superuser.com/a/901749",
+        "Do you have Excel open? This may cause warnings about",
+        "files that cannot be opened/are locked. If not open, maybe, Excel",
+        "had crashed before. You should close Excel, if it is not running,",
+        "open it, it may address this. If nothing helps, consider moving",
+        "all files whose names start with ~$ and end with .xls or xlsx away.")
+    )
+  }
+  if (any(startsWith(basename(fls), ".~lock.") &
+          endsWith(basename(fls), "#") # libreoffice
+          )) {
+    util_warning(
+      c("Found files that look like LibreOffice/OpenOffice/StarOffice",
+        "working copies https://superuser.com/a/901749",
+        "Do you have one of these apps open? This may cause warnings about",
+        "files that cannot be opened/are locked. If not open, maybe, one of",
+        "these apps had crashed before. You should close all such apps.",
+        "If they don't run, open them, they may address this. ",
+        "If nothing helps, consider moving",
+        "all files whose names start with .~lock. and end with # away.")
+    )
+  }
   lapply(fls, function(fn) {
     if (inherits(suppressWarnings(try(prep_load_workbook_like_file(fn,
                                                                    keep_types = keep_types),

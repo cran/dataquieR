@@ -6,10 +6,21 @@
 #' @param relevant_vars_for_warnings [character]
 #'
 #' @return [data.frame] modified study data
-#' @keywords internal
-util_adjust_data_type <- function(study_data, # TODO: Use maybe readr::type_convert
-                                  meta_data,
-                                  relevant_vars_for_warnings) {
+#' @noRd
+util_adjust_data_type <- function(study_data,
+                                  meta_data, # TODO: Use maybe readr::type_convert
+                                  relevant_vars_for_warnings = character(0)) {
+  # FIXME: The old adjust_type function does not interpret 19 as 0019 but as 2019. same hint in the test for test-acc_loess.R -- 1969 is the first year with 19, there.
+  if (!isTRUE(as.logical(getOption("dataquieR.old_type_adjust",
+                dataquieR.old_type_adjust_default)))) {
+    cl <- sys.call()
+    cl[[1]] <-
+      rlang::call2(":::", rlang::sym("dataquieR"),
+                   rlang::sym("util_adjust_data_type2"))
+    return(eval(cl,
+                envir = parent.frame(),
+                enclos = parent.frame()))
+  }
   # prevent repeated data type checks if adjusted previously
   if (!isTRUE(attr(study_data, "Data_type_matches"))) {
     check_type <- util_compare_meta_with_study(
@@ -52,6 +63,31 @@ util_adjust_data_type <- function(study_data, # TODO: Use maybe readr::type_conv
           return(rv2)
         })
       study_data[, vars_to_transform] <- transf_sd
+    }
+    logcs <- names(which(vapply(study_data, is.logical, FUN.VALUE = logical(1)))) # these should be NA only.
+    if (identical(Sys.getenv("TESTTHAT"), "true")) {
+      util_stop_if_not(
+        "all logical columns should be NA only." =
+          all(is.na(unlist(as.vector(study_data[, logcs])))))
+    }
+    if (length(logcs) > 0) {
+      expected_type <- setNames(util_map_labels( # convert them to the desired NA type -- can happen, if data type was compatible, so no conversion was done
+        x = logcs,
+        to = DATA_TYPE,
+        from = VAR_NAMES,
+        ifnotfound =
+          DATA_TYPES$FLOAT,
+        meta_data = meta_data,
+        warn_ambiguous = FALSE),
+        nm = logcs)
+      lgcs_which_are_flts <- names(which(expected_type == DATA_TYPES$FLOAT))
+      lgcs_which_are_intgs <- names(which(expected_type == DATA_TYPES$INTEGER))
+      study_data[, lgcs_which_are_intgs] <-
+        lapply(study_data[, lgcs_which_are_intgs, drop = FALSE],
+               as.integer)
+      study_data[, lgcs_which_are_flts] <-
+        lapply(study_data[, lgcs_which_are_flts, drop = FALSE],
+               as.double)
     }
     attr(study_data, "Data_type_matches") <- TRUE
   }

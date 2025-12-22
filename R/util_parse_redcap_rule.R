@@ -11,7 +11,7 @@
 #' @return [expression] the interpreted rule
 #'
 #' [`REDcap` rules 1](https://help.redcap.ualberta.ca/help-and-faq/project-best-practices/data-quality/example-data-quality-rules)
-#' [`REDcap` rules 2](https://www.ctsi.ufl.edu/files/2017/06/Calculated-Fields-%E2%80%93-REDCap-How.pdf)
+#' [`REDcap` rules 2](https://docs.google.com/document/d/1l3nGBgqqPKi5PtMe75g7q0dny8QzGMd_/edit?tab=t.0)
 #' [`REDcap` rules 3](https://www.iths.org/wp-content/uploads/REDCap-Branching-Logic-2017-202.pdf)
 #'
 #'
@@ -42,10 +42,10 @@
 #'  paste0('[con_consentdt] <> "" and [sda_osd1dt] <> "" and',
 #'  ' datediff([con_consentdt],[sda_osd1dt],"d",true) < 0')
 #'
-#' x <- data.frame(con_consentdt = c(as.POSIXct("2020-01-01"),
-#'                 as.POSIXct("2020-10-20")),
-#'                 sda_osd1dt = c(as.POSIXct("2020-01-20"),
-#'                 as.POSIXct("2020-10-01")))
+#' x <- data.frame(con_consentdt = c(util_parse_date("2020-01-01"),
+#'                 util_parse_date("2020-10-20")),
+#'                 sda_osd1dt = c(util_parse_date("2020-01-20"),
+#'                 util_parse_date("2020-10-01")))
 #' eval(util_parse_redcap_rule(paste0(
 #'   '[con_consentdt] <> "" and [sda_osd1dt] <> "" and ',
 #'   'datediff([con_consentdt],[sda_osd1dt],"d", "Y-M-D",true) < 10')),
@@ -72,7 +72,7 @@
 #'
 #' @family parser_functions
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 
 util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
                                    must_eof = FALSE) {
@@ -125,7 +125,7 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
                 tagged_action <- body(x)[["action"]]
                 body(x)[["action"]] <- function(...) {
                   if (debug >= 1) message(sprintf(">> %s", fname))
-                  if (debug >= 3) browser()
+                  if (debug >= 3) browser() # intended use of browser() -- dont modify this line
                   r <- eval(parent.env(environment())$tagged_action)(...)
                   if (debug >= 1) message(sprintf(">> %s", dQuote(util_deparse1(r))))
                   r
@@ -135,7 +135,7 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
                   tagged_action <- formals(eval(body(x)[[2]][[1]]))$action
                   body(x)[[2]][["action"]] <- function(...) {
                     if (debug >= 1) message(sprintf(">> %s", fname))
-                    if (debug >= 3) browser()
+                    if (debug >= 3) browser() # intended use of browser() -- dont modify this line
                     r <- eval(parent.env(environment())$tagged_action)(...)
                     if (debug >= 1) message(sprintf(">> %s", dQuote(util_deparse1(r))))
                     r
@@ -144,7 +144,7 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
                   tagged_action <- formals(eval(body(x)[[1]]))$action
                   body(x)[["action"]] <- function(...) {
                     if (debug >= 1) message(sprintf(">> %s", fname))
-                    if (debug >= 3) browser()
+                    if (debug >= 3) browser() # intended use of browser() -- dont modify this line
                     r <- eval(parent.env(environment())$tagged_action)(...)
                     if (debug >= 1) message(sprintf(">> %s", dQuote(util_deparse1(r))))
                     r
@@ -248,7 +248,7 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
       )
 
       tz_parsers <- lapply(c(
-        OlsonNames()
+        union(OlsonNames(), c("CEST", "CET"))
         ), keyword)
 
       tag(tz_parser <- function() do.call(alternation, c(
@@ -274,9 +274,96 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
             keyword(":"),
             digit012345(),
             digit(),
+            option(
+              concatenation(
+                keyword(":"),
+                digit012345(),
+                digit()
+              )
+            ),
+            option(
+              concatenation(
+                whitespace(),
+                ignore_ws,
+                tz_parser()
+              )
+            )
+          ), empty(action = function(s) empty_part)),
+          if (!no_brackets) keyword("]", action = function(s) empty_part) else empty(action = function(s) {empty_part}),
+          action = function(s) {
+            s <- remove_empty_part(s)
+
+            # Flatten while keeping names to filter parser bookkeeping fields
+            flat <- unlist(s, use.names = TRUE)
+
+            # Remove internal fields like ...$type
+            if (!is.null(names(flat))) {
+              flat <- flat[!grepl("type$", names(flat), perl = TRUE)]
+            }
+
+            # Work with characters
+            flat <- as.character(flat)
+
+            # Drop all "option" markers (we had two: one for :SS, one for TZ)
+            flat <- flat[flat != "option"]
+
+            # Detect TZ token from tz_parser (use same source as tz_parsers)
+            tz_set <- union(OlsonNames(), c("CEST", "CET"))
+
+            tz <- ""
+            tz_pos <- tail(which(flat %in% tz_set), 1)
+
+            if (length(tz_pos)) {
+              tz <- flat[tz_pos]
+              # Also drop the whitespace right before the TZ (if any),
+              # because we’ll rebuild the final string without it.
+              drop_idx <- tz_pos
+              if (tz_pos > 1 && grepl("^\\s+$", flat[tz_pos - 1])) {
+                drop_idx <- c(tz_pos - 1, drop_idx)
+              }
+              flat <- flat[-drop_idx]
+            }
+
+            # Rebuild the literal without internal markers or TZ token
+            s_str <- paste(flat, collapse = "")
+
+            call("util_parse_date", s_str, tz = tz)
+          }
+        ),
+        keyword("\"today\"", action = function(s) {
+          call("util_parse_date", Sys.Date())
+        }),
+        action = function(s) {
+          if (debug >= 1) message("datetime")
+          remove_empty_part(s)
+        }
+      )
+
+      dt_no_brackets <- dt_general
+
+      formals(dt_no_brackets)$no_brackets <- TRUE
+
+      tag(datetime <- dt_general)
+
+      tag(datetime_no_brackets <- dt_no_brackets)
+
+      # ------ 324 387
+      to_general <- function(no_brackets = FALSE) alternation(
+        concatenation(
+          if (!no_brackets) keyword("[", action = function(s) empty_part) else empty(action = function(s) {empty_part}),
+          alternation(concatenation(
+            digit012(),
+            digit(),
             keyword(":"),
             digit012345(),
             digit(),
+            option(
+              concatenation(
+                keyword(":"),
+                digit012345(),
+                digit()
+              )
+            ),
             option(
               concatenation(
                 whitespace(),
@@ -301,26 +388,23 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
             } else {
               tz <- ""
             }
-            call("as.POSIXct", paste(s_str, collapse = ""), tz = tz)
+            call("util_parse_time", paste(s_str, collapse = ""), tz = tz)
           }
         ),
-        keyword("\"today\"", action = function(s) {
-          call("as.POSIXct", Sys.Date())
-        }),
         action = function(s) {
-          if (debug >= 1) message("datetime")
+          if (debug >= 1) message("time")
           remove_empty_part(s)
         }
       )
 
-      dt_no_brackets <- dt_general
+      to_no_brackets <- to_general
 
-      formals(dt_no_brackets)$no_brackets <- TRUE
+      formals(to_no_brackets)$no_brackets <- TRUE
 
-      tag(datetime <- dt_general)
+      tag(time <- to_general)
 
-      tag(datetime_no_brackets <- dt_no_brackets)
-
+      tag(time_no_brackets <- to_no_brackets)
+      # ----- 324 387
 
       tag(nan <- function() keyword('"NaN"', action = function(s) {
         if (debug >= 1) message("nan")
@@ -339,6 +423,64 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
                                             do.call(call, c(list(name = "set"), s[[2]]), quote = TRUE)
                                           }
       ))
+      # --- strict time without brackets, no empty alternative
+      tag(time_strict_no_brackets <- function()
+        concatenation(
+          digit012(), digit(), keyword(":"),          # HH:
+          digit012345(), digit(),                     # MM
+          option(concatenation(keyword(":"), digit012345(), digit())),  # :SS
+          option(concatenation(whitespace(), ignore_ws, tz_parser())),  # TZ (optional)
+          action = function(s0) {
+            s <- remove_empty_part(s0)
+            s_str <- unlist(s)[!grepl("type$", perl = TRUE, names(unlist(s)))]
+            tz <- ""
+            if (any(unlist(s) == "option")) {
+              tz0 <- unname(tail(unlist(s), 1))
+              if (tz0 != "option") {
+                tz <- tz0
+                s_str <- head(s_str, -2)
+              }
+              rm("tz0")
+            }
+            list(type = "time_strict", value = paste(s_str, collapse = ""), tz = tz)
+          }
+        )
+      )
+
+      # --- strict datetime without brackets, no empty alternative
+      tag(datetime_strict_no_brackets <- function()
+        concatenation(
+          digit(), digit(), digit(), digit(),         # YYYY
+          dash(),
+          digit01(), digit(),                         # MM
+          dash(),
+          digit0123(), digit(),                       # DD
+          alternation(
+            concatenation(
+              whitespace(), ignore_ws,
+              digit012(), digit(), keyword(":"),      # HH:
+              digit012345(), digit(), keyword(":"),   # MM:
+              digit012345(), digit(),                 # SS
+              option(concatenation(whitespace(), ignore_ws, tz_parser()))
+            ),
+            empty(action = function(s) empty_part)
+          ),
+          action = function(s0) {
+            s <- remove_empty_part(s0)
+            s_str <- unlist(s)[!grepl("type$", perl = TRUE, names(unlist(s)))]
+            tz <- ""
+            if (any(unlist(s) == "option")) {
+              tz0 <- unname(tail(unlist(s), 1))
+              if (tz0 != "option") {
+                tz <- tz0
+                s_str <- head(s_str, -2)
+              }
+              rm("tz0")
+            }
+            list(type = "datetime_strict", value = paste(s_str, collapse = ""), tz = tz)
+          }
+        )
+      )
 
       tag(interval <- function() concatenation(
         alternation(charParser("("), charParser("["), action = function(s0) {
@@ -354,6 +496,7 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
                     keyword("-Inf", action = function(s0) {-Inf}),
                     term_expression(),#TODO: need alternative datetime rule here (w/o square brackets)
                     empty(action = function(s) {-Inf}),
+                    time_no_brackets(),
                     action = function(s0) {
                       s <- s0
                       s <- remove_empty_part(s)
@@ -370,6 +513,7 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
                     keyword("-Inf", action = function(s0) {-Inf}),
                     term_expression(),
                     empty(action = function(s) {+Inf}),
+                    time_no_brackets(),
                     action = function(s0) {
                       s <- s0
                       s <- remove_empty_part(s)
@@ -399,6 +543,9 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
           interval(),
           nan(),
           datetime(),
+          datetime_strict_no_brackets(),
+          time(),
+          time_strict_no_brackets(),
           string(),
           numberFloat(),
           numberInteger(),
@@ -411,9 +558,15 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
               return(s)
 
             s <- remove_empty_part(s)
-            if (s$type == "datetime") {
-              # as.POSIXct(s$value)
-              call("as.POSIXct", s$value)
+            if (s$type %in% c("datetime", "datetime_strict")) {
+              # util_parse_date(s$value)
+              call("util_parse_date", s$value)
+            } else if (s$type %in% c("time", "time_strict")) {
+              if (!is.null(s$tz) && nzchar(s$tz)) {
+                call("util_parse_time", s$value, tz = s$tz)
+              } else {
+                call("util_parse_time", s$value)
+              }
             } else if (s$type == "string") {
               as.character(s$value)
             } else if (s$type %in% c("numberInteger", "numberNatural")) {
@@ -454,7 +607,7 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
           if (debug >= 2) message(sprintf("-- %s", fname))
           rf <- keyword(fname, action = function(s) {
             if (debug >= 1) message(sprintf(">> %s", fname))
-            if (debug >= 3) browser()
+            if (debug >= 3) browser() # intended use of browser() -- dont modify this line
             r <- list(type = "keyword", value = s)
             if (debug >= 1) message(sprintf(">> %s", dQuote(util_deparse1(r))))
             r
@@ -741,7 +894,7 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
           }
           if (length(s) > 1) {
              if (inherits(s[[1]], "POSIXct")) {
-               s[[1]] <- call("as.POSIXct", list(as.character(s[[1]])))
+               s[[1]] <- call("util_parse_date", list(as.character(s[[1]])))
               #   s[[1]] <- as.numeric(s[[1]])
              }
             ensure_brackets(part(c(s[[1]], s[[2]])))
@@ -755,7 +908,7 @@ util_parse_redcap_rule <- function(rule, debug = 0, entry_pred = "REDcapPred",
         if (debug > 0) message(util_deparse1(sys.call()))
         s <- remove_empty_part(s)
         if (inherits(s[[2]], "POSIXct")) {
-          s[[2]] <- call("as.POSIXct", list(as.character(s[[2]])))
+          s[[2]] <- call("util_parse_date", list(as.character(s[[2]])))
         }
         c(s[[1]], s[[2]])
       }

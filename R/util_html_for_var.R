@@ -1,6 +1,6 @@
 #' Create a dynamic single variable page for the report
 #'
-#' @param report [dataquieR_resultset2] a `dq_report2` report
+#' @param results [list] a list of subsets of the report matching `cur_var`
 #' @param cur_var [character] variable name for single variable pages
 #' @param use_plot_ly [logical] use `plotly`, if available.
 #' @param template [character] template to use for the `dq_report2` report.
@@ -12,16 +12,34 @@
 #'
 #'
 #' @return list of arguments for `append_single_page()` defined locally in
-#'   [util_generate_pages_from_report()].
+#'   `util_generate_pages_from_report()`.
 #'
 #' @keywords internal
-util_html_for_var <- function(report, cur_var, use_plot_ly, template,
-                              note_meta = c(), rendered_repsum, dir) {
+util_html_for_var <- function(results, cur_var, use_plot_ly, template,
+                              note_meta = c(), rendered_repsum, dir,
+                              meta_data, label_col,
+                              dims_in_rep,
+                              clls_in_rep,
+                              function_alias_map) {
 
-  meta_data <- attr(report, "meta_data")
-  label_col <- attr(report, "label_col")
+  fname <-
+    sprintf("VAR_%s.html", prep_link_escape(cur_var, #remove special characters from variable name
+                                          html = TRUE))
 
-  util_stop_if_not(inherits(report, "dataquieR_resultset2"))
+  if (getOption("dataquieR.resume_print", dataquieR.resume_print_default)) {
+    # TODO: [html_files_should_also_work_alone] Check, if we have the html file, already, see util_create_page_file
+    # do not re-compute, then
+  }
+  .fn <- file.path(dir, sub("\\.html$", ".RDS", fname))
+  if (getOption("dataquieR.resume_print", dataquieR.resume_print_default)
+      && file.exists(.fn)) {
+    cached <- try(readRDS(.fn), silent = TRUE)
+    if (!util_is_try_error(cached)) {
+      return(cached)
+    }
+  }
+
+  util_stop_if_not(is.list(results))
   util_stop_if_not(!missing("cur_var") && length(cur_var) == 1 &&
                      !is.na(cur_var) &&
                       is.character(cur_var))
@@ -78,19 +96,6 @@ util_html_for_var <- function(report, cur_var, use_plot_ly, template,
     link = util_generate_anchor_link(cur_var, "Summary", "variable"), # these links are moved later
     rep_sum_el
   )
-  # find which dimensions are included in the report
-  dims_in_rep <-
-    unique(vapply(strsplit(colnames(report), "_"), `[[`, 1,
-                  FUN.VALUE = character(1)))
-
-  dims_in_rep <- util_sort_by_order(dims_in_rep, names(dims))
-
-  # match the functions to the dimensions
-  clls_in_rp <- lapply(setNames(nm = dims_in_rep),
-                             function(prefix)
-                               colnames(report)[startsWith(colnames(report),
-                                                           prefix)])
-
 
   svp <- list()
 
@@ -98,10 +103,12 @@ util_html_for_var <- function(report, cur_var, use_plot_ly, template,
     # util_message("Dimension %s", cur_dm)
     drop_down <- dims[[cur_dm]] # fetches the name of the content for the first-level drop-down menu
     j <- 0
-    m <- length(clls_in_rp[[cur_dm]])
-    for (cll in clls_in_rp[[cur_dm]]) { # loop over the functions in each dimension
-      fkt <- util_cll_nm2fkt_nm(cll, report)
-      all_of_f <- report[cur_var, cll] # extract the single result
+    m <- length(clls_in_rep[[cur_dm]])
+    for (cll in clls_in_rep[[cur_dm]]) { # loop over the functions in each dimension
+      fkt <- util_cll_nm2fkt_nm(cll, function_alias_map = function_alias_map)
+      all_of_f <- results[paste0(cll, '.', cur_var)] # extract the single result
+      all_of_f <- # remove non-existing results
+        all_of_f[!vapply(all_of_f, is.null, FUN.VALUE = logical(1))]
 
      # use results as they are, not combined by util_combine_res. see else branch below for comments on mapply
       output <- do.call(htmltools::tagList, unname(mapply(dqr = all_of_f,
@@ -144,7 +151,7 @@ util_html_for_var <- function(report, cur_var, use_plot_ly, template,
             htmltools::h5(paste(unique(c(cll, fkt)),
                                 collapse = ": ")),
             htmltools::HTML(" -->"),
-            htmltools::p(htmltools::HTML(description))),
+            htmltools::div(class="infobutton", htmltools::HTML(description))),
           output)
       } else {
         svp[[cll]] <- NULL
@@ -155,7 +162,20 @@ util_html_for_var <- function(report, cur_var, use_plot_ly, template,
   }
 
 
-
+  ..vn <- prep_map_labels(cur_var,
+                          meta_data = meta_data,
+                          to = VAR_NAMES,
+                          from = label_col,
+                          ifnotfound = "",
+                          warn_ambiguous = FALSE)
+  ..lbs <- prep_get_labels(cur_var,
+                           meta_data = meta_data,
+                           label_col = label_col,
+                           resp_vars_match_label_col_only = TRUE,
+                           label_class = "SHORT")
+  if (startsWith(..lbs, ..vn)) {
+    ..vn <- ""
+  }
   title <- htmltools::tagList(
     htmltools::h1(prep_get_labels(cur_var,
                                   max_len = 9999999,
@@ -163,19 +183,9 @@ util_html_for_var <- function(report, cur_var, use_plot_ly, template,
                                   label_col = label_col,
                                   resp_vars_match_label_col_only = TRUE,
                                   label_class = "LONG")),
-     htmltools::h2(paste0(
-       prep_map_labels(cur_var,
-                       meta_data = meta_data,
-                       to = VAR_NAMES,
-                       from = label_col,
-                       ifnotfound = "",
-                       warn_ambiguous = FALSE),
-      " ",
-      prep_get_labels(cur_var,
-                      meta_data = meta_data,
-                      label_col = label_col,
-                      resp_vars_match_label_col_only = TRUE,
-                      label_class = "SHORT")
+     htmltools::h2(paste(
+       ..vn,
+      ..lbs
        ))
   )
 
@@ -227,13 +237,22 @@ util_html_for_var <- function(report, cur_var, use_plot_ly, template,
                            max_len = 9999999,
                            resp_vars_match_label_col_only = TRUE,
                            label_class = "LONG")
-  title <- sprintf("%s: %s", names(title), title)
+  if (startsWith(x = title, prefix = sprintf("%s:", names(title)))) {
+    title <- sprintf("%s", title)
+  } else {
+    title <- sprintf("%s: %s", names(title), title)
+  }
 
-  return(list(list("Single Variables",
-                     title,
-                     sprintf("VAR_%s.html", prep_link_escape(cur_var, #remove special characters from variable name
-                                                             html = TRUE)),
-                     page)))
 
+  r <- list(list("Single Variables",
+                 title,
+                 fname,
+                 page))
+
+  if (getOption("dataquieR.resume_print", dataquieR.resume_print_default)) {
+    saveRDS(r, file = .fn, compress = "xz")
+  }
+
+  return(r)
 
 }

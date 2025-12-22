@@ -14,8 +14,8 @@ dims
 order does matter, because it defines the order in the \code{dq_report2}.
 }
 \seealso{
-\code{\link[=util_html_for_var]{util_html_for_var()}}
+\code{util_html_for_var()}
 
-\code{\link[=util_html_for_dims]{util_html_for_dims()}}
+\code{util_html_for_dims()}
 }
 \keyword{datasets}

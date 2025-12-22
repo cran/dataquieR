@@ -462,7 +462,7 @@ con_inadmissible_categorical <- function(resp_vars = NULL,
 #' @importFrom utils capture.output
 #' @seealso
 #' [Online Documentation](
-#' https://dataquality.ship-med.uni-greifswald.de/VIN_con_impl_inadmissible_categorical.html
+#' https://dataquality.qihs.uni-greifswald.de/VIN_con_impl_inadmissible_categorical.html
 #' )
 #' @examples
 #' \dontrun{

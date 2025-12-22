@@ -14,7 +14,7 @@
 #'
 #' @family rule_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_ds1_eval_env <- function(study_data,
                               meta_data = "item_level",
                               label_col = LABEL) {

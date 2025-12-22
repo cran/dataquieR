@@ -274,7 +274,7 @@ int_datatype_matrix <- function(resp_vars = NULL,
   # ref_env <- environment() TODO
 
   plot_me <- function(m) {
-    ggplot(m, aes(
+    util_create_lean_ggplot(ggplot(m, aes(
       x = IMPLEMENTATION, y = VARIABLES,
       fill = APP_SCORE
     )) +
@@ -295,8 +295,11 @@ int_datatype_matrix <- function(resp_vars = NULL,
         axis.text.x = element_text(angle = 90, hjust = 0),
         axis.text.y = element_text(size = 10)#,
        # aspect.ratio = ratio
-      ) # + util_coord_flip(ref_env = ref_env) # TODO: estimate w and h, since p is not using discrete axes
-  }
+      ), # + util_coord_flip(ref_env = ref_env) # TODO: estimate w and h, since p is not using discrete axes util_lazy_add_coord(p, fli)
+  m = m,
+  split_segments = split_segments,
+  colcode = colcode)
+    }
 
   p <- plot_me(app_matrix_long)
 

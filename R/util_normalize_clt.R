@@ -7,7 +7,7 @@
 #'
 #' @return [meta_data], but `CODE_LIST_TABLE` column is distributed to the
 #'         columns `VALUE_LABEL_TABLE` and `MISSING_LIST_TABLE`, respectively.
-#' @keywords internal
+#' @noRd
 util_normalize_clt <- function(meta_data) {
   if (!(CODE_LIST_TABLE %in% names(meta_data))) {
     return(meta_data)

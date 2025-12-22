@@ -1,4 +1,5 @@
 test_that("util_plot_figure_plotly works", {
+  skip_if_not_installed("plotly")
   skip_on_cran()
   # Create test ggplot
   p1 <- ggplot(mtcars) +

@@ -10,7 +10,7 @@
 #'
 #' @family outlier_functions
 #' @concept outlier
-#' @keywords internal
+#' @noRd
 util_3SD <- function(x) {
   xmu <- mean(x, na.rm = TRUE)
   xsd <- sd(x, na.rm = TRUE)

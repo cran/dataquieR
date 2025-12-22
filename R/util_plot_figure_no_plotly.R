@@ -5,7 +5,7 @@
 #'
 #' @return `htmltools` compatible object
 #'
-#' @keywords internal
+#' @noRd
 util_plot_figure_no_plotly <- function(x, sizing_hints = NULL) {
   if (capabilities("cairo") && suppressWarnings(util_ensure_suggested("grDevices",
                                                      "render vector graphics",

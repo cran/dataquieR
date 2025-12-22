@@ -12,16 +12,33 @@ prep_load_folder_with_metadata(folder, keep_types = FALSE, ...)
 \item{keep_types}{\link{logical} keep types as possibly defined in the file.
 set \code{TRUE} for study data.}
 
-\item{...}{arguments passed to []}
+\item{...}{arguments passed to \code{\link[=list.files]{list.files()}}}
 }
 \value{
 \verb{invisible(the cache environment)}
 }
 \description{
-These can thereafter be referred to by their names only. Such files are,
-e.g., spreadsheet-workbooks or \code{RData}-files.
+The original purpose of this function is to load metadata, not study data.
+If you want to load study data, you should keep them in a different folder,
+then you can call this function once for the metadata and once for the study
+data but this time setting \code{keep_types = TRUE} to avoid all data being read
+as \code{\link[=character]{character()}}.
 }
 \details{
+Note, that once loaded to the data frame cache, a file won't be read again,
+except you call \code{\link[=prep_purge_data_frame_cache]{prep_purge_data_frame_cache()}} or
+\code{\link[=prep_remove_from_cache]{prep_remove_from_cache()}}. That is, if you call this function first, and
+\code{\link[=prep_get_data_frame]{prep_get_data_frame()}} later, of if \code{dataquieR} wants to read a file, e.g.,
+for \code{\link[=dq_report2]{dq_report2()}}, the file will come from the cache in the way it was
+initially read in (\code{keep_types} may thus be used inadequately).
+
+By default, this function works not recursively, but you can tweak that by
+passing \code{...}-arguments passed through to the initially running
+\code{\link[=list.files]{list.files()}} function.
+
+These can thereafter be referred to by their names only. Such files are,
+e.g., spreadsheet-workbooks or \code{RData}-files.
+
 Note, that this function in contrast to \link{prep_get_data_frame} does neither
 support selecting specific sheets/columns from a file.
 }

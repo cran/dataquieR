@@ -297,7 +297,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(item_level = "item_level",
 #' `prep_get_data_frame`.
 #'
 #' @inheritParams prep_meta_data_v1_to_item_level_meta_data
-#' @keywords internal
+#' @noRd
 .util_internal_normalize_meta_data <- function(meta_data = "item_level",
                                                label_col = LABEL,
                                                verbose = TRUE) {
@@ -306,6 +306,8 @@ prep_meta_data_v1_to_item_level_meta_data <- function(item_level = "item_level",
       "Internal error: .util_internal_normalize_meta_data called on meta_data",
       "below v2.0"))
   }
+
+  meta_data <- util_handle_complex_data_types(meta_data)
 
   if (VALUE_LABELS %in% names(meta_data)) {
     # this should be checked outside  (!identical(attr(meta_data,
@@ -322,6 +324,37 @@ prep_meta_data_v1_to_item_level_meta_data <- function(item_level = "item_level",
   already_warned_env <- environment()
 
   if (!identical(attr(meta_data, "normalized"), TRUE)) {
+
+    for (lb in intersect(c(LABEL, LONG_LABEL, label_col, grep("^LONG_LABEL_",
+                                                    names(meta_data),
+                                                    value = TRUE,
+                                                    perl = TRUE),
+                 grep("^LABEL_",
+                      names(meta_data),
+                      value = TRUE,
+                      perl = TRUE)), colnames(meta_data))) {
+      .mis <- util_empty(meta_data[[lb]])
+      rep <- character(nrow(meta_data))
+      if (LABEL %in% names(meta_data)) rep <- meta_data[[LABEL]]
+      .nolb <- util_empty(rep)
+
+      if (any(.nolb)) {
+        util_warning(c("Some variables have no label in %s in %s.",
+                       "Labels are required to create a report,",
+                       "that's why missing labels will be replaced",
+                       "provisionally. Please add missing labels in",
+                       "your metadata."),
+                     dQuote(LABEL),
+                     sQuote("meta_data"),
+                     applicability_problem = TRUE
+        )
+      }
+
+      rep[.nolb] <- meta_data[[VAR_NAMES]][.nolb]
+      if (any(.mis)) {
+        meta_data[[lb]][.mis] <- rep[.mis]
+      }
+    }
 
     if (!N_RULES %in% names(meta_data)) {
       meta_data[[N_RULES]] <- NA_integer_
@@ -553,7 +586,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(item_level = "item_level",
             )
           r$resp_vars[have_vn] <- mapped_vn
           if (isTRUE(getOption("dataquieR.force_item_specific_missing_codes",
-                               FALSE))) {
+                               dataquieR.force_item_specific_missing_codes_default))) {
             r$resp_vars[!have_vn] <- vn
           }
           r

@@ -4,7 +4,7 @@
 #'
 #' @return [character] pasted strings
 #'
-#' @keywords internal
+#' @noRd
 util_paste_with_na <- function(...) {
   res <- paste(...)
   res[as.logical(rowSums(do.call(data.frame, lapply(list(...), is.na))))] <-
@@ -18,7 +18,7 @@ util_paste_with_na <- function(...) {
 #'
 #' @return [character] pasted strings
 #'
-#' @keywords internal
+#' @noRd
 util_paste0_with_na <- function(...) {
   res <- paste0(...)
   res[as.logical(rowSums(do.call(data.frame, lapply(list(...), is.na))))] <-

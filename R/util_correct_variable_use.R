@@ -16,10 +16,10 @@
 #' So this function can only be used after calling the function
 #' [prep_prepare_dataframes]
 #'
-#' [util_correct_variable_use] and [util_correct_variable_use2] differ only in
+#' `util_correct_variable_use` and `util_correct_variable_use2` differ only in
 #' the default of the argument `role`.
 #'
-#' [util_correct_variable_use] and [util_correct_variable_use2] put strong
+#' `util_correct_variable_use` and `util_correct_variable_use2` put strong
 #' effort on producing compressible
 #' error messages to the caller's caller (who is typically an end user of
 #' a `dataquieR` function).
@@ -31,7 +31,7 @@
 #' This function accesses the caller's environment!
 #'
 #' @param arg_name [character] Name of a function argument of the caller
-#'                             of [util_correct_variable_use]
+#'                             of `util_correct_variable_use`
 #' @param allow_na [logical] default = FALSE. allow NAs in the variable names
 #'                                            argument given in `arg_name`
 #' @param allow_more_than_one [logical] default = FALSE. allow more than one
@@ -71,7 +71,7 @@
 #'                         `allow_more_than_one = FALSE`, `allow_null = FALSE`,
 #'                         `allow_all_obs_na = TRUE`, `allow_any_obs_na = TRUE`,
 #'                         and `need_type = NA`.
-#'                         Use [util_correct_variable_use2] for using the
+#'                         Use `util_correct_variable_use2` for using the
 #'                         `arg_name` as default for `role`.
 #'                         See [.variable_arg_roles] for currently available
 #'                         variable-argument roles.
@@ -90,7 +90,7 @@
 #'
 #' @family robustness_functions
 #' @concept robustness
-#' @keywords internal
+#' @noRd
 util_correct_variable_use <- function(arg_name,
                                       allow_na,
                                       allow_more_than_one,
@@ -810,14 +810,14 @@ c("In %s, variables with scale levels matching %s should be specified, but not",
 #' In general for the table .variable_arg_roles, the suffix _var means one
 #' variable allowed,
 #' while _vars means more than one. The default  sets of arguments
-#' for [util_correct_variable_use]/[util_correct_variable_use2] are defined
+#' for `util_correct_variable_use`/`util_correct_variable_use2` are defined
 #' from the point of usage, e.g. if it could be, that NAs are in
 #' the list of variable names, the function should be able to remove certain
 #' response variables
 #' from the output and not disallow them by setting `allow_na` to `FALSE`.
 #'
-#' @seealso [util_correct_variable_use()]
-#' @seealso [util_correct_variable_use2()]
+#' @seealso `util_correct_variable_use()`
+#' @seealso `util_correct_variable_use2()`
 #'
 #' @keywords internal
 .variable_arg_roles <-
@@ -846,6 +846,6 @@ c("In %s, variables with scale levels matching %s should be specified, but not",
 #' @rdname util_correct_variable_use
 #' @family robustness_functions
 #' @concept robustness
-#' @keywords internal
+#' @noRd
 util_correct_variable_use2 <- util_correct_variable_use
 formals(util_correct_variable_use2)[["role"]] <- quote(arg_name)

@@ -5,7 +5,7 @@
 #'
 #' @family condition_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_condition_constructor_factory <- function(
                        .condition_type = c("error", "warning", "message")) {
 
@@ -30,9 +30,16 @@ util_condition_constructor_factory <- function(
   function(m, ..., applicability_problem = NA,
            intrinsic_applicability_problem = NA,
            integrity_indicator = "none", level = 0, immediate, title = "",
-           additional_classes = c()) {
-    if (identical(getOption("dataquieR.debug", FALSE), TRUE)) {
-      browser()
+           additional_classes = c(), varname = NULL) {
+    invis <- FALSE
+    if (identical(Sys.getenv("TESTTHAT"), "true")) { # TODO: use the ensure_suggested/is_testing pattern, but do this efficiently, then
+      if(!isTRUE(getOption("dataquieR.testthat_expect_message_active", NULL))) {
+        invis <- TRUE
+      }
+    }
+    if (identical(getOption("dataquieR.debug", dataquieR.debug_default),
+                  TRUE)) {
+      browser() # intended use of browser() -- dont modify this line
     }
     if (missing(immediate)) {
       immediate <- FALSE
@@ -90,7 +97,7 @@ util_condition_constructor_factory <- function(
       stacktrace <- character(0)
     # }
 
-    if (identical(as.logical(getOption("dataquieR.CONDITIONS_WITH_STACKTRACE", FALSE)), FALSE)) {
+    if (identical(as.logical(getOption("dataquieR.CONDITIONS_WITH_STACKTRACE", dataquieR.CONDITIONS_WITH_STACKTRACE_default)), FALSE)) {
       stacktrace <- ""
       if ((exists(".called_in_pipeline") && .called_in_pipeline) ||
           .condition_type != "error") {
@@ -118,10 +125,17 @@ util_condition_constructor_factory <- function(
           m <- "Condition -- should not be displayed, sorry. Please report."
         }
       }
+
+      if (isTRUE(getOption("dataquieR.traceback",
+                         dataquieR.traceback_default))) {
+        tc <- rlang::trace_back(bottom = 2)
+      } else {
+        tc <- NULL
+      }
       ec <-
         .cond_constructor(message = paste(c(m, calling, stacktrace),
                                           collapse = "\n"),
-                          trace = rlang::trace_back(bottom = 2),
+                          trace = tc,
                           use_cli_format = (!exists(".called_in_pipeline") ||
                                               !.called_in_pipeline),
                           call = caller.)
@@ -134,8 +148,14 @@ util_condition_constructor_factory <- function(
         mm <- substr(mm, 1, 8192)
         mm <- sub("(%[^%]$)", "\\1", mm, perl = TRUE)
       }
+      if (isTRUE(getOption("dataquieR.traceback",
+                           dataquieR.traceback_default))) {
+        tc <- rlang::trace_back(bottom = 2)
+      } else {
+        tc <- NULL
+      }
       ec <-
-        .cond_constructor(trace = rlang::trace_back(bottom = 2),
+        .cond_constructor(trace = tc,
                           use_cli_format = (!exists(".called_in_pipeline") ||
                                               !.called_in_pipeline),
                           message = paste0(c(do.call("sprintf", c(
@@ -147,6 +167,7 @@ util_condition_constructor_factory <- function(
     attr(ec, "applicability_problem") <- applicability_problem
     attr(ec, "intrinsic_applicability_problem") <- intrinsic_applicability_problem
     attr(ec, "integrity_indicator") <- integrity_indicator
+    attr(ec, "varname") <- varname
     class(ec) <- unique(c(additional_classes, class(ec)))
     if (level >= getOption("dataquieR.CONDITIONS_LEVEL_TRHESHOLD",
                   dataquieR.CONDITIONS_LEVEL_TRHESHOLD_default) ||
@@ -167,7 +188,7 @@ util_condition_constructor_factory <- function(
           rlang::cnd_signal(ec)
         } else {
           x <- capture.output(rlang::cnd_signal(ec), file = NULL, type = "message")
-          if (length(x)) {
+          if (!invis && length(x)) {
             cat(sep = "\n", x, file = stderr())
             if (!endsWith(x[length(x)], "\n")) {
               cat("\n", file = stderr())

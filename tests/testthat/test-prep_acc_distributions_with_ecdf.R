@@ -1,8 +1,9 @@
 test_that("prep_acc_distributions_with_ecdf works", {
   skip_on_cran() # slow, errors obvious
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  skip_if_not_installed("colorspace")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
 
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,

@@ -9,7 +9,7 @@
 #' @family meta_data_cross
 #' @seealso [meta_data_cross()]
 #'
-#' @keywords internal
+#' @noRd
 util_normalize_cross_item <-
   function(
     meta_data = "item_level",
@@ -39,6 +39,11 @@ util_normalize_cross_item <-
       ))
     }
 
+    if (!CONTRADICTION_TERM %in% colnames(meta_data_cross_item)) {
+      meta_data_cross_item[[CONTRADICTION_TERM]] <- rep(NA_character_,
+                                                    nrow(meta_data_cross_item))
+    }
+
     # ensure unique identifiers for cross-item checks --------------------------
     if (!CHECK_ID %in% colnames(meta_data_cross_item)) {
       meta_data_cross_item[[CHECK_ID]] <- seq_len(nrow(meta_data_cross_item))
@@ -49,6 +54,13 @@ util_normalize_cross_item <-
                    dQuote(CHECK_ID),
                    applicability_problem = TRUE)
       meta_data_cross_item[[CHECK_ID]] <- seq_len(nrow(meta_data_cross_item))
+    }
+    meta_data_cross_item[[CHECK_ID]] <- trimws(meta_data_cross_item[[CHECK_ID]])
+
+
+    if (VARIABLE_LIST %in% colnames(meta_data_cross_item)) {
+      meta_data_cross_item[[VARIABLE_LIST_ORDER]] <-
+        meta_data_cross_item[[VARIABLE_LIST]]
     }
 
     # fill empty entries in VARIABLE_LIST and check for possible mismatches
@@ -208,11 +220,12 @@ util_normalize_cross_item <-
 
     if (!DATA_PREPARATION %in% colnames(meta_data_cross_item)) {
       meta_data_cross_item[[DATA_PREPARATION]] <-
-        default_data_preparation
+        rep(default_data_preparation, nrow(meta_data_cross_item))
     } else {
       meta_data_cross_item[[DATA_PREPARATION]][
         util_empty(meta_data_cross_item[[DATA_PREPARATION]])] <-
-        default_data_preparation
+        rep(default_data_preparation,
+            sum(util_empty(meta_data_cross_item[[DATA_PREPARATION]])))
     }
 
     meta_data_cross_item[[DATA_PREPARATION]] <- trimws(
@@ -323,6 +336,41 @@ util_normalize_cross_item <-
       )
       meta_data_cross_item[dupl_tags, DATA_PREPARATION] <-
         default_data_preparation
+    }
+
+    # Check *_LIMITS
+    for (lim in c(HARD_LIMITS, SOFT_LIMITS, DETECTION_LIMITS)) {
+      if (lim %in% colnames(meta_data_cross_item)) {
+        meta_data_cross_item[[lim]] <- vapply(
+          meta_data_cross_item[[lim]],
+          FUN.VALUE = character(1),
+          FUN = function(rl) {
+            rr <- withCallingHandlers(
+              if (!util_empty(rl)) {
+                if (length(util_parse_redcap_rule(rl)) > 0) {
+                  rl
+                } else {
+                  NA_character_
+                }
+              } else {
+                NA_character_
+              },
+              warning = function(cnd) {
+                rl <- NA_character_
+                m <- conditionMessage(cnd)
+                util_warning("Cannot parse %s in cross item level: %s -- %s",
+                             dQuote(lim),
+                             sQuote(m),
+                             dQuote(rl),
+                             applicability_problem = TRUE
+                             )
+                invokeRestart("muffleWarning")
+              }
+            )
+            rr
+          }
+        )
+      }
     }
 
     # TODO: check the other columns

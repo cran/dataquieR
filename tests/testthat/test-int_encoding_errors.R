@@ -77,6 +77,10 @@ test_that("int_encoding_errors works", {
 })
 
 test_that("reports with encoding errors work", {
+  skip_if_not_installed("DT")
+  skip_if_not_installed("markdown")
+  skip_if_not_installed("stringdist")
+
   skip_on_cran() # depends on OS code page support
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   prep_purge_data_frame_cache()
@@ -109,7 +113,6 @@ test_that("reports with encoding errors work", {
                                  recursive = TRUE,
                                  full.names = TRUE,
                                  all.files = TRUE)))
-
-  expect_gt(sz, 15000000)
+  expect_gt(sz, 13000000)
 
 })

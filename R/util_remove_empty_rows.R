@@ -7,7 +7,7 @@
 #'
 #' @family missing_functions
 #' @concept data_management
-#' @keywords internal
+#' @noRd
 util_remove_empty_rows <- function(x, id_vars = character(0)) {
   util_expect_scalar(id_vars,
                      allow_more_than_one = TRUE,

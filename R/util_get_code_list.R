@@ -27,7 +27,7 @@
 #'
 #' @family missing_functions
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
                                label_col = VAR_NAMES,
                                warning_if_no_list = TRUE,
@@ -94,7 +94,7 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
       all(na.rm = TRUE, mdf[[DATA_TYPE]][
         !is.na(mdf[[label_col]]) & mdf[[label_col]] == x] ==
       DATA_TYPES$DATETIME)) {
-    dt_res <- suppressWarnings(lubridate::as_datetime(res))
+    dt_res <- suppressWarnings(util_parse_date(res))
     if (sum(is.na(res)) < sum(is.na(dt_res))) {
       if (warning_if_unsuitable_list) util_warning(
 "Some codes (%s) were not datetime/assignment for %s: %s, these will be ignored",
@@ -106,6 +106,23 @@ util_get_code_list <- function(x, code_name, split_char = SPLIT_CHAR, mdf,
     }
     names(dt_res) <- r
     r <- dt_res[!is.na(dt_res)]
+  } else if (DATA_TYPE %in% colnames(mdf) &&
+              any(!is.na(mdf[[DATA_TYPE]])) &&
+              all(na.rm = TRUE, mdf[[DATA_TYPE]][
+                !is.na(mdf[[label_col]]) & mdf[[label_col]] == x] ==
+                DATA_TYPES$TIME)) {
+    to_res <- suppressWarnings(util_parse_time(res))
+    if (sum(is.na(res)) < sum(is.na(to_res))) {
+      if (warning_if_unsuitable_list) util_warning(
+        "Some codes (%s) were not time/assignment for %s: %s, these will be ignored",
+        dQuote(code_name),
+        dQuote(x),
+        paste(sQuote(res[is.na(to_res) != is.na(res)]),
+              collapse = ", "),
+        applicability_problem = TRUE)
+    }
+    names(to_res) <- r
+    r <- to_res[!is.na(to_res)]
   } else {
     numeric_res <- suppressWarnings(as.numeric(res))
     if (sum(is.na(res)) < sum(is.na(numeric_res))) {

@@ -1,6 +1,6 @@
 test_that("util_get_code_list works", {
   skip_on_cran()
-  skip_if_not_installed("withr")
+  
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
@@ -86,7 +86,7 @@ test_that("util_get_code_list works", {
 
 test_that("util_get_code_list warns about non-numeric codes", {
   skip_on_cran()
-  skip_if_not_installed("withr")
+  
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,

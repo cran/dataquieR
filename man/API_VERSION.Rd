@@ -14,6 +14,6 @@ API_VERSION
 Version of the API
 }
 \seealso{
-\code{\link[=.get_internal_api]{.get_internal_api()}}
+\code{.get_internal_api()}
 }
 \keyword{internal}

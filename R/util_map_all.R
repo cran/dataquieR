@@ -16,7 +16,7 @@
 #'
 #' @family mapping
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 util_map_all <- function(label_col = VAR_NAMES,
                          study_data,
                          meta_data) {
@@ -110,19 +110,22 @@ util_map_all <- function(label_col = VAR_NAMES,
     }
   }
 
-  if (lost > 0 && !getOption("dataquieR.ELEMENT_MISSMATCH_CHECKTYPE",
+  if (!(exists(".called_in_pipeline") && .called_in_pipeline) &&
+      lost > 0 && !getOption("dataquieR.ELEMENT_MISSMATCH_CHECKTYPE",
                              dataquieR.ELEMENT_MISSMATCH_CHECKTYPE_default) %in%
       c("none", "subset_m")) {
     util_warning(
       "Lost %g%% of the study data because of missing/not assignable metadata",
       round(lost * 100, 1),
       applicability_problem = TRUE, integrity_indicator = "int_sts_element")
+    vars <- colnames(study_data)[!(colnames(study_data) %in%
+                                     meta_data[[VAR_NAMES]])]
     util_message(
       paste("Did not find any metadata for the following",
              "variables from the study data: %s"),
-      paste0(dQuote(colnames(study_data)[!(colnames(study_data) %in%
-                                             meta_data[[VAR_NAMES]])]),
-             collapse = ", "), integrity_indicator = "int_sts_element"
+      paste0(dQuote(vars),
+             collapse = ", "), integrity_indicator = "int_sts_element",
+      varname = vars
     )
   }
 
@@ -137,7 +140,8 @@ util_map_all <- function(label_col = VAR_NAMES,
     }
   }
 
-  if (unlost > 0 && !getOption("dataquieR.ELEMENT_MISSMATCH_CHECKTYPE",
+  if (!(exists(".called_in_pipeline") && .called_in_pipeline) &&
+      unlost > 0 && !getOption("dataquieR.ELEMENT_MISSMATCH_CHECKTYPE",
                                dataquieR.ELEMENT_MISSMATCH_CHECKTYPE_default) %in%
       c("none", "subset_u")) {
     util_warning(
@@ -145,12 +149,14 @@ util_map_all <- function(label_col = VAR_NAMES,
       round(unlost * 100, 1),
       applicability_problem = TRUE, integrity_indicator = "int_sts_element",
       intrinsic_applicability_problem = TRUE)
+    vars <- meta_data[[VAR_NAMES]][!(meta_data[[VAR_NAMES]] %in%
+                                       colnames(study_data))]
     util_message(
       paste("Found metadata for the following variables",
             "not found in the study data: %s"),
-      paste0(dQuote(meta_data[[VAR_NAMES]][!(meta_data[[VAR_NAMES]] %in%
-                                               colnames(study_data))]),
-             collapse = ", "), integrity_indicator = "int_sts_element"
+      paste0(dQuote(vars),
+             collapse = ", "), integrity_indicator = "int_sts_element",
+      varname = vars
     )
   }
 

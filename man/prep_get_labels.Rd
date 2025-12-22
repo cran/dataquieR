@@ -8,9 +8,9 @@ prep_get_labels(
   resp_vars,
   item_level = "item_level",
   label_col,
-  max_len = MAX_LABEL_LEN,
+  max_len,
   label_class = c("SHORT", "LONG"),
-  label_lang = getOption("dataquieR.lang", ""),
+  label_lang = getOption("dataquieR.lang", dataquieR.lang_default),
   resp_vars_are_var_names_only = FALSE,
   resp_vars_match_label_col_only = FALSE,
   meta_data = item_level,
@@ -30,7 +30,8 @@ with labels of variables}
 
 \item{max_len}{\link{integer} the maximum label length to return, if not possible
 w/o causing ambiguous labels, the labels may still
-be longer}
+be longer. For \code{label_class == "LONG"}, it defaults
+to \code{200}, while for \code{label_class == "SHORT"} to \code{30}}
 
 \item{label_class}{\link{enum} SHORT | LONG. which sort of label
 according to the metadata model should be returned}

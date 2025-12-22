@@ -22,16 +22,14 @@
 #'
 #' @family figure_functions
 #' @concept figure
-#' @keywords internal
-
-
+#' @noRd
 util_optimize_histogram_bins <- function(x, interval_freedman_diaconis = NULL,
                                          nbins_max = 100, cuts = NULL) {
   # check and prepare input ----------------------------------------------------
-  if (inherits(x, "POSIXlt")) x <- as.POSIXct(x)
+  if (inherits(x, "POSIXlt")) x <- util_parse_date(x)
   util_expect_scalar(x, allow_more_than_one = TRUE, allow_na = TRUE,
                      check_type = function(x) {
-    is.numeric(x) || "POSIXct" %in% class(x)
+    is.numeric(x) || "POSIXct" %in% class(x) || inherits(x, "hms")
   })
   if (any(is.infinite(x))) {
     x[is.infinite(x)] <- NA
@@ -43,8 +41,12 @@ util_optimize_histogram_bins <- function(x, interval_freedman_diaconis = NULL,
   x <- x[!is.na(x)]
   min_x <- min(x)
   max_x <- max(x)
+  if (inherits(x, "hms")) {
+    min_x <- hms::as_hms(min_x)
+    max_x <- hms::as_hms(max_x)
+  }
 
-  if (inherits(cuts, "POSIXlt")) cuts <- as.POSIXct(cuts)
+  if (inherits(cuts, "POSIXlt")) cuts <- util_parse_date(cuts)
   util_expect_scalar(cuts, allow_null = TRUE, allow_more_than_one = TRUE,
                      check_type = function(x) {
                        is.numeric(x) || "POSIXct" %in% class(x)
@@ -59,7 +61,7 @@ util_optimize_histogram_bins <- function(x, interval_freedman_diaconis = NULL,
       redcap_env$interval(inc_l = TRUE, inc_u = TRUE,
                           low = min_x, upp = max_x)
   } else {
-    if (!("interval" %in% class(interval_freedman_diaconis))) {
+    if (!("interval" %in% class(interval_freedman_diaconis))) {  #TOFIX: if the interval is 110; Inf it stops with an error
       interval_freedman_diaconis <-
         util_parse_interval(interval_freedman_diaconis)
     }
@@ -158,11 +160,6 @@ util_optimize_histogram_bins <- function(x, interval_freedman_diaconis = NULL,
     pp <- pretty(c(min_plot, max_plot), min.n = 1)
     bw_min <- min(c(min_dist, pp[2] - pp[1]))
   }
-  # - if all values are integer values, then we have to ensure that the
-  #   bandwidth `byX` is not smaller than one
-  if (all(util_is_integer(c(x, cuts)))) {
-    bw_min <- max(bw_min, 1)
-  }
   # - check whether the bandwidth `byX` is not below the minimum bandwidth.
   #   If it is, use 'floor' with the minimum bandwidth to calculate and round
   #   the number of bins within limits.
@@ -181,7 +178,11 @@ util_optimize_histogram_bins <- function(x, interval_freedman_diaconis = NULL,
       byX <- dif / nbins_within
     }
   }
-
+  # - if all values are integer values, then we have to ensure that the
+  #   bandwidth `byX` is an integer >= 1
+  if (all(util_is_integer(x))) {
+    byX <- max(round(byX), 1)
+  }
   # - calculate the number of bins for each segment
   nbins_seq <- vapply(dif_seq, FUN.VALUE = numeric(1), function(dd) {
     ceiling(dd / byX)
@@ -216,8 +217,7 @@ util_optimize_histogram_bins <- function(x, interval_freedman_diaconis = NULL,
     all_breaks <- list(pretty(c(min_plot, max_plot),
                               n = max(nbins_seq, 1), min.n = 1))
     if ("POSIXct" %in% class(x)) {
-      all_breaks[[1]] <- as.POSIXct(all_breaks[[1]],
-                                    origin = min(as.POSIXct(Sys.Date()), 0))
+      all_breaks[[1]] <- util_parse_date(all_breaks[[1]])
     }
   } else {
     all_breaks <- vector(mode = "list", length = length(nbins_seq))
@@ -240,8 +240,7 @@ util_optimize_histogram_bins <- function(x, interval_freedman_diaconis = NULL,
                                length.out = nbins_seq[i] + 1)
       }
       if ("POSIXct" %in% class(x)) {
-        all_breaks[[i]] <- as.POSIXct(all_breaks[[i]],
-                                      origin = min(as.POSIXct(Sys.Date()), 0))
+        all_breaks[[i]] <- util_parse_date(all_breaks[[i]])
       }
     }
   }

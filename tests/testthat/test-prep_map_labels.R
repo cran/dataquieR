@@ -1,6 +1,6 @@
 test_that("prep_map_labels works", {
   skip_on_cran()
-  skip_if_not_installed("withr")
+  
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,

@@ -35,6 +35,7 @@
 #'                     scale_colour_manual aes facet_grid
 #' @importFrom stats p.adjust
 #'
+#' @noRd
 util_margins_nom <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
                              min_obs_in_subgroup = 5, min_obs_in_cat = 5,
                              ds1, label_col,
@@ -169,19 +170,27 @@ util_margins_nom <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
 
   nom_plot_data[["facet"]] <- nom_plot_data[[resp_vars]] # make facet findable to prevent util_compress_ggplots_in_res from deleting this column
 
-  res_plot <- ggplot(nom_plot_data,
-                     aes(x = .data[["margins"]], y = .data[[group_vars]],
-                         col = .data[["GRADING"]])) +
-    geom_pointrange(aes(xmin = .data[["LCL"]], xmax = .data[["UCL"]])) +
-    geom_point() +
-    scale_color_manual(values = warn_code, guide = "none") +
-    facet_grid(.data[["facet"]] ~ .) +
-    theme_minimal() +
-    xlab("probability") +
-    ylab("") +
-    theme(strip.text = element_text(size = 14)) +
-    ggtitle(label = title,
-            subtitle = adjusted_hint)
+  res_plot <- util_create_lean_ggplot(ggplot(nom_plot_data,
+                                             aes(x = .data[["margins"]],
+                                                 y = .data[[group_vars]],
+                                                 col = .data[["GRADING"]])) +
+                                        geom_pointrange(aes(xmin = .data[["LCL"]],
+                                                            xmax = .data[["UCL"]])) +
+                                        geom_point() +
+                                        scale_color_manual(values = warn_code,
+                                                           guide = "none") +
+                                        facet_grid(.data[["facet"]] ~ .) +
+                                        theme_minimal() +
+                                        xlab("probability") +
+                                        ylab("") +
+                                        theme(strip.text = element_text(size = 14)) +
+                                        ggtitle(label = title,
+                                                subtitle = adjusted_hint),
+                                      nom_plot_data = nom_plot_data,
+                                      group_vars = group_vars,
+                                      warn_code = warn_code,
+                                      title = title,
+                                      adjusted_hint = adjusted_hint)
 
   return(list("plot_data" = res_df, "plot" = res_plot))
 }

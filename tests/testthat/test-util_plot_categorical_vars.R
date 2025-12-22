@@ -1,20 +1,13 @@
 test_that("util_plot_categorical_vars works", {
   skip_on_cran() # slow
   skip_if_translated()
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
+  require_english_locale_and_berlin_tz()
 
-  expect_message(
+  expect_message2(
     t1 <- util_plot_categorical_vars(resp_vars = "v00103",
                                  group_vars = "v00012",
                                  time_vars = "v00013",
@@ -25,7 +18,7 @@ test_that("util_plot_categorical_vars works", {
     "Missing some or all entries"
   )
 
-  expect_message(
+  expect_message2(
     t2 <- util_plot_categorical_vars(resp_vars = "v00103",
                                time_vars = "v00013",
                                study_data = study_data, meta_data = meta_data,
@@ -34,7 +27,7 @@ test_that("util_plot_categorical_vars works", {
     "Missing some or all entries"
   )
 
-  expect_message(
+  expect_message2(
     t3 <- util_plot_categorical_vars(resp_vars = "v00103",
                                  group_vars = "v00012",
                                  study_data = study_data, meta_data = meta_data,
@@ -43,7 +36,7 @@ test_that("util_plot_categorical_vars works", {
     "Missing some or all entries"
   )
 
-  expect_message(
+  expect_message2(
     t4 <- util_plot_categorical_vars(resp_vars = "v00103",
                                  study_data = study_data, meta_data = meta_data,
                                  n_cat_max = 10),
@@ -54,22 +47,15 @@ test_that("util_plot_categorical_vars works", {
 test_that("util_plot_categorical_vars works for nominal and ordinal variables", {
   skip_on_cran() # slow
   skip_if_translated()
-  skip_if_not_installed("withr")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
-  for (i in 1:2) {
-    # This command failed in the first try, but worked in the second try for me.
-    suppressWarnings(withr::local_locale(c(LC_TIME = "en_US.UTF-8")))
-    # Linux, macOS
-  }
-  if (Sys.getlocale("LC_TIME") != "en_US.UTF-8") {
-    withr::local_locale(c(LC_TIME = "English.UTF-8")) # Windows
-  }
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
+  require_english_locale_and_berlin_tz()
 
   meta_data[[SCALE_LEVEL]][meta_data[["VAR_NAMES"]] == "v00008"] <-
     SCALE_LEVELS$NOMINAL
-  expect_message(
+  expect_message2(
     t5 <- util_plot_categorical_vars(resp_vars = "v00008",
                                      group_vars = "v00011",
                                      study_data = study_data, meta_data = meta_data,
@@ -80,7 +66,7 @@ test_that("util_plot_categorical_vars works for nominal and ordinal variables", 
 
   meta_data[[SCALE_LEVEL]][meta_data[["VAR_NAMES"]] == "v00008"] <-
     SCALE_LEVELS$ORDINAL
-  expect_message(
+  expect_message2(
     t6 <- util_plot_categorical_vars(resp_vars = "v00008",
                                      group_vars = "v00011",
                                      study_data = study_data, meta_data = meta_data,

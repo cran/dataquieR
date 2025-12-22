@@ -9,10 +9,13 @@
   dir,
   view = TRUE,
   disable_plotly = FALSE,
-  block_load_factor = 4,
+  block_load_factor = getOption("dataquieR.print_block_load_factor",
+    dataquieR.print_block_load_factor_default),
   advanced_options = list(),
   dashboard = NA,
-  ...
+  ...,
+  cores = list(mode = "socket", logging = FALSE, cpus = util_detect_cores(),
+    load.balancing = TRUE)
 )
 }
 \arguments{
@@ -27,8 +30,7 @@ overwritten inside that directory}
 
 \item{disable_plotly}{\link{logical} do not use \code{plotly}, even if installed}
 
-\item{block_load_factor}{\link{numeric} multiply size of parallel compute blocks
-by this factor.}
+\item{block_load_factor}{\link{numeric} see \link{dataquieR.print_block_load_factor}}
 
 \item{advanced_options}{\link{list} options to set during report computation,
 see \code{\link[=options]{options()}}}
@@ -39,6 +41,11 @@ see \code{\link[=options]{options()}}}
 a dashboard included.}
 
 \item{...}{additional arguments:}
+
+\item{cores}{\link{integer} number of cpu cores to use or a named list with
+arguments for \link[parallelMap:parallelStart]{parallelMap::parallelStart} or NULL,
+if parallel has already been started by the caller.
+Can also be a cluster.}
 }
 \value{
 file names of the generated report's HTML files

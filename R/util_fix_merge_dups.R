@@ -8,9 +8,12 @@
 #'
 #' @family data_management
 #' @concept summary
-#' @keywords internal
+#' @noRd
 util_fix_merge_dups <- function(dfr,
                                 stop_if_incompatible = TRUE) {
+  if (nrow(dfr) == 0) {
+    return(dfr)
+  }
   dupcols <- unique(colnames(dfr)[duplicated(colnames(dfr))])
   for (dc in dupcols) {
     cur <- which(colnames(dfr) == dc)

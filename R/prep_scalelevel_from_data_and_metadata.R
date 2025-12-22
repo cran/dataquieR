@@ -236,7 +236,8 @@ prep_scalelevel_from_data_and_metadata <- function(resp_vars =
   # 4. Variables of type 'datetime': interval scale ----------------------------
   meta_info[
     util_empty(meta_info$SCALE_LEVEL) &
-      meta_info$DATA_TYPE %in% DATA_TYPES$DATETIME, SCALE_LEVEL] <-
+      meta_info$DATA_TYPE %in% c(DATA_TYPES$DATETIME, DATA_TYPES$TIME),
+    SCALE_LEVEL] <-
     SCALE_LEVELS$INTERVAL
 
   # 5. Variables of type 'string': nominal scale or 'na' -----------------------

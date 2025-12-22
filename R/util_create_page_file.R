@@ -22,7 +22,7 @@
 #'
 #' @family reporting_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_create_page_file <- function(page_nr,
                                   pages,
                                   rendered_pages,
@@ -39,6 +39,14 @@ util_create_page_file <- function(page_nr,
                                   by_report) {
 
   page <- names(pages)[page_nr] # the name of the page-file being created
+
+  file_name <- file.path(dir, page)
+
+  if (getOption("dataquieR.resume_print", dataquieR.resume_print_default) &&
+       util_is_html_file_complete(file_name)) {
+    progress(page_nr / length(pages) * 100)
+    return(invisible(file_name))
+  }
 
   # util_message("Writing %s...", dQuote(page))
   progress_msg("", sprintf("Writing %s...", dQuote(page)))
@@ -106,8 +114,6 @@ util_create_page_file <- function(page_nr,
 
   # https://atomiks.github.io/tippyjs/v6/all-props/
 
-  file_name <- file.path(dir, page)
-
   # htmltools::save_html(html_report,
   #                      libdir = file.path(dir, "lib"),
   #                      file = file_name)
@@ -117,10 +123,14 @@ util_create_page_file <- function(page_nr,
 
   withCallingHandlers({
     cat(as.character(html_report), file = f)
+    # TODO: [html_files_should_also_work_alone] ack and remove RDS -- then check, if html exists, really in util_html_for_*
+
   },
   warning = function(cond) { # suppress a waning caused by ggplotly for barplots
     if (startsWith(conditionMessage(cond),
-                   "'bar' objects don't have these attributes: 'mode'")) {
+                   "'bar' objects don't have these attributes: 'mode'") ||
+        startsWith(conditionMessage(cond),
+                   "'box' objects don't have these attributes: 'mode'")) {
       invokeRestart("muffleWarning")
     }
   })

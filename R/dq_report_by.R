@@ -147,10 +147,17 @@
 #'                        ends may nevertheless work, yet, they are not tested.
 #' @param amend [logical] if there is already data in.`storr_factory`,
 #'                        use it anyways -- unsupported, so far!
+#' @param checkpoint_resumed [logical] if using a `storr_factory` and the back-
+#'                                     end there is already filled, and if
+#'                                     `amend` is missing or set to `TRUE`,
+#'                                     compute all missing result and add them
+#'                                     to the back-end.
 #' @param view [logical] open the returned report
 #'
-#' @return [invisible()]. named [list] of named [list]s of [dq_report2] reports
-#'         or, if `output_dir` has been specified, `invisible(NULL)`
+#' @return A named [list] of named [list]s of [dq_report2] reports, returned
+#'         invisibly unless `view = TRUE`. If `output_dir` is given, the result
+#'         is still returned (invisibly), and optionally opened in a browser
+#'         (`view = TRUE`, `also_print = TRUE`).
 #'
 #' @seealso [dq_report]
 #'
@@ -215,6 +222,9 @@ dq_report_by <- function(study_data,
                          advanced_options =  list(),
                          storr_factory = NULL,
                          amend = FALSE,
+                         checkpoint_resumed =
+                           getOption("dataquieR.resume_checkpoint",
+                                     dataquieR.resume_checkpoint_default),
                          ...,
                          output_dir = NULL,
                          input_dir = NULL,
@@ -227,6 +237,18 @@ dq_report_by <- function(study_data,
                          segment_level,
                          dataframe_level,
                          item_computation_level) {
+
+  if (!suppressWarnings(util_ensure_suggested("plotly",
+                                              goal =
+                                              "creating interactive figures",
+                                              err = FALSE))) {
+    if (!isTRUE(disable_plotly)) {
+      util_message("Without the package plotly, you miss interactive figures.")
+      disable_plotly <- TRUE
+    }
+  }
+
+  dots <- rlang::dots_list(...)
 
   util_stop_if_not(is.list(advanced_options))
   util_expect_scalar(view, check_type = is.logical)
@@ -753,6 +775,11 @@ dq_report_by <- function(study_data,
                                              COMPUTATION_RULE = character(0))
   }
 
+  if (VARIABLE_LIST %in% colnames(meta_data_cross_item)) {
+    meta_data_cross_item[[VARIABLE_LIST_ORDER]] <-
+      meta_data_cross_item[[VARIABLE_LIST]]
+  }
+
   ### create VARIABLE_LIST entries from COMPUTATION_RULE entries
   needles_var_names <- unique(c(
     meta_data[[VAR_NAMES]],
@@ -904,6 +931,7 @@ dq_report_by <- function(study_data,
     overview_referred <- util_referred_vars(resp_vars = resp_vars,
                                             id_vars = id_vars,
                                             vars_in_subgroup = vars_in_subgroup,
+                                            label_col = label_col,
                                             meta_data = meta_data,
                                             meta_data_segment =
                                               meta_data_segment,
@@ -1545,6 +1573,7 @@ dq_report_by <- function(study_data,
                    util_referred_vars(resp_vars = vars,
                                       id_vars = id_vars,
                                       vars_in_subgroup = vars_in_subgroup,
+                                      label_col = label_col,
                                       meta_data = meta_data,
                                       meta_data_segment =
                                         seg_in_segment[[segment]],
@@ -1576,6 +1605,7 @@ dq_report_by <- function(study_data,
                    util_referred_vars(resp_vars = vars,
                                       id_vars = id_vars,
                                       vars_in_subgroup = vars_in_subgroup,
+                                      label_col = label_col,
                                       meta_data = meta_data,
                                       meta_data_segment =
                                         seg_in_segment[[segment]],
@@ -1619,6 +1649,7 @@ dq_report_by <- function(study_data,
                    util_referred_vars(resp_vars = vars,
                                       id_vars = id_vars,
                                       vars_in_subgroup = vars_in_subgroup,
+                                      label_col = label_col,
                                       meta_data = meta_data,
                                       meta_data_segment =
                                         seg_in_segment[[segment]],
@@ -1645,6 +1676,7 @@ dq_report_by <- function(study_data,
                    util_referred_vars(resp_vars = vars,
                                       id_vars = id_vars,
                                       vars_in_subgroup = vars_in_subgroup,
+                                      label_col = label_col,
                                       meta_data = meta_data,
                                       meta_data_segment =
                                         seg_in_segment[[segment]],
@@ -2039,7 +2071,8 @@ dq_report_by <- function(study_data,
   }
 
   # Create a job to report progress and give it a name ----
-  util_setup_rstudio_job("dq_report_by")
+  util_setup_rstudio_job("dq_report_by",
+                         n = length(segmentNames) * length(n_strata))
   # create an extra environment for the progress
   p <- new.env(parent = emptyenv())
   p$i <- 0
@@ -2410,6 +2443,17 @@ dq_report_by <- function(study_data,
             c("The number of cases did not change after applying the",
               "subgroup filter %s"),
             dQuote(subgroup))
+        } else if (nrow(sd_merged) == 0 && nrow_df > 0) {
+          util_warning(
+            c(
+              "After using subgroup rule %s, no dataset is left. You may",
+              "have provided an impossible condition, e.g., filtering",
+              "for a variable equal to %s, but the actual levels would be %s."
+            ),
+            dQuote(subgroup),
+            dQuote("females"),
+            dQuote("female")
+          )
         }
         rm(nrow_df, rule)
       }
@@ -2948,24 +2992,36 @@ dq_report_by <- function(study_data,
             return(NULL)
           }
 
+          allowed_args <- names(formals(dataquieR::dq_report2))
+
+          clean_dots <- dots[names(dots) %in% allowed_args]
+
+          args <- c(
+            list(
+              study_data = sd,
+              meta_data = md,
+              resp_vars = resp_vars_in_segment[[cur_seg]],
+              meta_data_cross_item = cil_in_segment[[cur_seg]],
+              meta_data_segment = seg_in_segment[[cur_seg]],
+              meta_data_dataframe = dfr_in_segment[[1]],
+              meta_data_item_computation = computed_in_segment[[cur_seg]],
+              label_col = label_col,
+              split_segments = split_segments,
+              user_info = info_sd_name_per_report,
+              title = title_report,
+              subtitle = subtitle_report,
+              storr_factory = storr_factory_clone,
+              amend = amend,
+              checkpoint_resumed = checkpoint_resumed,
+              name_of_study_data = name_of_study_data
+            ),
+            clean_dots
+          )
+
           # create the different sub-reports ----
-          r <- try(dq_report2(
-            study_data = sd,
-            meta_data = md,
-            resp_vars = resp_vars_in_segment[[cur_seg]],
-            meta_data_cross_item = cil_in_segment[[cur_seg]],
-            meta_data_segment = seg_in_segment[[cur_seg]],
-            meta_data_dataframe = dfr_in_segment[[1]],
-            meta_data_item_computation = computed_in_segment[[cur_seg]],
-            label_col = label_col,
-            split_segments = split_segments,
-            user_info = info_sd_name_per_report,
-            title = title_report,
-            subtitle = subtitle_report,
-            storr_factory = storr_factory_clone,
-            amend = amend,
-            ...
-          ))
+          r <- try(
+            do.call(dq_report2, args)
+          )
 
           ###Check here if it is an error, put r <- NULL, empty report()
           attr(r, "label_modification_text") <- trimws(paste(
@@ -3009,7 +3065,7 @@ dq_report_by <- function(study_data,
           gc()
 
           # in case an output directory is defined, save reports and delete them ----
-          if (length(output_dir) == 1) {
+          if (length(output_dir) == 1 && dir.exists(output_dir)) {
             if (inherits(r, "try-error")) {
               #check if instead of the report there is an error
               util_warning(
@@ -3065,32 +3121,42 @@ dq_report_by <- function(study_data,
               }
               # remove object to reduce memory use
               rm(s_res)
+              .dir <- file.path(output_dir,
+                                gsub("[^a-zA-Z0-9_\\.]", "",
+                                     sprintf("report_%s", sdn)))
+              dir.create(.dir,
+                         showWarnings = FALSE,
+                         recursive = TRUE)
+              if (!dir.exists(.dir)) {
+                # warning if the directory could not be created
+                util_warning(
+                  paste0("Could not create directory %s. ",
+                         "No output for this segment"),
+                  dQuote(.dir))
+              }
               # prepare the folder for saving the rendered report html file
               if (also_print) {
-                .dir <- file.path(output_dir,
-                                  gsub("[^a-zA-Z0-9_\\.]", "",
-                                       sprintf("report_%s", sdn)))
-                dir.create(.dir,
-                           showWarnings = FALSE,
-                           recursive = TRUE)
-                if (!dir.exists(.dir)) {
-                  # warning if the directory could not be created
-                  util_warning(
-                    paste0("Could not create directory %s. ",
-                           "No HTML output for this segment"),
-                    dQuote(.dir))
-                } else {
+                if (dir.exists(.dir)) {
+                  # these two arguments may be passed to the print function
+                  pass_args <- dots[names(dots) %in%
+                                      c("cores", "block_load_factor")]
                   # save the rendered html files in the directory
-                  p_res <-
-                    try(print.dataquieR_resultset2(
-                      r,
-                      dir = .dir,
-                      view = FALSE,
-                      disable_plotly = disable_plotly,
-                      by_report = TRUE
-                    ))
+                  p_res <- util_try_with_trace(rlang::eval_bare(
+                    rlang::call2(print.dataquieR_resultset2,
+                                 r,
+                                 dir = .dir,
+                                 view = FALSE,
+                                 disable_plotly = disable_plotly,
+                                 by_report = TRUE,
+                                 !!!pass_args
+                    )
+                  ))
                   #creating the back link
                   if (inherits(p_res, "try-error")) {
+                    if (isTRUE(getOption("dataquieR.traceback",
+                                         dataquieR.traceback_default))) {
+                      util_warning(util_condition_from_try_error(p_res))
+                    }
                     # gives a warning if the report could not be rendered
                     util_warning(
                       "Could not create HTML report for %s: %s.",
@@ -3125,10 +3191,16 @@ dq_report_by <- function(study_data,
       segment_column = segment_column,
       strata_column_label = strata_column_label,
       subgroup = subgroup,
-      mod_label = mod_label
+      mod_label = mod_label,
+      disable_plotly = disable_plotly
     )
   }
   prep_purge_data_frame_cache()
+
+  if (util_really_rstudio()) {
+    rstudioapi::executeCommand("activateConsole")
+  }
+
   if (missing(output_dir)) {
     if (view) {
       return(overall_res)

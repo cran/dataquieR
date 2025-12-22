@@ -7,17 +7,19 @@
 \alias{string}
 \alias{float}
 \alias{datetime}
+\alias{time}
 \alias{numeric}
 \alias{enum}
 \alias{FLOAT}
 \alias{INTEGER}
 \alias{STRING}
 \alias{DATETIME}
+\alias{TIME}
 \alias{variable}
 \alias{set}
 \title{Data Types}
 \format{
-An object of class \code{list} of length 4.
+An object of class \code{list} of length 5.
 }
 \usage{
 DATA_TYPES
@@ -35,6 +37,7 @@ In the metadata, the following entries are allowed for the
 \item \code{string} for text/string/character data
 \item \code{float} for decimal/floating point numbers
 \item \code{datetime} for timepoints
+\item \code{time} for time of day
 }
 \subsection{Data Types of Function Arguments}{
 

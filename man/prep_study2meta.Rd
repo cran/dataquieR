@@ -10,7 +10,9 @@ prep_study2meta(
   cumulative = TRUE,
   convert_factors = FALSE,
   guess_missing_codes = getOption("dataquieR.guess_missing_codes",
-    dataquieR.guess_missing_codes_default)
+    dataquieR.guess_missing_codes_default),
+  guess_character = getOption("dataquieR.guess_character", default =
+    dataquieR.guess_character_default)
 )
 }
 \arguments{
@@ -25,6 +27,9 @@ if selected, then also the study data will
 be updated and returned.}
 
 \item{guess_missing_codes}{\link{logical} try to guess missing codes from the data}
+
+\item{guess_character}{\link{logical} guess a data type for character columns
+based on the values}
 }
 \value{
 a meta_data data frame or a list with study data and metadata, if

@@ -43,7 +43,7 @@
 #'
 #' @family robustness_functions
 #' @concept robustness
-#' @keywords internal
+#' @noRd
 util_expect_scalar <- function(arg_name,
                                allow_more_than_one = FALSE,
                                allow_null = FALSE,

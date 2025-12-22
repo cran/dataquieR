@@ -6,12 +6,14 @@
 #' @param cll_names [character] then systematic function call name to fetch its
 #'                             function name
 #' @param report [dataquieR_resultset2] the report
+#' @param function_alias_map [data.frame] the `function_alias_map` of a report,
+#'                           alternative foe passing the report
 #'
 #' @return [character] the function name
 #'
-#' @keywords internal
-util_cll_nm2fkt_nm <- function(cll_names, report) {
-  if (missing(report)) {
+#' @noRd
+util_cll_nm2fkt_nm <- function(cll_names, report, function_alias_map) {
+  if (missing(report) && missing(function_alias_map)) {
     vapply(cll_names, function(cll_name) {
       fns <- util_all_ind_functions()
       fkt_name <- unique(names(which(vapply(fns, function(fn) {
@@ -33,11 +35,17 @@ util_cll_nm2fkt_nm <- function(cll_names, report) {
       return(fkt_name)
     }, FUN.VALUE = character(1))
   } else {
-    vapply(cll_names, report = report, function(cll_name, report) {
+    if (missing(function_alias_map)) {
+      function_alias_map <-
+        attributes(attributes(report)$matrix_list)$function_alias_map
+    }
+    vapply(cll_names,
+           function_alias_map = function_alias_map,
+           function(cll_name, function_alias_map) {
       fkt_name <- cll_name
       f <- cll_name
-      f <- try(subset(attributes(
-        attributes(report)$matrix_list)$function_alias_map,
+      f <- try(subset(
+        function_alias_map,
         alias == cll_name, "name", drop = TRUE),
         silent = TRUE)
       if (is.vector(f) && is.character(f) && (length(f) == 1)) {

@@ -6,7 +6,7 @@
 #' @return [data.frame] metadata with `VALUE_LABEL_TABLE` instead of
 #'   `VALUE_LABELS` (or none of these, if absent)
 #'
-#' @keywords internal
+#' @noRd
 #' @examples
 #' \dontrun{
 #' prep_purge_data_frame_cache()
@@ -199,7 +199,7 @@ util_normalize_value_labels <- function(meta_data = "item_level",
 #' @param vlt2 [value_label_table]
 #'
 #' @return [value_label_table]
-#' @keywords internal
+#' @noRd
 #' @examples
 #' \dontrun{
 #' util_combine_value_label_tables(

@@ -38,7 +38,7 @@
 #'
 #' @family reporting_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_generate_calls <- function(dimensions,
                                 meta_data,
                                 label_col,
@@ -74,8 +74,18 @@ util_generate_calls <- function(dimensions,
 
   ind_functions <- util_filter_names_by_regexps(ind_functions,
                                                 filter_indicator_functions)
+  # handle SSI functions
+  ssi_functions <- character(0)
+  try({
+    ssi_functions <- unlist(util_parse_assignments(util_get_concept_info("ssi",
+                                                                          get("SSI_METRICS") %in% colnames(meta_data_cross_item),
+                                                                          "functions",
+                                                                          drop = TRUE)))
+  }, silent = TRUE)
+  ssi_functions <- setNames(nm = unique(gsub("\\..*$", "", ssi_functions)))
+  # /SSI functions
 
-  all_calls <- lapply(ind_functions,
+  all_calls <- lapply(setNames(nm = union(ind_functions, ssi_functions)),
                       util_generate_calls_for_function,
                       meta_data = meta_data,
                       label_col = label_col,

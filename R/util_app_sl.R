@@ -14,7 +14,7 @@
 #' - 4 not applicable because of not suitable data type
 #'
 #' @seealso [pro_applicability_matrix]
-#' @keywords internal
+#' @noRd
 
 util_app_sl <- function(x, dta) {
   if (SOFT_LIMITS %in% names(x)) {

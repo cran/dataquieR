@@ -8,6 +8,8 @@
 #'                        arguments for [parallelMap::parallelStart] or NULL,
 #'                        if parallel has already been started by the caller.
 #'                        Can also be a cluster.
+#' @param ignore_empty_vars [enum] TRUE | FALSE | auto. See
+#'                             [dataquieR.ignore_empty_vars].
 #' @param specific_args [list] named list of arguments specifically for one of
 #'                             the called functions, the of the list elements
 #'                             correspond to the indicator functions whose calls
@@ -23,6 +25,8 @@
 #'                   is included to avoid misleading detections of e.g. missing
 #'                   codes as outliers, please refer to the data quality concept
 #'                   for more details. Integrity is always included.
+#'                   If dimensions is equal to NULL or "all", all dimensions
+#'                   will be covered.
 #' @param author [character] author for the report documents.
 #' @param debug_parallel [logical] print blocks currently evaluated in parallel
 #' @param meta_data_segment [data.frame] -- optional: Segment level metadata
@@ -87,6 +91,11 @@
 #'                        ends may nevertheless work, yet, they are not tested.
 #' @param amend [logical] if there is already data in.`storr_factory`,
 #'                        use it anyways -- unsupported, so far!
+#' @param checkpoint_resumed [logical] if using a `storr_factory` and the back-
+#'                                     end there is already filled, and if
+#'                                     `amend` is missing or set to `TRUE`,
+#'                                     compute all missing result and add them
+#'                                     to the back-end.
 #' @param cross_item_level [data.frame] alias for `meta_data_cross_item`
 #' @param `cross-item_level` [data.frame] alias for `meta_data_cross_item`
 #' @param segment_level [data.frame] alias for `meta_data_segment`
@@ -94,6 +103,14 @@
 #' @param item_computation_level [data.frame] alias for
 #'                               `meta_data_item_computation`
 #' @param .internal [logical] internal use, only.
+#' @param name_of_study_data [character] name for study data inside the report,
+#'                                       internal use.
+#' @param dt_adjust [logical] whether to trust data types in the study data. if
+#'                            `TRUE`, data types are checked based on the
+#'                            metadata and later casted to the declared type.
+#'                            if your data source is already typed, this can
+#'                            be turned off to speed up computations.
+#'                            see [dataquieR.dt_adjust]
 #'
 #' @return a [dataquieR_resultset2] that can be
 #' [printed][print.dataquieR_resultset2] creating a `HTML`-report.
@@ -109,30 +126,6 @@
 #' @importFrom stats alias
 #' @importFrom utils osVersion packageName packageVersion
 #' @importFrom stats setNames
-#' @examples
-#' \dontrun{
-#' prep_load_workbook_like_file("inst/extdata/meta_data_v2.xlsx")
-#' meta_data <- prep_get_data_frame("item_level")
-#' meta_data_cross <- prep_get_data_frame("cross-item_level")
-#' x <- dq_report2("study_data", dimensions = NULL, label_col = "LABEL")
-#' xx <- pbapply::pblapply(x, util_eval_to_dataquieR_result, env = environment())
-#' xx <- pbapply::pblapply(tail(x), util_eval_to_dataquieR_result, env = environment())
-#' xx <- parallel
-#' cat(vapply(x, deparse1, FUN.VALUE = character(1)), sep = "\n", file = "all_calls.txt")
-#' rstudioapi::navigateToFile("all_calls.txt")
-#' eval(x$`acc_multivariate_outlier.Blood pressure checks`)
-#'
-#' prep_load_workbook_like_file("meta_data_v2")
-#' rules <- tibble::tribble(
-#'   ~resp_vars,  ~RULE,
-#'   "BMI", '[BODY_WEIGHT_0]/(([BODY_HEIGHT_0]/100)^2)',
-#'   "R", '[WAIST_CIRC_0]/2/[pi]', # in m^3
-#'   "VOL_EST", '[pi]*([WAIST_CIRC_0]/2/[pi])^2*[BODY_HEIGHT_0] / 1000', # in l
-#'  )
-#' prep_load_workbook_like_file("ship_meta_v2")
-#' prep_add_data_frames(computed_items = rules)
-#' r <- dq_report2("ship", dimensions = NULL, label_col = "LABEL")
-#' }
 dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                        item_level = "item_level",
                        label_col = LABEL,
@@ -149,7 +142,10 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                                     logging = FALSE,
                                     cpus = util_detect_cores(),
                                     load.balancing = TRUE),
-                       specific_args = list(), # TODO: check if list of lists
+                       ignore_empty_vars =
+                         getOption("dataquieR.ignore_empty_vars",
+                                   dataquieR.ignore_empty_vars_default),
+                       specific_args = list(), # TODO: check if list of lists, or support not only function but also call names w/o var-suffix in this list: specific_args = list(acc_margins_observer = list()) or specific_args = list(acc_margins_observer.SBP_0 = list())
                        advanced_options =  list(),
                        author = prep_get_user_name(),
                        title = "Data quality report",
@@ -171,7 +167,7 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                        mode_args = list(),
                        notes_from_wrapper = list(),
                        storr_factory = NULL,
-                       amend = FALSE,
+                       amend = FALSE, # TODO: reduced output (png plus table): util_plot2svg_object would do with svg, png version was tested, but uses typically much more memory. Function with this commit but removed thereafter. use lobstr::obj_size() for testing w/o save() :)
                        cross_item_level,
                        `cross-item_level`,
                        segment_level,
@@ -180,7 +176,13 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                        .internal =
                          rlang::env_inherits(
                            rlang::caller_env(),
-                           parent.env(environment()))) { # TODO: on.exit(rstudioapi::executeCommand("activateConsole")), and also in the print()-method
+                           parent.env(environment())),
+                       checkpoint_resumed =
+                         getOption("dataquieR.resume_checkpoint",
+                                   dataquieR.resume_checkpoint_default),
+                       name_of_study_data,
+                       dt_adjust = as.logical(getOption("dataquieR.dt_adjust",
+                                             dataquieR.dt_adjust_default))) { # TODO: on.exit(rstudioapi::executeCommand("activateConsole")), and also in the print()-method
   util_stop_if_not(is.list(advanced_options))
 
   old_O <- options(
@@ -198,7 +200,36 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
 
   my_storr_object <- util_storr_object(storr_factory)
 
+  util_expect_scalar(dt_adjust, check_type = is.logical)
   util_expect_scalar(amend, check_type = is.logical)
+  util_expect_scalar(checkpoint_resumed, check_type = is.logical)
+
+  if (missing(amend) && !amend && checkpoint_resumed) {
+    util_message(c("%s was %s, but %s was unset (default = %s).",
+                   "I will set %s to %s to make %s work."),
+                 sQuote("checkpoint_resumed"),
+                 sQuote("TRUE"),
+                 sQuote("amend"),
+                 sQuote("FALSE"),
+                 sQuote("amend"),
+                 sQuote("TRUE"),
+                 sQuote("checkpoint_resumed"))
+    amend = TRUE
+  } else if (!missing(amend) && !amend && checkpoint_resumed) {
+    util_message(c("%s was %s, but %s was %s.",
+                   "I will set %s to %s to avoid results from being touched",
+                   "(%s = %s)"),
+                 sQuote("amend"),
+                 sQuote("FALSE"),
+                 sQuote("checkpoint_resumed"),
+                 sQuote("TRUE"),
+                 sQuote("checkpoint_resumed"),
+                 sQuote("FALSE"),
+                 sQuote("amend"),
+                 sQuote("FALSE")
+                 )
+    checkpoint_resumed <- FALSE
+  }
 
   if (!is.null(my_storr_object) && (
     length(my_storr_object$list()) > 0 ||
@@ -230,6 +261,9 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                  )
     }
   }
+
+  util_match_arg(ignore_empty_vars,
+                 c("TRUE", "FALSE", "auto"))
 
   mode <- util_match_arg(mode)
 
@@ -307,12 +341,19 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
   # checks and fixes the function arguments
   util_ck_arg_aliases()
 
-  if (is.data.frame(study_data)) {
-    name_of_study_data <- head(as.character(substitute(study_data)), 1)
-  } else if (length(study_data) == 1 && is.character(study_data)) {
-    name_of_study_data <- study_data
+  if (missing(name_of_study_data)) {
+    if (is.data.frame(study_data)) {
+      name_of_study_data <- substr(head(as.character(substitute(study_data)), 1),
+                                   1, 500)
+    } else if (length(study_data) == 1 && is.character(study_data)) {
+      name_of_study_data <- study_data
+    } else {
+      name_of_study_data <- "??No study data found??"
+    }
   } else {
-    name_of_study_data <- "??No study data found??"
+    util_expect_scalar(name_of_study_data,
+                       check_type = is.character)
+    substr(name_of_study_data, 1, 500)
   }
   util_expect_data_frame(study_data, keep_types = TRUE)
 #  if (ncol(study_data) == 0) {
@@ -330,27 +371,64 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
     util_verify_names(name_of_study_data = name_of_study_data)
   }
 
+  try(util_expect_data_frame(meta_data), silent = TRUE)
+
+  case_insens <- util_is_na_0_empty_or_false(
+    getOption("dataquieR.study_data_colnames_case_sensitive",
+              dataquieR.study_data_colnames_case_sensitive_default))
+
+  if (case_insens) {
+    colnames(study_data) <-
+      util_align_colnames_case(.colnames = colnames(study_data),
+                               .var_names = meta_data[[VAR_NAMES]])
+  }
+
+  ci_in_study <- FALSE
+  if (is.data.frame(meta_data) && !case_insens) {
+    in_study <- meta_data[[VAR_NAMES]] %in% colnames(study_data)
+    ci_in_study <- tolower(meta_data[[VAR_NAMES]]) %in%
+      tolower(colnames(study_data))
+  }
+  if (identical(getOption("dataquieR.ELEMENT_MISSMATCH_CHECKTYPE",
+                dataquieR.ELEMENT_MISSMATCH_CHECKTYPE_default), "subset_u")) {
+    if (is.data.frame(meta_data)) {
+      meta_data <- meta_data[in_study, , FALSE]
+    }
+  }
+
   # try, meta_data my still be missing
   # note: we had the following twice, first w/o try, then w/ try. likely a bug
   try(meta_data <- prep_meta_data_v1_to_item_level_meta_data(meta_data),
                    silent = TRUE)
   warning_pred_meta <- NULL
   if (!is.data.frame(meta_data) || !prod(dim(meta_data))) {
-    w <- paste("No item level metadata %s found. Will guess some from the study data.",
-           "This will not be very helpful, please consider passing an item level",
-           "metadata file.")
+    try_ci <- ""
+    if (!case_insens) {
+      if (any(ci_in_study)) {
+        try_ci <- sprintf(
+          paste("But maybe, if you enable case-insensitive mapping",
+                "of meta_data on study data using %s, it could work?"),
+          sQuote(
+            "options(dataquieR.study_data_colnames_case_sensitive = FALSE)")
+        )
+      }
+    }
+    w <- paste("No item level metadata matching study data found. Will guess",
+           "some from the study data. This will not be very helpful, please",
+           "consider passing an item level metadata file.",
+           try_ci)
     if (requireNamespace("cli", quietly = TRUE)) {
       w <- cli::bg_red(cli::col_br_yellow(cli::ansi_toupper(w)))
       w <- gsub("%S", "%s", w)
     }
     util_warning(w,
-                 dQuote(paste0(meta_data, collapse = " ")),
                  immediate = TRUE)
     predicted <- prep_study2meta(study_data, convert_factors = TRUE)
     meta_data <- predicted$MetaData
     study_data <- predicted$ModifiedStudyData
-    warning_pred_meta <- paste("The item-level metadata could not be found",
-                               "and was guessed from the study data.")
+    warning_pred_meta <- paste("No item-level metadata matching study data",
+                               "could not be found and was guessed from the",
+                               "study data.", try_ci)
   } else {
     # strip rownames from metadata to prevent confusing the html_table function
     rownames(meta_data) <- NULL
@@ -403,14 +481,16 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
     util_message(
          c("The variables %s have no or an invalid %s assigned in item level",
            "metadata: %s are not in %s. Defaulting to %s."), # TODO: normalize VARIABLE_ROLES
-         util_pretty_vector_string(meta_data[which_not, label_col,
+         util_pretty_vector_string(n_max = 5, meta_data[which_not, label_col,
                                                drop = TRUE]),
-         util_pretty_vector_string(meta_data[which_not, VARIABLE_ROLE,
-                                             drop = TRUE]),
+         sQuote(VARIABLE_ROLE),
+         dQuote(util_pretty_vector_string(sort(unique(meta_data[which_not,
+                                                         VARIABLE_ROLE,
+                                             drop = TRUE])))),
          util_pretty_vector_string(VARIABLE_ROLES),
-         sQuote(VARIABLE_ROLE), dQuote(VARIABLE_ROLES$PRIMARY),
+         dQuote(VARIABLE_ROLES$PRIMARY),
              applicability_problem = TRUE)
-    meta_data$VARIABLE_ROLE[] <- VARIABLE_ROLES$PRIMARY
+    meta_data$VARIABLE_ROLE[which_not] <- VARIABLE_ROLES$PRIMARY
   }
 
   util_expect_scalar(label_col, check_type = is.character)
@@ -421,6 +501,17 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                     sQuote("meta_data")))
 
   try(util_expect_data_frame(meta_data_item_computation), silent = TRUE)
+  if (!is.data.frame(meta_data_item_computation)) {
+    meta_data_item_computation <- data.frame()
+  }
+  uaci <-
+    util_add_computed_internals(meta_data_item_computation,
+                                meta_data_cross_item,
+                                meta_data,
+                                label_col)
+  meta_data_item_computation <-
+    uaci$meta_data_item_computation
+  meta_data <- uaci$meta_data
   if (is.data.frame(meta_data_item_computation)) {
     util_message("Computed items metadata defined. Computing them...")
     # strip rownames from metadata to prevent confusing the html_table function
@@ -494,7 +585,9 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                      error_message =
                        sprintf("The argument %s must be character or NULL",
                                sQuote("dimensions")))
-  if (length(dimensions) == 0) {
+  if (length(dimensions) == 0 || (length(dimensions) == 1 &&
+                                  !is.na(dimensions) &&
+                                  tolower(trimws(dimensions)) == "all")) {
     dimensions <- c("completeness", "consistency", "accuracy")
   } else {
     dimensions <- tolower(dimensions)
@@ -521,6 +614,12 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
 
   miss_from_study <- (!(md100[[VAR_NAMES]] %in% (c(colnames(study_data),
                                                    meta_data_item_computation$VAR_NAMES))))
+
+  only_nas <- vapply(setNames(md100[[VAR_NAMES]], nm = md100[[label_col]]),
+                     function(vn) {
+                       all(util_empty(study_data[[vn]]))
+                     },
+                     FUN.VALUE = logical(1))
 
   if (any(miss_from_study)) {
     vars_not_found <- paste0(
@@ -560,10 +659,40 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
     resp_vars <- resp_vars_m[!is.na(resp_vars_m)]
   }
 
+  to_remove <-
+    intersect(resp_vars, names(which(only_nas)))
+
+  orig_ignore_empty_vars <- ignore_empty_vars
+
+  if (length(resp_vars) == 0) {
+    util_error("No response variables left.")
+  }
+
+  if (ignore_empty_vars == "auto") {
+    ignore_empty_vars <- length(to_remove) / length(resp_vars) > .2 # 20%, see options for documentation, search for ignore_empty_vars20, if changing
+  } else {
+    ignore_empty_vars <- as.logical(ignore_empty_vars)
+  }
+
+  if (ignore_empty_vars) {
+    util_warning(
+      c("%s was %s, so removing the following variables from the report,",
+        "because they only feature empty values: %s"),
+      sQuote("ignore_empty_vars"),
+      sQuote(orig_ignore_empty_vars),
+      util_pretty_vector_string(to_remove, n_max = 6), immediate = TRUE)
+    resp_vars <- setdiff(resp_vars, to_remove)
+  } else if (length(to_remove) > 0) {
+    util_message("Have variables only featuring empty data values: %s",
+                 util_pretty_vector_string(to_remove, n_max = 6),
+                 immediate = TRUE)
+  }
+
   util_message("Pre-computing curated study data frames...")
 
   util_reset_cache()
-  if (getOption("dataquieR.precomputeStudyData", default = FALSE)) {
+  if (getOption("dataquieR.precomputeStudyData", default =
+                dataquieR.precomputeStudyData_default)) {
     util_populate_study_data_cache(study_data, meta_data, label_col = LABEL)
   } else {
     util_purge_study_data_cache()
@@ -628,7 +757,9 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
       filter_result_slots = filter_result_slots,
       mode = mode,
       mode_args = mode_args,
-      my_storr_object = my_storr_object
+      my_storr_object = my_storr_object,
+      checkpoint_resumed = checkpoint_resumed,
+      dt_adjust = dt_adjust
     )
   )
 
@@ -778,8 +909,9 @@ util_purge_study_data_cache <- function() {
 # options(dataquieR.study_data_cache_metrics_env = NULL)
 # rm(metrics)
 # rx <- dq_report2("study_data", meta_data_v2 = "meta_data_v2", dimensions = NULL)
-util_populate_study_data_cache <- function(study_data, meta_data, label_col, quick = getOption("dataquieR.study_data_cache_quick_fill", TRUE)) {
+util_populate_study_data_cache <- function(study_data, meta_data, label_col, quick = getOption("dataquieR.study_data_cache_quick_fill", dataquieR.study_data_cache_quick_fill_default)) {
   util_purge_study_data_cache()
+  invisible(lapply(study_data, util_is_na_0_empty_or_false)) # TODO: maybe RAM intensive?
   if (quick) {
     try(silent = TRUE, prep_prepare_dataframes(.study_data = study_data, .meta_data = meta_data, .label_col = label_col, .replace_hard_limits = TRUE, .replace_missings = TRUE, .adjust_data_type = TRUE, .amend_scale_level = TRUE))
     try(silent = TRUE, prep_prepare_dataframes(.study_data = study_data, .meta_data = meta_data, .label_col = label_col, .replace_missings = FALSE))

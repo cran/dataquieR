@@ -1,4 +1,4 @@
-#' @keywords internal
+#' @noRd
 util_queue_cluster_setup <- function(
                                 n_nodes,
                                 progress,

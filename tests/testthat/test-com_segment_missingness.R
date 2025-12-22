@@ -1,13 +1,13 @@
 test_that("com_segment_missingness works", {
   skip_on_cran()
-  skip_if_not_installed("withr")
+  
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = FALSE,
                    dataquieR.ERRORS_WITH_CALLER = FALSE,
                    dataquieR.WARNINGS_WITH_CALLER = FALSE,
                    dataquieR.MESSAGES_WITH_CALLER = FALSE)
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -15,7 +15,7 @@ test_that("com_segment_missingness works", {
     setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
       meta_data[[VAR_NAMES]]
     ]
-  expect_message(
+  expect_message2(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
                                threshold_value = NA, color_gradient_direction = "above",
                                exclude_roles = VARIABLE_ROLES$PROCESS),
@@ -32,7 +32,7 @@ test_that("com_segment_missingness works", {
                            "setting to 10%."))
   )
 
-  expect_message(
+  expect_message2(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
                                  threshold_value = NA, color_gradient_direction = "above"),
     regexp = sprintf("%s|%s|%s",
@@ -50,7 +50,7 @@ test_that("com_segment_missingness works", {
                            "all process variables are not included here."))
   )
 
-  expect_message(
+  expect_message2(
     r <- com_segment_missingness(study_data, meta_data,
                                  threshold_value = NA, color_gradient_direction = "above"),
     regexp = sprintf("%s|%s|%s",
@@ -68,7 +68,7 @@ test_that("com_segment_missingness works", {
                            "all process variables are not included here."))
   )
 
-  expect_message(
+  expect_message2(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
                                  threshold_value = NA, color_gradient_direction = "above",
                                  strata_vars = "CENTER_0"),
@@ -174,7 +174,7 @@ test_that("com_segment_missingness works", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
                                  threshold_value = 10, color_gradient_direction = "above",
                                  exclude_roles = VARIABLE_ROLES$PROCESS),
@@ -186,7 +186,7 @@ test_that("com_segment_missingness works", {
                    "are not considered due to their",
                    "VARIABLE_ROLE.")
   )
-  expect_message(
+  expect_message2(
     r <- com_segment_missingness(study_data, meta_data, label_col = LABEL,
                                  threshold_value = 10, color_gradient_direction = "below",
                                  exclude_roles = VARIABLE_ROLES$PROCESS),
@@ -219,14 +219,14 @@ test_that("com_segment_missingness works", {
 
 test_that("com_segment_missingness works w/g (group|strata)_vars", {
   skip_on_cran() # slow and not frequently used
-  skip_if_not_installed("withr")
+  
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = FALSE,
                    dataquieR.ERRORS_WITH_CALLER = FALSE,
                    dataquieR.WARNINGS_WITH_CALLER = FALSE,
                    dataquieR.MESSAGES_WITH_CALLER = FALSE)
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -234,7 +234,7 @@ test_that("com_segment_missingness works w/g (group|strata)_vars", {
     setNames(meta_data2[[SCALE_LEVEL]], nm = meta_data2[[VAR_NAMES]])[
       meta_data[[VAR_NAMES]]
     ]
-  expect_message({
+  expect_message2({
     r1 <- com_segment_missingness(study_data, meta_data, strata_vars = "CENTER_0",
                                   threshold_value = 5,
                                   color_gradient_direction = "above",

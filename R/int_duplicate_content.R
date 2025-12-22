@@ -9,14 +9,14 @@
 #'
 #' @param level [character] a character vector indicating whether the assessment should be conducted at the study level (level = "dataframe") or at the segment level (level = "segment").
 #' @param ... Depending on `level`, passed to either
-#'            [util_int_duplicate_content_segment] or
-#'            [util_int_duplicate_content_dataframe]
+#'            `util_int_duplicate_content_segment` or
+#'            `util_int_duplicate_content_dataframe`
 #'
 #' @inheritParams .template_function_indicator
 #'
 #' @return a [list]. Depending on `level`, see
-#'   [util_int_duplicate_content_segment] or
-#'   [util_int_duplicate_content_dataframe] for a description of the outputs.
+#'   `util_int_duplicate_content_segment` or
+#'   `util_int_duplicate_content_dataframe` for a description of the outputs.
 #'
 #' @export
 int_duplicate_content <- function(level = c("dataframe", "segment"),

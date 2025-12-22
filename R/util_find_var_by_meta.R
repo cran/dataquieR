@@ -16,7 +16,7 @@
 #'
 #' @family metadata_management
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 util_find_var_by_meta <- function(resp_vars,
                                   meta_data = "item_level",
                                   label_col = LABEL,

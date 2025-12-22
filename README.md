@@ -11,6 +11,8 @@ version](https://img.shields.io/badge/R%3E%3D-3.6.0-6666ff.svg)](https://cran.r-
 Status](https://gitlab.com/libreumg/dataquier/badges/master/pipeline.svg?ignore_skipped=true)](https://libreumg.gitlab.io/dataquier/)
 [![Coverage](https://codecov.io/gl/libreumg/dataquier/branch/master/graph/badge.svg?token=79TK6GQTMG)](https://app.codecov.io/gl/libreumg/dataquier)
 [![CRAN-Version](https://www.r-pkg.org/badges/version/dataquieR)](https://cran.r-project.org/package=dataquieR)
+![Latest
+Release](https://gitlab.com/libreumg/dataquier/-/badges/release.svg)
 [![DOI](https://img.shields.io/badge/DOI-10.32614%2FCRAN.package.dataquieR-00be00.svg)](https://doi.org/10.32614/CRAN.package.dataquieR)
 [![CRAN-Downloads](https://cranlogs.r-pkg.org/badges/dataquieR)](https://www.r-pkg.org/pkg/dataquieR)
 [![Project Status: Active – The project has reached a stable, usable
@@ -26,7 +28,7 @@ developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.re
 The goal of `dataquieR` is to provide functions for assessing data
 quality issues in studies, that can be used alone or in a data quality
 pipeline. `dataquieR` also implements one generic pipeline producing
-`flexdashboard` based HTML5 reports.
+`htmltools` based HTML5 reports.
 
 See also
 
@@ -62,6 +64,12 @@ devtools::install_gitlab("libreumg/dataquier")
 
 For examples and additional documentation, please refer to our
 [website](https://dataquality.qihs.uni-greifswald.de).
+
+## dataquieR usage questionnaire
+
+To help us improve `dataquieR`, we invite you to provide your feedback
+by completing this short survey ([English](https://3x7.de/kd4l6) or
+[German](https://3x7.de/4f884) version).
 
 ## Suggested packages
 

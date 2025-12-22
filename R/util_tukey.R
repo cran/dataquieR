@@ -10,7 +10,7 @@
 #'
 #' @family outlier_functions
 #' @concept outlier
-#' @keywords internal
+#' @noRd
 
 util_tukey <- function(x) {
   xq1 <- as.numeric(quantile(x, na.rm = TRUE)[2])

@@ -7,7 +7,9 @@
 prep_datatype_from_data(
   resp_vars = colnames(study_data),
   study_data,
-  .dont_cast_off_cols = FALSE
+  .dont_cast_off_cols = FALSE,
+  guess_character = getOption("dataquieR.guess_character", default =
+    dataquieR.guess_character_default)
 )
 }
 \arguments{
@@ -19,6 +21,9 @@ Hint: Only data frames supported, no URL
 or file names.}
 
 \item{.dont_cast_off_cols}{\link{logical} internal use, only}
+
+\item{guess_character}{\link{logical} guess a data type for character columns
+based on the values}
 }
 \value{
 vector of data types
@@ -30,4 +35,7 @@ Get data types from data
 \dontrun{
 dataquieR::prep_datatype_from_data(cars)
 }
+}
+\seealso{
+\code{\link[=prep_robust_guess_data_type]{prep_robust_guess_data_type()}}
 }

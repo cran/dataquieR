@@ -10,7 +10,7 @@
 #'                     rules of `SI`-closeness do not help selecting the most
 #'                     suitable unit.
 #'
-#' @keywords internal
+#' @noRd
 #'
 #' @examples
 #' \dontrun{
@@ -108,7 +108,7 @@ util_unit2baseunit <- function(unit,
   r <- names(mp)[base_unit]
   allowed_set <- c("base", "derived", "accepted", "common")
   orig_r <- r
-  while (unique && length(r) > 1 && length(allowed_set > 0)) {
+  while (unique && length(r) > 1 && length(allowed_set) > 0) {
     orig_r <- r
     r <- r[UNIT_SOURCES[r] %in% allowed_set]
     allowed_set <- head(allowed_set, -1)

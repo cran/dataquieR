@@ -1,17 +1,17 @@
 test_that("com_item_missingness works", {
   skip_on_cran() # slow and errors will be obvious.
-  skip_if_not_installed("withr")
+  
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
 
   md0 <- meta_data
   md0$STUDY_SEGMENT <- NULL
-  expect_message(invisible(
+  expect_message2(invisible(
     com_item_missingness(study_data = study_data,
                          item_level = md0,
                          suppressWarnings = TRUE)
@@ -57,7 +57,7 @@ test_that("com_item_missingness works", {
   w <- gsub("(\n|^|\r)+>.*$", "", w)
   expect_false(any(grepl("include_sysmiss", w)))
 
-  expect_message(invisible(
+  expect_message2(invisible(
     com_item_missingness(study_data = study_data,
                          item_level = meta_data,
                          suppressWarnings = TRUE)
@@ -113,7 +113,7 @@ test_that("com_item_missingness works", {
   ), regexp =
     paste(".+cause_label_df.+ is not a data frame."))
 
-  expect_message(invisible(
+  expect_message2(invisible(
     com_item_missingness(study_data = study_data,
                          item_level = meta_data, suppressWarnings = TRUE,
                          threshold_value = "XX")
@@ -147,6 +147,10 @@ test_that("com_item_missingness works", {
                                  "for participants not being",
                                  "part of one of the segments .+"),
                            paste("There are \\d+ meassurements",
+                                 "of .+",
+                                 "for participants not being",
+                                 "part of one of the segments .+"),
+                           paste("There are \\d+ meassurements",
                                        "of .+",
                                        "for participants not being",
                                        "part of one of the segments .+")
@@ -168,6 +172,10 @@ test_that("com_item_missingness works", {
                            paste("Combining .+ and assignments in .+ in",
                                  ".+ is discouraged. This may cause",
                                  "errors."),
+                           paste("There are \\d+ meassurements",
+                                 "of .+",
+                                 "for participants not being",
+                                 "part of one of the segments .+"),
                            paste("There are \\d+ meassurements",
                                  "of .+",
                                  "for participants not being",

@@ -1,5 +1,8 @@
 test_that("dq_report_by works with content na", {
-  skip_if_not_installed("withr")
+  skip_if_not_installed("DT")
+  skip_if_not_installed("markdown")
+  skip_if_not_installed("stringdist")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -9,7 +12,7 @@ test_that("dq_report_by works with content na", {
     # TODO: test with all sorts of _by calls and on windows
     target <- withr::local_tempdir("testdqareportby")
 
-    expect_message(dq_report_by("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
+    expect_message2(dq_report_by("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData",
                  dimensions = "int",
                  cores = NULL,
                  segment_column = NULL,

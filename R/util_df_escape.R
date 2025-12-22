@@ -3,7 +3,7 @@
 #' @param x [data.frame] to be escaped
 #'
 #' @return [data.frame] with html escaped content
-#' @keywords internal
+#' @noRd
 util_df_escape <- function(x) {
   if (identical(attr(x, "is_html_escaped"), TRUE)) {
     return(x)

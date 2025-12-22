@@ -18,7 +18,7 @@
 #'
 #' @family reporting_functions
 #' @concept html
-#' @keywords internal
+#' @noRd
 util_float_index_menu <- function(index_menu_table, object) {
   if (missing(object)) {
     object <- do.call(htmltools::tagList,

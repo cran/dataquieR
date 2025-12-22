@@ -44,7 +44,7 @@
 #' @seealso [prep_min_obs_level]
 #' @family data_management
 #' @concept robustness
-#' @keywords internal
+#' @noRd
 util_check_group_levels <- function(study_data,
                                     group_vars,
                                     min_obs_in_subgroup = -Inf,

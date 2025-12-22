@@ -4,10 +4,17 @@
 \alias{prep_dq_data_type_of}
 \title{Get the dataquieR \code{DATA_TYPE} of \code{x}}
 \usage{
-prep_dq_data_type_of(x)
+prep_dq_data_type_of(
+  x,
+  guess_character = getOption("dataquieR.guess_character", default =
+    dataquieR.guess_character_default)
+)
 }
 \arguments{
 \item{x}{object to define the dataquieR data type of}
+
+\item{guess_character}{\link{logical} guess a data type for character columns
+based on the values}
 }
 \value{
 the dataquieR data type as listed in \code{DATA_TYPES}

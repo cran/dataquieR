@@ -8,8 +8,8 @@
 #' `.meta_data_env` -- an environment for easy metadata access
 #'
 #' used by the dq_report2-pipeline
-#' @seealso [meta_data_env_id_vars] [meta_data_env_co_vars]
-#'          [meta_data_env_time_vars] [meta_data_env_group_vars]
+#' @seealso `meta_data_env_id_vars()` `meta_data_env_co_vars()`
+#'          `meta_data_env_time_vars()` `meta_data_env_group_vars()`
 #' @name meta_data_env
 #' @keywords internal
 .meta_data_env <- new.env(parent = environment())
@@ -23,7 +23,7 @@
 #'         `explode` attribute set to `FALSE`
 #' @seealso [meta_data_env]
 #' @name meta_data_env_id_vars
-#' @keywords internal
+#' @noRd
 .meta_data_env$id_vars <- function(entity) {
   util_expect_scalar(entity, check_type = is.character)
   if (target_meta_data == "cross-item_level") {
@@ -56,16 +56,16 @@
 #' @details
 #' In the environment, `target_meta_data` should be set either to
 #' `item_level` or to `cross-item_level`.
-#' @return a vector with id-variables for each entity-entry, having the
+#' @return a vector with flags for each entity-entry, having the
 #'         `explode` attribute set to `FALSE`
 #' @seealso [meta_data_env]
 #' @name meta_data_env_criteria
-#' @keywords internal
+#' @noRd
 .meta_data_env$multivariate_outlier_check <- function(entity) {
   util_expect_scalar(entity, check_type = is.character)
   if (target_meta_data == "cross-item_level") {
     if (!CONTRADICTION_TERM %in% colnames(meta_data_cross_item)) {
-      meta_data_cross_item <- NA_character_
+      meta_data_cross_item[[CONTRADICTION_TERM]] <- NA_character_
     }
     r <- util_empty(
       meta_data_cross_item[!util_empty(meta_data_cross_item[[CHECK_ID]]) &
@@ -83,6 +83,7 @@
       } else {
         if (!util_empty(.r)) {
           util_warning("Found invalid entry in %s, treated as missing",
+                       sQuote(MULTIVARIATE_OUTLIER_CHECK),
                        applicability_problem = TRUE)
         }
         mvolc <- getOption("dataquieR.MULTIVARIATE_OUTLIER_CHECK",
@@ -110,6 +111,50 @@
   r
 }
 
+#' Extract `MAHALANOBIS_THRESHOLD` for variable group
+#' @param entity vector of item- or variable group identifiers
+#' @details
+#' In the environment, `target_meta_data` should be set either to
+#' `item_level` or to `cross-item_level`.
+#' @return a vector with thresholds for each entity-entry, having the
+#'         `explode` attribute set to `FALSE`
+#' @seealso [meta_data_env]
+#' @name meta_data_env_criteria
+#' @noRd
+.meta_data_env$mahalanobis_threshold <- function(entity) {
+  util_expect_scalar(entity, check_type = is.character)
+  if (target_meta_data == "cross-item_level") {
+    .r <- getOption("dataquieR.MAHALANOBIS_THRESHOLD",
+              dataquieR.MAHALANOBIS_THRESHOLD_default)
+    if (MAHALANOBIS_THRESHOLD %in% colnames(meta_data_cross_item)) {
+      .r <-
+        meta_data_cross_item[!util_empty(meta_data_cross_item[[CHECK_ID]]) &
+                               meta_data_cross_item[[CHECK_ID]] ==
+                               entity, MAHALANOBIS_THRESHOLD]
+      if (tolower(trimws(.r)) %in% c("true", "1", "t", "+")) {
+        .r <- dataquieR.MAHALANOBIS_THRESHOLD_default
+      }
+    } else {
+      return("") # do not run the check by default
+    }
+    r <- suppressWarnings(as.numeric(.r))
+    if (!util_empty(r) && (
+        r < 0 ||
+        r > 1
+    )) {
+      r <- dataquieR.MAHALANOBIS_THRESHOLD_default
+      util_warning("Found invalid entry in %s, used %s",
+                   sQuote("MAHALANOBIS_THRESHOLD"),
+                   dQuote(r),
+                   applicability_problem = TRUE)
+    }
+  } else {
+    util_error()
+  }
+  if (length(r) > 0)
+    attr(r, "explode") <- FALSE
+  r
+}
 
 #' Extract selected outlier criteria for a given item or variable group
 #' @param entity vector of item- or variable group identifiers
@@ -120,7 +165,7 @@
 #'         `explode` attribute set to `FALSE`
 #' @seealso [meta_data_env]
 #' @name meta_data_env_criteria
-#' @keywords internal
+#' @noRd
 .meta_data_env$criteria <- function(entity) {
   util_expect_scalar(entity, check_type = is.character)
   if (target_meta_data == "cross-item_level") {
@@ -153,7 +198,7 @@
 #'         `explode` attribute set to `FALSE`
 #' @seealso [meta_data_env]
 #' @name meta_data_env_n_rules
-#' @keywords internal
+#' @noRd
 .meta_data_env$n_rules <- function(entity) {
   util_expect_scalar(entity, check_type = is.character)
   if (target_meta_data == "cross-item_level") {
@@ -170,6 +215,9 @@
                                       ifnotfound = NA_integer_)))
   } else {
     util_error()
+  }
+  if (identical(r, "NA")) {
+    r <- NA_character_
   }
   r1 <- suppressWarnings(as.integer(r))
   if (any(is.na(r) != is.na(r1))) {
@@ -225,7 +273,7 @@
 #'         entity-entry, having the `explode` attribute set to `TRUE`
 #' @seealso [meta_data_env]
 #' @name meta_data_env_time_vars
-#' @keywords internal
+#' @noRd
 .meta_data_env$time_vars <- function(resp_vars) {
   util_expect_scalar(resp_vars, check_type = is.character)
   r <- vapply(FUN.VALUE = character(1),
@@ -247,11 +295,32 @@
 .meta_data_env$resp_vars <- function(resp_vars, f = fkt) { # FIXME: Make multivariate
   if (length(resp_vars) == 0) return(resp_vars)
   util_stop_if_not(length(resp_vars) == 1)
+  if (COMPUTED_VARIABLE_ROLE %in% colnames(meta_data)) {
+    cvr <- meta_data[meta_data[[label_col]] == resp_vars,
+                      COMPUTED_VARIABLE_ROLE, TRUE]
+    if (length(cvr) == 1 && !util_empty(cvr)) {
+      applicable_functions <- unlist(util_parse_assignments(util_get_concept_info("ssi",
+                                                   get("SSI_METRICS") == cvr,
+                                                   "functions",
+                                                   drop = TRUE)))
+      applicable_functions <- unique(gsub("\\..*$", "", applicable_functions))
+      if (fkt %in% applicable_functions) {
+        return(resp_vars)
+      } else {
+        return(character(0))
+      }
+    }
+  }
   only_roles <- util_get_concept_info("implementations", get("function_R")
                                    == f, "only_roles")[["only_roles"]]
   if (length(only_roles) == 1 && !util_empty(only_roles)) {
     only_roles <- util_parse_assignments(only_roles)
   } else {
+    if (length(only_roles) != 1) {
+      util_warning(c("Internal warning, sorry; please report: not exactly",
+                     "one entry for %s inside DQ_OBS"),
+                   sQuote(f))
+    }
     if (startsWith(f, "int_") ||
         startsWith(f, "des_")) {
       ## default for integrity and descripors
@@ -277,7 +346,7 @@
 #'         set to `TRUE`
 #' @name meta_data_env_group_vars
 #' @seealso [meta_data_env]
-#' @keywords internal
+#' @noRd
 .meta_data_env$group_vars <- function(resp_vars) {
   util_expect_scalar(resp_vars, check_type = is.character)
   r <- vapply(FUN.VALUE = character(1),
@@ -499,12 +568,31 @@ util_meta_data_env <- local({
         }
         cal
       }
+
       clon$call <- function(cal) {
         cl <- sys.call()
-        cl[[1]] <- as.symbol("provisionize_call")
+        cl[[1]] <- as.symbol("provisionize_call") # a bit hacky, and using debug output, it should not work this way, but it does?!
         with_dataframe_environment(env = .dfre,
                                    eval.parent(eval(cl)))
       }
+
+      # Alternative solution using kind of a functinal this but with
+      # cirucular references:
+      # clon$call <- function(cal) {
+      #   cal <- substitute(cal)
+      #   prov_cal <-
+      #     clon$provisionize_call(cal, internal = TRUE)
+      #   with_dataframe_environment(env = .dfre,
+      #                              eval.parent(prov_cal))
+      #
+      # }
+      #
+      # # The following code needs to be cleaned to save memory, but according to
+      # # Gemini and ChatGPT does R a "Mark-and-Sweep" and will remove this, as
+      # # soon as no reference to clon exists, any more. 2025-06-06 Str /
+      # clon$clon <- clon
+      # ##
+
       r <- fix_fkts(clon)
       r
     })

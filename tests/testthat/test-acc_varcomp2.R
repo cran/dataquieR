@@ -1,7 +1,7 @@
 test_that("varcomp works", {
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -23,6 +23,8 @@ test_that("varcomp works", {
     study_data = study_data, meta_data = meta_data, label_col = LABEL)
 
   expect_false(inherits(res2, "try-error"))
+
+  skip_if_not_installed("ordinal")
 
   # integer
   # meta_data[[DATA_TYPE]][meta_data[[LABEL]] == "N_INJURIES_0"]

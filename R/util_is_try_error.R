@@ -3,7 +3,7 @@
 #' @param x
 #'
 #' @return [logical()] if it is a try-error
-#' @keywords internal
+#' @noRd
 util_is_try_error <- function(x) {
   inherits(x, "try-error")
 }
@@ -13,7 +13,7 @@ util_is_try_error <- function(x) {
 #' @param x the try-error object
 #'
 #' @return [condition] of the try-error
-#' @keywords internal
+#' @noRd
 util_condition_from_try_error <- function(x) {
   if (!util_is_try_error(x)) {
     util_error("Internal error %s: Not a try-error. Please report, sorry.",

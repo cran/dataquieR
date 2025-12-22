@@ -2,7 +2,7 @@ test_that("util_heatmap_1th works", {
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   skip_on_cran() # will be remoed, currently used only by segment missingness which is also tested
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   label_col <- LABEL
   prep_prepare_dataframes(.internal = TRUE)
   hm1 <- util_heatmap_1th(

@@ -18,10 +18,10 @@ summarized by one column (currently, we support
 \item{meta_data}{\link{meta_data}}
 }
 \value{
-a \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} plot
+a \code{htmltools} compatible object or \code{NULL}, if package is missing
 }
 \description{
-Create a \code{ggplot2} pie chart
+needs \code{htmltools}
 }
 \seealso{
 Other summary_functions: 
@@ -31,18 +31,6 @@ Other summary_functions:
 \code{\link{prep_extract_summary.dataquieR_result}()},
 \code{\link{prep_extract_summary.dataquieR_resultset2}()},
 \code{\link{prep_render_pie_chart_from_summaryclasses_plotly}()},
-\code{\link{prep_summary_to_classes}()},
-\code{\link{util_as_cat}()},
-\code{\link{util_as_integer_cat}()},
-\code{\link{util_extract_indicator_metrics}()},
-\code{\link{util_get_category_for_result}()},
-\code{\link{util_get_colors}()},
-\code{\link{util_get_labels_grading_class}()},
-\code{\link{util_get_message_for_result}()},
-\code{\link{util_get_rule_sets}()},
-\code{\link{util_get_ruleset_formats}()},
-\code{\link{util_get_thresholds}()},
-\code{\link{util_html_table}()},
-\code{\link{util_sort_by_order}()}
+\code{\link{prep_summary_to_classes}()}
 }
 \concept{summary_functions}

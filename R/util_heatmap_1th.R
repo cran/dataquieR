@@ -29,7 +29,7 @@
 #'
 #' @family figure_functions
 #' @concept summary
-#' @keywords internal
+#' @noRd
 util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
                              invert, cols, strata
                              # , flip_mode # TODO: pass through from all usages of this function
@@ -161,7 +161,7 @@ util_heatmap_1th <- function(df, cat_vars, values, threshold, right_intv,
       scale_x_discrete(name = namex) +
       scale_y_continuous(name = "(%)",
                          limits = c(0, 1.2 * max(df$z2))) +
-      coord_flip() # TODO: use util_coord_flip
+      coord_flip() # TODO: use util_coord_flip util_lazy_add_coord(p, fli)
   }
 
   return(list(SummaryPlot = p))

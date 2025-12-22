@@ -7,7 +7,7 @@
 #' @seealso [base::abbreviate]
 #' @family process_functions
 #' @concept reporting
-#' @keywords internal
+#' @noRd
 util_abbreviate <- function(x) {
   util_expect_scalar(x, allow_more_than_one = TRUE, allow_null = TRUE,
                      allow_na = TRUE, check_type = is.character)

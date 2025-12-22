@@ -11,17 +11,18 @@
 #'                        unique names in case of reports created with dq_report_by
 #'                        containing the same variable in several reports
 #'                        (e.g., creation of reports by sex)
-#'
+#' @inheritParams util_filter_repsum
 #' @return something, `htmltools` can render
 #'
-#' @keywords internal
+#' @noRd
 #'
 util_render_table_dataquieR_summary <- function(x,
                                                 grouped_by =
                                                   c("call_names",
                                                     "indicator_metric"),
                                                 folder_of_report = NULL,
-                                                var_uniquenames = NULL) { # FIXME: -> util_*, remove other table printer functions, make prep_extract_summary util_* and, maybe, remove ggplot2 alternative pre for pie charts
+                                                var_uniquenames = NULL,
+                                                vars_to_include = c("study")) { # FIXME: -> util_*, remove other table printer functions, make prep_extract_summary util_* and, maybe, remove ggplot2 alternative pre for pie charts
   # make check happy:
   ordered_call_names <- NULL
   ordered_var_names <- NULL
@@ -41,6 +42,10 @@ util_render_table_dataquieR_summary <- function(x,
     for (n in names(this)) {
       assign(n, get(n, envir = this), envir = environment())
     }
+    result <- util_filter_repsum(result, vars_to_include, meta_data,
+                                 rownames_of_report,
+                                 label_col)
+    rownames_of_report <- attr(result, "rownames_of_report")
     labels <- this$labels #obviously not attached by with_environment
     # extract the colors from the grading_format file
     gg_colors <- util_get_colors()
@@ -327,11 +332,15 @@ util_render_table_dataquieR_summary <- function(x,
       #===== Merge the 3 object in one data frame =======
 
       # Merge results and errors in one object (errors become 4 extra columns)
+      if (!VAR_NAMES %in% colnames(result_err_msg))
+        result_err_msg[[VAR_NAMES]] <- rep(NA_character_, nrow(result_err_msg))
       result_full <- merge(
         result_full,
         result_err_msg,
         by = c(VAR_NAMES, "call_names"), all = TRUE)
 
+      if (!VAR_NAMES %in% colnames(result_err_cat))
+        result_err_cat[[VAR_NAMES]] <- rep(NA_character_, nrow(result_err_cat))
       result_full <- merge(
         result_full,
         result_err_cat,
@@ -1031,7 +1040,7 @@ util_render_table_dataquieR_summary <- function(x,
         # indicator_metrics in the second column
         mapping_of_cns <-
           expand.grid(call_names = unique(result$call_names),
-                      indicator_metric = unique(result$indicator_metric),
+                      indicator_metric = unique(na.omit(result$indicator_metric)),
                       stringsAsFactors = FALSE)
 
 
@@ -1137,8 +1146,10 @@ util_render_table_dataquieR_summary <- function(x,
           setNames(seq(length(this$ordered_call_names)),
                    nm = this$ordered_call_names)[
                      mapping_of_cns[["call_names"]]]
+        # FIXME: If called with grouped_by = c("call_names"), the columns imtitle and imtitle_short are NA at their second occurrence
         # Then create an order based on indicator metric e.g., 9
-        mapping_of_cns$order_slot <- rank(mapping_of_cns[["indicator_metric"]])
+        mapping_of_cns$order_slot <- util_order_of_indicator_metrics(mapping_of_cns[["indicator_metric"]]) # was rank(mapping_of_cns[["indicator_metric"]])
+
         # Then combine the 2 values e.g., 3009
         mapping_of_cns$order <-
           (mapping_of_cns$order_call * 10 **
@@ -1265,7 +1276,7 @@ util_render_table_dataquieR_summary <- function(x,
                       as.character,
                       FUN.VALUE = character(1)))
         # import the dqi informations
-        dqi_info <- util_get_concept_info("dqi")
+        dqi_info <- util_get_concept_info("dqi") # order_nr. AbbreviationMetrics$order
         # use the Definition from dqi to create the description of the hover text
         mapping_of_cns$coldesc <-
           util_map_labels(mapping_of_cns$indicators_no_prefix,
@@ -1276,7 +1287,7 @@ util_render_table_dataquieR_summary <- function(x,
 
         # order the columns
         # create an order based on indicator metric e.g., 9
-        mapping_of_cns$order <- rank(mapping_of_cns[["indicator_metric_suff"]])
+        mapping_of_cns$order <- util_order_of_indicator_metrics(mapping_of_cns[["indicator_metric_suff"]]) # was rank(mapping_of_cns[["indicator_metric_suff"]])
 
         # create an object with the order
         order_of_cols <- c(

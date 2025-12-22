@@ -15,7 +15,7 @@
 #'
 #' @family data_management
 #' @concept data_management
-#' @keywords internal
+#' @noRd
 util_dichotomize <- function(study_data,
                              meta_data,
                              label_col = VAR_NAMES) {

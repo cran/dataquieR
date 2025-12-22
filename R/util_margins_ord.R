@@ -37,6 +37,7 @@
 #'                     scale_colour_manual aes geom_vline
 #' @importFrom stats qnorm p.adjust
 #'
+#' @noRd
 util_margins_ord <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL,
                              min_obs_in_subgroup = 5, min_subgroups = 5,
                              ds1, label_col,
@@ -187,23 +188,35 @@ util_margins_ord <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   # figure ---------------------------------------------------------------------
   warn_code <- c("1" = "#B2182B", "0" = "#2166AC")
 
-  p1 <- ggplot(plot_data,
-               aes(x = .data[["ran_ef"]], y = .data[["group"]],
-                   col = .data[["GRADING"]])) +
-    # +/- 1 SD of random effects (group_var) around 0
-    geom_vline(xintercept = -sqrt(as.numeric(ordinal::VarCorr(fit1)[[group_vars]])),
-               linetype = 2, col = "gray60") +
-    geom_vline(xintercept = sqrt(as.numeric(ordinal::VarCorr(fit1)[[group_vars]])),
-               linetype = 2, col = "gray60") +
-    geom_pointrange(aes(xmin = .data[["lower"]], xmax = .data[["upper"]])) +
-    geom_point() +
-    scale_color_manual(values = warn_code, guide = "none") +
-    xlab("conditional mode") +
-    ylab("") +
-    theme_minimal() +
-    ggtitle(label = title,
-            subtitle = adjusted_hint) +
-    labs(caption = "Dashed lines mark the interval 0 \u00B1 SD.")
+  p1 <- util_create_lean_ggplot(
+    ggplot(plot_data,
+           aes(x = .data[["ran_ef"]],
+               y = .data[["group"]],
+               col = .data[["GRADING"]])) +
+      # +/- 1 SD of random effects (group_var) around 0
+      geom_vline(xintercept = -sqrt(as.numeric(ordinal::VarCorr(fit1)[[group_vars]])),
+                 linetype = 2,
+                 col = "gray60") +
+      geom_vline(xintercept = sqrt(as.numeric(ordinal::VarCorr(fit1)[[group_vars]])),
+                 linetype = 2,
+                 col = "gray60") +
+      geom_pointrange(aes(xmin = .data[["lower"]],
+                          xmax = .data[["upper"]])) +
+      geom_point() +
+      scale_color_manual(values = warn_code,
+                         guide = "none") +
+      xlab("conditional mode") +
+      ylab("") +
+      theme_minimal() +
+      ggtitle(label = title,
+              subtitle = adjusted_hint) +
+      labs(caption = "Dashed lines mark the interval 0 \u00B1 SD."),
+    plot_data = plot_data,
+    fit1 = fit1,
+    group_vars = group_vars,
+    warn_code = warn_code,
+    title = title,
+    adjusted_hint = adjusted_hint)
 
   # alternative code, for testing and further development ----------------------
   # # the emmeans approach works if we include the grouping variable as

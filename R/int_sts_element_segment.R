@@ -93,7 +93,12 @@ int_sts_element_segment <- function(study_data,
   suppressMessages(
     suppressWarnings(
       withCallingHandlers(
-        prep_prepare_dataframes(.label_col = VAR_NAMES, .allow_empty = TRUE),
+        without_pipeline(
+          prep_prepare_dataframes(.study_data = study_data,
+                                  .meta_data = meta_data,
+                                  .label_col = VAR_NAMES, .allow_empty = TRUE,
+                                  .internal = TRUE)
+        ),
         message = register_cond,
         warning = register_cond
       )

@@ -5,9 +5,14 @@
 #'            object, if called recursively
 #'
 #' @return undisclosed object
-#' @keywords internal
+#' @noRd
 util_undisclose <- function(x, ...) {
   UseMethod("util_undisclose")
+}
+
+#' @export
+util_undisclose.dq_lazy_ggplot <- function(x, ...) {
+  util_undisclose(prep_realize_ggplot(x), ...)
 }
 
 #' @export
@@ -21,6 +26,21 @@ util_undisclose.default <- function(x, ...) {
 
 #' @export
 util_undisclose.dataquieR_resultset2 <- function(x, ...) {
+  if ("cores" %in% names(list(...))) {
+    cores <- list(...)$cores
+  }
+  if ((("cores" %in% names(list(...))) ||
+      .called_in_pipeline) && rlang::is_integerish(dynGet("cores")) &&
+      as.integer(dynGet("cores")) > 1 &&
+      suppressWarnings(util_ensure_suggested("parallel", err = FALSE))) {
+    mycl <- parallel::makePSOCKcluster(as.integer(dynGet("cores")))
+    parallel::clusterCall(mycl, library, "dataquieR", character.only = TRUE)
+    parallel::clusterCall(mycl, loadNamespace, "hms")
+    on.exit(parallel::stopCluster(mycl))
+  } else {
+    mycl <- parallel::getDefaultCluster()
+  }
+
   my_tabs <- lapply(setNames(nm = names(attr(x, "referred_tables"))),
                    function(dfn) {
                       data.frame(`NA` = paste(dQuote(dfn), "is not available."),
@@ -29,7 +49,8 @@ util_undisclose.dataquieR_resultset2 <- function(x, ...) {
 
   attr(x, "referred_tables")[] <- my_tabs
 
-  x[] <- lapply(x, util_undisclose, ...)
+  x[] <- util_par_lapply_lb(cl = mycl,
+                            x, util_undisclose, ...)
   return(x)
 }
 
@@ -103,6 +124,12 @@ util_undisclose.gg <- function(x, ...) {
 }
 
 #' @export
+util_undisclose.util_pairs_ggplot_panels <- util_undisclose.gg
+
+#' @export
+util_undisclose.svg_plot_proxy <- util_undisclose.gg
+
+#' @export
 util_undisclose.ggmatrix_plot_obj <- util_undisclose.gg
 
 #' @export
@@ -121,10 +148,13 @@ util_undisclose.data.frame <- function(x, ...) {
 #' new function: no warranty, so far.
 #'
 #' @param x an object to un-disclose, a
+#' @param cores can be an integer with a number of cores to use. if not
+#'              specified, the function uses the default cluster, if available
+#'              and falls back to serial un-disclosing, otherwise.
 #'
 #' @return undisclosed object
 #' @export
-prep_undisclose <- function(x) {
+prep_undisclose <- function(x, cores) {
   if (!(inherits(x, "dataquieR_resultset2") ||
         inherits(x, "dataquieR_result"))) {
     util_error("%s works for results or reports, only",
@@ -133,5 +163,10 @@ prep_undisclose <- function(x) {
   }
   util_message("%s comes without any warranty, so far",
                sQuote("prep_undisclose"));
-  suppressMessages(util_undisclose(x))
+  if (missing(cores)) {
+    return(suppressMessages(util_undisclose(x)))
+  } else {
+    return(suppressMessages(util_undisclose(x, cores = cores)))
+  }
+
 }

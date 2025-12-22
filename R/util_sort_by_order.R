@@ -11,7 +11,7 @@
 #'
 #' @family summary_functions
 #' @concept reporting
-#' @keywords internal
+#' @noRd
 
 util_sort_by_order <- function(x, order, ...) {
   x <- ordered(x, order)
@@ -30,7 +30,7 @@ util_sort_by_order <- function(x, order, ...) {
 #' }
 #' @family reporting_functions
 #' @concept summary
-#' @keywords internal
+#' @noRd
 util_order_by_order <- function(x, order, ...) {
   x <- ordered(x, order)
   order(x, ...)
@@ -47,10 +47,14 @@ util_order_by_order <- function(x, order, ...) {
 #'
 #' @family string_functions
 #' @concept reporting
-#' @keywords internal
+#' @noRd
 util_sub_string_left_from_. <- function(x) {
-  util_stop_if_not(all(grepl(fixed = TRUE, ".", x))) # there must be at least one dot to separated the col. name from the row name (wolog this is the first dots)
-  vapply(strsplit(x, ".", fixed = TRUE), `[[`, 1, FUN.VALUE = character(1))
+  splitted <- strsplit(x, ".", fixed = TRUE)
+  util_stop_if_not(
+    "there must be at least one dot to separated the col. name from the row name (wolog this is the first dots)" =
+      all(vapply(splitted, length, FUN.VALUE = integer(1)) >= 2))
+  #util_stop_if_not(all(grepl(fixed = TRUE, ".", x))) # there must be at least one dot to separated the col. name from the row name (wolog this is the first dots)
+  vapply(splitted, `[[`, 1, FUN.VALUE = character(1))
 }
 
 #' Get sub-string right from first `.`
@@ -66,10 +70,14 @@ util_sub_string_left_from_. <- function(x) {
 #'
 #' @family string_functions
 #' @concept reporting
-#' @keywords internal
+#' @noRd
 util_sub_string_right_from_. <- function(x) {
-  util_stop_if_not(all(grepl(fixed = TRUE, ".", x))) # there must be at least one dot to separated the col. name from the row name (wolog this is the first dots)
-  vapply(lapply(strsplit(x, ".", fixed = TRUE), `[`, -1),
+  splitted <- strsplit(x, ".", fixed = TRUE)
+  util_stop_if_not(
+    "there must be at least one dot to separated the col. name from the row name (wolog this is the first dots)" =
+      all(vapply(splitted, length, FUN.VALUE = integer(1)) >= 2))
+  #util_stop_if_not(all(grepl(fixed = TRUE, ".", x))) # there must be at least one dot to separated the col. name from the row name (wolog this is the first dots)
+  vapply(lapply(splitted, `[`, -1),
          paste0, collapse = ".", FUN.VALUE = character(1))
 
 }

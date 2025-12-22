@@ -1,11 +1,12 @@
-#' @keywords internal
+#' @noRd
 util_parallel_futures <- function(all_calls,
                                   worker,
                                   n_nodes,
                                   progress,
                                   debug_parallel,
-                                  my_storr_object) { # nocov start
+                                  my_storr_object) {
   util_ensure_suggested("future")
+  outer_env <- parent.frame()
   if (!is.null(parallel::getDefaultCluster())) {
     oplan <- future::plan(list(future::tweak(future::cluster,
                                              persistent = TRUE,
@@ -19,17 +20,14 @@ util_parallel_futures <- function(all_calls,
            function(i) {
              progress(100 * i/length(all_calls))
 
-             # covr instrumentation breaks the results, here.
-             # nocov start
              future::future(seed = TRUE, # IDEA: Use future_promise: https://rstudio.github.io/promises/articles/future_promise.html
                {
-                 worker(all_calls[[i]], env = environment(), nm =
+                 worker(all_calls[[i]], env = outer_env, nm =
                           names(all_calls)[[i]],
                         function_name = rlang::call_name(all_calls[[i]]),
                         my_storr_object = my_storr_object)
                }
               )
-             # nocov end
 
              #   label = names(all_calls)[[i]],
              #   expr = {
@@ -39,7 +37,7 @@ util_parallel_futures <- function(all_calls,
              # )
            }
   )
-  r <- lapply(rp, future::value)
+  r <- future::value(rp)
   # repeat {
   #   rsvld <- vapply(rp, resolved, FUN.VALUE = logical(1))
   #   if (all(rsvld)) break;
@@ -53,4 +51,4 @@ util_parallel_futures <- function(all_calls,
   # }
   # as.list(r)
   r
-} # nocov end
+}

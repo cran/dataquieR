@@ -4,7 +4,7 @@
 \alias{[.dataquieR_resultset2}
 \title{Get a subset of a \code{dataquieR} \code{dq_report2} report}
 \usage{
-\method{[}{dataquieR_resultset2}(x, row, col, res, drop = FALSE, els = row)
+\method{[}{dataquieR_resultset2}(x, row, col, res, drop = FALSE, els = row, as_raw = FALSE)
 }
 \arguments{
 \item{x}{the report}
@@ -18,6 +18,9 @@
 \item{drop}{drop, if length is 1}
 
 \item{els}{used, if in list-mode with named argument}
+
+\item{as_raw}{retrieve the result maybe as compressed \code{raw} \code{util_compress()}
+serialized object}
 }
 \value{
 a list with results, depending on \code{drop} and the number of results,

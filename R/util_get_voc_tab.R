@@ -3,7 +3,7 @@
 #' @param .data_frame_list [environment] cache for loaded data frames
 #'
 #' @return [data.frame] the (combined) table with known vocabularies
-#' @keywords internal
+#' @noRd
 util_get_voc_tab <- function(.data_frame_list = .dataframe_environment()) {
   voc_tab <- util_get_concept_info("voc")
   if ("<>" %in% names(.data_frame_list)) { # also labels?

@@ -43,7 +43,7 @@
 
 #' Version of the API
 #'
-#' @seealso [.get_internal_api()]
+#' @seealso `.get_internal_api()`
 #'
 #' @export
 #' @keywords internal

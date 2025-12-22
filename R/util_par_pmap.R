@@ -24,7 +24,7 @@
 #'
 #' @family process_functions
 #' @concept reporting
-#' @keywords internal
+#' @noRd
 util_par_pmap <- function(.l, .f, ...,
                           cores = list(mode = "socket",
                                        cpus = util_detect_cores(),

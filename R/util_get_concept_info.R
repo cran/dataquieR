@@ -7,7 +7,7 @@
 #'
 #' @family concept_functions
 #' @concept reporting
-#' @keywords internal
+#' @noRd
 
 util_get_concept_info <- function(filename, ...) {
   if (exists(filename, .concept_chache, mode = "list")) {
@@ -26,7 +26,7 @@ util_get_concept_info <- function(filename, ...) {
   cl$x <- dfr
   r <- try(eval(cl,
        envir = parent.frame(),
-       enclos = environment()))
+       enclos = environment()), silent = TRUE)
   if (util_is_try_error(r)) {
     util_warning(r)
     r <- NULL

@@ -1,16 +1,15 @@
 test_that("con_contradictions works", {
   skip_on_cran() # slow and deprecated, use redcap rules, now
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
-  skip_if_not_installed("withr")
-  withr::local_timezone('CET')
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  require_english_locale_and_berlin_tz()
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
   meta_data <- prep_scalelevel_from_data_and_metadata(meta_data = meta_data,
                                                       study_data = study_data)
   meta_data[startsWith(meta_data[[LABEL]], "EDUCATION_"), SCALE_LEVEL] <-
     SCALE_LEVELS$ORDINAL
   check_table <- read.csv(
-    "https://dataquality.ship-med.uni-greifswald.de/extdata/contradiction_checks.csv",
+    "https://dataquality.qihs.uni-greifswald.de/extdata/contradiction_checks.csv",
     header = TRUE, sep = "#"
   )
   check_table[1, "tag"] <- "Logical"
@@ -72,11 +71,11 @@ test_that("con_contradictions works", {
   skip_on_cran()
   skip_if_not_installed("vdiffr")
   # TODO: skip_if_not(capabilities()["long.double"])
-  expect_doppelganger2("summary contradiction plot ok",
+  expect_doppelganger2("summary contradictio1 plot ok",
                               on$all_checks$SummaryPlot)
-  expect_doppelganger2("summary contradiction plot ok",
+  expect_doppelganger2("summary contradictio2 plot ok",
                               default$SummaryPlot)
-  expect_doppelganger2("summary contradiction plot ok",
+  expect_doppelganger2("summary contradictio3 plot ok",
                               off$SummaryPlot)
 
   expect_doppelganger2("one cat contradiction plot ok",

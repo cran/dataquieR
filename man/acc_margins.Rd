@@ -135,7 +135,7 @@ Selecting the appropriate distribution is complex. Dozens of continuous,
 discrete or mixed distributions are conceivable in the context of
 epidemiological data. Their exact exploration is beyond the scope of this
 data quality approach. The present function uses the help function
-\link{util_dist_selection}, the assigned \code{SCALE_LEVEL} and the \code{DATA_TYPE}
+\code{util_dist_selection}, the assigned \code{SCALE_LEVEL} and the \code{DATA_TYPE}
 to discriminate the following cases:
 \itemize{
 \item continuous data
@@ -166,4 +166,3 @@ is installed.
 \seealso{
 \href{https://dataquality.qihs.uni-greifswald.de/VIN_acc_impl_margins.html}{Online Documentation}
 }
-\keyword{accuracy}

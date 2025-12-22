@@ -4,7 +4,7 @@
 #'
 #' @return an ordered factor
 #' @family summary_functions
-#' @keywords internal
+#' @noRd
 util_as_cat <- function(category) {
   if (is.character(category)) {
     category <- gsub("^cat", "", category)
@@ -25,7 +25,7 @@ util_as_cat <- function(category) {
 #'
 #' @return an integer
 #' @family summary_functions
-#' @keywords internal
+#' @noRd
 util_as_integer_cat <- function(category) {
   if (!is.ordered(category)) category <- util_as_cat(category)
   util_stop_if_not(all(startsWith(levels(category), "cat")))

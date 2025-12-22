@@ -1,6 +1,12 @@
 test_that("dq_report_by error_arguments_test", {
   skip_on_cran() # slow test
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+
+  skip_if_not_installed("DT")
+  skip_if_not_installed("markdown")
+  skip_if_not_installed("stringdist")
+  skip_if_not_installed("storr")
+
   target <- withr::local_tempdir("testdqareporstorr")
   storr_dir <- withr::local_tempdir("testdqareporstorr_dir")
 
@@ -20,7 +26,7 @@ test_that("dq_report_by error_arguments_test", {
   md0$STUDY_SEGMENT <- "STUDY"
 
 
-  expect_message(dq_report_by(sd0,
+  expect_message2(dq_report_by(sd0,
                meta_data = md0,
                dimensions = "int",
                strata_column = "SEX_0",

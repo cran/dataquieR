@@ -24,7 +24,7 @@
 #'
 #' @family condition_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 
 NULL # Documentation is assigned to null (@name in line 1)
 

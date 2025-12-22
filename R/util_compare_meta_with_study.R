@@ -29,7 +29,7 @@
 #'                                                    of decimal places)
 #'         for `return_percentages == TRUE`: a data frame with percentages of
 #'         non-matching datatypes according, each column is a variable, the
-#'         rows follow the vectors returned by [util_check_data_type].
+#'         rows follow the vectors returned by `util_check_data_type`.
 #' @importFrom stats setNames
 #'
 #' @seealso [prep_dq_data_type_of]
@@ -37,7 +37,7 @@
 #'
 #' @family data_management
 #' @concept robustness
-#' @keywords internal
+#' @noRd
 #'
 util_compare_meta_with_study <- function(sdf, mdf, label_col,
                                          check_convertible = FALSE,
@@ -79,18 +79,21 @@ util_compare_meta_with_study <- function(sdf, mdf, label_col,
   } else {
     res_template <- integer(1)
   }
-  sdf[trimws(sdf) == ""] <- NA # enable robust_na = FALSE option to accelerate
+  sdf[util_empty(sdf)] <- NA # enable robust_na = FALSE option to accelerate -- util_empty keeps structure, important for nrow or ncol < 2
   is_data_type <- lapply(setNames(nm = colnames(sdf)),
                          function(x, check_convertible, threshold_value,
                                   return_percentages, check_conversion_stable) {
-    res <- util_check_data_type(sdf[, x, drop = TRUE],
+    ..vct <- sdf[, x, drop = TRUE]
+    attr(..vct, "..cn") <- x
+    res <- util_check_data_type(..vct,
                                 mdf$DATA_TYPE[mdf[[label_col]] == x],
                                 check_convertible = check_convertible,
                                 robust_na = FALSE,
                                 threshold_value = threshold_value,
                                 return_percentages = return_percentages,
                                 check_conversion_stable =
-                                  check_conversion_stable)
+                                  check_conversion_stable,
+                                vname = x)
     bitsToInt<-function(x) { # https://stackoverflow.com/a/25411493
       packBits(rev(c(rep(FALSE, 32-length(x)%%32), as.logical(x))), "integer")
     }

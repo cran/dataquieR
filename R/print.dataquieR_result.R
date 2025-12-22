@@ -1,10 +1,10 @@
 #' Print a [dataquieR] result returned by [dq_report2]
 #' @aliases dataquieR_result
 #' @param x [list] a dataquieR result from [dq_report2] or
-#'                 [util_eval_to_dataquieR_result]
+#'                 `util_eval_to_dataquieR_result`
 #' @param ... passed to print. Additionally, the argument `slot` may be passed
 #'            to print only specific sub-results.
-#' @seealso [util_pretty_print()]
+#' @seealso `util_pretty_print()`
 #' @return see print
 #' @export
 print.dataquieR_result <- function(x, ...) {
@@ -97,7 +97,26 @@ ALLOWED_DATAQUIER_RESULT_NAMES <- character(0)
 })()
 
 util_is_gg <- function(x) {
-  inherits(x, "gg") || ggplot2::is.ggplot(x)
+  # Handle S7-wrapped dq_lazy_ggplot
+  if (dq_lazy_register_s7() &&
+      inherits(x, "S7_object") &&
+      !is.null(.dq_lazy_state$s7_class) &&
+      S7::S7_inherits(x, .dq_lazy_state$s7_class)) {
+    return(TRUE)
+  }
+  return(inherits(x, "gg") || inherits(x, "dq_lazy_ggplot") ||
+           inherits(x, "") ||
+           inherits(x, "util_pairs_ggplot_panels") ||
+           inherits(x, "svg_plot_proxy") ||
+           util_is_gg_plot(x))
+}
+
+util_is_gg_plot <- function(x) {
+  stop(
+    paste("Internal error, sorry. Please report! Will be availble later. As",
+          "a dataquieR developer: util_is_gg_plot cannot be used during package",
+          "load.")
+  )
 }
 
 # r <- dq_report2("ship", meta_data_v2 = "ship_meta_v2", dimensions = NULL); r2 <- dq_report2("study_data", meta_data_v2 = "meta_data_v2", dimensions = NULL);
@@ -307,11 +326,13 @@ print.TableSlot <- function(x, ...) {
 #' Print a `master_result` object
 #'
 #' @param x the object
+#' @param template the template for the `iframes`, not used, so far.
 #' @param ... not used
 #'
 #' @return `invisible(NULL)`
 #' @export
-print.master_result <- function(x, ...) {
+print.master_result <- function(x, template = "default", ...) {
+  template <- "default"
   util_ensure_suggested("htmltools")
   if (isTRUE(getOption('knitr.in.progress'))) {
     f <- withr::local_tempdir(.local_envir = knitr::knit_global())
@@ -330,23 +351,65 @@ print.master_result <- function(x, ...) {
     # FIXME: Remove special treatment of con_limit_deviations in favor of suitable result slots in DQ_OBS
     x$ReportSummaryTable <- NULL
   }
+  cnt <- util_pretty_print(dqr = x, nm = attr(x, "cn"),
+                           is_single_var = FALSE,
+                           use_plot_ly = util_ensure_suggested("plotly", "plot interactive figures", err = FALSE),
+                           dir = f,
+                           ...)
+  util_write_iframe_results(pages = cnt,
+                            progress_msg = function(...) {},
+                            progress = function(...) {},
+                            template_file = system.file("templates",
+                                                        template,
+                                                        "iframe.html",
+                                                        package =
+                                                          packageName()),
+                            dir = f)
   doc <- htmltools::tagList(rmarkdown::html_dependency_jquery(),
                             html_dependency_tippy(),
                             html_dependency_clipboard(),
                             html_dependency_dataquieR(iframe = FALSE),
+                            html_dependency_jspdf(),
                             jqui,
                             htmltools::div(class = "navbar"),
-                     util_pretty_print(dqr = x, nm = attr(x, "cn"),
-                                       is_single_var = FALSE,
-                                       use_plot_ly = util_ensure_suggested("plotly", "plot interactive figures", err = FALSE),
-                                       dir = f,
-                                       ...),
-                     htmltools::tags$script('$(function(){$("body").css("overflow", ""); })'),
+                     cnt,
+                     htmltools::tags$script('window.dataquieR_single_result = true ; $(function(){$("body").css("overflow", ""); $(".navbar").hide(); $(".default-target").height("1em");})'),
                      # htmltools::tags$script('    setTimeout(function() {
                      # debugger
                      #                        window.dispatchEvent(new Event("resize")) }, 500)')
                      )
-  htmltools::save_html(doc, "index.html")
+
+  deps_prepro <- util_copy_all_deps(dir = f,
+                                    doc,
+                                    rmarkdown::html_dependency_jquery(),
+                                    jqui,
+                                    html_dependency_clipboard(),
+                                    html_dependency_tippy(),
+                                    rmarkdown::html_dependency_font_awesome(),
+                                    html_dependency_dataquieR(),
+                                    html_dependency_jspdf()
+  )
+
+  html_result <- htmltools::htmlTemplate(system.file("templates",
+                                                     template,
+                                                     "report.html",
+                                                     package =
+                                                       packageName()),
+                                         document_ = TRUE,
+                                         spage = doc,
+                                         logo = NULL,
+                                         menu = NULL,
+                                         loading = NULL,
+                                         deps = deps_prepro$deps,
+                                         title = attr(x, "nm"),
+                                         backlink = NULL,
+                                         header = NULL)
+
+  f <- file(description = "index.html", open = "w", encoding = "utf-8")
+  on.exit(close(f))
+
+  cat(as.character(html_result), file = f)
+
   if (!("view" %in% names(list(...))) || (!identical(list(...)[["view"]],
                                                   FALSE))) {
     if (isTRUE(getOption('knitr.in.progress'))) {
@@ -419,10 +482,12 @@ print.Slot <- function(x, ...) {
   attr(x, "warning") <- NULL
   attr(x, "error") <- NULL
   withr::with_pdf(NULL,
-                  o <- capture.output(r <- NextMethod()))
+                  o <- capture.output(rr <- withVisible(NextMethod())))
+  r <- rr$value
+  v <- rr$visible
   if (!is.null(r))
     class(r) <- setdiff(class(r), "Slot")
-  if ((!("view" %in% names(list(...))) || (!identical(list(...)[["view"]],
+  if ((v || !("view" %in% names(list(...))) || (!identical(list(...)[["view"]],
                                                      FALSE)))) {
     print(r)
     # if (any(nzchar(o))) {

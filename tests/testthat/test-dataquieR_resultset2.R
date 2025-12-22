@@ -10,7 +10,7 @@ test_that("dataquieR_resultset2 class", {
 
   prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx")
 
-  study_data <- head(prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData"), 100)
+  study_data <- head(prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE), 100)
   meta_data <- prep_get_data_frame("item_level")
 
   mlt <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx| missing_table")
@@ -47,7 +47,7 @@ test_that("dataquieR_resultset2 class", {
                          dimensions =
                            c("Integrity",
                              "Consistency")),
-    "(Some variables have labels with more than 30 characters in.+|Lost 16.7% of the study data because of missing/not assignable metadata|Need.+VAR_NAMES.+discard.+|.+dummy names)"
+    "(Some variables have labels with more than 60 characters in.+|Unique labels are required|Lost 16.7% of the study data because of missing/not assignable metadata|Need.+VAR_NAMES.+discard.+|.+dummy names|Some variables have no label in .+LABEL)"
   )
   report0 <- report
 
@@ -56,8 +56,7 @@ test_that("dataquieR_resultset2 class", {
 
   x0 <- force(report0[[testidx]]$SummaryTable)
   expect_s3_class(report0[["con_limit_deviations.v00004"]], "master_result")
-  expect_error(report0[["con_limit_deviations.v0000xx4"]],
-               regexp = "element not found")
+  expect_null(report0[["con_limit_deviations.v0000xx4"]])
 
 
   suppressWarningsMatching({
@@ -67,15 +66,14 @@ test_that("dataquieR_resultset2 class", {
 
     expect_error(
       report[["con_limit_deviations.v0000xx4"]] <- NULL,
-      regexp = "element not found")
+      regexp = "Extending reports is not supported")
   }, regexps = ".*inefficient.*")
 
   x1 <- force(report[[testidx]]$SummaryTable)
   # save(x0, x1, report, file = "/tmp/xx.RData")
 
   expect_s3_class(report[["con_limit_deviations.v00004"]], "master_result")
-  expect_error(report[["con_limit_deviations.v0000xx4"]],
-               regexp = "element not found")
+  expect_null(report[["con_limit_deviations.v0000xx4"]])
 
   report0 <- prep_set_backend(report, NULL)
   report2 <- prep_set_backend(report0,
@@ -88,17 +86,20 @@ test_that("dataquieR_resultset2 class", {
 
   expect_equal(
     report0$`int_all_datastructure_dataframe.[ALL]`,
-    report$`int_all_datastructure_dataframe.[ALL]`
+    report$`int_all_datastructure_dataframe.[ALL]`,
+    ignore_attr = "system.time"
   )
 
   expect_equal(
     report2$`int_all_datastructure_dataframe.[ALL]`,
-    report$`int_all_datastructure_dataframe.[ALL]`
+    report$`int_all_datastructure_dataframe.[ALL]`,
+    ignore_attr = "system.time"
   )
 
   expect_equal(
     report3$`int_all_datastructure_dataframe.[ALL]`,
-    report$`int_all_datastructure_dataframe.[ALL]`
+    report$`int_all_datastructure_dataframe.[ALL]`,
+    ignore_attr = "system.time"
   )
 
   # testthat::skip_if(identical(Sys.getenv("R_COVR"), "true"),

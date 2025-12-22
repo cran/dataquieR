@@ -8,11 +8,11 @@
 #'
 #' @family string_functions
 #' @concept reporting
-#' @keywords internal
+#' @noRd
 util_translate <- function(
     keys,
     ns = "general",
-    lang = getOption("dataquieR.lang", "")) {
+    lang = getOption("dataquieR.lang", dataquieR.lang_default)) {
   translations <-
     util_get_concept_info("translations")
   vapply(keys, function(key) {

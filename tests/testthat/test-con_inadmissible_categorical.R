@@ -2,7 +2,7 @@ test_that("con_inadmissible_categorical works", {
   skip_on_cran() # slow
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -14,11 +14,11 @@ test_that("con_inadmissible_categorical works", {
     IAVCatAll <- con_inadmissible_categorical(study_data = study_data,
                                               meta_data  = meta_data,
                                               label_col  = "LABEL")
-  } %>% expect_message(
+  } %>% expect_message2(
     regexp = paste("All variables with VALUE_LABELS.+",
                            "in the metadata are used."),
     perl = TRUE
-  ) %>% expect_message(
+  ) %>% expect_message2(
     regexp = paste("The following variable.s.: .+_IAV.+flag.s.",
                            "inadmissible values."),
     perl = TRUE

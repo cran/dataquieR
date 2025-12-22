@@ -7,7 +7,7 @@
 #'
 #' @family lookup_functions
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 
 util_variable_references <- function(meta_data = "item_level") {
   util_expect_data_frame(meta_data)

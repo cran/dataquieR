@@ -1,6 +1,9 @@
 test_that("dq_report2 works", {
+  skip_if_not_installed("DT")
+  skip_if_not_installed("stringdist")
+  skip_if_not_installed("markdown")
   skip_on_cran() # slow, parallel, ...
-  skip_if_not_installed("withr")
+
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
                        dataquieR.WARNINGS_WITH_CALLER = TRUE,
@@ -8,7 +11,7 @@ test_that("dq_report2 works", {
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx")
 
-  study_data <- head(prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData"), 100)
+  study_data <- head(prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE), 100)
   meta_data <- prep_get_data_frame("item_level")
 
   mlt <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx| missing_table")
@@ -190,17 +193,23 @@ test_that("dq_report2 works", {
                                "Consistency")),
       regexp = ".*Labels are required to create a report.*"),
       regexp = ".*Unique labels are required to create a report.*"),
-    "Some variables have labels with more than 30 characters in .+LABEL.+"
+    c("Some variables have labels with more than 60 characters in .+LABEL.+",
+      "Unique labels are required",
+      ".*duplicated in the metadata and cannot be used as label.*")
   )
-  expect_warning(
-    report <- dq_report2(sd0, md1,
-                         label_col = VAR_NAMES,
-                         cores = NULL,
-                         dimensions =
-                           c("Integrity",
-                             "Consistency")),
-    regexp = ".*This will cause suboptimal outputs and possibly.*"
-    )
+  suppressWarningsMatching(
+    expect_warning(
+      report <- dq_report2(sd0, md1,
+                           label_col = VAR_NAMES,
+                           cores = NULL,
+                           dimensions =
+                             c("Integrity",
+                               "Consistency")),
+      regexp = ".*This will cause suboptimal outputs and possibly.*"
+      ),
+    c("Some variables have no label in .+LABEL", "Unique labels are required",
+      "more than 60 characters")
+  )
 
   md1$VAR_NAMES[2] <- "" # this will be considered different
   colnames(sd0)[2] <- "" # because both are missing, and NA maybe unequal
@@ -221,10 +230,11 @@ test_that("dq_report2 works", {
           perl = TRUE
         ),
       regexp =
-        "Some variables have labels with more than 30 characters in .+LABEL.+",
+        "Some variables have labels with more than 60 characters in .+LABEL.+",
       perl = TRUE
     ),
-    "(Some variables have labels with more than 30 characters in .+LABEL.+|Lost 16.7% of the study data because of missing/not assignable metadata|.+dummy names)"
+    c("(Some variables have duplicated labels in .+LABEL.+|Need.+VAR_NAMES.+in.*meta_data|Some variables have labels with more than 60 characters in .+LABEL.+|Lost 16.7% of the study data because of missing/not assignable metadata|.+dummy names|Some variables have no label in .+LABEL)",
+      ".*duplicated in the metadata and cannot be used as label.*")
   )
 
   suppressWarningsMatching(
@@ -234,7 +244,7 @@ test_that("dq_report2 works", {
                            dimensions =
                              c("Integrity",
                                "Consistency")),
-    "(Some variables have labels with more than 30 characters in .+LABEL.+|Lost 16.7% of the study data because of missing/not assignable metadata|Need.+VAR_NAMES.+discard.+|.+dummy names)"
+    "(Unique labels are required|Some variables have labels with more than 60 characters in .+LABEL.+|Lost 16.7% of the study data because of missing/not assignable metadata|Need.+VAR_NAMES.+discard.+|.+dummy names|Some variables have no label in .+LABEL)"
   )
 
   #warning message that there is no metadata
@@ -288,7 +298,7 @@ test_that("dq_report2 works", {
                                SCALE_LEVEL = "nominal",
                                VALUE_LABELS = NA_character_))
 
-  expect_message(dq_report2(study_data = study_data,
+  expect_message2(dq_report2(study_data = study_data,
                             meta_data = md1,
                             cores = NULL,
                             dimensions = "Integrity"))

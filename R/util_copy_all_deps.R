@@ -5,13 +5,13 @@
 #' @param ... additional `htmltools::htmlDependency` objects to be added to all
 #'            pages, also
 #'
-#' @return `invisible(NULL)`
+#' @return pre-processed dependencies -- a list with `deps` and rendered `pages`
 #'
 #' @family reporting_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_copy_all_deps <- function(dir, pages, ...) {
-
+# FIXME: Crashes for no dependencies
   libdir <- file.path(dir, "lib")
 
   withCallingHandlers({
@@ -19,13 +19,20 @@ util_copy_all_deps <- function(dir, pages, ...) {
   },
   warning = function(cond) { # suppress a waning caused by ggplotly for barplots
     if (startsWith(conditionMessage(cond),
-                   "'bar' objects don't have these attributes: 'mode'")) {
+                   "'bar' objects don't have these attributes: 'mode'") ||
+        startsWith(conditionMessage(cond),
+                   "'box' objects don't have these attributes: 'mode'")) {
       invokeRestart("muffleWarning")
     }
   })
 
   deps <- c(lapply(rendered_pages, `[[`, "dependencies"),
             GLOBAL_ = list(list(...)))
+
+  names(deps)[util_empty(names(deps))] <- paste0("__NULL__",
+                                                         seq_len(sum(util_empty(
+                                                           names(deps)))),
+                                                         "__NULL__")
 
   deps_cnt <- lapply(deps, length)
 
@@ -39,7 +46,7 @@ util_copy_all_deps <- function(dir, pages, ...) {
                           pos_in_file = unlist(pos_in_file))
   deps_info$version <- vapply(deps, `[[`, "version", FUN.VALUE = character(1))
   deps_info$name <- vapply(deps, `[[`, "name", FUN.VALUE = character(1))
-  deps_info$take <- FALSE
+  deps_info$take <- rep(FALSE, nrow(deps_info))
 
   # Omit older version, if libraries are duplicated
   deps_info <- split(deps_info, deps_info$name)

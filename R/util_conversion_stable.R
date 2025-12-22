@@ -5,7 +5,7 @@
 #' suffixes in a date, just note, that
 #' `as.POSIXct("2020-01-01 12:00:00 CET asdf")` does not fail in `R`), but
 #' `util_conversion_stable("2020-01-01 12:00:00 CET asdf", DATA_TYPES$DATETIME)`
-#' will.
+#' will return `FALSE`.
 #'
 #' *HINT:*
 #' `util_conversion_stable(.Machine$integer.max + 1, DATA_TYPES$INTEGER)` seems
@@ -18,7 +18,7 @@
 #'                                     conversions or matches.
 #'
 #' @return [numeric] ratio of convertible entries in `vector`
-#' @keywords internal
+#' @noRd
 util_conversion_stable <- function(vector, data_type,
                                    return_percentages = FALSE) {
   util_expect_scalar(return_percentages, check_type = is.logical)
@@ -30,7 +30,7 @@ util_conversion_stable <- function(vector, data_type,
                          "argument %s needs to be convertible to a string",
                                              sQuote("vector")),
                      check_type = is.character,
-                     convert_if_possible = as.character)
+                     convert_if_possible = util_as_character)
   util_match_arg(data_type, DATA_TYPES)
   if (data_type == DATA_TYPES$INTEGER) {
     as_target <- util_data_type_conversion(vector, data_type)
@@ -55,9 +55,12 @@ util_conversion_stable <- function(vector, data_type,
     as_target <- util_data_type_conversion(vector, data_type)
     res <- util_empty(vector) == util_empty(as_target)
   } else if (data_type == DATA_TYPES$DATETIME) {
-    # FIXME: integrate somehow my_parse_date to util_data_type_conversion
+    # FIXME: integrate somehow my_parse_date to util_data_type_conversion -- also parse_time and so on
     # as_target <- util_data_type_conversion(string, data_type)
     as_target <- .my_parse_date(vector)
+    res <- util_empty(vector) == util_empty(as_target)
+  } else if (data_type == DATA_TYPES$TIME) {
+    as_target <- util_as_time_only(vector)
     res <- util_empty(vector) == util_empty(as_target)
   } else if (data_type == DATA_TYPES$STRING) {
     res <- rep(TRUE, length(vector))
@@ -73,7 +76,7 @@ util_conversion_stable <- function(vector, data_type,
 .my_parse_date <- function(x) {
   x <- trimws(x, "right")
   # remove all OlsonNames, if endswith
-  for (n in OlsonNames()) {
+  for (n in union(OlsonNames(), c("CEST", "CET"))) {
     subst <- !is.na(x) & endsWith(x, n)
     l <- nchar(n)
     x[subst] <-

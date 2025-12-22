@@ -1,13 +1,13 @@
 test_that("pro_applicability_matrix works", {
   skip_on_cran() # deprecated
-  skip_if_not_installed("withr")
+  
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
                    dataquieR.MESSAGES_WITH_CALLER = TRUE)
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -90,7 +90,7 @@ test_that("pro_applicability_matrix works", {
     md0[[KEY_STUDY_SEGMENT]][[2]] <- NA
   if (STUDY_SEGMENT %in% names(md0))
     md0[[STUDY_SEGMENT]][[2]] <- NA
-  expect_message(
+  expect_message2(
     appmatrix <- pro_applicability_matrix(study_data = study_data,
                                           meta_data = md0,
                                           label_col = LABEL,
@@ -101,7 +101,7 @@ test_that("pro_applicability_matrix works", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     appmatrix <- pro_applicability_matrix(study_data = study_data,
                                           meta_data = meta_data,
                                           label_col = LABEL,
@@ -117,7 +117,7 @@ test_that("pro_applicability_matrix works", {
   md0 <- meta_data
   md0$KEY_STUDY_SEGMENT <- NULL
   md0$STUDY_SEGMENT <- NULL
-  expect_message(
+  expect_message2(
     appmatrix <- pro_applicability_matrix(study_data = study_data,
                                           meta_data = md0,
                                           label_col = LABEL,

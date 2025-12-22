@@ -10,6 +10,7 @@ like m, g, N, ...
 Other UNITS: 
 \code{\link{UNIT_IS_COUNT}},
 \code{\link{UNIT_PREFIXES}},
+\code{\link{UNIT_PREFIX_FACTORS}},
 \code{\link{UNIT_SOURCES}},
 \code{\link{WELL_KNOWN_META_VARIABLE_NAMES}}
 }

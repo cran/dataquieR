@@ -9,7 +9,7 @@
 #'
 #' @return [logical] if entries in x start with prefix-DOT/equal to prefix
 #'
-#' @keywords internal
+#' @noRd
 util_startsWith_prefix._or_equals_prefix <- function(x, prefix, sep = ".") {
   startsWith(x, paste0(prefix, sep)) || x == prefix
 }

@@ -18,6 +18,7 @@
   </clipPath>
 </defs>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+<rect x='0.00' y='0.00' width='720.00' height='576.00' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
 </g>
 <defs>
   <clipPath id='cpNTQuMTR8MzQ2Ljg5fDg4LjI1fDQ4NS44MA=='>
@@ -64,8 +65,8 @@
 <text x='568.15' y='82.96' text-anchor='middle' style='font-size: 8.80px; fill: #1A1A1A; font-family: sans;' textLength='101.24px' lengthAdjust='spacingAndGlyphs'>PART_QUESTIONNAIRE</text>
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
-<text transform='translate(200.52,66.67) rotate(-90)' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='31.29px' lengthAdjust='spacingAndGlyphs'>MATCH</text>
-<text transform='translate(568.15,66.67) rotate(-90)' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='31.29px' lengthAdjust='spacingAndGlyphs'>MATCH</text>
+<text transform='translate(206.57,66.67) rotate(-90)' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='31.29px' lengthAdjust='spacingAndGlyphs'>MATCH</text>
+<text transform='translate(574.20,66.67) rotate(-90)' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='31.29px' lengthAdjust='spacingAndGlyphs'>MATCH</text>
 <text x='416.84' y='380.82' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='46.14px' lengthAdjust='spacingAndGlyphs'>ITEM_1_0</text>
 <text x='416.84' y='200.12' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='64.48px' lengthAdjust='spacingAndGlyphs'>QUEST_DT_0</text>
 <text x='49.21' y='290.47' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='31.14px' lengthAdjust='spacingAndGlyphs'>SBP_0</text>

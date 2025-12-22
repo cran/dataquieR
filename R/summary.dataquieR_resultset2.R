@@ -325,6 +325,12 @@ util_compute_rowmaxes <- function(result,
                                   filter_of,
                                   labels_of_var_names_in_report) {
   indicator_metric <- NULL # make R CMD check happy
+  if (!VAR_NAMES %in% colnames(result)) {
+    result[[VAR_NAMES]] <- rep(NA_character_, nrow(result))
+  }
+  if (!"class" %in% colnames(result)) {
+    result[["class"]] <- rep(NA_character_, nrow(result))
+  }
   result %>% dplyr::filter(!startsWith(as.character(indicator_metric), "CAT_") &
                              !startsWith(as.character(indicator_metric), "MSG_")) %>%
     dplyr::group_by(VAR_NAMES) %>%

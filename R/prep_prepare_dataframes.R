@@ -52,7 +52,8 @@
 #'
 #' @seealso acc_margins
 #'
-#' @return `ds1` the study data with mapped column names
+#' @return `ds1` the study data with mapped column names, `invisible()`, if
+#'         not `.internal`
 #'
 #' @examples
 #' \dontrun{
@@ -128,6 +129,11 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
                                       rlang::env_inherits(
                                         rlang::caller_env(),
                                         parent.env(environment()))) {
+
+  case_insens <- util_is_na_0_empty_or_false(
+    getOption("dataquieR.study_data_colnames_case_sensitive",
+              dataquieR.study_data_colnames_case_sensitive_default))
+
 #  dimension <- substr(rlang::call_name(rlang::caller_call()), 1, 3)
   util_expect_scalar(.sm_code,
                      check_type = util_all_is_integer,
@@ -247,8 +253,10 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     util_error("Need study data as a data frame: %s",
                conditionMessage(attr(.study_data, "condition")))
   }
+  .study_data <- util_normalize_time_only_columns(.study_data)
 
-  if (!exists("already_ppdf", parent.frame()) &&
+  if (.internal &&
+      !exists("already_ppdf", parent.frame()) &&
       all(c("item_level", "meta_data") %in% caller_formals) &&
       !isTRUE(missing_in_parent["item_level"]) &&
       !isTRUE(missing_in_parent["meta_data"]) &&
@@ -380,7 +388,9 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
                                     VARATT_REQUIRE_LEVELS$REQUIRED)
   }
 
-  assign("already_ppdf", TRUE, envir = parent.frame())
+  if (.internal) {
+    assign("already_ppdf", TRUE, envir = parent.frame())
+  }
 
   if (is.null(.label_col)) {
     .label_col <- VAR_NAMES
@@ -395,6 +405,12 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
                sQuote("study_data"),
                sQuote("NA"), applicability_problem = TRUE,
                intrinsic_applicability_problem = TRUE)
+  }
+
+  if (case_insens) {
+    colnames(study_data) <-
+      util_align_colnames_case(.colnames = colnames(study_data),
+                               .var_names = meta_data[[VAR_NAMES]])
   }
 
   # Exchanged to "label_col"
@@ -432,34 +448,7 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
       meta_data[[DATA_TYPE]] <- NA_character_
     }
 
-    which_wrong <-
-      util_empty(meta_data[[DATA_TYPE]]) |
-      !(meta_data[[DATA_TYPE]] %in% DATA_TYPES)
-
-    wrong_names <- meta_data[which_wrong, VAR_NAMES, drop = TRUE]
-
-    wrong_names <- intersect(colnames(study_data), wrong_names)
-
-    datatypes <- prep_datatype_from_data(resp_vars = wrong_names,
-                                         study_data = study_data)
-
-    if (length(datatypes) != 0) {
-      util_warning(
-       c("For the variables %s, I have no valid %s in the %s. I've predicted",
-         "the %s from the %s yielding %s."),
-        util_pretty_vector_string(wrong_names),
-       sQuote(DATA_TYPE),
-       sQuote("meta_data"),
-       sQuote(DATA_TYPE),
-       sQuote("study_data"),
-       dQuote(prep_deparse_assignments(names(datatypes), datatypes,
-                                       mode = "string_codes")),
-        applicability_problem = TRUE,
-        intrinsic_applicability_problem = FALSE
-      )
-    }
-    meta_data[which_wrong, DATA_TYPE] <-
-      datatypes[meta_data[which_wrong, VAR_NAMES]]
+    meta_data <- .util_fix_data_types(meta_data, study_data)
   }
 
   if (!.called_in_pipeline) meta_data <- util_validate_known_meta(meta_data)
@@ -476,11 +465,13 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
 
   study_data_hash <- rlang::hash(.study_data)
   meta_data_hash <- rlang::hash(.meta_data)
-  meta_tabs_hash <- rlang::hash(lapply(unique(unlist(meta_data[,
-                                                               endsWith(
-                                                                 colnames(
-                                                                   meta_data),
-                                                                 "_TABLE")])),
+  .tabs <- sort(unique(unlist(meta_data[,
+                                       endsWith(
+                                         colnames(
+                                           meta_data),
+                                         "_TABLE")])))
+  .tabs <- .tabs[!is.na(.tabs)]
+  meta_tabs_hash <- rlang::hash(lapply(.tabs,
                                        function(tb) {
                                          try(prep_get_data_frame(tb),
                                              silent = TRUE)
@@ -497,11 +488,30 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
            "@", study_data_hash,
            "@", meta_data_hash,
            "@", meta_tabs_hash,
-           "@", label_col)
+           "@", label_col,
+           "@", getOption("dataquieR.old_type_adjust",
+                          dataquieR.old_type_adjust_default))
 
   if (key %in% names(.study_data_cache)) {
-    if (getOption("dataquieR.study_data_cache_metrics", FALSE)) {
-      e <- getOption("dataquieR.study_data_cache_metrics_env")
+    if (getOption("dataquieR.study_data_cache_metrics",
+                  dataquieR.study_data_cache_metrics_default)) {
+      e <- getOption("dataquieR.study_data_cache_metrics_env",
+                     dataquieR.study_data_cache_metrics_env_default)
+      if (!is.environment(e) ||
+          rlang::env_is_locked(e) ||
+          any(rlang::env_binding_are_locked(e, intersect(
+            names(e),
+            c("usage"))))) {
+        util_warning(c("in `option()` %s, %s expects an unlocked",
+                       "environment with an unlocked binding in %s.
+                       Use %s, instead."),
+                     sQuote("dataquieR.study_data_cache_metrics_env"),
+                     sQuote(packageName),
+                     sQuote("usage"),
+                     sQuote('dataquieR.study_data_cache_metrics_env_default'))
+        e <- dataquieR.study_data_cache_metrics_env_default
+        e$usage <- list()
+      }
       if (is.null(e$usage)) e$usage <- list()
       if (is.null(e$usage[[key]])) e$usage[[key]] <- 0
       e$usage[[key]] <- e$usage[[key]] + 1
@@ -583,34 +593,43 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     meta_data <- meta_data[order(meta_data[[VAR_NAMES]]), , FALSE]
   }
 
+  relevant_vars_for_warnings <- NULL
+
   # adjust data types, if enabled
   util_stop_if_not(
     `Pipeline should never request study data w/ unchanged datatypes, sorry, internal error, please report` =
                      !(!.adjust_data_type && .called_in_pipeline))
-  if (.adjust_data_type && !.called_in_pipeline) {
-
+  if (.adjust_data_type || .apply_factor_metadata) {
     relevant_vars_for_warnings <- lapply(
-        setNames(nm = names(.meta_data_env)[endsWith(names(.meta_data_env), "_vars")]), # all arguments populated by the pipeline with some variable references
-        util_find_indicator_function_in_callers
-      )
+      setNames(nm = names(.meta_data_env)[endsWith(names(.meta_data_env), "_vars")]), # all arguments populated by the pipeline with some variable references
+      util_find_indicator_function_in_callers
+    )
     if (is.null(relevant_vars_for_warnings$resp_vars)) { # original call was not for item level, so no filtering of problems by related items
       relevant_vars_for_warnings <- NULL
     }
     relevant_vars_for_warnings <- unlist(relevant_vars_for_warnings,
                                          recursive = TRUE)
+
+    # Important: Remove all non-character matches (maybe, our call-stack kept the metadata-env-look-up-functions, whyever)
+    relevant_vars_for_warnings <-
+      relevant_vars_for_warnings[vapply(relevant_vars_for_warnings,
+                                         is.character, FUN.VALUE = logical(1))]
+
     relevant_vars_for_warnings <-
       relevant_vars_for_warnings[!util_empty(relevant_vars_for_warnings)]
 
     try(relevant_vars_for_warnings <- # TODO: sometimes, relevant... does not have variables from label_col, if correct variable use used find var by names and mapped them to varnames already # this corresponds with TODO POSSIBLE_VARS in util_correct_variable_use
-      util_find_var_by_meta(relevant_vars_for_warnings,
-                    meta_data = meta_data,
-                    label_col = label_col,
-                    target = VAR_NAMES,
-                    allowed_sources =
-                      c(VAR_NAMES, LABEL, LONG_LABEL, label_col),
-                    ifnotfound = relevant_vars_for_warnings),
-      silent = TRUE)
+          util_find_var_by_meta(relevant_vars_for_warnings,
+                                meta_data = meta_data,
+                                label_col = label_col,
+                                target = VAR_NAMES,
+                                allowed_sources =
+                                  c(VAR_NAMES, LABEL, LONG_LABEL, label_col),
+                                ifnotfound = relevant_vars_for_warnings),
+        silent = TRUE)
 
+  }
+  if (.adjust_data_type && !.called_in_pipeline) {
     study_data <- util_adjust_data_type(
       study_data = study_data,
       meta_data = meta_data,
@@ -742,14 +761,38 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
   attr(ds1, "HL_viol_to_NA") <- .replace_hard_limits
 
   if (.apply_factor_metadata) {
+    relevant_vars_for_warnings_lb <-
+      util_map_labels(relevant_vars_for_warnings, meta_data = meta_data,
+                      from = VAR_NAMES, to = label_col,
+                      relevant_vars_for_warnings)
+
     # convert columns to factors?
     if (!isTRUE(attr(ds1, "apply_fact_md"))) {
       which_cols <- intersect(meta_data[[attr(ds1, "label_col")]],
                               colnames(ds1))
       ds1[, which_cols] <- lapply(which_cols,
-                                  function(cl) { # IDEA: What to do with mising labels for numerical variables?
+                                  function(cl) { # IDEA: What to do with missing labels for numerical variables?
                                     # prep_load_workbook_like_file("meta_data_v2")
                                     # (prep_prepare_dataframes(.study_data = "study_data", .meta_data = il, .label_col = LABEL, .apply_factor_metadata = TRUE))
+                                    if (!(
+                                      SCALE_LEVEL %in% colnames(meta_data))) {
+                                      util_error(c("%s was called with %s = %s",
+                                                   "and %s = %s",
+                                                   "but %s does not provide a",
+                                                   "column %s -- please provide",
+                                                   "this column or call with ",
+                                                   "%s = %s"),
+                                                 sQuote(rlang::call_name(sys.call(1))),
+                                                 sQuote(".apply_factor_metadata"),
+                                                 dQuote(.apply_factor_metadata),
+                                                 sQuote(".amend_scale_level"),
+                                                 dQuote(.amend_scale_level),
+                                                 "meta_data",
+                                                 sQuote(SCALE_LEVEL),
+                                                 sQuote(".amend_scale_level"),
+                                                 dQuote(TRUE),
+                                                 applicability_problem = TRUE)
+                                    }
                                     sl <- meta_data[meta_data[[attr(ds1, "label_col")]] == cl,
                                                     SCALE_LEVEL, drop = TRUE]
                                     if (sl %in% c(
@@ -818,17 +861,48 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
                                         levels <- c(levels, empir)
                                         labels <- c(labels, empir)
                                       }
-                                      ds1[[cl]] <- do.call(factor, list(
+                                      .fct <- do.call(factor, list(
                                         x = ds1[[cl]],
                                         levels = levels,
                                         labels = labels,
                                         ordered = ordered
                                       ), quote = TRUE);
+                                      if
+                                        (any(is.na(.fct) != is.na(ds1[[cl]]))) {
+                                        hint <- sprintf(paste(
+                                          c("Found the following",
+                                            "inadmissible categorical",
+                                            "values in %s: %s -- I've",
+                                            "removed them.")),
+                                          sQuote(cl),
+                                          util_pretty_vector_string(
+                                            unique(ds1[[cl]][is.na(.fct) !=
+                                                               is.na(ds1[[cl]])])
+                                          ))
+                                      } else {
+                                        hint <- character(0)
+                                      }
+                                      .fct <-
+                                        util_attach_attr(
+                                          .fct,
+                                          hint = hint)
+                                    } else {
+                                      .fct <- ds1[[cl]]
                                     }
-                                    return(ds1[[cl]])
+                                    return(.fct)
                                   }
       )
     }
+    # message for hints in columns - currently only inadm.cat.values.
+    for (cl in intersect(relevant_vars_for_warnings_lb,
+                         colnames(ds1))) {
+      if (length(attr(ds1[[cl]], "hint")) > 0 &&
+          !all(is.na(attr(ds1[[cl]], "hint")))) {
+        util_message(attr(ds1[[cl]], "hint"))
+      }
+    }
+
+    ##
   }
 
   attr(ds1, "apply_fact_md") <- .apply_factor_metadata
@@ -847,7 +921,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
   }
 
   dataquieR.study_data_cache_max <-
-    getOption("dataquieR.study_data_cache_max", Inf)
+    getOption("dataquieR.study_data_cache_max",
+              dataquieR.study_data_cache_max_default)
 
   if (is.data.frame(ds1) &&
       !(key %in% names(.study_data_cache))) {
@@ -855,7 +930,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
               vapply(.study_data_cache, object.size, FUN.VALUE = numeric(1)),
               na.rm = TRUE) <= dataquieR.study_data_cache_max) {
         .study_data_cache[[key]] <- util_attach_attr(ds1, call = sys.call())
-      } else if (getOption("dataquieR.study_data_cache_metrics", FALSE)) {
+      } else if (getOption("dataquieR.study_data_cache_metrics",
+                           dataquieR.study_data_cache_metrics_default)) {
         class(dataquieR.study_data_cache_max) <- "object_size"
         rlang::inform(
           sprintf(
@@ -870,7 +946,11 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
       }
   }
 
-  invisible(ds1)
+  if (.internal) {
+    invisible(ds1)
+  } else {
+    ds1
+  }
 }
 
 util_maybe_load_meta_data_v2 <- function() {
@@ -983,3 +1063,38 @@ util_ck_arg_aliases <- function() {
                           "Data_type_matches", "apply_fact_md",
                           "apply_fact_md_inadm", "study_data",
                           "normalized", "version")
+
+.util_fix_data_types <- function(meta_data, study_data) {
+  if (missing(study_data))
+    study_data <- data.frame()
+  which_wrong <-
+    util_empty(meta_data[[DATA_TYPE]]) |
+    !(meta_data[[DATA_TYPE]] %in% DATA_TYPES)
+
+  wrong_names <- meta_data[which_wrong, VAR_NAMES, drop = TRUE]
+
+  wrong_names <- intersect(colnames(study_data), wrong_names)
+
+  datatypes <- prep_datatype_from_data(resp_vars = wrong_names,
+                                       study_data = study_data)
+
+  if (length(datatypes) != 0) {
+    util_warning(
+      c("For the variables %s, I have no valid %s in the %s. I've predicted",
+        "the %s from the %s yielding %s."),
+      util_pretty_vector_string(wrong_names),
+      sQuote(DATA_TYPE),
+      sQuote("meta_data"),
+      sQuote(DATA_TYPE),
+      sQuote("study_data"),
+      dQuote(prep_deparse_assignments(names(datatypes), datatypes,
+                                      mode = "string_codes")),
+      applicability_problem = TRUE,
+      intrinsic_applicability_problem = FALSE
+    )
+  }
+  meta_data[which_wrong, DATA_TYPE] <-
+    datatypes[meta_data[which_wrong, VAR_NAMES]]
+
+  meta_data
+}

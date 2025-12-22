@@ -5,7 +5,7 @@
 #'
 #' @family robustness_functions
 #' @concept system
-#' @keywords internal
+#' @noRd
 util_fix_rstudio_bugs <- function() { # nocov start
   if (!util_really_rstudio()) return(invisible(NULL))
   # https://github.com/rstudio/rstudio/issues/6692

@@ -2,7 +2,7 @@ test_that("util_dichotomize works", {
   skip_on_cran() # TODO: activate?
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data[meta_data[[LABEL]] == "EATING_PREFS_0", RECODE_CONTROL] <-
     "0" # 0 = "eat meat" as reference
   meta_data[meta_data[[LABEL]] == "MEAT_CONS_0", RECODE_CASES] <-
@@ -49,7 +49,7 @@ test_that("util_dichotomize is robust", {
   skip_on_cran() # TODO: activate?
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
 
   # with wrong input for the recoding, the function returns the original data
   meta_data[meta_data[[LABEL]] == "EATING_PREFS_0", RECODE_CONTROL] <-

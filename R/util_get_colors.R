@@ -4,7 +4,7 @@
 #'         values are colors as `HTML` `RGB` hexadecimal strings
 #' @family summary_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_get_colors <- function() {
 
   rsts <- util_get_ruleset_formats()

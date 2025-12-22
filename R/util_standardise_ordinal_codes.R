@@ -7,7 +7,7 @@
 #' @param maxlevel_new [integer()] number of categories for output
 #'
 #' @return [integer()] `n` values in `{1, ..., maxlevel_new}`
-#' @keywords internal
+#' @noRd
 util_standardise_ordinal_codes <- function(codes, maxlevel_old, maxlevel_new) {
   util_expect_scalar(maxlevel_old, check_type = util_is_numeric_in(min = 2,
                                                                    whole_num = TRUE,

@@ -17,7 +17,7 @@ prep_apply_coding <- function(study_data, meta_data_v2,
                               meta_data = item_level) {
   util_maybe_load_meta_data_v2()
   util_expect_data_frame(study_data, keep_types = TRUE)
-  prep_prepare_dataframes()
+  prep_prepare_dataframes(.adjust_data_type = FALSE)
   util_expect_data_frame(meta_data, c(VAR_NAMES, VALUE_LABEL_TABLE))
   resp_vars <-
     meta_data[!util_empty(meta_data[[VALUE_LABEL_TABLE]]), VAR_NAMES, drop = TRUE]

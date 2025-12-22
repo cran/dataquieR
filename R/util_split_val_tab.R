@@ -6,7 +6,7 @@
 #'
 #' @return `invisible(NULL)`
 #'
-#' @keywords internal
+#' @noRd
 util_split_val_tab <- function(val_tab = CODE_LIST_TABLE) {
   util_expect_data_frame(val_tab, c(CODE_VALUE, CODE_CLASS))
 

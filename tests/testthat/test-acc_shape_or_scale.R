@@ -2,7 +2,7 @@ test_that("acc_shape_or_scale works with 3 args", {
   skip_on_cran() # slow
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -12,7 +12,7 @@ test_that("acc_shape_or_scale works with 3 args", {
     ]
 
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data,
@@ -28,7 +28,7 @@ test_that("acc_shape_or_scale works with 3 args", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data,
@@ -94,7 +94,7 @@ test_that("acc_shape_or_scale works with 3 args", {
     regexp = "This distribution .+dirichlet.+ is not supported yet..."
   ))
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00006", # uniform and integer
                          study_data = study_data,
@@ -136,7 +136,7 @@ expect_error(
                  "not have an allowed type"),
   perl = TRUE
 )
-expect_message(
+expect_message2(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data,
@@ -155,7 +155,7 @@ expect_message(
     ),
     perl = TRUE
   )
-expect_message(
+expect_message2(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data,
@@ -170,7 +170,7 @@ expect_message(
     ),
     perl = TRUE
   )
-expect_message(
+expect_message2(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data,
@@ -210,7 +210,7 @@ expect_message(
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_shape_or_scale(resp_vars = "v00014",
                          study_data = study_data, meta_data = meta_data),
@@ -243,7 +243,7 @@ test_that("acc_shape_or_scale works with label_col", {
   skip_on_cran() # slow
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   meta_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data.RData")
-  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData")
+  study_data <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE)
   meta_data2 <-
     prep_scalelevel_from_data_and_metadata(study_data = study_data,
                                            meta_data = meta_data)
@@ -270,7 +270,7 @@ test_that("acc_shape_or_scale works with label_col", {
     perl = TRUE
   )
 
-  expect_message(
+  expect_message2(
     res1 <-
       acc_shape_or_scale(resp_vars = "CRP_0",
                          study_data = study_data, meta_data = meta_data,

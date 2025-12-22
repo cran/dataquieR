@@ -1,12 +1,12 @@
 # Makes the manual accessible at run-time
 #' Holds parts of the manual at run-time
-#' @keywords internal
+#' @noRd
 ..manual <- new.env(parent = emptyenv())
 
 # Makes Indicator .//. Descriptor information
 # from the manual accessible at run-time
 #' Holds Indicator .// Descriptor assignments from the manual at run-time
-#' @keywords internal
+#' @noRd
 ..indicator_or_descriptor <- new.env(parent = emptyenv())
 
 #' @name Indicator
@@ -55,7 +55,7 @@ Descriptor <- "Descriptor"
 #'
 #' @family reporting_functions
 #' @concept system
-#' @keywords internal
+#' @noRd
 util_load_manual <- function(rebuild = FALSE,
                              target = "inst/manual.RData",
                              target2 = "inst/indicator_or_descriptor.RData",

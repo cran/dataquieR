@@ -1,7 +1,7 @@
-#' @seealso [util_study_var2factor]
+#' @seealso `util_study_var2factor()`
 #' @family missing_functions
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 util_get_combined_code_lists <- function(x,
                                          code_name,
                                          split_char = SPLIT_CHAR,

@@ -7,7 +7,7 @@
 #'
 #' @family system_functions
 #' @concept reporting
-#' @keywords internal
+#' @noRd
 util_view_file <- function(file) {
   viewer <- getOption("viewer")
   if (is.null(viewer)) { # nocov start

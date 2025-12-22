@@ -24,15 +24,23 @@ window.onresize = function(e) { // if we had the well_known error, do a reload
   }
 }
 
-window.onload = function(){
+window.onload = function() {
   $("body").contextmenu((event) => {
-      event.preventDefault();
-      var coords = {
-        offsetX: event.offsetX,
-        offsetY: event.offsetY,
-        nm: $("#nm").attr("data-nm")
-      };
-      window.sendMsgContextMenu(coords);
+    event.preventDefault();
+    const coords = {
+      x: event.clientX,
+      y: event.clientY,
+      nm: $("#nm").attr("data-nm")
+    };
+    window.sendMsgContextMenu(coords);
+    document.addEventListener("click", function () {
+      window.sendMsgDismissContextMenu();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        window.sendMsgDismissContextMenu();
+      }
+    });
   });
 };
 

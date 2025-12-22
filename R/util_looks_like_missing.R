@@ -16,7 +16,7 @@
 #'
 #' @family metadata_management
 #' @concept missing
-#' @keywords internal
+#' @noRd
 
 
 util_looks_like_missing <- function(x, n_rules = 1) {

@@ -15,16 +15,25 @@
 #' @param colors vector of colors, or a single color
 #' @param is_datetime if `TRUE`, the x-axis will be adapted for the
 #'              datetime format
+#' @param is_time if `TRUE`, the x-axis will be adapted for the
+#'              time-only format
 #'
 #' @return a histogram
 #'
+#' @importFrom ggplot2 ggplot aes theme_minimal xlab ylab geom_col
+#'                     scale_x_continuous scale_x_datetime expansion facet_grid
+#'                     theme element_text
+#' @importFrom grDevices colorRampPalette
+#'
+#' @noRd
 util_histogram <- function(plot_data,
                            num_var = colnames(plot_data)[1],
                            fill_var = NULL,
                            facet_var = NULL,
                            nbins_max = 100,
                            colors = "#2166AC",
-                           is_datetime = FALSE) {
+                           is_datetime = FALSE,
+                           is_time = FALSE) {
   # compute bin breaks
   # if the plot is faceted, optimize bin breaks for the most frequent category
   bb_opt_sel <- seq_len(nrow(plot_data))
@@ -47,40 +56,97 @@ util_histogram <- function(plot_data,
   ))
   breaks_x <- bin_breaks[[1]]
 
-  # create histogram
-  his <- ggplot(data = plot_data, aes(x = .data[[num_var]])) +
-    theme_minimal() +
-    xlab("") +
-    ylab("")
+  # compute bin heights, prepare data for plotting
+  if (!is.null(facet_var) | !is.null(fill_var)) { # histogram with groups
+    split_var <- c(facet_var, fill_var)
+    split_data <- split(plot_data, plot_data[, split_var])
+    split_data <- split_data[vapply(split_data, nrow, integer(1)) > 0]
+    plot_data2 <- lapply(seq_along(split_data), function(ll) {
+      h1 <- hist(split_data[[ll]][, num_var], plot = FALSE, breaks = breaks_x)
+      return(data.frame(histogram_x = h1$mids,
+                        histogram_y = h1$counts,
+                        split_data[[ll]][1, split_var, drop = FALSE],
+                        row.names = NULL))
+    })
+    plot_data2 <- do.call(rbind, plot_data2)
+    if (is_datetime) {
+      plot_data2[["histogram_x"]] <- util_parse_date(plot_data2[["histogram_x"]])
+    } else if (is_time) {
+      plot_data2[["histogram_x"]] <- util_parse_time(plot_data2[["histogram_x"]])
+    }
+  } else { # plain histogram
+    bin_heights <- hist(as.numeric(plot_data[, num_var]),
+                        plot = FALSE,
+                        breaks = breaks_x)
+    if (is_datetime) {
+      plot_data2 <- data.frame(histogram_x = util_parse_date(bin_heights$mids),
+                               histogram_y = bin_heights$counts)
+    } else if (is_time) {
+      plot_data2 <- data.frame(histogram_x = util_parse_time(bin_heights$mids),
+                               histogram_y = bin_heights$counts)
+    } else {
+      plot_data2 <- data.frame(histogram_x = bin_heights$mids,
+                               histogram_y = bin_heights$counts)
+    }
+  }
+  width_col <- as.numeric(breaks_x)
+  width_col <- width_col[2] - width_col[1]
 
-  if (!is.null(fill_var)) {
+  # create histogram
+  if (!is.null(fill_var)) { # histogram with color-coded groups
     if (length(colors) < length(levels(plot_data[, fill_var]))) {
       if (length(colors) == 1) {
         colors <- c("gray90", colors, "gray20")
       }
       colors <- colorRampPalette(colors)(length(levels(plot_data[, fill_var])))
     }
-    his <- his +
-      geom_histogram(aes(fill = .data[[fill_var]]),
-                     breaks = breaks_x) +
-      scale_fill_manual(values = colors, name = "")
-  } else {
-    his <- his +
-      geom_histogram(breaks = breaks_x,
-                     fill = colors[1],
-                     color = colors[1])
+    his <- util_create_lean_ggplot(
+      ggplot(data = plot_data2, aes(x = .data[["histogram_x"]],
+                                    y = .data[["histogram_y"]],
+                                    fill = .data[[fill_var]])) +
+        theme_minimal() +
+        xlab("") +
+        ylab("") +
+        geom_col(width = width_col) +
+        scale_fill_manual(values = colors, name = ""),
+      plot_data2 = plot_data2,
+      fill_var = fill_var,
+      width_col = width_col,
+      colors = colors
+    )
+  } else { # 'plain' histogram
+    his <- util_create_lean_ggplot(
+      ggplot(data = plot_data2, aes(x = .data[["histogram_x"]],
+                                    y = .data[["histogram_y"]])) +
+        theme_minimal() +
+        xlab("") +
+        ylab("") +
+        geom_col(width = width_col,
+                 fill = colors[1],
+                 color = colors[1]),
+      plot_data2 = plot_data2,
+      width_col = width_col,
+      colors = colors
+    )
   }
 
-  if (!is_datetime) {
-    his <- his + scale_x_continuous(expand = expansion(mult = 0.1))
+  if (!is_datetime && !is_time) {
+    his <- his + util_create_lean_ggplot(
+      scale_x_continuous(expand = expansion(mult = 0.1)))
+  } else if (is_datetime && !is_time) {
+    his <- his + util_create_lean_ggplot(
+      scale_x_datetime(expand = expansion(mult = 0.1)))
   } else {
-    his <- his + ggplot2::scale_x_datetime(expand = expansion(mult = 0.1))
+    # should be time
+    his <- his + util_create_lean_ggplot(
+      ggplot2::scale_x_time(expand = expansion(mult = 0.1)))
   }
 
   if (!is.null(facet_var)) {
-    his <- his +
-      facet_grid(.data[[facet_var]] ~ ., scales = "free_y") +
-      theme(strip.text = element_text(size = 14))
+    his <- his + util_create_lean_ggplot(
+      facet_grid(.data[[facet_var]] ~ ., scales = "free_y"),
+      facet_var = facet_var) +
+        theme(strip.text = element_text(size = 14))
   }
 
   return(his)

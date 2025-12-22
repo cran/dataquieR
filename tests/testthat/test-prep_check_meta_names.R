@@ -1,6 +1,6 @@
 test_that("prep_check_meta_names works", {
   skip_on_cran()
-  skip_if_not_installed("withr")
+  
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                   dataquieR.ERRORS_WITH_CALLER = TRUE,
                   dataquieR.WARNINGS_WITH_CALLER = TRUE,
@@ -27,7 +27,9 @@ test_that("prep_check_meta_names works", {
       PROPORTION_RANGE = "PROPORTION_RANGE",
       MISSING_LIST_TABLE = "MISSING_LIST_TABLE",
       LONG_LABEL = "LONG_LABEL",
-      CO_VARS = "CO_VARS"
+      CO_VARS = "CO_VARS",
+      UNIVARIATE_OUTLIER_CHECKTYPE = "UNIVARIATE_OUTLIER_CHECKTYPE",
+      N_RULES = "N_RULES"
     ),
     RECOMMENDED
   ))
@@ -62,7 +64,11 @@ test_that("prep_check_meta_names works", {
       RECODE_CASES = "RECODE_CASES",
       RECODE_CONTROL = "RECODE_CONTROL",
       DATAFRAMES = "DATAFRAMES",
-      ENCODING = "ENCODING"
+      ENCODING = "ENCODING",
+      UNIVARIATE_OUTLIER_CHECKTYPE = "UNIVARIATE_OUTLIER_CHECKTYPE",
+      N_RULES = "N_RULES",
+      EXTENDED_DATA_TYPE = "EXTENDED_DATA_TYPE",
+      TIME_VAR_END = "TIME_VAR_END"
     ),
     OPTIONAL
   ))

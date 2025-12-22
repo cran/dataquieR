@@ -55,8 +55,24 @@ prep_extract_cause_label_df <- function(item_level = "item_level",
                if (!is.na(tp) && tp == DATA_TYPES$DATETIME) {
                  dfr <- data.frame(CODE_VALUE =
                                      as.character(
-                                     suppressWarnings(lubridate::as_datetime(
+                                     suppressWarnings(util_parse_date(
                                        names(x)))),
+                                   CODE_LABEL = unname(unlist(x)))
+                 prfx <- as.character(dfr$CODE_LABEL) ==
+                   as.character(dfr$CODE_VALUE)
+                 prfx <- prfx[!is.na(prfx)]
+                 if (any(prfx, na.rm = TRUE)) {
+                   dfr[prfx, CODE_LABEL] <-
+                     paste(cls, dfr[prfx, CODE_LABEL])
+                 }
+                 dfr$CODE_CLASS <- rep(cls, nrow(dfr))
+                 dfr$resp_vars <- rep(v, nrow(dfr))
+                 dfr[!is.na(dfr$CODE_VALUE), , FALSE]
+               } else if (!is.na(tp) && tp == DATA_TYPES$TIME) {
+                 dfr <- data.frame(CODE_VALUE =
+                                     as.character(
+                                       suppressWarnings(util_parse_time(
+                                         names(x)))),
                                    CODE_LABEL = unname(unlist(x)))
                  prfx <- as.character(dfr$CODE_LABEL) ==
                    as.character(dfr$CODE_VALUE)
@@ -92,12 +108,19 @@ prep_extract_cause_label_df <- function(item_level = "item_level",
   dt <- !is.na(meta_data[[DATA_TYPE]]) &
     meta_data[[DATA_TYPE]] == DATA_TYPES$DATETIME
 
+  to <- !is.na(meta_data[[DATA_TYPE]]) &
+    meta_data[[DATA_TYPE]] == DATA_TYPES$TIME
+
   ml2 <- ml
   jl2 <- jl
 
   coll <- sprintf(" %s ", SPLIT_CHAR)
+  coll_to <- function(x)
+    paste(.util_format_hms(
+      na.omit(suppressWarnings(util_parse_time(names(x))))),
+          collapse = coll)
   coll_dt <- function(x)
-    paste(na.omit(suppressWarnings(lubridate::as_datetime(names(x)))),
+    paste(na.omit(suppressWarnings(util_parse_date(names(x)))),
           collapse = coll)
   coll_ndt <- function(x)
     paste(na.omit(suppressWarnings(as.numeric(names(x)))),
@@ -105,13 +128,15 @@ prep_extract_cause_label_df <- function(item_level = "item_level",
 
   ml_empty_on_purpose <- trimws(meta_data$MISSING_LIST) == SPLIT_CHAR
   ml2[dt] <- vapply(ml[dt], coll_dt, FUN.VALUE = character(1))
-  ml2[!dt] <- vapply(ml[!dt], coll_ndt, FUN.VALUE = character(1))
+  ml2[to] <- vapply(ml[to], coll_to, FUN.VALUE = character(1))
+  ml2[!dt & !to] <- vapply(ml[!dt & !to], coll_ndt, FUN.VALUE = character(1))
   ml2[trimws(ml2) == ""] <- NA
   meta_data$MISSING_LIST <- unlist(ml2, recursive = FALSE)
 
   jl_empty_on_purpose <- trimws(meta_data$JUMP_LIST) == SPLIT_CHAR
   jl2[dt] <- vapply(jl[dt], coll_dt, FUN.VALUE = character(1))
-  jl2[!dt] <- vapply(jl[!dt], coll_ndt, FUN.VALUE = character(1))
+  jl2[to] <- vapply(jl[to], coll_to, FUN.VALUE = character(1))
+  jl2[!dt & !to] <- vapply(jl[!dt & !to], coll_ndt, FUN.VALUE = character(1))
   jl2[trimws(jl2) == ""] <- NA
   meta_data$JUMP_LIST <- unlist(jl2, recursive = FALSE)
 

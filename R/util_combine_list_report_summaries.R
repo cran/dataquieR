@@ -11,6 +11,7 @@
 #'
 #' @return a summary of summaries of `dataquieR` reports
 #'
+#' @noRd
 util_combine_list_report_summaries <- function(to_combine,
                                                type = c("unique_vars",
                                                         "repeated_vars")) {

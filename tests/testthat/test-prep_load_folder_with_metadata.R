@@ -1,5 +1,6 @@
 test_that("prep_load_folder_with_metadata works", {
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+  skip_if_not_installed("rvest")
   skip_on_cran()
   prep_purge_data_frame_cache()
   expect_equal(length(prep_list_dataframes()), 0)

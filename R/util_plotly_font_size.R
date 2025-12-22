@@ -1,7 +1,7 @@
-#' @seealso [print.ReportSummaryTableo]
+#' @seealso [print.ReportSummaryTable]
 #' @family figure_functions
 #' @concept figure
-#' @keywords internal
+#' @noRd
 
 util_plotly_font_size <- function(n_labels, space = 200,
                                   max_font_size = 16, min_font_size = 12) {

@@ -26,7 +26,7 @@ test_that("util_finalize_sizing_hints works", {
       "w": "10px"
     }')
 
-  expect_message(sh <- util_finalize_sizing_hints(sh),
+  expect_message2(sh <- util_finalize_sizing_hints(sh),
                          regexp = "sizes in pixels")
 
   expect_equal(sh$w_in_cm, 0.26, tolerance = 0.1)

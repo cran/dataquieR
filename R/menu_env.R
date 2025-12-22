@@ -6,7 +6,7 @@
 #'
 #' used by the dq_report2-pipeline
 #' @name menu_env
-#' @keywords internal
+#' @noRd
 .menu_env <- new.env(parent = environment())
 
 #' Create a single menu entry
@@ -90,17 +90,7 @@
 #' @return the html-`taglist` for the menu
 #' @name menu_env-menu
 #' @keywords internal
-.menu_env$menu <- function(pages) { # TODO: implement
-  # htmltools::tagList(
-  #   menu_entry("Home"),
-  #   menu_entry("News"),
-  #   drop_down("Dropdown",
-  #             menu_entry("Link 1", "report.html#x"),
-  #             menu_entry("Link 2", "report.html#y"),
-  #             menu_entry("Link 3", "https://google.de", target="_blank"),
-  #             menu_entry("Link 4", "z.html#z")
-  #   )
-  # )
+.menu_env$menu <- function(pages) {
   entry_env <- environment()
   entries_of_dd <- lapply(names(pages), function(fn) {
     dd <- lapply(names(pages[[fn]]), function(sp) {
@@ -145,22 +135,26 @@
                       "IndicatorID"),
            drop = FALSE)
     if (nrow(concept_info) == 1) { # https://dataquality.qihs.uni-greifswald.de/PDQC_DQ_1_0_0_0.html
+      if (!util_empty(concept_info$IndicatorID))
+        href <- sprintf(
+          "https://dataquality.qihs.uni-greifswald.de/PDQC_%s.html",
+          concept_info$IndicatorID)
+      else
+        href = NULL
       menu_description <-
         htmltools::tagList(
           htmltools::h2(ddn),
           htmltools::tags$p(
             htmltools::a(
               href=
-                sprintf(
-          "https://dataquality.qihs.uni-greifswald.de/PDQC_%s.html",
-                  concept_info$IndicatorID),
+                href,
               target="_blank",
               title="Online reference",
               ddn
             ),
-            sprintf(
+            ifelse(util_empty(concept_info$abbreviation), "", sprintf(
               " -- related indicator function names are prefixed with %s",
-              dQuote(concept_info$abbreviation))
+              dQuote(concept_info$abbreviation)))
           ),
           htmltools::h3("Definition"),
           htmltools::tags$p(

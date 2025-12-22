@@ -6,7 +6,7 @@
 #'
 #' @return [data.frame] but transposed
 #'
-#' @keywords internal
+#' @noRd
 util_table_rotator <- function(tb) {  #TODO: should take care of the description attribute
   util_expect_data_frame(tb)
   if (nrow(tb) == 1) {

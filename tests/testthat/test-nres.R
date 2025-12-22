@@ -1,5 +1,7 @@
 test_that("nres works", {
   skip_on_cran() # slow, errors unlikely
+  skip_if_not_installed("stringdist")
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx")
   withr::defer(prep_purge_data_frame_cache())

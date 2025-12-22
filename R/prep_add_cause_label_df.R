@@ -107,7 +107,9 @@ prep_add_cause_label_df <- function(item_level = "item_level",
         cls <- cause_label_df$CODE_VALUE
       } else {
         if (tp %in% c(DATA_TYPES$DATETIME)) {
-          cls <- lubridate::as_datetime(names(util_parse_assignments(cl)))
+          cls <- util_parse_date(names(util_parse_assignments(cl)))
+        } else if (tp %in% c(DATA_TYPES$TIME)) {
+          cls <- util_parse_time(names(util_parse_assignments(cl)))
         } else {
           cls <- as.integer(names(util_parse_assignments(cl)))
         }

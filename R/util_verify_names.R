@@ -6,7 +6,7 @@
 #'
 #' @return `invisible(NULL)`, messages / warns only.
 #'
-#' @keywords internal
+#' @noRd
 util_verify_names <- function(name_of_study_data = character(0)) {
   x <- .util_verify_names(observed_names = prep_list_dataframes(),
                           name_of_study_data = name_of_study_data)
@@ -29,6 +29,7 @@ util_verify_names <- function(name_of_study_data = character(0)) {
                                                   "segment_level",
                                                   "item_computation_level",
                                                   "study_data",
+                                                  "columns definition",
                                                   "<>",
                                                   name_of_study_data),
                               observed_names = prep_list_dataframes(),

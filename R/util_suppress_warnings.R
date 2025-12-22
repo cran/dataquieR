@@ -7,7 +7,7 @@
 #'
 #' @family condition_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_suppress_warnings <- function(expr, classes = "warning") {
   withCallingHandlers(
     expr = expr,

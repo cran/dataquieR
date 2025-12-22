@@ -16,6 +16,7 @@
 #' @return a guess of the data type of `x`. An attribute `orig_type` is also
 #' attached to give the more detailed guess returned by [readr::guess_parser()].
 #' @export
+#' @seealso [prep_datatype_from_data()]
 prep_robust_guess_data_type <- function(x, k = 50, it = 200) {
   withr::with_seed(4242, {
     util_expect_scalar(x,
@@ -41,7 +42,7 @@ prep_robust_guess_data_type <- function(x, k = 50, it = 200) {
     parsers <- as.matrix(table(gp))[, 1]
     util_attach_attr(unname(c(
       date = DATA_TYPES$DATETIME,
-      time = DATA_TYPES$DATETIME,
+      time = DATA_TYPES$TIME,
       datetime = DATA_TYPES$DATETIME,
       integer = DATA_TYPES$INTEGER,
       double = DATA_TYPES$FLOAT,
@@ -107,7 +108,7 @@ prep_guess_encoding <- function(x, file) {
 #' @param ref_encs [character] names are column names of `dt0`, values their
 #'                             expected encoding, can be missing.
 #'
-#' @keywords internal
+#' @noRd
 #' @examples
 #' \dontrun{
 #'   dt0 <-

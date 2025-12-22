@@ -8,7 +8,7 @@ user_hints$l <- list()
 #'
 #' @family system_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_user_hint <- function(x) {
   util_expect_scalar(x, check_type = is.character)
   user_hints$l <-

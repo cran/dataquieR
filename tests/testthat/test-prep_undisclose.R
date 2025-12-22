@@ -1,13 +1,14 @@
 test_that("prep_undisclose works", {
   skip_on_cran() # slow, parallel, ...
-  skip_if_not_installed("withr")
+  skip_if_not_installed("stringdist")
+
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
                        dataquieR.WARNINGS_WITH_CALLER = TRUE,
                        dataquieR.MESSAGES_WITH_CALLER = TRUE)
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx")
-  study_data <- head(prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData"), 100)
+  study_data <- head(prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE), 100)
   meta_data <- prep_get_data_frame("item_level")
 
   mlt <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx| missing_table")
@@ -41,8 +42,7 @@ test_that("prep_undisclose works", {
                            "Consistency",
                            "Accuracy"))
 
-  expect_equal(length(report$acc_distributions_loc.SBP_0$SummaryPlotList$SBP_0$data$SBP_0), 88)
+  expect_equal(nrow(report$acc_univariate_outlier.SBP_0$SummaryPlotList$SBP_0$data), 88)
   report_x <- prep_undisclose(report)
-  expect_equal(length(report_x$acc_distributions_loc.SBP_0$SummaryPlotList$SBP_0$data), 0)
-
+  expect_equal(length(report_x$acc_univariate_outlier.SBP_0$SummaryPlotList$SBP_0$data), 0)
 })

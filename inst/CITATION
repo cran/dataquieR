@@ -8,6 +8,7 @@ note <- sprintf("R package version %s", meta$Version)
 note <- paste0(note, " doi: 10.32614/CRAN.package.dataquieR")
 
 bibentry(bibtype = "Manual",
+         key = "dataquieRManual",
          title = "{dataquieR}: Data Quality in Epidemiological Research",
          author = c(
                        as.person("Elisa Kasbohm"),
@@ -19,7 +20,6 @@ bibentry(bibtype = "Manual",
          year = year,
          note = note,
          url = "https://dataquality.qihs.uni-greifswald.de/",
-
          textVersion =
            paste("Elisa Kasbohm, Joany Marino, Elena Salogni, Adrian Richter, Carsten Oliver Schmidt, Stephan Struckmann",
      	       sprintf("(%s).", year),
@@ -52,6 +52,7 @@ bibentry(bibtype = "Article",
 
 
 bibentry(bibtype = "Article",
+      key = "Richter2021",
       title =
         "{dataquieR}: assessment of data quality in epidemiological research",
        author = c(as.person("Adrian Richter"),
@@ -70,6 +71,7 @@ bibentry(bibtype = "Article",
 )
 
 bibentry(bibtype = "Article",
+         key = "Schmidt2021",
          title = paste("Facilitating harmonized data quality assessments. A",
                        "data quality framework for observational health",
                        "research data collections with software",

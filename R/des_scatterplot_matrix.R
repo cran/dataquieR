@@ -36,8 +36,6 @@ des_scatterplot_matrix <- function(label_col, # FIXME: This needs a variable_gro
                                    meta_data_v2,
                                    cross_item_level,
                                    `cross-item_level`) {
-  util_ensure_suggested(c("GGally"),
-                        goal = "create scatter plot matrices")
   util_maybe_load_meta_data_v2()
   util_ck_arg_aliases()
   prep_prepare_dataframes(.apply_factor_metadata = TRUE)
@@ -53,13 +51,15 @@ des_scatterplot_matrix <- function(label_col, # FIXME: This needs a variable_gro
       c("pearson", "spearman")), function(vg) {
         rvs <-
           vapply(
-            util_parse_assignments(meta_data_cross_item[vg, "VARIABLE_LIST"]),
+            util_parse_assignments(meta_data_cross_item[vg, VARIABLE_LIST]),
             identity, FUN.VALUE = character(1))
        rvs <- rvs[vapply(rvs, FUN = function(x) {
          !all(is.na(ds1[[x]]))
          }, FUN.VALUE = logical(1) )]
        if (length(rvs) == 0) {
-         r <- ggplot() +
+         r_py <- htmltools::div(
+           htmltools::h3("No data available to create the plot"))
+         r <- util_create_lean_ggplot(ggplot() +
            annotate("text", x = 0, y = 0,
                     label = "No data available to create the plot") +
            theme(
@@ -75,18 +75,37 @@ des_scatterplot_matrix <- function(label_col, # FIXME: This needs a variable_gro
              panel.grid.major = element_blank(),
              panel.grid.minor = element_blank(),
              plot.background = element_blank()
-           )
+           ))
         number_of_vars <- 0
-
+        attr(r, "plotly") <- r_py
        } else {
-         r <- GGally::ggpairs(ds1[, rvs], progress = FALSE,
-                              columnLabels = prep_get_labels(rvs,
-                                                             item_level = meta_data,
-                                                             label_col = label_col,
-                                                             resp_vars_match_label_col_only = TRUE,
-                                                             label_class = "SHORT"))
-
-         number_of_vars <- length(names(r$data))
+         columnLabels <- prep_get_labels(rvs,
+                                         item_level = meta_data,
+                                         label_col = label_col,
+                                         resp_vars_match_label_col_only = TRUE,
+                                         label_class = "SHORT")
+         correlation_method <-
+           trimws(tolower(meta_data_cross_item[vg, ASSOCIATION_METRIC]))
+         .dt0 <- ds1[, rvs]
+         cc <- complete.cases(.dt0)
+         if (any(!cc, na.rm = TRUE)) {
+           util_warning(
+      "Found %d incomplete cases in %s. Discarding such rows for correlations.",
+                        sum(!cc), util_pretty_vector_string(columnLabels))
+         }
+         .dt0 <- .dt0[cc, , FALSE]
+         r <- util_create_lean_ggplot(util_pairs_ggplot(.dt0,
+                              columnLabels = columnLabels,
+                              correlation_method = correlation_method),
+                              .dt0 = .dt0,
+                              columnLabels = columnLabels,
+                              correlation_method = correlation_method
+         )
+         r_py <- util_pairs_plotly(.dt0,
+                                   columnLabels = columnLabels,
+                                   correlation_method = correlation_method)
+         attr(r, "plotly") <- r_py
+         number_of_vars <- length(rvs)
        }
 
 
@@ -95,7 +114,6 @@ des_scatterplot_matrix <- function(label_col, # FIXME: This needs a variable_gro
          figure_type_id = "pairs_plot",
          number_of_vars = number_of_vars
        )
-
        return(r)
       })
 
@@ -108,17 +126,25 @@ des_scatterplot_matrix <- function(label_col, # FIXME: This needs a variable_gro
     util_rbind(data_frames_list = lapply(which(
       useNames = TRUE,
       trimws(tolower(setNames(meta_data_cross_item$ASSOCIATION_METRIC,
-                              nm = meta_data_cross_item$CHECK_LABEL))) ==
-        "pearson"), function(vg) {
+                              nm = meta_data_cross_item$CHECK_LABEL))) %in%
+        c("pearson", "spearman")), function(vg) {
 
-          vl <- meta_data_cross_item[vg, "VARIABLE_LIST"]
+          vl <- meta_data_cross_item[vg, VARIABLE_LIST]
+
+          correlation_method <-
+            trimws(tolower(meta_data_cross_item[vg, ASSOCIATION_METRIC]))
+
+          cor_range <-
+            util_parse_interval(
+              trimws(tolower(meta_data_cross_item[vg, ASSOCIATION_RANGE])))
 
           rvs <-
             vapply(
               util_parse_assignments(vl),
               identity, FUN.VALUE = character(1))
 
-          cors <- cor(ds1[, rvs, FALSE], use = "pairwise.complete.obs")
+          cors <- cor(ds1[, rvs, FALSE], use = "complete.obs",
+                      method = correlation_method)
 
           cors_combs <-
             t(apply(expand.grid(rvs, rvs), 1, sort))
@@ -146,20 +172,40 @@ des_scatterplot_matrix <- function(label_col, # FIXME: This needs a variable_gro
                      cors = prep_deparse_assignments(labels = cors_of_combs,
                                                     codes = names(cors_of_combs),
                                                     mode = "string_codes"),
-                    max_cor = max(cors_of_combs, na.rm = TRUE)
+                     max_cor = max(cors_of_combs, na.rm = TRUE),
+                     pretty_in_range = redcap_env$`in`(max(cors_of_combs, na.rm = TRUE),
+                                                cor_range),
+                     pretty_range = as.character(cor_range),
+                     in_range = redcap_env$`in`(max(cors_of_combs, na.rm = TRUE),
+                                                       cor_range)
           )
           #            # max(cor()))
         }))
   VariableGroupData <- VariableGroupTable[, c(VARIABLE_LIST, grep("^pretty_.*$",
                                                                   names(VariableGroupTable), value = TRUE))]
   colnames(VariableGroupData) <- gsub("^pretty_", "", colnames(VariableGroupData))
-  list(
+  util_attach_attr(list(
     VariableGroupPlotList = VariableGroupPlotList,
     VariableGroupTable = VariableGroupTable[, !startsWith(colnames(VariableGroupTable), "pretty_")],
     VariableGroupData = VariableGroupData
-  )
+  ), "as_plotly" = "util_as_plotly_des_scatterplot_matrix")
 }
-# des_scatterplot_matrix
-# https://plotly.com/r/splom/
-# https://r-charts.com/correlation/ggpairs/
-# GGally
+
+util_as_plotly_des_scatterplot_matrix <- function(dqr) {
+  util_ensure_suggested("plotly")
+  if (!identical(length(dqr$VariableGroupPlotList), 1L)) {
+    print("FIXME") # FIXME
+    plotly::plot_ly() %>%
+      plotly::add_text(x = 0.5, y = 0.5,
+                       text = "> 1 group in scatter plot matrix is not yet supported",
+                       textfont = list(size = 24, color = "red"),
+                       showlegend = FALSE) %>%
+      plotly::layout(
+        xaxis = list(showticklabels = FALSE, zeroline = FALSE, showgrid = FALSE),
+        yaxis = list(showticklabels = FALSE, zeroline = FALSE, showgrid = FALSE),
+        margin = list(l = 0, r = 0, t = 0, b = 0)
+      )
+  } else {
+    attr(dqr$VariableGroupPlotList[[1]], "plotly")
+  }
+}

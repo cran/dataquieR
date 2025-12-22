@@ -10,7 +10,7 @@
 #'
 #' @family conversion_functions
 #' @concept data_management
-#' @keywords internal
+#' @noRd
 util_as_numeric <- function(v, warn) {
   if (is.factor(v) && !is.ordered(v)) {
     r <- suppressWarnings(as.numeric(levels(v))[v])

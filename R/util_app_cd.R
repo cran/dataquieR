@@ -13,7 +13,7 @@
 #' - 3 data type matches and applicable
 #'
 #' @seealso [pro_applicability_matrix]
-#' @keywords internal
+#' @noRd
 
 util_app_cd <- function(x, dta) {
   if ("CONTRADICTIONS" %in% names(x)) { # TODO: This is not really relevant

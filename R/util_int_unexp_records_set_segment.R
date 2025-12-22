@@ -285,7 +285,10 @@ util_int_unexp_records_set_segment <- function(level = c("segment"),
       "Number of records in metadata" = length(metadata_ids),
       "Number of mismatches" = length(unex_records_tmp),
       "Percentage of mismatches" =
-        abs(round(100 * length(unex_records_tmp) / length(metadata_ids), 3)),
+        abs(round(100 * length(unex_records_tmp) / (
+          length(data_ids[[id_vars]]) +
+                                                       length(
+                                                         metadata_ids)), 3)),
       "Expected match type" = match_expected,
       "Actual match type" = match_actual,
       "GRADING" = ifelse((match_expected[1] == match_actual), 0, 1),

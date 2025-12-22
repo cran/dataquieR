@@ -12,7 +12,8 @@ DATA_PREPARATION
 }
 \description{
 For contradiction rules, the required pre-processing steps that can be given.
-TODO JM: MISSING_LABEL will not work for non-factor variables
+Note: \code{MISSING_LABEL}, \code{MISSING_INTERPRET} may not work for non-factor
+variables
 }
 \details{
 LABEL LIMITS MISSING_NA MISSING_LABEL MISSING_INTERPRET
@@ -27,16 +28,26 @@ Other meta_data_cross:
 \code{\link{ASSOCIATION_RANGE}},
 \code{\link{CHECK_ID}},
 \code{\link{CHECK_LABEL}},
+\code{\link{COMPUTED_VARIABLE_ROLES}},
 \code{\link{CONTRADICTION_TERM}},
 \code{\link{CONTRADICTION_TYPE}},
 \code{\link{GOLDSTANDARD}},
+\code{\link{IRV}},
+\code{\link{MAHALANOBIS_THRESHOLD}},
+\code{\link{MAXIMUM_LONG_STRING}},
+\code{\link{MISS_RESP}},
 \code{\link{MULTIVARIATE_OUTLIER_CHECK}},
 \code{\link{MULTIVARIATE_OUTLIER_CHECKTYPE}},
-\code{\link{N_RULES}},
+\code{\link{RELCOMPL_SPEED}},
 \code{\link{REL_VAL}},
+\code{\link{RESPT_PER_ITEM}},
+\code{\link{SCALE_ACRONYM}},
+\code{\link{SCALE_NAME}},
+\code{\link{TOTRESPT}},
 \code{\link{VARIABLE_LIST}},
-\code{\link{meta_data_cross}},
-\code{\link{util_normalize_cross_item}()}
+\code{\link{VARIABLE_LIST_ORDER}},
+\code{\link{meta_data_computation}},
+\code{\link{meta_data_cross}}
 }
 \concept{meta_data_cross}
 \keyword{datasets}

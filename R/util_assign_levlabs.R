@@ -27,7 +27,7 @@
 #'
 #' @family data_management
 #' @concept data_management
-#' @keywords internal
+#' @noRd
 util_assign_levlabs <- function(variable, string_of_levlabs, splitchar,
                                 assignchar, ordered = TRUE, variable_name = "",
                                 warn_if_inadmissible = TRUE) {

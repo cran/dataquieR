@@ -1,6 +1,6 @@
 test_that("util_map_all works", {
   skip_on_cran()
-  skip_if_not_installed("withr")
+  
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
                    dataquieR.WARNINGS_WITH_CALLER = TRUE,
@@ -105,8 +105,8 @@ test_that("util_map_all works", {
   withr::with_options(list(dataquieR.ELEMENT_MISSMATCH_CHECKTYPE = "exact"),
                       expect_warning(
     expect_warning(
-      expect_message(
-        expect_message(
+      expect_message2(
+        expect_message2(
           invisible(capture.output(util_map_all(
             label_col = LABEL,
             study_data = sd,

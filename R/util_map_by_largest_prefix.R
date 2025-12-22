@@ -32,7 +32,7 @@
 #'
 #' @family mapping
 #' @concept concept
-#' @keywords internal
+#' @noRd
 util_map_by_largest_prefix <- function(
     needle,
     haystack,

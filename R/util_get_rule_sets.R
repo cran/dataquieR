@@ -5,16 +5,19 @@
 #'         `indicator_metric`, `dqi_catnum` and `dqi_cat_1` to
 #'         `dqi_cat_<dqi_catnum>`
 #' @family summary_functions
-#' @keywords internal
+#' @noRd
 util_get_rule_sets <- function() {
   shipped_rulesets <- system.file("grading_rulesets.xlsx",
                                   package = "dataquieR")
   if (!nzchar(shipped_rulesets) &&
       suppressWarnings(util_ensure_suggested("pkgload", err = FALSE)) &&
       pkgload::is_dev_package("dataquieR")) {
-        if (util_is_try_error(
+        if (util_is_try_error(# comes from a quosure featuring an older dq version.
           try(silent = TRUE, shipped_rulesets <- pkgload::package_file("inst",
-                                                  "grading_rulesets.xlsx")))) {
+                                                  "grading_rulesets.xlsx",
+                                                  path =
+                                                  find.package(
+                                                    "dataquieR"))))) {
           rlang::warn(sprintf(
             "Could not find package source, trying to use %s from installed package",
             sQuote("grading_rulesets.xlsx")

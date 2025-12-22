@@ -8,7 +8,7 @@
 #'
 #' @family parser_functions
 #' @concept metadata_management
-#' @keywords internal
+#' @noRd
 
 util_parse_interval <- function(int) {
   if (util_empty(int)) {

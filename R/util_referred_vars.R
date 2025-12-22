@@ -11,6 +11,8 @@
 #' @param meta_data_item_computation [data.frame] -- optional: Computed items
 #'                                                                     metadata
 #' @param resp_vars [variable list] the name of the original variables.
+#' @param label_col [variable attribute] the name of the column in the metadata
+#'                                       with labels of variables
 #' @param id_vars [variable] a vector containing the name/s of the variables
 #'                            containing ids
 #' @param vars_in_subgroup [variable] a vector containing the name/s of the
@@ -24,12 +26,13 @@
 #' a new item_level metadata including information on the original variables
 #' and the referred variables
 #'
-#' @keywords internal
+#' @noRd
 
 util_referred_vars <- function(resp_vars,
                                id_vars = character(0),
                                vars_in_subgroup = character(0),
                                meta_data,
+                               label_col,
                                meta_data_segment = NULL,
                                meta_data_dataframe = NULL,
                                meta_data_cross_item = NULL,
@@ -46,17 +49,81 @@ util_referred_vars <- function(resp_vars,
   #-----
   vars <- resp_vars
   repeat {
-    # referred variables from key_cols
+    # referred variables from key_cols----
     referred_vars <-
       unique(unlist(meta_data[meta_data[[VAR_NAMES]] %in%
                                 vars, key_cols], recursive = TRUE))
-    # referred variables from cross-item level metadata
+    # referred variables from cross-item level metadata----
     referred_vars <-
       c(referred_vars, unlist(
         util_parse_assignments(meta_data_cross_item[[VARIABLE_LIST]],
                                multi_variate_text = TRUE)
       ))
-    # referred variables from meta_data_item_computation metadata
+
+
+    # referred variables from cross-item level metadata from *_LIMITS columns----
+    # Define a vector of the LIMITS column names to iterate over
+    limit_cols <- c("HARD_LIMITS", "SOFT_LIMITS", "DETECTION_LIMITS")
+
+    # if at least one limit column is non-empty
+    if (any(sapply(limit_cols, function(col)
+      any(!util_empty(meta_data_cross_item[[col]]))))) {
+
+      # Pre-calculate needles_var_names and needles once
+      needles_var_names <- unique(c(meta_data[[VAR_NAMES]],
+                                    meta_data[[label_col]],
+                                    meta_data[[LABEL]],
+                                    meta_data[[LONG_LABEL]],
+                                    meta_data[["ORIGINAL_VAR_NAMES"]],
+                                    meta_data[["ORIGINAL_LABEL"]]))
+      needles <- paste0("[", needles_var_names, "]")
+
+      results_list <- lapply(
+        limit_cols,
+        function(col) {
+          if (any(!util_empty(meta_data_cross_item[[col]]))) {
+            x <- vapply(setNames(needles, nm = needles_var_names),
+                        grepl,
+                        setNames(nm = meta_data_cross_item[[col]]),
+                        fixed = TRUE,
+                        FUN.VALUE = logical(length =
+                                              nrow(meta_data_cross_item))
+            )
+            # Ensure x is a matrix
+            if (is.vector(x)) {
+              x <- as.matrix(t(x))
+            }
+            # Extract variable names, ensure unique and sorted per row
+            variablelist_raw <-
+              unname(lapply(as.data.frame(t(x)),
+                            function(xx) unique(sort(colnames(x)[xx]))))
+            # Collapse the list of variable names into a single string
+            variablelist <-
+              lapply(variablelist_raw,
+                     paste0,
+                     collapse = sprintf(" %s ", SPLIT_CHAR))
+            return(variablelist)
+          }
+          return(NULL) # Return NULL if the limit column is empty
+        }
+      )
+      variable_list_limits <- unique(unname(unlist(results_list)))
+      #remove empty results
+      variable_list_limits <- variable_list_limits[variable_list_limits != ""]
+      # separate variables as single ones
+      variable_list_limits <- lapply(X = variable_list_limits,
+                                     FUN = util_parse_assignments)
+      # get a vector of variables from all limits
+      variable_list_limits <- unique(unname(unlist(variable_list_limits)))
+
+
+      #merge the variablea to the referred_vars
+      referred_vars <-
+        unique(c(referred_vars, variable_list_limits))
+
+    }
+
+    # referred variables from meta_data_item_computation metadata----
     referred_vars <-
       c(referred_vars, unlist(
         util_parse_assignments(meta_data_item_computation[[VARIABLE_LIST]],

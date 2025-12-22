@@ -23,7 +23,7 @@
 #' discrete or mixed distributions are conceivable in the context of
 #' epidemiological data. Their exact exploration is beyond the scope of this
 #' data quality approach. The present function uses the help function
-#' \link{util_dist_selection}, the assigned `SCALE_LEVEL` and the `DATA_TYPE`
+#' `util_dist_selection`, the assigned `SCALE_LEVEL` and the `DATA_TYPE`
 #' to discriminate the following cases:
 #' \itemize{
 #'   \item continuous data
@@ -50,8 +50,6 @@
 #' in the argument, the data will be analyzed by a linear model. Otherwise,
 #' the data will be modeled by a ordered regression, if the package `ordinal`
 #' is installed.
-#'
-#' @keywords accuracy
 #'
 #' @inheritParams .template_function_indicator
 #'
@@ -110,7 +108,7 @@
 #'   - `SummaryPlot`: [ggplot2::ggplot()] margins plot
 #'
 #' @export
-
+#'
 #' @importFrom utils tail head
 #'
 #' @seealso
@@ -157,7 +155,8 @@ acc_margins <- function(resp_vars = NULL,
   util_correct_variable_use("group_vars",
                             allow_any_obs_na = TRUE,
                             need_type = "!float",
-                            need_scale = "nominal | ordinal")
+                            need_scale = "nominal | ordinal",
+                            min_distinct_values = 2)
 
   util_correct_variable_use("co_vars",
                             allow_more_than_one = TRUE,
@@ -165,6 +164,8 @@ acc_margins <- function(resp_vars = NULL,
                             allow_null = TRUE,
                             allow_na = TRUE,
                             allow_any_obs_na = TRUE)
+
+  util_disjunct_var_sets(resp_vars, co_vars, group_vars)
 
   co_vars <- na.omit(co_vars)
   if (is.null(co_vars)) {
@@ -421,17 +422,19 @@ acc_margins <- function(resp_vars = NULL,
                                 sort_group_var_levels = sort_group_var_levels,
                                 include_numbers_in_figures =
                                   include_numbers_in_figures)
-    obj1<- ggplot2::ggplot_build(mar_out$plot)
-    obj1_data <- util_rbind(data_frames_list = obj1$data)
-    min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
-    max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+
+    .plot1 <- mar_out$plot
+    obj1 <- util_create_lean_ggplot(
+      ggplot2::ggplot_build(.plot1),
+      .plot1  = .plot1
+    )
+    obj1_data <- util_rbind(
+      data_frames_list = util_gg_get(obj1, "data")
+    )
+    min_value <- min(c(obj1_data$x, obj1_data$xintercept),  na.rm = TRUE)
+    max_value <- max(c(obj1_data$x, obj1_data$xintercept),  na.rm = TRUE)
     range_values <- max_value - min_value
 
- #   if (exists("mf")) {
-#      no_char_y <- max(nchar(c(mf, lf)))
-#    } else {
- #     no_char_y <- 1
-#    }
     no_char_y <- nchar(range_values)
     rm(obj1, obj1_data)
     type_plot <- "count_plot"
@@ -516,10 +519,17 @@ acc_margins <- function(resp_vars = NULL,
                                   sort_group_var_levels = sort_group_var_levels,
                                   include_numbers_in_figures =
                                     include_numbers_in_figures)
-      obj1<- ggplot2::ggplot_build(mar_out$plot)
-      obj1_data <- util_rbind(data_frames_list = obj1$data)
-      min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
-      max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+
+      .plot2 <- mar_out$plot
+      obj1 <- util_create_lean_ggplot(
+        ggplot2::ggplot_build(.plot2),
+        .plot2 = .plot2
+      )
+      obj1_data <- util_rbind(
+        data_frames_list = util_gg_get(obj1, "data")
+      )
+      min_value <- min(c(obj1_data$x, obj1_data$xintercept),  na.rm = TRUE)
+      max_value <- max(c(obj1_data$x, obj1_data$xintercept),  na.rm = TRUE)
       range_values <- max_value - min_value
       no_char_y <- nchar(range_values)
       rm(obj1, obj1_data)
@@ -576,13 +586,19 @@ acc_margins <- function(resp_vars = NULL,
                                   adjusted_hint = adjusted_hint,
                                   title = title,
                                   sort_group_var_levels = sort_group_var_levels)
-      obj1<- ggplot2::ggplot_build(mar_out$plot)
-      n_groups <- max(obj1$data[[2]]$group) * nrow(count_nom)
-      min_value <- min(c(obj1$data[[1]]$xmin, obj1$data[[1]]$xmax),  na.rm = TRUE)
-      max_value <- max(c(obj1$data[[1]]$xmin, obj1$data[[1]]$xmax),  na.rm = TRUE)
+
+      .plot3 <- mar_out$plot
+      obj1 <- util_create_lean_ggplot(
+        ggplot2::ggplot_build(.plot3),
+        .plot3 = .plot3
+      )
+      obj1_data <- util_gg_get(obj1, "data")
+      n_groups <- max(obj1_data[[2]]$group) * nrow(count_nom)
+      min_value <- min(c(obj1_data[[1]]$xmin, obj1_data[[1]]$xmax),  na.rm = TRUE)
+      max_value <- max(c(obj1_data[[1]]$xmin, obj1_data[[1]]$xmax),  na.rm = TRUE)
       range_values <- max_value - min_value
-      no_char_y <- nchar(round(range_values, digits = 2 ))
-      rm(obj1)
+      no_char_y <- nchar(round(range_values, digits = 2))
+      rm(obj1, obj1_data)
       type_plot <- "rotated_plot"
     }
     ###3rd CASE: ORDINAL (2 possible results)
@@ -612,12 +628,18 @@ acc_margins <- function(resp_vars = NULL,
                                    include_numbers_in_figures,
                                  n_violin_max = n_violin_max)
 
-      obj1<- ggplot2::ggplot_build(mar_out$plot)
-      obj1_data <- util_rbind(data_frames_list = obj1$data)
-      min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
-      max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+      .plot4 <- mar_out$plot
+      obj1 <- util_create_lean_ggplot(
+        ggplot2::ggplot_build(.plot4),
+        .plot4 = .plot4
+      )
+      obj1_data <- util_rbind(
+        data_frames_list = util_gg_get(obj1, "data")
+      )
+      min_value <- min(c(obj1_data$x, obj1_data$xintercept),  na.rm = TRUE)
+      max_value <- max(c(obj1_data$x, obj1_data$xintercept),  na.rm = TRUE)
       range_values <- max_value - min_value
-      a<- orig_levels
+      a <- orig_levels
       names(a) <- NULL
       no_char_y <- max(nchar(a))
       rm(a)
@@ -678,10 +700,17 @@ acc_margins <- function(resp_vars = NULL,
                                 title = title,
                                 sort_group_var_levels = sort_group_var_levels,
                                 include_numbers_in_figures = include_numbers_in_figures)
-    obj1<- ggplot2::ggplot_build(mar_out$plot)
-    obj1_data <- util_rbind(data_frames_list = obj1$data)
-    min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
-    max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+
+    .plot5 <- mar_out$plot
+    obj1 <- util_create_lean_ggplot(
+      ggplot2::ggplot_build(.plot5),
+      .plot5 = .plot5
+    )
+    obj1_data <- util_rbind(
+      data_frames_list = util_gg_get(obj1, "data")
+    )
+    min_value <- min(c(obj1_data$x, obj1_data$xintercept),  na.rm = TRUE)
+    max_value <- max(c(obj1_data$x, obj1_data$xintercept),  na.rm = TRUE)
     range_values <- max_value - min_value
     no_char_y <- nchar(range_values)
     rm(obj1, obj1_data)
@@ -702,10 +731,17 @@ acc_margins <- function(resp_vars = NULL,
                                include_numbers_in_figures =
                                  include_numbers_in_figures,
                                n_violin_max = n_violin_max)
-    obj1<- ggplot2::ggplot_build(mar_out$plot)
-    obj1_data <- util_rbind(data_frames_list = obj1$data)
-    min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
-    max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+
+    .plot6 <- mar_out$plot
+    obj1 <- util_create_lean_ggplot(
+      ggplot2::ggplot_build(.plot6),
+      .plot6 = .plot6
+    )
+    obj1_data <- util_rbind(
+      data_frames_list = util_gg_get(obj1, "data")
+    )
+    min_value <- min(c(obj1_data$x, obj1_data$xintercept),  na.rm = TRUE)
+    max_value <- max(c(obj1_data$x, obj1_data$xintercept),  na.rm = TRUE)
     range_values <- max_value - min_value
     no_char_y <- nchar(range_values)
     rm(obj1, obj1_data)
@@ -720,10 +756,11 @@ acc_margins <- function(resp_vars = NULL,
   res_plot <- mar_out$plot
 
   SummaryTable <- data.frame(
-    Variables = resp_vars,
-    FLG_acc_ud_loc = as.numeric(any(res_df$GRADING > 0)),
-    PCT_acc_ud_loc = round(sum(res_df$GRADING == 1)/nrow(res_df)*100,
-                           digits = 2))
+    Variables = resp_vars#,
+    # FLG_acc_ud_loc = as.numeric(any(res_df$GRADING > 0)),
+    #PCT_acc_ud_loc = round(sum(res_df$GRADING == 1)/nrow(res_df)*100,
+   #                        digits = 2)
+  )
 
   SummaryData <- cbind.data.frame(
     Variables = resp_vars,
@@ -771,32 +808,30 @@ acc_margins <- function(resp_vars = NULL,
 
 
   SummaryPlot <- util_set_size(res_plot, width_em = 25 +
-                  1.2 * length(unique(ds1[[group_vars]])),
-                height_em = 25)
+                                 1.2 * length(unique(ds1[[group_vars]])),
+                               height_em = 25)
 
   #Information for sizing
-#  obj1 <- ggplot2::ggplot_build(res_plot)
-#  obj1_data <- util_rbind(data_frames_list = obj1$data)
+  #  obj1 <- ggplot2::ggplot_build(res_plot)
+  #  obj1_data <- util_rbind(data_frames_list = obj1$data)
 
   if(!exists("n_groups")) {
     n_groups <- nrow(SummaryData)
   }
 
+  #  min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+  #  max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
+  #  range_values <- max_value - min_value
+  #  if ((max(obj1_data$x,na.rm = TRUE) - min(obj1_data$x,na.rm = TRUE)) < 2 ) {
+  #    type_plot <- "count_plot"
+  #  } else {
+  #    type_plot <- "violin_plot"
+  #  }
+  #  rm(obj1, obj1_data)
 
-
-#  min_value <- min(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
-#  max_value <- max(c(obj1_data$x,obj1_data$xintercept),  na.rm = TRUE)
-#  range_values <- max_value - min_value
-#  if ((max(obj1_data$x,na.rm = TRUE) - min(obj1_data$x,na.rm = TRUE)) < 2 ) {
-#    type_plot <- "count_plot"
-#  } else {
-#    type_plot <- "violin_plot"
-#  }
-#  rm(obj1, obj1_data)
-
-if(!exists("no_char_x")){
-  no_char_x <- max(nchar(as.character(SummaryData[[group_vars]])))
-}
+  if(!exists("no_char_x")){
+    no_char_x <- max(nchar(as.character(SummaryData[[group_vars]])))
+  }
 
 
   return(util_attach_attr(list(
@@ -804,18 +839,18 @@ if(!exists("no_char_x")){
     SummaryTable = SummaryTable,
     SummaryPlot = SummaryPlot),
     sizing_hints = list(figure_type_id = "marg_plot",
-                       n_groups = n_groups,
-                       no_char_x = no_char_x,
-                       no_char_y = no_char_y,
-                       type_plot = type_plot
-                       ),
+                        n_groups = n_groups,
+                        no_char_x = no_char_x,
+                        no_char_y = no_char_y,
+                        type_plot = type_plot
+    ),
     as_plotly = "util_as_plotly_acc_margins"))
 }
 
 
 #' @family plotly_shims
 #' @concept plotly_shims
-#' @keywords internal
+#' @noRd
 util_as_plotly_acc_margins <- function(res, ...) {
   #remove classes for plotly to work properly
   res$SummaryPlot <- util_remove_dataquieR_result_class(res$SummaryPlot)
@@ -828,8 +863,16 @@ util_as_plotly_acc_margins <- function(res, ...) {
     rel_w <- res$SummaryPlot$patches$layout$widths /
       sum(res$SummaryPlot$patches$layout$widths, na.rm = TRUE)
     # extract the violin plots
-    py1 <- try(plotly::ggplotly(res$SummaryPlot[[1]],
-                                ...), silent = TRUE)
+    py1 <- try(util_ggplotly(res$SummaryPlot[[1]],
+                             ...), silent = TRUE)
+    if (util_is_try_error(py1)) {
+      err <- attr(py1, "condition")
+      err_msg <- conditionMessage(err)
+      if (suppressWarnings(util_ensure_suggested("cli", err = FALSE))) {
+        err_msg <- cli::ansi_strip(err_msg)
+      }
+      return(util_plotly_text(err_msg))
+    }
     if (identical(py1$x$data[[2]]$mode, "lines+markers")) { # no violins were created because of too many observers, see dataquieR.max_group_var_levels_with_violins
       py1$x$data[[1]]$mode <- NULL # suppress a warning on print (https://github.com/plotly/plotly.R/issues/2242)
     } else {
@@ -837,8 +880,16 @@ util_as_plotly_acc_margins <- function(res, ...) {
     }
 
     # extract the overall distribution plot
-    py2 <- try(plotly::ggplotly(res$SummaryPlot[[2]],
-                                ...), silent = TRUE)
+    py2 <- try(util_ggplotly(res$SummaryPlot[[2]],
+                             ...), silent = TRUE)
+    if (util_is_try_error(py2)) {
+      err <- attr(py2, "condition")
+      err_msg <- conditionMessage(err)
+      if (suppressWarnings(util_ensure_suggested("cli", err = FALSE))) {
+        err_msg <- cli::ansi_strip(err_msg)
+      }
+      return(util_plotly_text(err_msg))
+    }
     # check if both are plotly objects
     util_stop_if_not(!inherits(py1, "try-error"))
     util_stop_if_not(!inherits(py2, "try-error"))
@@ -849,7 +900,7 @@ util_as_plotly_acc_margins <- function(res, ...) {
     #                                                               group_vars), samplesize = dplyr::n()))
 
 
-    # py1<- plotly::ggplotly(py1, tooltip = paste("Sample size:",
+    # py1<- util_ggplotly(py1, tooltip = paste("Sample size:",
     #                                            as.data.frame(dplyr::summarize(dplyr::group_by_at(ds1[, c(resp_vars, group_vars), drop = FALSE],
     #                                                                                                             group_vars), samplesize = dplyr::n()))[,2]))
     #py2<- plotly::layout(py2)
@@ -860,8 +911,18 @@ util_as_plotly_acc_margins <- function(res, ...) {
     hovertexts <- lapply(py1$x$data, `[[`, "hovertext")
     if (!all(vapply(hovertexts, is.null, logical(1)))) {
       hovertexts_matching_sample_size <- lapply(hovertexts, grepl, pattern = "sample_size: ", fixed = TRUE)
+
+      # S7-sicher: Anzahl der Gruppen über das ggplot-Kind des patchwork bestimmen
+      child1      <- res$SummaryPlot[[1]]
+      child1_data <- util_gg_get(child1, "data")
+
       hovertexts_matching_sample_size_with_length_nr_groups <-
-        vapply(hovertexts_matching_sample_size, function(x) length(x) == length(unique(res$SummaryPlot[[1]]$data[[2]])) && all(x, na.rm = TRUE), FUN.VALUE = logical(1))
+        vapply(
+          hovertexts_matching_sample_size,
+          function(x) length(x) == length(unique(child1_data[[2]])) && all(x, na.rm = TRUE),
+          FUN.VALUE = logical(1)
+        )
+
       layer_with_sample_size <- which(hovertexts_matching_sample_size_with_length_nr_groups)
       if (length(layer_with_sample_size) != 1) {
         util_warning(c("Internal error: unexpected number of",
@@ -896,7 +957,7 @@ util_as_plotly_acc_margins <- function(res, ...) {
 
     note <- ""
     try(note <- res$SummaryPlot$patches$annotation$caption, silent = TRUE)
-    if (length(note) != 1) {
+    if (length(note) != 1 || !is.character(note)) {
       note <- ""
     }
 

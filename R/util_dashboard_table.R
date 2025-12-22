@@ -4,7 +4,7 @@
 #'
 #' @family html
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_dashboard_table <- function(repsum) {
   this <- attr(repsum, "this")
   bigTable <- this$result

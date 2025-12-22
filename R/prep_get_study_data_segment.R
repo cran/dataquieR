@@ -19,7 +19,15 @@ prep_get_study_data_segment <- function(
   util_expect_scalar(segment, check_type = is.character,
                      error_message =
                        sprintf("Need a segment name in %s", sQuote("segment")))
-  meta_data_segment <- prep_check_meta_data_segment(meta_data_segment)
+  meta_data_segment <- try(prep_check_meta_data_segment(meta_data_segment),
+                           silent = TRUE)
+  if (util_is_try_error(meta_data_segment)) {
+    util_warning("%s metadata missing/corrupted: %s",
+                 sQuote("segment_level"),
+                 conditionMessage(attr(meta_data_segment, "condition",
+                                       exact = TRUE)))
+    meta_data_segment <- data.frame()
+  }
   # map metadata to study data
   prep_prepare_dataframes(.allow_empty =  TRUE,
                           .adjust_data_type = FALSE,

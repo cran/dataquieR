@@ -34,13 +34,13 @@ using \code{\link{prep_purge_data_frame_cache}},
 if you specify \code{meta_data_v2}.}
 
 \item{...}{Depending on \code{level}, passed to either
-\link{util_int_duplicate_ids_segment} or
-\link{util_int_duplicate_ids_dataframe}}
+\code{util_int_duplicate_ids_segment} or
+\code{util_int_duplicate_ids_dataframe}}
 }
 \value{
 a \link{list}. Depending on \code{level}, see
-\link{util_int_duplicate_ids_segment} or
-\link{util_int_duplicate_ids_dataframe} for a description of the outputs.
+\code{util_int_duplicate_ids_segment} or
+\code{util_int_duplicate_ids_dataframe} for a description of the outputs.
 }
 \description{
 This function tests for duplicates entries in identifiers. It is possible to

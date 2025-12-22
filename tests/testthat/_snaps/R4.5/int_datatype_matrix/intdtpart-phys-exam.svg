@@ -18,6 +18,7 @@
   </clipPath>
 </defs>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+<rect x='0.00' y='0.00' width='720.00' height='576.00' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
 </g>
 <defs>
   <clipPath id='cpMTQ0Ljc2fDcxNC41Mnw3MS42MHw0ODUuODA='>
@@ -50,7 +51,7 @@
 <rect x='192.24' y='75.30' width='474.80' height='36.98' style='stroke-width: 1.71; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #2166AC;' />
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
-<text transform='translate(429.64,66.67) rotate(-90)' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='31.29px' lengthAdjust='spacingAndGlyphs'>MATCH</text>
+<text transform='translate(435.70,66.67) rotate(-90)' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='31.29px' lengthAdjust='spacingAndGlyphs'>MATCH</text>
 <text x='139.83' y='467.06' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='31.14px' lengthAdjust='spacingAndGlyphs'>SBP_0</text>
 <text x='139.83' y='430.07' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='31.69px' lengthAdjust='spacingAndGlyphs'>DBP_0</text>
 <text x='139.83' y='393.09' text-anchor='end' style='font-size: 10.00px; fill: #4D4D4D; font-family: sans;' textLength='121.76px' lengthAdjust='spacingAndGlyphs'>GLOBAL_HEALTH_VAS_0</text>

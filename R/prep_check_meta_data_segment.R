@@ -69,12 +69,12 @@ prep_check_meta_data_segment <- function(meta_data_segment = "segment_level",
                                                nrow(meta_data_segment))
   }
   if (!(SEGMENT_UNIQUE_ROWS %in% colnames(meta_data_segment))) {
-    meta_data_segment$SEGMENT_RECORD_CHECK <- rep(NA,
-                                                  nrow(meta_data_segment))
+    meta_data_segment$SEGMENT_UNIQUE_ROWS <- rep(NA,
+                                                 nrow(meta_data_segment))
   }
   if (!(SEGMENT_UNIQUE_ID %in% colnames(meta_data_segment))) {
     meta_data_segment[[SEGMENT_UNIQUE_ID]] <- rep(1,
-                                                    nrow(meta_data_segment))
+                                                  nrow(meta_data_segment))
   }
 
   r <- util_expect_data_frame(

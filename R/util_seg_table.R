@@ -1,6 +1,6 @@
 #' @family missing_functions
 #' @concept missing
-#' @keywords internal
+#' @noRd
 util_seg_table <- function(ds2, study_data, meta_data, expected_observations =
                          c("HIERARCHY",
                            "ALL",

@@ -18,7 +18,7 @@ from the report or result in \code{x},
 the \link{STUDY_SEGMENT} and the \link{VAR_NAMES}.
 In case of \code{Data}, the columns are formatted nicely but still
 with the standardized column names -- use
-\code{\link[=util_translate_indicator_metrics]{util_translate_indicator_metrics()}} to rename them nicely. In
+\code{util_translate_indicator_metrics()} to rename them nicely. In
 case of \code{Table}, just as they are.
 }
 \description{
@@ -32,18 +32,6 @@ Other summary_functions:
 \code{\link{prep_extract_summary.dataquieR_resultset2}()},
 \code{\link{prep_render_pie_chart_from_summaryclasses_ggplot2}()},
 \code{\link{prep_render_pie_chart_from_summaryclasses_plotly}()},
-\code{\link{prep_summary_to_classes}()},
-\code{\link{util_as_cat}()},
-\code{\link{util_as_integer_cat}()},
-\code{\link{util_extract_indicator_metrics}()},
-\code{\link{util_get_category_for_result}()},
-\code{\link{util_get_colors}()},
-\code{\link{util_get_labels_grading_class}()},
-\code{\link{util_get_message_for_result}()},
-\code{\link{util_get_rule_sets}()},
-\code{\link{util_get_ruleset_formats}()},
-\code{\link{util_get_thresholds}()},
-\code{\link{util_html_table}()},
-\code{\link{util_sort_by_order}()}
+\code{\link{prep_summary_to_classes}()}
 }
 \concept{summary_functions}

@@ -5,7 +5,7 @@
 #'
 #' @return `TRUE`, if really sure to be `RStudio`, `FALSE`, otherwise.
 #'
-#' @keywords internal
+#' @noRd
 util_really_rstudio <- function() {
 
   is_shiny <- suppressWarnings(util_ensure_suggested("shiny", err = FALSE)) &&

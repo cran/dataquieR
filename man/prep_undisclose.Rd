@@ -4,10 +4,14 @@
 \alias{prep_undisclose}
 \title{Remove data disclosing details}
 \usage{
-prep_undisclose(x)
+prep_undisclose(x, cores)
 }
 \arguments{
 \item{x}{an object to un-disclose, a}
+
+\item{cores}{can be an integer with a number of cores to use. if not
+specified, the function uses the default cluster, if available
+and falls back to serial un-disclosing, otherwise.}
 }
 \value{
 undisclosed object

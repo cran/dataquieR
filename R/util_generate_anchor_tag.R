@@ -13,7 +13,7 @@
 #'
 #' @family reporting_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_generate_anchor_tag <- function(
     varname,
     callname,
@@ -66,7 +66,7 @@ util_generate_anchor_tag <- function(
 #'
 #' @family reporting_functions
 #' @concept process
-#' @keywords internal
+#' @noRd
 util_generate_anchor_link <- function(
     varname,
     callname,

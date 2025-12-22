@@ -44,7 +44,7 @@ acc_distributions_ecdf <- function(resp_vars = NULL,
   prep_prepare_dataframes(.replace_hard_limits = TRUE,
                           #.apply_factor_metadata = TRUE, # can be omitted in favor of .apply_factor_metadata_inadm
                           .apply_factor_metadata_inadm = TRUE
-                          )
+  )
 
   # If no response variable is defined, all suitable variables will be selected.
   if (length(resp_vars) == 0) {
@@ -178,32 +178,47 @@ acc_distributions_ecdf <- function(resp_vars = NULL,
     # omit NAs from data to prevent ggplot2 warning messages
     ds1 <- ds1[!(is.na(ds1[[rv]])), , drop = FALSE]
 
-    pp <- ggplot(data = ds1[, c(rv, group_vars), drop = FALSE],
-                 aes(x = .data[[rv]], colour = .data[[group_vars]])) +
-      stat_ecdf(geom = "step") +
-      labs(x = "", y = paste0("ECDF: ", lbr, " (by ", lbg, ")")) +
-      theme_minimal() +
-      theme(
-        title = txtspec,
-        axis.text.x = txtspec,
-        axis.text.y = txtspec,
-        axis.title.x = txtspec,
-        axis.title.y = txtspec,
-        legend.title = element_blank()
-      )
+    .ds00 <- ds1[, c(rv, group_vars), drop = FALSE]
+
+    pp <- util_create_lean_ggplot(
+      ggplot(data = .ds00,
+             aes(x = .data[[rv]], colour = .data[[group_vars]])) +
+        stat_ecdf(geom = "step") +
+        labs(x = "", y = paste0("ECDF: ", lbr, " (by ", lbg, ")")) +
+        theme_minimal() +
+        theme(
+          title = txtspec,
+          axis.text.x = txtspec,
+          axis.text.y = txtspec,
+          axis.title.x = txtspec,
+          axis.title.y = txtspec,
+          legend.title = element_blank()
+        ),
+      .ds00 = .ds00,
+      rv = rv,
+      group_vars = group_vars,
+      lbr = lbr,
+      lbg = lbg,
+      txtspec = txtspec
+    )
 
     if (!is_datetime_var[[rv]]) {
-      pp <- pp + scale_x_continuous(expand = expansion(mult = 0.1))
+      pp <- pp + util_create_lean_ggplot(
+        scale_x_continuous(expand = expansion(mult = 0.1))
+      )
     } else {
-      pp <- pp + scale_x_datetime(expand = expansion(mult = 0.1))
+      pp <- pp + util_create_lean_ggplot(
+        scale_x_datetime(expand = expansion(mult = 0.1))
+      )
     }
 
     if (util_ensure_suggested("colorspace",
                               "use the colorspace color scale",
                               err = FALSE)) {
-      pp <- pp +
-        colorspace::scale_color_discrete_sequential(palette = "Plasma",
-                                                    na.value = "grey")
+      pp <- pp + util_create_lean_ggplot(
+          colorspace::scale_color_discrete_sequential(palette = "Plasma",
+                                                      na.value = "grey")
+      )
     }
 
     util_set_size(pp)

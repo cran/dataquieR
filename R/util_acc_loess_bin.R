@@ -64,7 +64,7 @@
 #'                     element_blank expand_limits
 #' @importFrom stats as.formula lm loess predict na.omit glm binomial poisson sd
 #'                   cov var runif
-#' @keywords internal
+#' @noRd
 util_acc_loess_bin <- function(
     resp_vars,
     label_col = NULL,
@@ -81,14 +81,14 @@ util_acc_loess_bin <- function(
     n_group_max = getOption("dataquieR.max_group_var_levels_in_plot",
                             dataquieR.max_group_var_levels_in_plot_default),
     enable_GAM = getOption("dataquieR.GAM_for_LOESS",
-                           dataquieR.GAM_for_LOESS.default),
+                           dataquieR.GAM_for_LOESS_default),
     exclude_constant_subgroups =
       getOption("dataquieR.acc_loess.exclude_constant_subgroups",
-                dataquieR.acc_loess.exclude_constant_subgroups.default),
+                dataquieR.acc_loess.exclude_constant_subgroups_default),
     min_bandwidth = getOption("dataquieR.acc_loess.min_bw",
-                              dataquieR.acc_loess.min_bw.default),
+                              dataquieR.acc_loess.min_bw_default),
     min_proportion = getOption("dataquieR.acc_loess.min_proportion",
-                               dataquieR.acc_loess.min_proportion.default)) {
+                               dataquieR.acc_loess.min_proportion_default)) {
   # preps ----------------------------------------------------------------------
   # map metadata to study data
   prep_prepare_dataframes(.replace_hard_limits = TRUE,
@@ -262,7 +262,9 @@ util_acc_loess_bin <- function(
   ds1 <- ds1[complete.cases(ds1), ]
 
   # convert group_vars to factor (needed for example for the dummy group)
-  ds1[[group_vars]] <- factor(ds1[[group_vars]])
+  if (!is.factor(ds1[[group_vars]])) {
+    ds1[[group_vars]] <- factor(ds1[[group_vars]])
+  }
 
   # TODO: use util_check_group_levels
   # too few observations per level?
@@ -290,7 +292,12 @@ util_acc_loess_bin <- function(
                   ds1[[group_vars]] %in%
                     setdiff(levels(ds1[[group_vars]]), to_excl))
     # drop unused levels
-    ds1[[group_vars]] <- factor(ds1[[group_vars]])
+    if (!is.factor(ds1[[group_vars]])) {
+      ds1[[group_vars]] <- factor(ds1[[group_vars]])
+    } else {
+      ds1[[group_vars]] <-
+        droplevels(ds1[[group_vars]])
+    }
   }
 
   if (nrow(ds1) == 0) {
@@ -322,7 +329,12 @@ util_acc_loess_bin <- function(
                     ds1[[group_vars]] %in%
                       setdiff(levels(ds1[[group_vars]]), lvl_to_exclude))
       # drop unused levels
-      ds1[[group_vars]] <- factor(ds1[[group_vars]])
+      if (!is.factor(ds1[[group_vars]])) {
+        ds1[[group_vars]] <- factor(ds1[[group_vars]])
+      } else {
+        ds1[[group_vars]] <-
+          droplevels(ds1[[group_vars]])
+      }
     }
   }
 
@@ -382,7 +394,7 @@ util_acc_loess_bin <- function(
   tp_round_seq <- util_optimize_sequence_across_time_var(
     time_var_data = tp_seq,
     n_points = resolution)
-  ds1[["ROUND_TIME"]] <- suppressWarnings(as.POSIXct(
+  ds1[["ROUND_TIME"]] <- suppressWarnings(util_parse_date(
     lubridate::round_date(ds1[[time_vars]], unit = tp_round_seq)))
 
   # store a numeric version of the original time variable for later calculations
@@ -458,7 +470,13 @@ util_acc_loess_bin <- function(
       # can lead to an underestimation of the proportion of cases.
       fit_i_df <- unique(as.data.frame(fit_i))
       fit_vals <- fit_i_df$y
-      data_i_seq <- as.POSIXct(fit_i_df$x)
+      val_bel_0 <- fit_vals < 0
+      val_abv_1 <- fit_vals > 1
+      if (any(c(val_bel_0, val_abv_1))) {
+        fit_vals[val_bel_0] <- 0
+        fit_vals[val_abv_1] <- 1
+      }
+      data_i_seq <- util_parse_date(fit_i_df$x)
     }
 
     pred_df <- data.frame(TIME = data_i_seq,
@@ -497,42 +515,61 @@ util_acc_loess_bin <- function(
   y_max <- min(1, mean(ds1$Residuals) + sd(ds1$Residuals))
 
   # Facet-Grids for categorical variable (observer/device)
-  p1 <- ggplot(fit_groups,
-               aes(x = .data$TIME,
-                   y = .data$FITTED_VALUE,
-                   color = .data$GROUP)) + {
-                     if (!is.null(hex_code)) {
-                       scale_color_manual(values = hex_code)
-                     }} +
-    xlab(rvs_bin_note) +
-    ylab("") +
-    geom_line() +
-    facet_wrap(~ .data$GROUP, ncol = 2) + #TODO: What about this ~?
-    expand_limits(y = c(y_min, y_max)) +
-    theme_minimal() +
-    ggtitle(plot_title, subtitle) +
-    theme(legend.title = element_blank())
+  p1 <- util_create_lean_ggplot(ggplot(fit_groups,
+                                       aes(x = .data$TIME,
+                                           y = .data$FITTED_VALUE,
+                                           color = .data$GROUP)) + {
+                                             if (!is.null(hex_code)) {
+                                               scale_color_manual(values = hex_code)
+                                             }} +
+                                  xlab(rvs_bin_note) +
+                                  ylab("") +
+                                  geom_line() +
+                                  facet_wrap(~ .data$GROUP, ncol = 2) + #TODO: What about this ~?
+                                  expand_limits(y = c(y_min, y_max)) +
+                                  theme_minimal() +
+                                  ggtitle(plot_title, subtitle) +
+                                  theme(legend.title = element_blank()),
+                                fit_groups = fit_groups,
+                                hex_code = hex_code,
+                                rvs_bin_note = rvs_bin_note,
+                                y_max = y_max,
+                                y_min = y_min,
+                                plot_title = plot_title,
+                                subtitle = subtitle)
+
 
   # combined plot
-  p2 <- ggplot(fit_groups,
-               aes(x = .data$TIME,
-                   y = .data$FITTED_VALUE,
-                   group = .data$GROUP,
-                   color = .data$GROUP)) + {
-                     if (!is.null(hex_code)) {
-                       scale_color_manual(values = hex_code)
-                     }} +
-    xlab(rvs_bin_note) +
-    ylab("") +
-    geom_line() +
-    expand_limits(y = c(y_min, y_max)) +
-    theme_minimal() +
-    ggtitle(plot_title, subtitle)
+  p2 <- util_create_lean_ggplot(ggplot(fit_groups,
+                                       aes(x = .data$TIME,
+                                           y = .data$FITTED_VALUE,
+                                           group = .data$GROUP,
+                                           color = .data$GROUP)) + {
+                                             if (!is.null(hex_code)) {
+                                               scale_color_manual(values = hex_code)
+                                             }} +
+                                  xlab(rvs_bin_note) +
+                                  ylab("") +
+                                  geom_line() +
+                                  expand_limits(y = c(y_min, y_max)) +
+                                  theme_minimal() +
+                                  ggtitle(plot_title, subtitle),
+                                fit_groups = fit_groups,
+                                hex_code = hex_code,
+                                rvs_bin_note = rvs_bin_note,
+                                y_min = y_min,
+                                y_max = y_max,
+                                plot_title = plot_title,
+                                subtitle = subtitle)
 
   if (length(levels(ds1[[group_vars]])) > 1) {
-    p2 <- p2 + theme(legend.title = element_blank())
+    p2 <- util_create_lean_ggplot(p2 +
+                                    theme(legend.title = element_blank()),
+                                  p2 = p2)
   } else {
-    p2 <- p2 + theme(legend.position = "none")
+    p2 <- util_create_lean_ggplot(p2 +
+                                    theme(legend.position = "none"),
+                                  p2 = p2)
   }
 
   p1 <- util_set_size(p1,
@@ -551,7 +588,10 @@ util_acc_loess_bin <- function(
 
   # Add attribute with size hints to the combined plot
   if (!is.null(pl[["Loess_fits_combined"]])) {
-    obj1 <- ggplot2::ggplot_build(pl[["Loess_fits_combined"]])
+    .plot1 <- pl[["Loess_fits_combined"]]
+    obj1 <- util_create_lean_ggplot(
+      ggplot2::ggplot_build(.plot1),
+      .plot1 = .plot1)
     min_point_line <- min(util_rbind(data_frames_list = obj1$data)$y, na.rm = TRUE)
     max_point_line <- max(util_rbind(data_frames_list = obj1$data)$y, na.rm = TRUE)
     n_groups <- length(unique(util_rbind(data_frames_list = obj1$data)$group))

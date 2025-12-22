@@ -6,7 +6,7 @@
 #'
 #' @return [character] the link
 #'
-#' @keywords internal
+#' @noRd
 util_online_ref <- function(fkt_name) {
 
   # convert function names to website names
