@@ -225,6 +225,7 @@ util_load_manual <- function(rebuild = FALSE,
       title
   })
   if (rebuild) {
+    ..manual$rd_objects <- NULL
     ..manual$.man_hash <- man_hash
     save(list = ls(envir = ..manual), envir = ..manual, file = target,
          compress = "xz")

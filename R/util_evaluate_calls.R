@@ -244,7 +244,8 @@ util_evaluate_calls <-
         dev_package <- FALSE
       }
 
-      if (dev_package && !is.null(parallel::getDefaultCluster())) {
+      if (dev_package && !is.null(parallel::getDefaultCluster()) &&
+          !isTRUE(getOption("dataquieR.tmp_no_load_all"))) {
         .d <- system.file(package = utils::packageName())
         .exp <- substitute({
           pkgload::load_all(path = .d)
@@ -253,9 +254,9 @@ util_evaluate_calls <-
         parexp(".exp")
         par_eval_q(eval(.exp))
       } else {
-        if (!is.null(parallel::getDefaultCluster())) {
+        suppressWarnings(suppressMessages(try({
           parlib(utils::packageName())
-        }
+        }, silent = TRUE)))
       }
       parloadNS("hms")
 

@@ -287,7 +287,7 @@ try({
     dev_package <- FALSE
   }
 
-  if (dev_package && !is.null(parallel::getDefaultCluster())) {
+  if (dev_package) {
     roxygenise_call <- 0
     called_from_rogygen <- FALSE
     while (!is.null(cl <- rlang::caller_call(roxygenise_call)) &&
@@ -315,7 +315,7 @@ try({
       need_rebuild <- FALSE
       max_man <- max(vapply(list.files("man/", full.names = TRUE, all.files = TRUE,
                                        pattern = "*.Rd", ignore.case = TRUE), file.mtime,
-                            FUN.VALUE = file.mtime("/")))
+                            FUN.VALUE = file.mtime("/")), na.rm = TRUE)
       man_hash <- rlang::hash(rlang::hash_file(list.files("man/", full.names =
                                                             TRUE,
                                                           all.files = TRUE,
@@ -329,7 +329,9 @@ try({
         silent = TRUE
       )
       if (old_man_hash == "" || old_man_hash != man_hash) {
-        if (file.mtime("inst/manual.RData") < max_man) {
+        .update <- file.mtime("inst/manual.RData") < max_man
+        .update <- .update || is.na(.update)
+        if (.update) {
           rlang::inform(
             use_cli_format = use_cli_format,
             c(i = cli::format_inline(sprintf(paste("inst/manual.RData may be out of date, as a dataquieR developer,",
@@ -346,7 +348,9 @@ try({
         silent = TRUE
       )
       if (old_man_hash == "" || old_man_hash != man_hash) {
-        if (file.mtime("inst/indicator_or_descriptor.RData") < max_man) {
+        .update <- file.mtime("inst/indicator_or_descriptor.RData") < max_man
+        .update <- .update || is.na(.update)
+        if (.update) {
           rlang::inform(
             use_cli_format = use_cli_format,
             c(i = cli::format_inline(sprintf(paste("inst/indicator_or_descriptor.RData may be out of date, as a",

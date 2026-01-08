@@ -9,6 +9,12 @@
   <meta http-equiv="Expires" content="0">
   <title>{{ as.character(title) }}</title>
   <script type="text/javascript">
+    //<![CDATA[
+    document.querySelector(':root').style.setProperty('--screen-width', window.screen.width);
+    document.querySelector(':root').style.setProperty('--screen-height', window.screen.height);
+    //]]>
+  </script>
+  <script type="text/javascript">
 //<![CDATA[
   window.dq_report2_iframe = true;
 //]]>

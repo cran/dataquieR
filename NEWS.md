@@ -1,3 +1,29 @@
+# dataquieR 2.8.7
+
+* Fixed a bug in generated `JavaScript` containing variable labels with
+  quotes
+* Fixed a bug in rendering, if some of the variables from the study data
+  that are not covered in the metadata
+
+# dataquieR 2.8.6
+
+* Fixed race-condition with `JavaScript` and `css` in output
+* Fix in build-pipeline not affecting end-users
+
+# dataquieR 2.8.5
+
+* Improved `css` in output
+* Smaller package
+
+# dataquieR 2.8.4
+
+* Added regression test based on the bug fixed in version `2.8.3`.
+* Fixed a bug preventing some internal links from working.
+
+# dataquieR 2.8.3
+
+* Fixed a bug causing reports to be incomplete.
+
 # dataquieR 2.8.2
 
 * disabled slow tests

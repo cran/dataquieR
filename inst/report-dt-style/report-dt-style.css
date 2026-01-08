@@ -52,6 +52,12 @@ table.matrixTable * {
     margin:0px!important;
 }
 
+table.myDT * {
+    padding: 2px!important;
+    padding-right: 11px!important;
+    margin:0px!important;
+}
+
 /* TODO: FIND OUT; WHAT EXACTLY:
 table.matrixTable > * > * > * > * > * {
     padding: 0px;

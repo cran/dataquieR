@@ -286,10 +286,18 @@ print.dataquieR_resultset2 <- function(
                  "Creating HTML files in memory...finalize")
 
     all_ids <- util_extract_all_ids(pages)
+    js_escape_string <- function(x) {
+      x <- gsub("\\\\", "\\\\\\\\", x)  # Backslash first
+      x <- gsub("\"", "\\\\\"", x)      # "
+      x <- gsub("\n", "\\\\n", x)
+      x <- gsub("\r", "\\\\r", x)
+      x <- gsub("\t", "\\\\t", x)
+      x
+    }
     cat(sep = "",
         "window.all_ids = {\"all_ids\": ",
         paste0("[",
-               paste0('"', all_ids, '"', collapse = ", "),
+               paste0('"', js_escape_string(all_ids), '"', collapse = ", "),
                "]"),
         "}",
         file = file.path(dir, "anchor_list.js")
@@ -1020,3 +1028,4 @@ util_check_shared_filesystem <- function(dir = ".",
 }
 
 # IDEA: For PDF output, support https://cran.r-project.org/web/packages/xmpdf/index.html
+

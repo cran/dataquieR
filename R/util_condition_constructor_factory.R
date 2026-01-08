@@ -168,7 +168,20 @@ util_condition_constructor_factory <- function(
     attr(ec, "intrinsic_applicability_problem") <- intrinsic_applicability_problem
     attr(ec, "integrity_indicator") <- integrity_indicator
     attr(ec, "varname") <- varname
-    class(ec) <- unique(c(additional_classes, class(ec)))
+    dq_err_classes <- character(0)
+    if (isTRUE(intrinsic_applicability_problem)) {
+      dq_err_classes <- unique(c(
+        dq_err_classes,
+        dataquieR.intrinsic_applicability_problem
+      ))
+    }
+    if (isTRUE(applicability_problem)) {
+      dq_err_classes <- unique(c(
+        dq_err_classes,
+        dataquieR.applicability_problem
+      ))
+    }
+    class(ec) <- unique(c(additional_classes, dq_err_classes, class(ec)))
     if (level >= getOption("dataquieR.CONDITIONS_LEVEL_TRHESHOLD",
                   dataquieR.CONDITIONS_LEVEL_TRHESHOLD_default) ||
         inherits(ec, "error")) {

@@ -779,7 +779,8 @@ document.addEventListener("click", function (e) {
   if (shouldCheck) {
     const baseName = targetUrl.pathname.split("/").pop() + targetUrl.hash;
 
-    if (!all_ids.all_ids.includes(baseName)) {
+    if (!all_ids.all_ids.includes(baseName) &&
+        !all_ids.all_ids.includes(decodeURI(baseName))) {
       e.preventDefault();
       alert("The requested output does not exist: " + baseName + ". Sorry, this is a bug, please report.");
     }

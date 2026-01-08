@@ -563,9 +563,10 @@ util_generate_pages_from_report <- function(report, template,
   }
   vars_to_create_pages4 <- vars_to_create_pages4[util_empty(util_map_labels(
     ifnotfound = NA_character_, # remove SSI vars from standard report.
-    attr(report, "study_data_dimnames")[[2]],
+    vars_to_create_pages4,
     .md,
-    to = COMPUTED_VARIABLE_ROLE))]
+    to = COMPUTED_VARIABLE_ROLE,
+    from = attr(report, "label_col")))]
 
   i <- 0
   n <- length(vars_to_create_pages4)
@@ -683,9 +684,10 @@ util_generate_pages_from_report <- function(report, template,
     rownames(report),
     util_map_labels(
       ifnotfound = NA_character_,
-      attr(report, "study_data_dimnames")[[2]],
+      vars_to_create_pages4,
       attr(report, "meta_data"),
-      to = attr(report, "label_col"))
+      to = attr(report, "label_col"),
+      from = attr(report, "label_col"))
   )
 
   vars_to_create_pages4 <-

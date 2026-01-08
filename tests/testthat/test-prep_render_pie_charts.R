@@ -56,6 +56,6 @@ test_that("prep_render_pie_chart_from_summaryclasses_ggplot2 works", {
   # expect_snapshot_value(r, style = "deparse") snapshots do not work, here. the plots differ (like the label is on the test platform on top locally at the bottom of the big pie-piece)
   # do a very unspecific verification:
 
-  expect_gt(nchar(r), 70000)
+  expect_gt(nchar(r), 20000)
 
 })

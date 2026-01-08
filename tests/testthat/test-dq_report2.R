@@ -303,16 +303,101 @@ test_that("dq_report2 works", {
                             cores = NULL,
                             dimensions = "Integrity"))
 
-  # sd0 <- study_data
-  # md0 <- meta_data
-  # md0 <- md0[which(md0[[LABEL]] %in%
-  #                    c("CENTER_0", "CRP_0", "BSG_0", "PSEUD0_ID", "DEV_NO_0", "PART_STUDY", "PART_LAB")), ]
-  # md0[[LABEL]] <- ""
-  # # create a grouping variable with large integer numbers and without specifying value labels
-  # sd0$v11111 <- sd0$v00000 * 1000
-  # md0[["KEY_DEVICE"]][md0[["VAR_NAMES"]] == "v00015"] <- "v11111"
-  # md0 <- rbind(md0, c("v11111", "", "integer", rep(NA_character_, ncol(md0) - 3)))
-  # sd0 <- sd0[which(colnames(sd0) %in% md0[[VAR_NAMES]])]
-  # test_rep <- dq_report2(study_data = sd0, meta_data = md0, dimensions = NULL)
 })
 
+test_that("no issues with parallel running reports", {
+  skip_if_not_installed("DT")
+  skip_if_not_installed("stringdist")
+  skip_if_not_installed("markdown")
+  skip_on_cran() # needs maybe too many cores
+  skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
+
+  prep_load_workbook_like_file("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx")
+
+  study_data <- head(prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/study_data.RData", keep_types = TRUE), 100)
+  meta_data <- prep_get_data_frame("item_level")
+
+  mlt <- prep_get_data_frame("https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx| missing_table")
+
+  prep_purge_data_frame_cache()
+
+  prep_add_data_frames(`missing_table` = mlt)
+
+  invisible(testthat::capture_output_lines(gc(full = TRUE, verbose = FALSE)))
+
+  sd0 <- study_data[, 1:5]
+  sd0$v00012 <- study_data$v00012
+  md0 <- subset(meta_data, VAR_NAMES %in% colnames(sd0))
+  md0$PART_VAR <- NULL
+
+  r <- without_testthat(
+    withr::with_options( # otherwise, cores = 2 is disallowed
+      list(dataquieR.tmp_no_load_all = TRUE, # even in testthat do not run load_all in this specific test, it would hide possible problems in the default code branch not being executed under load_all in util_evalute_calls
+           dataquieR.dt_adjust = FALSE), { # speed up
+    dq_report2(sd0, md0,
+                    resp_vars = c("v00000", "v00001", "v00002",
+                                  "v00003", "v00004", "v00012"),
+                    filter_indicator_functions =
+                      c("^com_item_missingness$",
+                        "^acc_varcomp$"),
+                    filter_result_slots =
+                      c("^SummaryTable$"),
+                    cores = 2,
+                    mode = "queue",
+                    dimensions = # for speed, omit Accuracy
+                      c("Integrity",
+                        "Completeness",
+                        "Consistency",
+                        "Accuracy"))
+      })
+  )
+
+  res_is_null <- vapply(r,
+         inherits, "dataquieR_NULL",
+         FUN.VALUE = logical(1))
+
+  res_is_iap <-
+    any(vapply(r,
+           function(rres) {
+             if (length(attr(rres, "error")) > 1) {
+               fail("We should not have > 1 error per result")
+             }
+             if (length(attr(rres, "error")) == 0) {
+               FALSE
+             } else {
+               vapply(attr(rres, "error"),
+                      inherits, dataquieR.intrinsic_applicability_problem,
+                      FUN.VALUE = logical(1))
+             }
+           }, FUN.VALUE = logical(1)))
+
+  res_is_ap <-
+    any(vapply(r,
+               function(rres) {
+                 if (length(attr(rres, "error")) > 1) {
+                   fail("We should not have > 1 error per result")
+                 }
+                 if (length(attr(rres, "error")) == 0) {
+                   FALSE
+                 } else {
+                   vapply(attr(rres, "error"),
+                          inherits, dataquieR.applicability_problem,
+                          FUN.VALUE = logical(1))
+                 }
+               }, FUN.VALUE = logical(1)))
+
+  expect_all_false(res_is_null & !res_is_ap & !res_is_iap) # should not have unknown errors in the report
+
+})
+
+# sd0 <- study_data
+# md0 <- meta_data
+# md0 <- md0[which(md0[[LABEL]] %in%
+#                    c("CENTER_0", "CRP_0", "BSG_0", "PSEUD0_ID", "DEV_NO_0", "PART_STUDY", "PART_LAB")), ]
+# md0[[LABEL]] <- ""
+# # create a grouping variable with large integer numbers and without specifying value labels
+# sd0$v11111 <- sd0$v00000 * 1000
+# md0[["KEY_DEVICE"]][md0[["VAR_NAMES"]] == "v00015"] <- "v11111"
+# md0 <- rbind(md0, c("v11111", "", "integer", rep(NA_character_, ncol(md0) - 3)))
+# sd0 <- sd0[which(colnames(sd0) %in% md0[[VAR_NAMES]])]
+# test_rep <- dq_report2(study_data = sd0, meta_data = md0, dimensions = NULL)
