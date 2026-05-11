@@ -63,7 +63,7 @@ if you specify \code{meta_data_v2}.}
 a list with:
 \itemize{
 \item \code{ResultData}: \link{data.frame} underlying the plot
-\item \code{SummaryPlot}: \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} probability distribution plot
+\item \code{SummaryPlot}: \link[ggplot2:ggplot2]{ggplot2::ggplot2} probability distribution plot
 \item \code{SummaryTable}: \link{data.frame} with the columns \code{Variables} and \code{FLG_acc_ud_shape}
 }
 }

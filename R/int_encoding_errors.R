@@ -53,7 +53,8 @@ int_encoding_errors <- function(resp_vars = NULL,
     meta_data_dataframe <- data.frame()
   }
 
-  util_expect_data_frame(study_data, keep_types =  TRUE)
+  util_expect_data_frame(study_data, keep_types =  TRUE,
+                         keep_encoding_errors = TRUE)
 
   if (missing(label_col)) {
     label_col <- VAR_NAMES

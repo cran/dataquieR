@@ -33,6 +33,25 @@ util_rio_import <- function(fn, keep_types, ...) {
 #' @noRd
 #'
 util_rio_import_list <- function(fn, keep_types, ...) {
+  if (tolower(tools::file_ext(trimws(fn))) %in% c("odm", "xml") &&
+      file.exists(fn) && !dir.exists(fn) &&
+      util_is_odm_xml(fn)) {
+    if (!odm_installed) {
+      util_error(c("%s looks like an ODM file. %s cannot read these without",
+                     "the help of dataquieR2odm, which you need to install",
+                     "separately, see %s"),
+                   dQuote(fn),
+                   sQuote(utils::packageName()),
+                   sQuote(
+                   'https://dataquality.qihs.uni-greifswald.de/DownloadR.html'))
+    }
+    my_read_list <- try(util_odm2dataquieR(fn), silent = TRUE)
+    if (!util_is_try_error(my_read_list) && is.list(my_read_list)) {
+      if (all(c("item_level", CODE_LIST_TABLE) %in% names(my_read_list))) {
+        return(my_read_list[c("item_level", CODE_LIST_TABLE)])
+      }
+    }
+  }
   r <- .util_rio_import_lambda(fn, keep_types, lambda = rio::import_list, ...)
   .util_warn_on_possible_study_data_read_with_keep_types_false_or_vv(
     r,

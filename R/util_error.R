@@ -30,6 +30,8 @@
 #'                                        here is the indicator abbreviation..
 #' @param level [integer] level of the error message (defaults to 0). Higher
 #'                        levels are more severe.
+#' @param once_id [character] If specified, suppress further conditions
+#'                 with the same ID during this R session.
 #' @param immediate [logical] not used.
 #' @param additional_classes [character] additional classes the
 #'                                       thrown condition object should inherit

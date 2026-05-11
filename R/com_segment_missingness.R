@@ -656,6 +656,16 @@ com_segment_missingness <- function(study_data,
   res_df <- res_df[, !names(res_df) %in% c("GRADING")]
 
 
+  #Add new attribute to the columns of ResultData to define the datatype of each column
+  attr(res_df[[paste(colnames(res_df)[1])]], DATA_TYPE) <- DATA_TYPES$STRING #The column name depends on the presence of the argument group_vars, if not present is Group otherwise is the name of the variable in group_vars
+  attr(res_df$Examinations, DATA_TYPE) <- DATA_TYPES$STRING
+  attr(res_df$`No. Participants`, DATA_TYPE) <- DATA_TYPES$INTEGER
+  attr(res_df$`No. missing segments`, DATA_TYPE) <- DATA_TYPES$INTEGER
+  attr(res_df$`(%) of missing segments`, DATA_TYPE) <- DATA_TYPES$FLOAT
+  attr(res_df$threshold, DATA_TYPE) <- DATA_TYPES$INTEGER
+  attr(res_df$direction, DATA_TYPE) <- DATA_TYPES$STRING
+
+
   return(util_attach_attr(list(ResultData = res_df,
               ReportSummaryTable = repsumtab,
               SummaryPlot = p)#,

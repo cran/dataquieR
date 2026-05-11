@@ -44,6 +44,24 @@ Indicator <- "Indicator"
 #' @seealso [Indicator]
 Descriptor <- "Descriptor"
 
+util_fix_backticks <- function(path = "man") {
+  rd_files <- list.files(path, "\\.Rd$", full.names = TRUE)
+
+  for (f in rd_files) {
+    x <- readLines(f, warn = FALSE, encoding = "UTF-8")
+
+    x <- gsub(
+      "\\\\item\\{(?:\\\\\\\\)?`?cross-item_level`?(?:\\\\\\\\)?\\}",
+      "\\\\item{`cross-item_level`}",
+      x,
+      perl = TRUE
+    )
+
+    writeLines(x, f, useBytes = TRUE)
+  }
+
+  invisible(rd_files)
+}
 
 #' being called by the active binding function for .manual
 #'
@@ -226,11 +244,11 @@ util_load_manual <- function(rebuild = FALSE,
   })
   if (rebuild) {
     ..manual$rd_objects <- NULL
-    ..manual$.man_hash <- man_hash
-    save(list = ls(envir = ..manual), envir = ..manual, file = target,
+    ..manual$man_hash <- man_hash
+    save(list = ls(envir = ..manual, all.names = TRUE), envir = ..manual, file = target,
          compress = "xz")
-    ..indicator_or_descriptor$.man_hash <- man_hash
-    save(list = ls(envir = ..indicator_or_descriptor),
+    ..indicator_or_descriptor$man_hash <- man_hash
+    save(list = ls(envir = ..indicator_or_descriptor, all.names = TRUE),
          envir = ..indicator_or_descriptor, file = target2,
          compress = "xz")
   }

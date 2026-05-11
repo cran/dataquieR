@@ -453,16 +453,6 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
 
   if (!.called_in_pipeline) meta_data <- util_validate_known_meta(meta_data)
 
-  if (.replace_missings) {
-    # Are missing codes replaced?
-    if (!isTRUE(attr(study_data, "Codes_to_NA"))) {
-      study_data <-
-        util_replace_codes_by_NA(
-          study_data = study_data, meta_data = meta_data,
-          split_char = SPLIT_CHAR, sm_code = .sm_code)
-    }
-  }
-
   study_data_hash <- rlang::hash(.study_data)
   meta_data_hash <- rlang::hash(.meta_data)
   .tabs <- sort(unique(unlist(meta_data[,
@@ -525,9 +515,9 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
   # If study_data exist and metadata were already mapped, then we can return ds1
   # directly, but only if all requested modifications are already considered
   # (if possible).
-  if (isTRUE(attr(study_data, "MAPPED", exact = TRUE))) {
-    ds1 <- study_data
-    study_data <- attr(ds1, "study_data")
+  if (isTRUE(attr(study_data, "MAPPED", exact = TRUE))) { # here, we known, study_data was a ds1, so it features a study_data already with original study data
+    ds1 <- study_data # study_data is actually a ds1 already, that may be used
+    study_data <- attr(ds1, "study_data") # get the original study_data w/o any attributes (XXX)
     # labels can be modified easily
     if (attr(ds1, "label_col") != label_col) {
       colnames(ds1) <-
@@ -538,13 +528,20 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
       attr(ds1, "label_col") <- label_col
     }
     ds1_ready <- TRUE
+
+    # find out, if ds1 really can be re-used
+
     # replacement of missing value codes can not be undone
     if (isTRUE(attr(ds1, "Codes_to_NA")) && !.replace_missings) {
+      ds1_ready <- FALSE
+    } else if (isTRUE(attr(ds1, "Codes_to_NA")) != .replace_missings) {
       ds1_ready <- FALSE
     }
     # replacement of hard limits can not be undone
     if (isTRUE(attr(ds1, "HL_viol_to_NA")) &&
         !.replace_hard_limits) {
+      ds1_ready <- FALSE
+    } else if (isTRUE(attr(ds1, "HL_viol_to_NA")) != .replace_hard_limits) {
       ds1_ready <- FALSE
     }
     # replacement of hard limits can not be undone, also, it may prevent hard limit replacement, e.g.
@@ -558,6 +555,8 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     if (isTRUE(attr(ds1, "Data_type_matches")) &&
         !.adjust_data_type) {
       ds1_ready <- FALSE
+    } else if (isTRUE(attr(ds1, "Data_type_matches")) != .adjust_data_type) {
+      ds1_ready <- FALSE
     }
     check_sl <-
       (.amend_scale_level && SCALE_LEVEL %in% colnames(meta_data) &&
@@ -568,16 +567,30 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     ds1_ready <- ds1_ready &&
       check_sl
 
-    if (ds1_ready) {
+    if (ds1_ready) { # ds1 can be re-used
       if (.internal) {
         assign("study_data", study_data, parent.frame())
         assign("meta_data", meta_data, parent.frame())
         assign("ds1", ds1, parent.frame())
         assign("label_col", label_col, parent.frame())
+        return(invisible(ds1))
+      } else {
+        return(ds1)
       }
-      return(invisible(study_data))
-    } else {
+    } else { # need to create a valid ds1, now
       ds1 <- NULL
+    }
+  }
+
+  # study_data does not feature ds1- attributes any more and ds1 needs to be built.
+
+  if (.replace_missings) {
+    # Are missing codes replaced?
+    if (!isTRUE(attr(study_data, "Codes_to_NA"))) { # always true, here, because study_data is now not mapped
+      study_data <-
+        util_replace_codes_by_NA(
+          study_data = study_data, meta_data = meta_data,
+          split_char = SPLIT_CHAR, sm_code = .sm_code)
     }
   }
 
@@ -588,7 +601,7 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
                applicability_problem = TRUE)
   }
 
-  if (!isTRUE(attr(study_data, "MAPPED", exact = TRUE))) {
+  if (!isTRUE(attr(study_data, "MAPPED", exact = TRUE))) { # always true, here, because study_data is now not mapped
     study_data <- study_data[, order(colnames(study_data)), FALSE]
     meta_data <- meta_data[order(meta_data[[VAR_NAMES]]), , FALSE]
   }
@@ -719,7 +732,7 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
     attributes(ds1)[.ds1_attribute_names] <- my_atts
   }
 
-  if (!isTRUE(attr(study_data, "MAPPED", exact = TRUE)) &&
+  if (!isTRUE(attr(study_data, "MAPPED", exact = TRUE)) &&  # !mapped is always true, here, because study_data is now not mapped
       PART_VAR %in% colnames(meta_data)) local({
     .kssvs <- intersect(colnames(study_data), meta_data[, PART_VAR])
     for (rv in .kssvs) {
@@ -767,7 +780,7 @@ prep_prepare_dataframes <- function(.study_data, .meta_data, .label_col,
                       relevant_vars_for_warnings)
 
     # convert columns to factors?
-    if (!isTRUE(attr(ds1, "apply_fact_md"))) {
+    if (!isTRUE(attr(ds1, "apply_fact_md"))) { # !apply_fact_md is always true, here, because study_data is now not mapped
       which_cols <- intersect(meta_data[[attr(ds1, "label_col")]],
                               colnames(ds1))
       ds1[, which_cols] <- lapply(which_cols,

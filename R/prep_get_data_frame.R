@@ -448,22 +448,7 @@ prep_get_data_frame <- function(data_frame_name,
   }
 
   # delete invalid character codes
-  if (nrow(r) > 0) {
-    chars <- vapply(r, is.character, FUN.VALUE = logical(1))
-    r[, chars] <-
-      lapply(r[, chars, drop = FALSE],
-             function(x) {
-               from <- Encoding(x)
-               from <- setdiff(from, "unknown")
-               from <- head(names(which.max(table(from))), 1)
-               if (length(from) != 1) {
-                 from <- "UTF-8"
-               }
-               x <- iconv(x, from, "UTF-8", sub = '')
-               Encoding(x) <- "UTF-8"
-               return(x)
-             })
-  }
+  r[] <- util_fix_encoding_cols(r)
 
   if (!column_names_only) {
     assign(data_frame_name, r, envir = .data_frame_list)

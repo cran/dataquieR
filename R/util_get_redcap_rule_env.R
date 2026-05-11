@@ -715,7 +715,7 @@ redcap_env <- (function() {
     }
   }
 
-  penv[["perc_miss_in_row"]] <- function(...){
+  penv[["perc_miss_in_row"]] <- function(...) {
     all_data <- cbind(...)
     apply(all_data, 1, function(rw) { 100 * sum(is.na(rw)) / length(rw) })
   }
@@ -746,6 +746,43 @@ redcap_env <- (function() {
     # Intra-individual Response variability
     all_data <- apply(cbind(...), 1:2, as.numeric) # FIXME: Use get_input_as_num_matrix
     apply(all_data, 1, sd, na.rm = TRUE)
+  }
+
+  penv[["QCHISQ"]] <- function(p, df) {
+    stats::qchisq(p = p, df = df)
+  }
+
+  penv[["mahalanobis_threshold"]] <- function(x) {
+    if (missing(x) || length(x) == 0) {
+      return(NA_real_)
+    }
+    util_expect_scalar(x)
+    by_opt <- getOption("dataquieR.MAHALANOBIS_THRESHOLD",
+                    dataquieR.MAHALANOBIS_THRESHOLD_default)
+    if (tolower(trimws(by_opt)) %in% c("true", "1", "t", "+")) {
+      by_opt <- dataquieR.MAHALANOBIS_THRESHOLD_default
+    }
+    if (tolower(trimws(x)) %in% c("true", "1", "t", "+")) {
+      .r <- by_opt
+    } else {
+      .r <- suppressWarnings(as.numeric(x))
+    }
+    if (length(.r) != 1) {
+      .r <- NA_real_
+    }
+    .r
+  }
+
+  penv[["MAHALANOBIS"]] <- function(...) {
+
+    x <- get_input_as_num_matrix(...)
+
+    keep_rows <- rowSums(is.na(x)) == 0
+
+    x_clean <- x[keep_rows, , drop = FALSE]
+
+    # Calculation of the Mahalanobis distance
+    mahalanobis(x, colMeans(x_clean), cov(x_clean))
   }
 
   # TODO: penv[["group_var"]], ...

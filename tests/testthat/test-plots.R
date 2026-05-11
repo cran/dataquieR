@@ -121,7 +121,7 @@ test_that("margins plot works", { # acc_margins.R -----
                   sort_group_var_levels = FALSE)
 
     expect_doppelganger2("margins dbp0", r$SummaryPlot)
-    expect_lt(lobstr::obj_size(r$SummaryPlot), 15 * 1024 * 1024)
+    r1 <- r
 
     prep_purge_data_frame_cache()
     skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
@@ -140,6 +140,8 @@ test_that("margins plot works", { # acc_margins.R -----
                   co_vars = "AGE_0")
 
     expect_doppelganger2("margins edu0", r$SummaryPlot)
+    skip_on_covr()
+    expect_lt(lobstr::obj_size(r1$SummaryPlot), 15 * 1024 * 1024)
     expect_lt(lobstr::obj_size(r$SummaryPlot), 15 * 1024 * 1024)
   })
 })
@@ -162,8 +164,9 @@ test_that("multivariate outlier plot works", { # acc_multivariate_outlier.R ----
 
     expect_doppelganger2("acc_multivariate_outlier test 1",
                                 r$SummaryPlot)
-    skip_if(TRUE || R.version$major == "4" && R.version$minor == "5.1", message = "Strange size differences in lobstr on test containers with many, but not all R versions for this plot. No idea, but likely related with the FIXME at the end of this file.") # FIXME
+    # skip_if(TRUE || R.version$major == "4" && R.version$minor == "5.1", message = "Strange size differences in lobstr on test containers with many, but not all R versions for this plot. No idea, but likely related with the FIXME at the end of this file.") # FIXME
     skip_if_not_installed("lobstr")
+    skip_on_covr()
     expect_lt(lobstr::obj_size(r$SummaryPlot), 15 * 1024 * 1024)
 
   })

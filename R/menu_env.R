@@ -19,8 +19,8 @@
 #' @name menu_env_menu_entry
 #' @keywords internal
 .menu_env$menu_entry <- function(title,
-                                 id = title,
-                       ...) {
+           id = title,
+           ...) {
   if (!grepl("#", id, fixed = TRUE) &&
       !startsWith(id, "http://") &&
       !startsWith(id, "https://") &&
@@ -42,12 +42,23 @@
     hash <- htmltools::urlEncodePath(as.character(hash))
     id <- paste0(link, "#", hash)
   }
+  if (!is.null(attr(title, "alternative_names")) &&
+      suppressWarnings(util_ensure_suggested("jsonlite",
+                                             goal = "Alias names in menu for search",
+                                             err = FALSE))) {
+    alternative_names <-
+      jsonlite::toJSON(attr(title, "alternative_names"), auto_unbox = TRUE)
+  } else {
+    alternative_names <- NULL
+  }
+
   htmltools::a(href=sprintf(
     "%s%s",
     hash_if_needed,
     id),
-    title, # htmltools::htmlEscape(title),
-    ...)
+    `data-alternative-names` = alternative_names,
+                 title, # htmltools::htmlEscape(title),
+                 ...)
 }
 
 #' Creates a drop-down menu
@@ -105,7 +116,11 @@
     lapply(setNames(nm = dd), function(ddn) {
       eoddn <- lapply(names(pages[[fn]]), function(sp) {
         if (attr(pages[[fn]][[sp]], "dropdown") == ddn) {
-          util_attach_attr(sp, fn = fn)
+          util_attach_attr(sp,
+                           fn = fn,
+                           alternative_names =
+                             attr(pages[[fn]][[sp]]$attribs$id, "alternative_names")
+                           )
         } else {
           NULL
         }

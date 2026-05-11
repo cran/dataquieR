@@ -2,12 +2,12 @@
 % Please edit documentation in R/000_globs.R
 \name{UNIT_PREFIXES}
 \alias{UNIT_PREFIXES}
-\title{Valid unit prefixes according to \code{\link[units:valid_udunits]{units::valid_udunits_prefixes()}}}
+\title{Valid unit prefixes according to \code{\link[units:valid_udunits_prefixes]{units::valid_udunits_prefixes()}}}
 \description{
 like k, m, M, c, ...
 }
 \seealso{
-Other UNITS: 
+Other UNITS:
 \code{\link{UNITS}},
 \code{\link{UNIT_IS_COUNT}},
 \code{\link{UNIT_PREFIX_FACTORS}},

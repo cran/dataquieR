@@ -13,6 +13,9 @@ util_df_escape <- function(x) {
   x[] <- lapply(x, function(y) {
     r <- htmltools::htmlEscape(y)
     attr(r, "plain_label") <- attr(y, "plain_label")
+    #Add the new data type attributes for columns
+    attr(r, DATA_TYPE) <- attr(y, DATA_TYPE)
+
     r
   })
   x

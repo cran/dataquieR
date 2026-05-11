@@ -6,6 +6,9 @@
 util_map_labels <- function(x, meta_data = "item_level",
                             to = LABEL, from = VAR_NAMES, ifnotfound,
                             warn_ambiguous = FALSE) {
+  if (!missing(x) && length(x) == 0) {
+    return(character(0))
+  }
   util_expect_data_frame(meta_data, c(from, to))
 
   if (warn_ambiguous) {

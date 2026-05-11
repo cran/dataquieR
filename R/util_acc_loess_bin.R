@@ -59,11 +59,8 @@
 #' @return a [list] with:
 #'   - `SummaryPlotList`: a plot.
 #'
-#' @importFrom ggplot2 ggplot aes scale_color_manual xlab ylab
-#'                     geom_line facet_wrap theme_minimal ggtitle theme
-#'                     element_blank expand_limits
-#' @importFrom stats as.formula lm loess predict na.omit glm binomial poisson sd
-#'                   cov var runif
+#' @importFrom ggplot2 ggplot aes scale_color_manual xlab ylab geom_line facet_wrap theme_minimal ggtitle theme element_blank expand_limits
+#' @importFrom stats as.formula lm loess predict na.omit glm binomial poisson sd cov var runif
 #' @noRd
 util_acc_loess_bin <- function(
     resp_vars,
@@ -73,7 +70,9 @@ util_acc_loess_bin <- function(
     group_vars = NULL,
     time_vars,
     co_vars = NULL,
-    min_obs_in_subgroup = 30,
+    min_obs_in_subgroup =
+      getOption("dataquieR.acc_loess.min_obs_in_subgroup",
+                dataquieR.acc_loess.min_obs_in_subgroup_default),
     resolution = 80,
     plot_format = getOption("dataquieR.acc_loess.plot_format",
                             dataquieR.acc_loess.plot_format_default),
@@ -110,6 +109,8 @@ util_acc_loess_bin <- function(
                             allow_all_obs_na = FALSE,
                             min_distinct_values = 3)
   util_correct_variable_use("co_vars",
+                            overwrite = TRUE,
+                            remove_not_found = TRUE,
                             allow_more_than_one = TRUE,
                             allow_all_obs_na = FALSE,
                             allow_na = TRUE,
@@ -135,6 +136,8 @@ util_acc_loess_bin <- function(
     co_vars <- character(0)
   }
   co_vars <- na.omit(co_vars)
+
+  n_lev_gv_total <- length(na.omit(unique(ds1[[group_vars]])))
 
   # omit missing values and unnecessary variables
   n_prior <- nrow(ds1)
@@ -345,12 +348,15 @@ util_acc_loess_bin <- function(
 
   # collapse 'rare' groups to reduce the number of levels, if needed
   tab_groups <- table(ds1[[group_vars]])
+  have_other <- FALSE
   if (length(tab_groups) > n_group_max) {
     tab_groups <- tab_groups[order(tab_groups, decreasing = TRUE)]
     keep_gr <- names(tab_groups)[1:n_group_max]
     levels(ds1[[group_vars]])[which(!levels(ds1[[group_vars]])
                                     %in% keep_gr)] <- "other"
+    tab_groups[["other"]] <- sum(ds1[[group_vars]] == "other")
     # new category 'other' should always be the last one
+    have_other <- TRUE
     lvl_gr <-
       c(levels(ds1[[group_vars]])[which(levels(ds1[[group_vars]])
                                         %in% keep_gr)],
@@ -501,12 +507,40 @@ util_acc_loess_bin <- function(
     subtitle <- ""
   }
 
+  {
+    n_lev_gv_reduced <-
+      length(unique(fit_groups$GROUP))
+    if (n_lev_gv_reduced < n_lev_gv_total) {
+      appendix <- sprintf("%d of %d levels shown",
+                         n_lev_gv_reduced - have_other,
+                         n_lev_gv_total)
+    } else {
+      appendix <- sprintf("all %d levels shown",
+                         n_lev_gv_reduced - have_other)
+    }
+    if (nzchar(subtitle)) {
+      subtitle <- paste(subtitle,
+                        appendix,
+                        sep = " - ")
+    } else {
+      subtitle <- appendix
+    }
+  }
+
+  levs <- as.character(levels(ds1[[group_vars]]))
+
+  g_labs <- paste(
+    levs,
+    sprintf("(n=%d)", unname(tab_groups[levs]))
+  )
+
   if (length(levels(ds1[[group_vars]])) <= 8) {
     hex_code <- c(
       "#56B4E9", "#E69F00", "#009E73",
       "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#8C510A"
     )
-    names(hex_code) <- as.character(levels(ds1[[group_vars]]))
+    hex_code <- head(hex_code, length(levs))
+    names(hex_code) <- levs
   } else {
     hex_code <- NULL
   }
@@ -520,7 +554,16 @@ util_acc_loess_bin <- function(
                                            y = .data$FITTED_VALUE,
                                            color = .data$GROUP)) + {
                                              if (!is.null(hex_code)) {
-                                               scale_color_manual(values = hex_code)
+                                               scale_color_manual(
+                                                 values = hex_code,
+                                                 breaks = levs,
+                                                 labels = g_labs
+                                               ) # https://chatgpt.com/c/69e0ecc5-10a8-8397-9f51-0d365cfa1876
+                                             } else {
+                                               ggplot2::scale_color_discrete(
+                                                 breaks = levs,
+                                                 labels = g_labs
+                                               )
                                              }} +
                                   xlab(rvs_bin_note) +
                                   ylab("") +
@@ -532,6 +575,8 @@ util_acc_loess_bin <- function(
                                   theme(legend.title = element_blank()),
                                 fit_groups = fit_groups,
                                 hex_code = hex_code,
+                                levs = levs,
+                                g_labs = g_labs,
                                 rvs_bin_note = rvs_bin_note,
                                 y_max = y_max,
                                 y_min = y_min,
@@ -546,7 +591,16 @@ util_acc_loess_bin <- function(
                                            group = .data$GROUP,
                                            color = .data$GROUP)) + {
                                              if (!is.null(hex_code)) {
-                                               scale_color_manual(values = hex_code)
+                                               scale_color_manual(
+                                                 values = hex_code,
+                                                 breaks = levs,
+                                                 labels = g_labs
+                                               ) # https://chatgpt.com/c/69e0ecc5-10a8-8397-9f51-0d365cfa1876
+                                             } else {
+                                               ggplot2::scale_color_discrete(
+                                                 breaks = levs,
+                                                 labels = g_labs
+                                               )
                                              }} +
                                   xlab(rvs_bin_note) +
                                   ylab("") +
@@ -556,6 +610,8 @@ util_acc_loess_bin <- function(
                                   ggtitle(plot_title, subtitle),
                                 fit_groups = fit_groups,
                                 hex_code = hex_code,
+                                levs = levs,
+                                g_labs = g_labs,
                                 rvs_bin_note = rvs_bin_note,
                                 y_min = y_min,
                                 y_max = y_max,

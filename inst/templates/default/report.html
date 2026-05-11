@@ -13,13 +13,92 @@
   <script src="https://polyfill.io/v3/polyfill.min.js?features=Array.prototype.find,Promise,Object.assign"></script><!-- TODO: Find a solution w/o inernet -->
   <script type="text/javascript">
 //<![CDATA[
-document.querySelector(':root').style.setProperty('--screen-width', window.screen.width);
-document.querySelector(':root').style.setProperty('--screen-height', window.screen.height);
+(function () {
+  const root = document.documentElement;
+
+  function getNumVar(name) {
+    const v = root.style.getPropertyValue(name);
+    const n = v ? Number(v.trim()) : 0;
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function freezeScreenVarsMonotonic(sw, sh) {
+    const prevW = getNumVar('--screen-width');
+    const prevH = getNumVar('--screen-height');
+
+    // never shrink; only grow
+    const nextW = Math.max(prevW, sw);
+    const nextH = Math.max(prevH, sh);
+
+    root.style.setProperty('--screen-width',  String(nextW)); // unitless for *1px
+    root.style.setProperty('--screen-height', String(nextH));
+  }
+
+  function readScreen() {
+    const s = window.screen;
+    if (!s || !s.width || !s.height) return null;
+    return { w: s.width, h: s.height };
+  }
+
+function callWhenAvailable(fnName, cb, tries = 120) {
+  const fn = window[fnName];
+  if (typeof fn === "function") { cb(fn); return true; }
+  if (tries <= 0) return false;
+  requestAnimationFrame(() => callWhenAvailable(fnName, cb, tries - 1));
+  return false;
+}
+
+function initWithRetry(tries = 20) {
+  const v = readScreen();
+  if (v) {
+    freezeScreenVarsMonotonic(v.w, v.h);
+
+    callWhenAvailable("sizeIframes", (fn) => {
+      fn(true);
+    });
+
+    return true;
+  }
+  if (tries <= 0) return false;
+  requestAnimationFrame(() => initWithRetry(tries - 1));
+}
+
+  // init early
+  initWithRetry();
+
+  // BFCache restore
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) initWithRetry();
+  });
+
+  // DPR change handler: keep it (as you want), but NEVER shrink the stored values
+  let lastDpr = window.devicePixelRatio || 1;
+  let mql = window.matchMedia(`(resolution: ${lastDpr}dppx)`);
+
+  function onDprChange() {
+    const newDpr = window.devicePixelRatio || 1;
+    if (newDpr === lastDpr) return;
+    lastDpr = newDpr;
+
+    if (mql.removeEventListener) mql.removeEventListener('change', onDprChange);
+    else if (mql.removeListener) mql.removeListener(onDprChange);
+
+    mql = window.matchMedia(`(resolution: ${lastDpr}dppx)`);
+    if (mql.addEventListener) mql.addEventListener('change', onDprChange);
+    else if (mql.addListener) mql.addListener(onDprChange);
+
+    initWithRetry(); // will only grow, never shrink
+  }
+
+  if (mql.addEventListener) mql.addEventListener('change', onDprChange);
+  else if (mql.addListener) mql.addListener(onDprChange);
+})();
 //]]>
   </script>
   <script type="text/javascript">
 //<![CDATA[
   window.dq_report2 = true;
+  window.by_report = {{ ifelse(by_report, "true", "false") }};
 //]]>
 </script>
   <script src="renderinfo.js"></script>
@@ -34,6 +113,7 @@ document.querySelector(':root').style.setProperty('--screen-height', window.scre
     <i class="fa fa-bars"></i>
   </a>
   {{ menu }}
+  <div class="dq-search-hint"><i class="fa fa-search"></i></div>
   <div class="opaque-on-hover-20 dropdown" style="visibility: hidden;display:none;">
     <button class="dropbtn">
     <label for="_enabletippy">Tooltips on Plots</label>

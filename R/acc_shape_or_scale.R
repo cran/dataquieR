@@ -38,10 +38,7 @@
 #'
 #' @export
 #' @importFrom MASS fitdistr
-#' @importFrom MultinomialCI multinomialCI
-#' @importFrom ggplot2 ggplot theme_minimal geom_bar aes scale_fill_manual
-#'                     geom_line geom_hline xlab scale_color_manual
-#'                     geom_errorbar
+#' @importFrom ggplot2 ggplot theme_minimal geom_bar aes scale_fill_manual geom_line geom_hline xlab scale_color_manual geom_errorbar
 #' @importFrom stats dunif dgamma dnorm punif pgamma pnorm median
 #' @seealso
 #' [Online Documentation](
@@ -239,6 +236,21 @@ acc_shape_or_scale <- function(resp_vars,
     nobs <- sum(h1$counts)
   }
 
+  if (identical(getOption("dataquieR.acc_shape_or_scale_ci",
+                           dataquieR.acc_shape_or_scale_ci_default),
+                 "binomial")) {
+    ci <- util_binomial_ci
+  } else if (identical(getOption("dataquieR.acc_shape_or_scale_ci",
+                               dataquieR.acc_shape_or_scale_ci_default),
+                     "multinomial")) {
+    ci <- util_multinomial_ci
+  } else {
+    util_error("option %s should be either %s or %s",
+               sQuote("dataquieR.acc_shape_or_scale_ci"),
+               dQuote("multinomial"),
+               dQuote("binomial"))
+  }
+
   if (end_digits == FALSE) {
     if (all(util_is_integer(ds1[[resp_vars]])) &
         length(unique(ds1[[resp_vars]])) < 20 & dist == "uniform") {
@@ -249,9 +261,9 @@ acc_shape_or_scale <- function(resp_vars,
         PROB = as.vector(table(ds1[[resp_vars]])) / nobs,
         EXP_PROB = round(1 / length(unique(ds1[[resp_vars]])), digits = 2),
         EXP_COUNT = nobs * 1 / length(unique(ds1[[resp_vars]])),
-        LOWER_CL = multinomialCI(as.vector(table(ds1[[resp_vars]])),
+        LOWER_CL = ci(as.vector(table(ds1[[resp_vars]])),
                                  alpha = 0.05 / (length(h1$mids) - 1))[, 1],
-        UPPER_CL = multinomialCI(as.vector(table(ds1[[resp_vars]])),
+        UPPER_CL = ci(as.vector(table(ds1[[resp_vars]])),
                                  alpha = 0.05 / (length(h1$mids) - 1))[, 2]
       )
     } else {
@@ -261,9 +273,9 @@ acc_shape_or_scale <- function(resp_vars,
         PROB = h1$counts / nobs,
         EXP_PROB = min(diff(h1$mids)) * d.fun(h1$mids, par1, par2),
         EXP_COUNT = nobs * diff(p.fun(h1$breaks, par1, par2)),
-        LOWER_CL = multinomialCI(h1$counts,
+        LOWER_CL = ci(h1$counts,
                                  alpha = 0.05 / (length(h1$mids) - 1))[, 1],
-        UPPER_CL = multinomialCI(h1$counts,
+        UPPER_CL = ci(h1$counts,
                                  alpha = 0.05 / (length(h1$mids) - 1))[, 2]
       )
     }
@@ -275,9 +287,9 @@ acc_shape_or_scale <- function(resp_vars,
       PROB = as.vector(table(ds1[[resp_vars]])) / nobs,
       EXP_PROB = 0.1,
       EXP_COUNT = nobs * 0.1,
-      LOWER_CL = multinomialCI(as.vector(table(ds1[[resp_vars]])),
+      LOWER_CL = ci(as.vector(table(ds1[[resp_vars]])),
                                alpha = 0.05 / (length(h1$mids) - 1))[, 1],
-      UPPER_CL = multinomialCI(as.vector(table(ds1[[resp_vars]])),
+      UPPER_CL = ci(as.vector(table(ds1[[resp_vars]])),
                                alpha = 0.05 / (length(h1$mids) - 1))[, 2]
     )
   }

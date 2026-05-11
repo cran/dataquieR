@@ -4,7 +4,7 @@
 \alias{prep_add_data_frames}
 \title{Add data frames to the pre-loaded / cache data frame environment}
 \usage{
-prep_add_data_frames(..., data_frame_list = list())
+prep_add_data_frames(..., data_frame_list = list(), append = FALSE)
 }
 \arguments{
 \item{...}{data frames, if passed with names, these will be the names
@@ -14,6 +14,9 @@ names in the calling environment will be used.}
 \item{data_frame_list}{a named list with data frames. Also these will be
 added and names will be handled as for the \code{...}
 argument.}
+
+\item{append}{\link{logical} if a data frame already exists in the cache
+(by name), extend the existing one}
 }
 \value{
 \link{data.frame} \verb{invisible(the cache environment)}
@@ -32,12 +35,12 @@ they will remain data frames).
 
 \link{prep_get_data_frame}
 
-Other data-frame-cache: 
-\code{\link{prep_get_data_frame}()},
-\code{\link{prep_list_dataframes}()},
-\code{\link{prep_load_folder_with_metadata}()},
-\code{\link{prep_load_workbook_like_file}()},
-\code{\link{prep_purge_data_frame_cache}()},
-\code{\link{prep_remove_from_cache}()}
+Other data-frame-cache:
+\code{\link[=prep_get_data_frame]{prep_get_data_frame()}},
+\code{\link[=prep_list_dataframes]{prep_list_dataframes()}},
+\code{\link[=prep_load_folder_with_metadata]{prep_load_folder_with_metadata()}},
+\code{\link[=prep_load_workbook_like_file]{prep_load_workbook_like_file()}},
+\code{\link[=prep_purge_data_frame_cache]{prep_purge_data_frame_cache()}},
+\code{\link[=prep_remove_from_cache]{prep_remove_from_cache()}}
 }
 \concept{data-frame-cache}

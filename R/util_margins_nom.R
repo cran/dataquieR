@@ -30,9 +30,7 @@
 #'
 #' @return A table and a matching plot.
 #'
-#' @importFrom ggplot2 ggplot geom_point geom_pointrange
-#'                     theme_minimal theme xlab ylab ggtitle
-#'                     scale_colour_manual aes facet_grid
+#' @importFrom ggplot2 ggplot geom_point geom_pointrange theme_minimal theme xlab ylab ggtitle scale_colour_manual aes facet_grid
 #' @importFrom stats p.adjust
 #'
 #' @noRd
@@ -174,7 +172,7 @@ util_margins_nom <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
                                              aes(x = .data[["margins"]],
                                                  y = .data[[group_vars]],
                                                  col = .data[["GRADING"]])) +
-                                        geom_pointrange(aes(xmin = .data[["LCL"]],
+                                        util_geom_pointrange_robust(aes(xmin = .data[["LCL"]],
                                                             xmax = .data[["UCL"]])) +
                                         geom_point() +
                                         scale_color_manual(values = warn_code,

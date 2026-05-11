@@ -26,13 +26,13 @@ Extract report summary from reports
 \seealso{
 \code{\link[=prep_combine_report_summaries]{prep_combine_report_summaries()}}
 
-Other summary_functions: 
-\code{\link{prep_combine_report_summaries}()},
-\code{\link{prep_extract_classes_by_functions}()},
-\code{\link{prep_extract_summary}()},
-\code{\link{prep_extract_summary.dataquieR_result}()},
-\code{\link{prep_render_pie_chart_from_summaryclasses_ggplot2}()},
-\code{\link{prep_render_pie_chart_from_summaryclasses_plotly}()},
-\code{\link{prep_summary_to_classes}()}
+Other summary_functions:
+\code{\link[=prep_combine_report_summaries]{prep_combine_report_summaries()}},
+\code{\link[=prep_extract_classes_by_functions]{prep_extract_classes_by_functions()}},
+\code{\link[=prep_extract_summary]{prep_extract_summary()}},
+\code{\link[=prep_extract_summary.dataquieR_result]{prep_extract_summary.dataquieR_result()}},
+\code{\link[=prep_render_pie_chart_from_summaryclasses_ggplot2]{prep_render_pie_chart_from_summaryclasses_ggplot2()}},
+\code{\link[=prep_render_pie_chart_from_summaryclasses_plotly]{prep_render_pie_chart_from_summaryclasses_plotly()}},
+\code{\link[=prep_summary_to_classes]{prep_summary_to_classes()}}
 }
 \concept{summary_functions}

@@ -18,7 +18,7 @@ util_table_rotator <- function(tb) {  #TODO: should take care of the description
       row.names = NULL,
       ` ` = colnames(tb),
       ` ` = unlist(tb[1, , drop = TRUE])
-    ), is_html_escaped = is_html_escaped)
+    ), is_html_escaped = is_html_escaped, kv_table = TRUE)
   } else {
     tb
   }

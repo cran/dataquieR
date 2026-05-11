@@ -1,3 +1,30 @@
+# dataquieR 2.8.9
+
+* Try to avoid spurious CRAN `winbuilder` fails.
+
+# dataquieR 2.8.8
+
+* Removed the dependency on the archived `MultinomialCI` package. Confidence
+  intervals used by `acc_shape_or_scale()` and `acc_end_digits()` are now
+  computed internally. The method can be selected with the option
+  `dataquieR.acc_shape_or_scale_ci`.
+* Started experimental support for response quality.
+* Added pattern expansion for variable groups and rule templates, including
+  support for expanded cross-item and computed rules.
+* Improved the `dq_report_by()` overview and subgroup handling, including more
+  informative error messages for invalid subgroup rules.
+* Improved report rendering, including DataTables header filters, Plotly
+  context-menu hooks, thumbnail font sizes, `LOESS` plots and sunburst charts.
+* Changed the default colors used for data-quality classes in sunburst charts to
+  avoid counterintuitive mixed colors.
+* Changed margin plots for binary outcomes: by default, the overall
+  distribution and `geom_count` are no longer shown. This can be controlled with
+  the new `no_overall_in_bin` and `no_geom_count_in_bin` arguments and options.
+* Fixed filtering of cross-item and computed rules to keep only rules relevant
+  for the selected response variables.
+* Fixed robustness issues in statistical indicators, metadata-v2 handling,
+  JavaScript output and missing-list table rendering.
+
 # dataquieR 2.8.7
 
 * Fixed a bug in generated `JavaScript` containing variable labels with
@@ -13,7 +40,7 @@
 # dataquieR 2.8.5
 
 * Improved `css` in output
-* Smaller package
+* Smaller installed package size
 
 # dataquieR 2.8.4
 
@@ -69,6 +96,8 @@ remotes::install_version("ggplot2", version = "3.5.2")
   previously saved report objects. No guarantee is given and you use it
   at your own risk. For long-term use, we recommend recomputing the
   reports with current package versions.
+* Factors are no longer converted to integers; they are converted to `character`
+  first (controlled via option `dataquieR.old_factor_handling`)
 
 ## Other noteworthy changes
 
@@ -76,11 +105,7 @@ remotes::install_version("ggplot2", version = "3.5.2")
 * Added complex limits for `cross-item_level` metadata  
   (`HARD_LIMITS`, `SOFT_LIMITS`, `DETECTION_LIMITS`).  
   If both complex and item-level limits exist, complex limits take precedence
-* Work in progress: Added careless responding measures (new **Scales** menu), 
-  including:  
-  maximum long string, missing responses per participant,  
-  intra-individual response variability, response times, completion speed,  
-  Mahalanobis distance
+* Work in progress: new **Scales** menu
 * Removed indicator `PCT_acc_ud_loc` from `acc_margins()` and grading rulesets
 * Removed metric `FLG_acc_ud_loc` from `acc_margins()`
 
@@ -91,8 +116,6 @@ remotes::install_version("ggplot2", version = "3.5.2")
     `"No. categories (incl. NAs)"` and `"Level_freq"`
   * column `"Variables"` renamed `"Variable_names"`  
     (previous content now in attribute `plain_label`)
-* Factors are no longer converted to integers; they are converted to `character`
-  first (controlled via option `dataquieR.old_factor_handling`)
 * Correlation plots no longer depend on `GGally`
 * Proper and consistent date/time parsing
 * Better control over visibility of unused heatmap levels

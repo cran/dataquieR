@@ -56,10 +56,10 @@ The developer version from
 using:
 
 ``` r
-if (!requireNamespace("devtools")) {
-  install.packages("devtools")
+if (!requireNamespace("remotes")) {
+  install.packages("remotes")
 }
-devtools::install_gitlab("libreumg/dataquier")
+remotes::install_gitlab("libreumg/dataquier")
 ```
 
 For examples and additional documentation, please refer to our

@@ -32,9 +32,17 @@
 
 util_expect_data_frame <- function(x, col_names, convert_if_possible,
                                    custom_errors,
-                                   dont_assign, keep_types = FALSE) {
+                                   dont_assign, keep_types = FALSE,
+                                   keep_encoding_errors = FALSE) {
   # TODO: Custom error message
   if (missing(dont_assign)) dont_assign <- FALSE
+  if (!missing(keep_encoding_errors)) {
+    util_expect_scalar(keep_encoding_errors,
+                       check_type = is.logical,
+                       error_message =
+                         sprintf("%s needs to be to be a logical value.",
+                                 sQuote("keep_encoding_errors")))
+  }
   if (!missing(keep_types)) {
     util_expect_scalar(keep_types,
                        check_type = is.logical,
@@ -89,12 +97,17 @@ util_expect_data_frame <- function(x, col_names, convert_if_possible,
     # Handle data frame as char
     x <- prep_get_data_frame(x, keep_types = keep_types)
   }
-
   x <- util_cast_off(x, as.character(symb), .dont_cast_off_cols = TRUE)
 
   if (!is.data.frame(x)) {
     util_error("%s is not a data frame.", dQuote(symb))
   }
+
+  if (!keep_encoding_errors) {
+    x[] <- util_fix_encoding_cols(x)
+  }
+
+
   if (any(!col_names %in% colnames(x))) {
     if (nrow(x) == 0) {
       cols <- union(

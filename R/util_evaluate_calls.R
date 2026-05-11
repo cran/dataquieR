@@ -29,6 +29,7 @@
 #'                                     end there is already filled
 #'                                     compute all missing result and add them
 #'                                     to the back-end.
+#' @param content_file [character] internal use-- only for progress messages
 #' @inheritParams dq_report2
 #'
 #' @return a [dataquieR_resultset2]. Can be printed creating a RMarkdown-report.
@@ -53,7 +54,8 @@ util_evaluate_calls <-
            my_storr_object = NULL,
            checkpoint_resumed,
            dt_adjust = as.logical(getOption("dataquieR.dt_adjust",
-                                               dataquieR.dt_adjust_default))) {
+                                               dataquieR.dt_adjust_default)),
+           content_file) {
 
     conds <- NULL # integrity issues outside the pipeline are collected here
 
@@ -121,6 +123,9 @@ util_evaluate_calls <-
       n = length(all_calls))
 
     progress_msg("Cluster setup", "initializing parallel mode, if applicable")
+    if (!missing(content_file))
+      progress_msg("Cluster setup",
+                   sprintf("content_file = %s", dQuote(content_file)))
 
     if (mode == "queue") {
       if ((eval.parent(call("missing", as.symbol("cores"))) &&
@@ -163,12 +168,12 @@ util_evaluate_calls <-
             on.exit(options(old_o_def_cl), add = TRUE)
           } else if (inherits(cores, "list")) {
             suppressMessages(do.call(parallelMap::parallelStart, cores))
-            on.exit(suppressMessages(parallelMap::parallelStop()), add = TRUE)
+            on.exit({Sys.sleep(2);suppressMessages(parallelMap::parallelStop());}, add = TRUE) # whyever, rstudio needs these two seconds, it hangs, otherwise.
           } else {
             suppressMessages(parallelMap::parallelStart("socket", cpus = cores,
                                                         logging = FALSE,
                                                         load.balancing = TRUE))
-            on.exit(suppressMessages(parallelMap::parallelStop()), add = TRUE)
+            on.exit({Sys.sleep(2);suppressMessages(parallelMap::parallelStop());}, add = TRUE) # whyever, rstudio needs these two seconds, it hangs, otherwise.
           }
           cores <- NULL
         } else if

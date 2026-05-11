@@ -61,6 +61,7 @@ util_generate_pages_from_report <- function(report, template,
                                  div_name, # sub-menu entry (second-level)
                                  file_name, # name where the page is stored, it is possible to add more than one page to a file
                                  ...) { # ... are the contents in htmltools compatible objects
+    alternative_names <- attr(div_name, "alternative_names")
     # Setup ####
     if (file_name %in% names(call_env$pages)) {
       fil <- call_env$pages[[file_name]]
@@ -69,12 +70,33 @@ util_generate_pages_from_report <- function(report, template,
     }
     all_ids <- unlist(lapply(call_env$pages, names))
     if (div_name %in% all_ids) {
+      pgidx <- vapply(FUN = `%in%`, X = lapply(call_env$pages, names),
+                      x = div_name, FUN.VALUE = logical(1))
+      existing_page <- call_env$pages[pgidx]
+      if (length(existing_page) == 1) {
+        file_name <- names(existing_page)
+        if (length(file_name) == 1 && is.character(file_name)) {
+          existing_page <- existing_page[[file_name]][[div_name]]
+          dd_men <- attr(existing_page, "dropdown")
+          dropdown <- existing_page$dropdown
+          existing_page$dropdown <- NULL
+          pg <- htmltools::tagList(
+            existing_page,
+            ...,
+            dropdown = dropdown
+          )
+          attr(pg, "dropdown") <- dd_men
+          call_env$pages[[file_name]][[div_name]] <- pg
+          return(invisible(NULL))
+        }
+      }
       util_error("Cannot create report, single page with ID %s already exists",
                  dQuote(div_name))
     }
 
     curr_url <- htmltools::tagGetAttribute(.menu_env$menu_entry(
-      sprintf("%s#%s", file_name, div_name)), "href")
+      sprintf("%s#%s", file_name, div_name),
+      alternative_names = alternative_names), "href")
 
     # https://matthewjamestaylor.com/custom-tags?utm_content=cmp-true
     # e.g. <r-1 curr_url=></r-1> // needs to have a hyphen, attributes in custom tags don't need the prefix data-
@@ -210,20 +232,21 @@ util_generate_pages_from_report <- function(report, template,
   }
   meta_data_item_computation <-
     attr(report, "meta_data_item_computation")
+  socs_cnt <- sum(!is.na(attr(report, "meta_data")[[
+    COMPUTED_VARIABLE_ROLE]]))
   info_sd <-
     data.frame(
       "Number of ..." = c(
         "observations in study data set",
         mark("variables in study data set"),
         mark("variables with item-level metadata"),
-        mark("out of these, computed for social science indicators")
+        ifelse(socs_cnt > 0, mark("out of these, computed for social science indicators"), "")
       ),
       " " = c(
         length(attr(report, "study_data_dimnames")[[1]]),
         mark(as.character(length(vinsd))),
         mark(as.character(length(with_md))),
-        mark(as.character(sum(!is.na(attr(report, "meta_data")[[
-          COMPUTED_VARIABLE_ROLE]]))))),
+        ifelse(socs_cnt > 0, mark(as.character(socs_cnt)), "")),
       # TODO: Does it suffice to check for VAR_NAMES in the metadata? Should we also check if any valid metadata information apart from the name is given?
       check.names = FALSE)
   info_sd_hover <- info_sd
@@ -292,7 +315,8 @@ util_generate_pages_from_report <- function(report, template,
   }
 
   append_single_page("General",
-                     "Report information",
+                     util_attach_attr("Report information",
+                                      alternative_names = c("index", "home")),
                      "report.html",
                      htmltools::tagList(
                        htmltools::h1(title),
@@ -341,7 +365,8 @@ util_generate_pages_from_report <- function(report, template,
                        htmltools::h2("Technical information"),
                        htmltools::p("The table below summarizes technical information about this report, the R session and the operating system."),
                        util_html_table(util_df_escape(p),
-                                       dl_fn = "Report_Metadata"),
+                                       dl_fn = "Report_Metadata",
+                                       kv_table = TRUE),
                        htmltools::p(htmltools::tags$i(id = "render-time",
                                                       sprintf("Rendered using %s %s at %s",
                                                               utils::packageName(),
@@ -357,12 +382,20 @@ util_generate_pages_from_report <- function(report, template,
                               } else {
                                 $("#render-time").html(xx + " -- no rendering time available.")
                               }
-                              console.log(data);
+                              // console.log(data);
                           });'),
-                       htmltools::hr(),
-                       htmltools::a(id = "notes_labels", notes_labels),
-                       dt_adjust_info,
-                       htmltools::hr(),
+                       if (!util_is_empty_html(notes_labels)) {
+                         list(
+                           htmltools::hr(),
+                           htmltools::a(id = "notes_labels", notes_labels)
+                         )
+                       },
+                       if (!util_is_empty_html(dt_adjust_info)) {
+                         list(
+                           dt_adjust_info,
+                           htmltools::hr()
+                         )
+                       },
                        htmltools::h2("Related literature"),
                        do.call(htmltools::tagList, lapply(format(
                          utils::readCitationFile(system.file("CITATION",
@@ -390,12 +423,13 @@ util_generate_pages_from_report <- function(report, template,
   # TODO apmat_not_segments_and_other_non_item_levels
   # TODO: add some hints if there is an integrity issue
   append_single_page("General",
-                     "Item-level data quality summary",
+                     util_attach_attr("Item-level data quality summary",
+                                      alternative_names = c("summary table")),
                      "report.html",
                      htmltools::htmlTemplate(
                        text_ = readLines(system.file("templates", template, "overview.html",
                                                      package = utils::packageName())),
-                       comat = comat,
+                       comat = util_apply_full_page_table_class(comat),
                        summaryplots = summaryplots,
                        # ismat = ismat,
                        # apmat = apmat,
@@ -408,11 +442,20 @@ util_generate_pages_from_report <- function(report, template,
                        util_abbreviate = util_abbreviate)
   )
 
+  if (have_plot_ly) {
+    append_single_page("General",
+                       util_attach_attr("Item-level data quality chart",
+                                        alternative_names = c("summary chart", "sunburst")),
+                       "sunburst.html",
+                       plot(repsum, hierarchy = "DQ_OBS"))
+  }
+
   if (!missing(my_dashboard) && inherits(my_dashboard, "shiny.tag.list")) {
     append_single_page("General",
-                       "Item-level data quality dashboard",
+                       util_attach_attr("Item-level data quality dashboard",
+                                        alternative_names = c("summary dashboard")),
                        "dashboard.html",
-                       my_dashboard)
+                       util_apply_full_page_table_class(my_dashboard))
   }
 
   # FIXME: For multicore/fork, there are also some problems with fork on newer Macs: https://github.com/rails/rails/issues/38560
@@ -537,7 +580,7 @@ util_generate_pages_from_report <- function(report, template,
 
   progress_msg("Page generation", "Mounting indicator pages")
   i <- 0
-  n <- dim(dim_pages)
+  n <- length(dim_pages)
   for (args in dim_pages) {
     do.call(append_single_page, args) # creates the indicator related pages because cur_var has not yet been set
     progress(i/n * 100)
@@ -627,7 +670,7 @@ util_generate_pages_from_report <- function(report, template,
     use_plot_ly <- have_plot_ly
     note_meta <- warn_pred_meta
     function_alias_map <-
-      attributes(attributes(report)$matrix_list)$function_alias_map_map
+      attributes(attributes(report)$matrix_list)$function_alias_map
 
     f <-
       function(cml) {
@@ -695,6 +738,12 @@ util_generate_pages_from_report <- function(report, template,
       length(report[rn, ]) > 0
     }, FUN.VALUE = logical(1))]
 
+  meta_data_cross <- util_normalize_cross_item(
+    meta_data = attr(report, "meta_data"),
+    meta_data_cross_item = attr(report, "meta_data_cross"),
+    label_col = attr(report, "label_col")
+  )
+
   .md <- attr(report, "meta_data")
   if (!COMPUTED_VARIABLE_ROLE %in% colnames(.md)) {
     .md[[COMPUTED_VARIABLE_ROLE]] <- NA_character_
@@ -726,77 +775,123 @@ util_generate_pages_from_report <- function(report, template,
 
   ssi_pages <- lapply(setNames(nm = ssi_roles_only), function(cvr) {
       if (!util_empty(cvr)) {
-        variables <- vars_for_each_role[[cvr]]
-        if (length(variables) > 0) {
-          ssi_title <- util_get_concept_info("ssi",
-                                get("SSI_METRICS") == cvr,
-                                "long_label",
-                                drop = TRUE)
-          applicable_functions <-
+        ssi_men_lab <- util_get_concept_info("ssi",
+                                             get("SSI_METRICS") == cvr,
+                                             "menu_label",
+                                             drop = TRUE)
+        ssi_title <- util_get_concept_info("ssi",
+                                           get("SSI_METRICS") == cvr,
+                                           "result_caption",
+                                           drop = TRUE)
+        pg_list <- lapply(vars_for_each_role[[cvr]], function(variable) {
+          .applicable_functions <-
             unlist(util_parse_assignments(util_get_concept_info("ssi",
                                                       get("SSI_METRICS") == cvr,
                                                                 "functions",
-                                                                drop = TRUE)))
-          applicable_slots <- gsub("^.*\\.", "", applicable_functions)
-          applicable_functions <- gsub("\\..*$", "", applicable_functions)
-          applicable_aliases <- vapply(applicable_functions,
+                                                                drop = TRUE),
+                                          multi_variate_text = TRUE))
+          applicable_aliases_slots <- lapply(.applicable_functions,
                                        function(af) {
+                                         as <- gsub("^.*\\.", "", af)
+                                         af <- gsub("\\..*$", "", af)
                                          r <- subset(fam, get("name") == af,
                                                      "alias",
-                                                drop = TRUE)
+                                                     drop = TRUE)
                                          if (length(r) == 0) {
                                            r <- ""
                                          }
-                                         r
-                                       }, FUN.VALUE = character(1))
+                                         res <- util_recycle(r, as)
+                                         list(alias = res[[1]], slot = res[[2]])
+                                       })
+          rm(".applicable_functions")
+          applicable_slots <- vapply(applicable_aliases_slots, `[[`, "slot", FUN.VALUE = character(1))
+          applicable_aliases <- vapply(applicable_aliases_slots, `[[`, "alias", FUN.VALUE = character(1))
+          # remove redundancies
+          uniq_al_slo <- unique(cbind(applicable_aliases, applicable_slots))
+          applicable_aliases <-
+            unlist(uniq_al_slo[, "applicable_aliases", drop = TRUE])
+          applicable_slots <-
+            unlist(uniq_al_slo[, "applicable_slots", drop = TRUE])
 
-          page <- do.call(htmltools::tagList, mapply(SIMPLIFY = FALSE,
-                 alias = applicable_aliases,
-                 slot = applicable_slots,
-                 FUN = function(alias, slot) {
-            if (alias == "") {
-              return(htmltools::HTML(""))
-            }
-            dqr <- lapply(report[variables, alias], `[`, slot)
-            dqr <- util_combine_res(dqr)
-            r <- do.call(htmltools::tagList, mapply(SIMPLIFY = FALSE,
-                   dqr = dqr,
-                   nm = names(dqr),
-                   FUN = util_pretty_print,
-                   MoreArgs = list(
-                      is_single_var = !FALSE,
-                      use_plot_ly = have_plot_ly,
-                      meta_data = .md,
-                      label_col = attr(report, "label_col"),
-                      dir = dir,
-                      is_ssi = TRUE)
-            ))
-            # care about memory usage
-            rm(dqr)
-            gc()
-            r
-          }))
-          vars_to_show_in_summ <-
-            util_map_labels(variables,
-                            meta_data = attr(report, "meta_data"),
-                            to = VAR_NAMES,
-                            from = attr(report, "label_col"),
-                            ifnotfound = NA_character_,
-                            warn_ambiguous = FALSE)
-          list( "Scales",
-                prep_title_escape(cvr, html = TRUE),
-                paste0(prep_link_escape(cvr), ".html"),
-                htmltools::tagList(
-                  htmltools::h5(ssi_title),
-                  plot(repsum,
-                       vars_to_include = "ssi",
-                       filter = VAR_NAMES %in% vars_to_show_in_summ,
-                       dont_plot = TRUE),
-                  page
-                ))
-        } else {
-          NULL
-        }
+          vg_title <- util_map_labels(
+            util_map_labels(
+              util_map_labels(
+                variable,
+                meta_data = .md,
+                to = VAR_NAMES,
+                from = attr(report, "label_col"),
+                ifnotfound = NA_character_
+              ),
+              meta_data = meta_data_item_computation,
+              from = VAR_NAMES,
+              to = CHECK_ID,
+              ifnotfound = NA_character_
+            ),
+            meta_data = meta_data_cross,
+            from = CHECK_ID,
+            to = CHECK_LABEL,
+            ifnotfound = NA_character_
+          )
+          do.call(htmltools::tagList,
+                  c(list(htmltools::h5(vg_title)),
+                          mapply(SIMPLIFY = FALSE,
+                                 alias = unique(applicable_aliases),
+                                 slot = applicable_slots,
+                                 FUN = function(alias, slot) {
+                                   if (alias == "") {
+                                     return(htmltools::HTML(""))
+                                   }
+                                   dqr <- lapply(report[variable, alias], `[`, slot) # TODO: Try to disentangle later, so we can combine all tables in one for a group.
+                                   dqr <- util_combine_res(dqr)
+                                   r <- do.call(
+                                     htmltools::tagList,
+                                     mapply(
+                                       SIMPLIFY = FALSE,
+                                       dqr = dqr,
+                                       nm = names(dqr),
+                                       FUN = function(dqr, nm) {
+                                         util_pretty_print(
+                                           dqr = dqr,
+                                           nm = nm,
+                                           is_single_var = !FALSE,
+                                           use_plot_ly = have_plot_ly,
+                                           meta_data = .md,
+                                           label_col =
+                                             attr(report, "label_col"),
+                                           dir = dir,
+                                           is_ssi = TRUE
+                                         )
+                                       }
+                                     )
+                                   )
+                                   # care about memory usage
+                                   rm(dqr)
+                                   gc()
+                                   r
+                                 }))
+          )
+        })
+        vars_to_show_in_summ <-
+          util_map_labels(vars_for_each_role[[cvr]],
+                          meta_data = attr(report, "meta_data"),
+                          to = VAR_NAMES,
+                          from = attr(report, "label_col"),
+                          ifnotfound = NA_character_,
+                          warn_ambiguous = FALSE)
+        list( "Scales",
+              prep_title_escape(ssi_men_lab, html = TRUE), # Modified title in the Menu drop-down
+              paste0(prep_link_escape(cvr), ".html"),
+              htmltools::tagList(
+                htmltools::h2(ssi_title),
+                # TODO: in the pie chart the total number of variables in not correct, it is 3 variables groups over 3 variable groups
+                plot(repsum,
+                     vars_to_include = "ssi",
+                     filter = VAR_NAMES %in% vars_to_show_in_summ,
+                     dont_plot = TRUE, disable_plotly =
+                       disable_plotly),
+                do.call(htmltools::tagList,
+                        pg_list)
+              ))
       } else {
         NULL
       }
@@ -807,19 +902,13 @@ util_generate_pages_from_report <- function(report, template,
 
   progress_msg("Page generation", "Mounting SSI pages by indicators")
   i <- 0
-  n <- dim(ssi_pages)
+  n <- length(ssi_pages)
   for (args in ssi_pages) {
     do.call(append_single_page, args) # creates the indicator related pages because cur_var has not yet been set
     progress(i/n * 100)
   }
 
   # SSI by variable group #####
-  meta_data_cross <- util_normalize_cross_item(
-    meta_data = attr(report, "meta_data"),
-    meta_data_cross_item = attr(report, "meta_data_cross"),
-    label_col = attr(report, "label_col")
-  )
-
   about_scale <- c(CHECK_ID,
                    CHECK_LABEL,
                    SCALE_NAME,
@@ -839,6 +928,10 @@ util_generate_pages_from_report <- function(report, template,
 
   meta_data_item_computation <- attr(report, "meta_data_item_computation") # FIXME: Test w/o such sheets, that rendering wont crash, here!!
 
+  ssi_concept_info <- util_get_concept_info("ssi")
+  mapping_names_labels_ssi <- setNames(ssi_concept_info$result_caption,
+                                       ssi_concept_info$SSI_METRICS)
+
   ssi_pages2 <- apply(meta_data_cross, 1, simplify = FALSE, function(rw) {
     if (!CHECK_ID %in% names(rw)) return(NULL);
     check_id <- rw[[CHECK_ID]]
@@ -853,24 +946,32 @@ util_generate_pages_from_report <- function(report, template,
                         ifnotfound = NA,
                         warn_ambiguous = FALSE)
       curr_roles <- ssi_roles[computed_vars_for_this_scale]
-      applicable_functions <-
+
+      .applicable_functions <-
         unique(unlist(util_parse_assignments(util_get_concept_info("ssi",
-                                                      get("SSI_METRICS") %in%
-                                                        curr_roles,
-                                                            "functions",
-                                                            drop = TRUE))))
-      applicable_slots <- gsub("^.*\\.", "", applicable_functions)
-      applicable_functions <- gsub("\\..*$", "", applicable_functions)
-      applicable_aliases <- vapply(applicable_functions,
-                                   function(af) {
-                                     r <-
-                                       subset(fam, get("name") == af, "alias",
-                                            drop = TRUE)
-                                     if (length(r) == 0) {
-                                       r <- ""
-                                     }
-                                     r
-                                   }, FUN.VALUE = character(1))
+                                                                   get("SSI_METRICS") %in%
+                                                                     curr_roles,
+                                                                   "functions",
+                                                                   drop = TRUE),
+                      multi_variate_text = TRUE)))
+      applicable_aliases_slots <- lapply(.applicable_functions,
+                                         function(af) {
+                                           as <- gsub("^.*\\.", "", af)
+                                           af <- gsub("\\..*$", "", af)
+                                           r <- subset(fam, get("name") == af,
+                                                       "alias",
+                                                       drop = TRUE)
+                                           if (length(r) == 0) {
+                                             r <- ""
+                                           }
+                                           res <- util_recycle(r, as)
+                                           list(alias = res[[1]], slot = res[[2]])
+                                         })
+      rm(".applicable_functions")
+      applicable_slots <- vapply(applicable_aliases_slots, `[[`, "slot", FUN.VALUE = character(1))
+      applicable_aliases <- vapply(applicable_aliases_slots, `[[`, "alias", FUN.VALUE = character(1))
+
+
       # remove redundancies
       uniq_al_slo <- unique(cbind(applicable_aliases, applicable_slots))
       applicable_aliases <-
@@ -887,44 +988,81 @@ util_generate_pages_from_report <- function(report, template,
                dqr <- report[computed_vars_for_this_scale, alias, drop = FALSE]
                dqr <- lapply(dqr, `[`, slot)
                dqr <- util_combine_res(dqr)
+               if (slot %in% c("SummaryTable", "SummaryData")) {
+                 old_slot <- slot
+                 tb <- dqr[[alias]][[slot]]
+                 vgs <- curr_roles[tb$Variables]
+                 #-> correct names
+                 slot <- "ResultData"
+                 # avoid to auto-expand to var_names/label-column pair
+                 colnames(tb)[colnames(tb) == "Variables"] <-
+                   "Metrics"
+                 rownames(tb) <- NULL
+                 tb[["Metrics"]] <-
+                   mapping_names_labels_ssi[vgs]
+                 dqr[[alias]][[slot]] <- tb
+                 dqr[[alias]][[old_slot]] <- NULL
+               }
                r <- do.call(htmltools::tagList, mapply(SIMPLIFY = FALSE,
-                                                  dqr = dqr,
-                                                  nm = names(dqr),
-                                                  FUN = util_pretty_print,
-                                                  MoreArgs = list(
-                                                    is_single_var = TRUE,
-                                                    use_plot_ly = have_plot_ly,
-                                                    meta_data = .md,
-                                                    label_col =
-                                                      attr(report, "label_col"),
-                                                    dir = dir,
-                                                    is_ssi = TRUE)
+                                                       dqr = dqr,
+                                                       nm = names(dqr),
+                                                       FUN = function(dqr,
+                                                                      nm) {
+                                                         # variable name -> computed-varaible role -> SSI-header-title
+                                                         res1 <-
+                                                           util_pretty_print(
+                                                             dqr = dqr,
+                                                             nm = nm,
+                                                             is_single_var = !FALSE,
+                                                             use_plot_ly = have_plot_ly,
+                                                             meta_data = .md,
+                                                             label_col =
+                                                               attr(report,
+                                                                    "label_col"),
+                                                             dir = dir,
+                                                             is_ssi = TRUE)
+                                                         return(htmltools::tagList(
+                                                           htmltools::h5(mapping_names_labels_ssi[curr_roles[attr(attr(dqr, "call"), "entity_name")]]),
+                                                           res1
+                                                         ))
+                                                       }
                ))
                # care about memory usage
                rm(dqr)
                gc()
                r
-            }))
-      if (length(report[rw[[CHECK_LABEL]], "acc_mahalanobis"]) == 1) {
-        # add possible mahalanobis results for this scale
-        dqr <- report[rw[[CHECK_LABEL]], "acc_mahalanobis"]
-        dqr <- util_combine_res(dqr)
-        page <- htmltools::tagList(page, do.call(htmltools::tagList, mapply(SIMPLIFY = FALSE,
-                                                dqr = dqr,
-                                                nm = names(dqr),
-                                                FUN = util_pretty_print,
-                                                MoreArgs = list(
-                                                  is_single_var = TRUE,
-                                                  use_plot_ly = have_plot_ly,
-                                                  meta_data = .md,
-                                                  label_col =
-                                                    attr(report, "label_col"),
-                                                  dir = dir,
-                                                  is_ssi = TRUE)
-        )))
-        # care about memory usage
-        rm(dqr)
-        gc()
+             }))
+
+      # Whenever a function is assigned to the Scales menu, show it here
+      fkts_in_scales <- util_get_concept_info("implementations",
+                                              get("menu_location_report") ==
+                                                "Scales",
+                                              "function_R",
+                                              drop = TRUE)
+      for (fkt_in_scales in fkts_in_scales) {
+        if (length(report[rw[[CHECK_LABEL]], fkt_in_scales]) == 1) {
+          # add possible other SSI-only-function's results for this scale
+          dqr <- report[rw[[CHECK_LABEL]], fkt_in_scales]
+          dqr <- util_combine_res(dqr)
+          page <- htmltools::tagList(page,
+                                     htmltools::h5(util_alias2caption(fkt_in_scales, long = TRUE)),
+                                     do.call(htmltools::tagList, mapply(SIMPLIFY = FALSE,
+                                                                        dqr = dqr,
+                                                                        nm = names(dqr),
+                                                                        FUN = util_pretty_print,
+                                                                        MoreArgs = list(
+                                                                          is_single_var = TRUE,
+                                                                          use_plot_ly = have_plot_ly,
+                                                                          meta_data = .md,
+                                                                          label_col =
+                                                                            attr(report, "label_col"),
+                                                                          dir = dir,
+                                                                          is_ssi = TRUE)
+                                     )))
+          # care about memory usage
+          rm(dqr)
+          gc()
+        }
       }
       short_title <- subset(meta_data_cross, trimws(CHECK_ID) ==
                check_id, CHECK_LABEL, drop = TRUE) # FIXME: Ensure, we have one
@@ -942,11 +1080,13 @@ util_generate_pages_from_report <- function(report, template,
            prep_title_escape(short_title, html = TRUE),
            paste0(prep_link_escape(short_title), ".html"),
            htmltools::tagList(
-             htmltools::h4(long_title),
+             htmltools::h2(long_title),
              plot(repsum,
                   vars_to_include = "ssi",
                   filter = VAR_NAMES %in% vars_to_show_in_summ,
-                  dont_plot = TRUE),
+                  dont_plot = TRUE,
+                  disable_plotly =
+                    disable_plotly),
              page))
     } else {
       NULL
@@ -957,7 +1097,7 @@ util_generate_pages_from_report <- function(report, template,
 
   progress_msg("Page generation", "Mounting SSI pages by variable groups")
   i <- 0
-  n <- dim(ssi_pages2)
+  n <- length(ssi_pages2)
   for (args in ssi_pages2) {
     do.call(append_single_page, args) # creates the indicator related pages because cur_var has not yet been set
     progress(i/n * 100)
@@ -968,12 +1108,27 @@ util_generate_pages_from_report <- function(report, template,
   meta_data_frames <-
     grep("^meta_data", names(attributes(report)), value = TRUE)
 
-  meta_data_titles <- c(
-    meta_data_segment = "Segment-level metadata",
-    meta_data_dataframe = "Dataframe-level metadata",
-    meta_data_cross_item = "Cross-item-level metadata",
-    meta_data = "Item-level metadata",
-    meta_data_item_computation = "Item-computation-level metadata"
+  meta_data_titles <- list(
+    meta_data_segment = util_attach_attr("Segment-level metadata",
+                                         alternative_names = c(
+                                           "meta_data_segment", "segment_level"
+                                         )),
+    meta_data_dataframe = util_attach_attr("Dataframe-level metadata",
+                                           alternative_names = c(
+                                             "meta_data_dataframe", "dataframe_level"
+                                           )),
+    meta_data_cross_item = util_attach_attr("Cross-item-level metadata",
+                                            alternative_names = c(
+                                              "meta_data_cross_item", "cross-item_level"
+                                            )),
+    meta_data = util_attach_attr("Item-level metadata",
+                                 alternative_names = c(
+                                   "meta_data", "item_level"
+                                 )),
+    meta_data_item_computation = util_attach_attr("Item-computation-level metadata",
+                                                  alternative_names = c(
+                                                    "meta_data_item_computation", "item_computation_level"
+                                                  ))
   )
 
   for (mdn in meta_data_frames) {
@@ -1053,6 +1208,11 @@ util_generate_pages_from_report <- function(report, template,
                  union(VAR_NAMES, x)
                }
         ))
+      col_tags[VARATT_REQUIRE_LEVELS_ORDER] <-
+        lapply(col_tags[VARATT_REQUIRE_LEVELS_ORDER], function(x) {
+            util_attach_attr(x, cssClass = "dq-hidden-col")
+          })
+      col_tags
     } else {
       known_cols <- colnames(xlmd)[vapply(colnames(xlmd),
                                           exists,
@@ -1069,7 +1229,6 @@ util_generate_pages_from_report <- function(report, template,
       meta_data = meta_data,
       label_col = label_col,
       dl_fn = mdn,
-      output_format = "HTML", # needed for generating plain html, "RMD" would generate a mix between Rmd and html
       hideCols = hideCols,
       col_tags = col_tags
     )
@@ -1107,7 +1266,7 @@ util_generate_pages_from_report <- function(report, template,
                                 meta_data_title,
                                 perl = TRUE),
                          label_meta_data_hints = label_meta_data_hints,
-                         meta_data_table = meta_data_table
+                         meta_data_table = util_apply_full_page_table_class(meta_data_table)
                        )
     )
   }
@@ -1117,15 +1276,15 @@ util_generate_pages_from_report <- function(report, template,
     for (reftab in names(referred_tables)) {
       if (nrow(referred_tables[[reftab]]) > 1000) {
         append_single_page("Metadata",
-                           paste("Table", sQuote(reftab)),
+                           util_attach_attr(paste("Table", sQuote(reftab)),
+                                            alternative_names = c(reftab)),
                            paste0(prep_link_escape(reftab, html = TRUE), ".html"),
                            htmltools::h1(dQuote(reftab)),
                            util_html_table(
                              util_df_escape(head(referred_tables[[reftab]], 1000)), # generate links in VAR_NAMES/Variables, only possible if meta_data and label_col are available
                              meta_data = meta_data,
                              label_col = label_col,
-                             dl_fn = reftab,
-                             output_format = "HTML" # needed for generating plain html, "RMD" would generate a mix between Rmd and html
+                             dl_fn = reftab
                            ),
                            htmltools::tags$hr(),
                            htmltools::p(
@@ -1135,15 +1294,15 @@ util_generate_pages_from_report <- function(report, template,
         )
       } else {
         append_single_page("Metadata",
-                           paste("Table", sQuote(reftab)),
+                           util_attach_attr(paste("Table", sQuote(reftab)),
+                                            alternative_names = c(reftab)),
                            paste0(prep_link_escape(reftab, html = TRUE), ".html"),
                            htmltools::h1(dQuote(reftab)),
                            util_html_table(
                              util_df_escape(referred_tables[[reftab]]), # generate links in VAR_NAMES/Variables, only possible if meta_data and label_col are available
                              meta_data = meta_data,
                              label_col = label_col,
-                             dl_fn = reftab,
-                             output_format = "HTML" # needed for generating plain html, "RMD" would generate a mix between Rmd and html
+                             dl_fn = reftab
                            )
         )
       }
@@ -1154,6 +1313,10 @@ util_generate_pages_from_report <- function(report, template,
   rsts <- util_get_rule_sets()
   for (rstsn in names(rsts)) {
     ..tb <- util_df_escape(rsts[[rstsn]])
+    ..tb[[GRADING_RULESET]] <-
+      ifelse(..tb[[GRADING_RULESET]] == "0",
+             "Default (0)",
+             paste0("(", ..tb[[GRADING_RULESET]], ")"))
     if ("indicator_metric" %in% colnames(..tb)) {
       ..tb[["indicator_metric"]] <- lapply(..tb[["indicator_metric"]],
                                          function(im) {
@@ -1170,16 +1333,18 @@ util_generate_pages_from_report <- function(report, template,
     attr(..tb, "description") <- text_to_display
 
     append_single_page("Metadata",
-                       paste("Grading Ruleset", dQuote(rstsn)),
+                       util_attach_attr(paste("Grading Ruleset", dQuote(rstsn)),
+                                        alternative_names = c(rstsn)),
                        paste0("rulesets.html"),
                        htmltools::htmlTemplate(
                          system.file("templates", template,
                                      paste0("grading_ruleset_text.html"),
                                      package = utils::packageName()),
-                         meta_data_name = "grading_rulesets",
+                         meta_data_name = paste0("grading_rulesets_", rstsn),
                          meta_data_title =
-                           "Grading Rulesets",
-                         meta_data_table = util_html_table(..tb)
+                           paste("Grading Rulesets", rstsn),
+                         meta_data_table = util_apply_full_page_table_class(util_html_table(..tb,
+                                                                                            dl_fn = paste0("grading_rulesets_", rstsn)))
                        )
     )
   }
@@ -1208,20 +1373,37 @@ util_generate_pages_from_report <- function(report, template,
 
 
   append_single_page("Metadata",
-                     "Ruleset Formats",
+                     util_attach_attr(paste("Ruleset Formats"),
+                                      alternative_names = c("grading_formats")), # TODO: More names
                      paste0("ruleset_formats.html"),
                      htmltools::htmlTemplate(
                        system.file("templates", template,
                                    paste0("ruleset_formats_text.html"),
                                    package = utils::packageName()),
-                       meta_data_name = "grading_rulesets",
+                       meta_data_name = "grading_formats",
                        meta_data_title =
                          "Ruleset Formats",
                        meta_data_table =
-                         util_html_table(..tb)
+                         util_apply_full_page_table_class(util_html_table(..tb,
+                                                                          dl_fn = "grading_formats"))
                      )
   )
 
 
   pages
+}
+
+util_apply_full_page_table_class <- function(x) {
+  util_ensure_suggested(pkg = c("htmltools"),
+                        goal = "generate interactive HTML-reports.")
+
+  htmltools::div(class = "fullpage-table", x)
+}
+
+util_is_empty_html <- function(x) {
+  if (is.null(x)) return(TRUE)
+
+  # convert to character representation
+  txt <- paste0(as.character(x), collapse = "")
+  !nzchar(trimws(txt))
 }

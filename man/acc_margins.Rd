@@ -24,7 +24,11 @@ acc_margins(
   include_numbers_in_figures = getOption("dataquieR.acc_margins_num",
     dataquieR.acc_margins_num_default),
   n_violin_max = getOption("dataquieR.max_group_var_levels_with_violins",
-    dataquieR.max_group_var_levels_with_violins_default)
+    dataquieR.max_group_var_levels_with_violins_default),
+  no_overall_in_bin = getOption("dataquieR.no_overall_in_bin",
+    dataquieR.no_overall_in_bin_default),
+  no_geom_count_in_bin = getOption("dataquieR.no_geom_count_in_bin",
+    dataquieR.no_geom_count_in_bin_default)
 )
 }
 \arguments{
@@ -103,6 +107,13 @@ variable?}
 \item{n_violin_max}{\link{integer} from=0. This optional argument specifies
 the maximum number of levels of the \code{group_var} for
 which violin plots will be shown in the figure.}
+
+\item{no_overall_in_bin}{\link{logical} Suppress overall distribution in 'margins'
+figures for binary outcomes}
+
+\item{no_geom_count_in_bin}{\link{logical} Suppress counts 'margins'
+figures for binary outcomes, so they
+.                                      are not always including 0 and 1.}
 }
 \value{
 a list with:

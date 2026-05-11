@@ -13,6 +13,7 @@
     dataquieR.print_block_load_factor_default),
   advanced_options = list(),
   dashboard = NA,
+  force_overwrite = FALSE,
   ...,
   cores = list(mode = "socket", logging = FALSE, cpus = util_detect_cores(),
     load.balancing = TRUE)
@@ -23,8 +24,7 @@
 
 \item{dir}{\link{character} directory to store the rendered report's files,
 a temporary one,
-if omitted. Directory will be created, if missing, files may be
-overwritten inside that directory}
+if omitted. Directory will be created, if missing}
 
 \item{view}{\link{logical} display the report}
 
@@ -39,6 +39,8 @@ see \code{\link[=options]{options()}}}
 \code{FALSE}: don't create a dashboard at all,
 \code{NA} or missing: create a "normal" report with
 a dashboard included.}
+
+\item{force_overwrite}{\link{logical} force to overwrite \code{dir}, even if it exists}
 
 \item{...}{additional arguments:}
 

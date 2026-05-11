@@ -102,8 +102,11 @@ util_pairs_ggplot <- function(data, columns = NULL, bins = 30, title = NULL,
 util_pairs_plotly <- function(data, columns = NULL, bins = 30, title = NULL,
                               columnLabels = NULL, diag = c("density", "histogram"),
                               correlation_method = c("pearson", "spearman")) {
+  # data <- cbind(data, setNames(data, nm = paste("V", seq_len(ncol(data))))); columns <- names(data)
 
   util_ensure_suggested("plotly", "plot interactive figures")
+
+  used_subsampling_for_plotly <- FALSE
 
   util_expect_scalar(correlation_method,
                      check_type = is.character,
@@ -193,7 +196,22 @@ util_pairs_plotly <- function(data, columns = NULL, bins = 30, title = NULL,
         )
 
       } else {
-        p <- plotly::plot_ly(x = df[[xname]], y = df[[yname]],
+        if (nrow(df) <= 3000) {
+          .df <- df
+        } else {
+          .df <-
+            df[util_subsample_cases(df,
+                                    x = xname,
+                                    y = yname,
+                                    nmax = 3000, # TODO: Make these parameters option()able
+                                    seed = 1), , drop = FALSE]
+          if (nrow(.df) < nrow(df)) {
+            used_subsampling_for_plotly <- TRUE
+            sampling_hint <-
+              "For interactive rendering performance, sampling was used"
+          }
+        }
+        p <- plotly::plot_ly(x = .df[[xname]], y = .df[[yname]],
                              type = "scatter", mode = "markers",
                              marker = list(opacity = 0.6, size = 6, color = var_colors[[xname]]),
                              showlegend = FALSE)
@@ -259,6 +277,27 @@ util_pairs_plotly <- function(data, columns = NULL, bins = 30, title = NULL,
     }
 
     fig <- fig %>% plotly::layout(annotations = annotations)
+  }
+
+  if (used_subsampling_for_plotly) {
+    sampling_hint <- list(
+      text = sampling_hint,
+      x = 1,
+      y = 0,
+      xref = "paper",
+      yref = "paper",
+      xanchor = "right",
+      yanchor = "top",
+      yshift = -60,
+      showarrow = FALSE,
+      font = list(size = 8)
+    )
+    ann <- fig$x$layout$annotations
+    if (is.null(ann)) ann <- list()
+    fig <- fig %>% plotly::layout(annotations = c(
+      ann,
+      list(sampling_hint)
+    ))
   }
 
   fig <- plotly::layout(fig,

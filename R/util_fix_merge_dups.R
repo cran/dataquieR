@@ -42,17 +42,16 @@ util_fix_merge_dups <- function(dfr,
         `Internal error, sorry, please report: fix_merge_dups failed` =
           ncol(fix_nas) == 1)
     } else {
-
+      # if we have incompatible cases, try to fix them (!stop_if_incompatible)
       if (ncol(fix_nas) > 1) {
         colnames(dfr)[tail(cur, -1)] <-
           paste0(colnames(dfr)[tail(cur, -1)], ".", seq_len(length(cur)-1))  #TODO: check if there is not already a column with that name in all data, not just dfr
-      } else {
-        dfr[, head(cur, 1)] <- as.vector(fix_nas)
-        dfr[, tail(cur, -1)] <- NULL
-
       }
     }
 
+    # actually fix it!
+    dfr[, head(cur, 1)] <- as.vector(fix_nas)
+    dfr[, tail(cur, -1)] <- NULL
   }
   dfr
 }

@@ -1,6 +1,6 @@
 test_that("com_item_missingness works", {
   skip_on_cran() # slow and errors will be obvious.
-  
+
   skip_if_offline(host = "dataquality.qihs.uni-greifswald.de")
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                    dataquieR.ERRORS_WITH_CALLER = TRUE,
@@ -74,8 +74,7 @@ test_that("com_item_missingness works", {
     com_item_missingness(study_data = study_data,
                          item_level = meta_data, suppressWarnings = "xx")
   ), regexp =
-    paste("Argument",
-          "suppressWarnings must match the predicate .+is.logical.+"))
+    paste("Argument suppressWarnings must be logical"))
 
   expect_error(invisible(
     com_item_missingness(study_data = study_data,

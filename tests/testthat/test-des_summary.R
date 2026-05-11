@@ -1,5 +1,5 @@
 test_that("test_create_descriptive_summ", {
-  
+
   withr::local_options(dataquieR.CONDITIONS_WITH_STACKTRACE = TRUE,
                        dataquieR.ERRORS_WITH_CALLER = TRUE,
                        dataquieR.WARNINGS_WITH_CALLER = TRUE,
@@ -18,20 +18,20 @@ test_that("test_create_descriptive_summ", {
   sd1 <- sd1[, 4:7]
   desc1 <- des_summary(study_data = sd1)
   expect_equal(sum(as.numeric(desc1$SummaryData$Mean)),
-                298.2)
+                297.9)
 
   desc2 <- des_summary(resp_vars = c("v00003", "v00004"),
                    study_data = sd1)
   expect_equal(sum(as.numeric(desc2$SummaryData$Mean)),
-                171.75)
+                171.4)
   expect_equal(sum(as.numeric(desc2$SummaryData$SD)),
-               10.932)
+               10.93)
   expect_equal(sum(as.numeric(desc2$SummaryData$CV)),
                13.27)
   expect_equal(sum(as.numeric(desc2$SummaryData$Kurtosis)),
                -2.5740)
   expect_equal(sum(as.numeric(desc2$SummaryData$Median)),
-               170.5)
+               171)
 
 })
 

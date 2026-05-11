@@ -159,6 +159,16 @@
 #'         is still returned (invisibly), and optionally opened in a browser
 #'         (`view = TRUE`, `also_print = TRUE`).
 #'
+#' @param force_overwrite [logical] force to overwrite `output_dir`, even if it
+#'                                 exists
+#' @param title [character] optional argument to specify the title for
+#'                          the data quality report bundle
+#' @param subtitle [character] optional argument to specify a subtitle for
+#'                             the data quality report bundle
+#' @param user_info [list] additional info stored with the report bundle,
+#'                          e.g., comments, title, ...
+#' @param author [character] author for the report bundle's documents.
+#'
 #' @seealso [dq_report]
 #'
 #' @export
@@ -228,7 +238,8 @@ dq_report_by <- function(study_data,
                          ...,
                          output_dir = NULL,
                          input_dir = NULL,
-                         also_print = FALSE,
+                         also_print = FALSE, # TODO: is this needed? or should this default to TRUE, whenever we have an output_dir?
+                         force_overwrite = FALSE,
                          disable_plotly = FALSE,
                          view = TRUE,
                          meta_data = item_level,
@@ -236,7 +247,27 @@ dq_report_by <- function(study_data,
                          `cross-item_level`,
                          segment_level,
                          dataframe_level,
-                         item_computation_level) {
+                         item_computation_level,
+                         author = prep_get_user_name(),
+                         title = ifelse(is.null(output_dir),
+                                        "Data quality report Bundle",
+                                        paste0(basename(output_dir))),
+                         subtitle = as.character(Sys.Date()),
+                         user_info = NULL) {
+
+  by_call <- rlang::caller_call(0)
+
+  .outer_by_env$outer_by <- list(
+    i = NA,
+    n = NA,
+    msg = "Preparing computation..."
+  )
+
+  on.exit({.outer_by_env$outer_by <- NULL}, add = TRUE)
+
+  start_time <- Sys.time()
+
+  rep_id <- util_make_report_id()
 
   if (!suppressWarnings(util_ensure_suggested("plotly",
                                               goal =
@@ -263,7 +294,7 @@ dq_report_by <- function(study_data,
     ),
     advanced_options
   ))
-  on.exit(options(old_O))
+  on.exit(options(old_O), add = TRUE)
 
   # store the call to use it later for the technical info in the reports
   call_report_by <- paste(deparse(sys.call()), collapse = "")
@@ -314,6 +345,8 @@ dq_report_by <- function(study_data,
     )
   }
 
+  util_expect_scalar(force_overwrite, check_type = is.logical)
+
   ### check output directory only if also_print == TRUE
   # if users specify an output dir, check if it is a scalar, a character
   # string, check if also_print is a scalar and logical,
@@ -323,15 +356,20 @@ dq_report_by <- function(study_data,
     if (!missing(output_dir)) {
       util_expect_scalar(output_dir, check_type = is.character)
       util_expect_scalar(also_print, check_type = is.logical)
-      if (dir.exists(output_dir)) {
-        util_error("%s already exists. Remove the %s first",
-                   dQuote(output_dir),
-                   sQuote("output_dir"))
-      }
-      if (!dir.create(output_dir, FALSE, TRUE)) {
-        util_error("Could not create %s", dQuote(output_dir))
-      }
+      util_overwrite_if_requested(output_dir, force_overwrite)
+      output_dir <- util_normalize_path(output_dir)
     }
+  }
+
+  .hi <- .hp <- .hm <- NULL
+  content_file <- NULL
+  if (!missing(output_dir) && also_print) {
+    content_file <- file.path(output_dir, "index.html")
+    list2env(util_init_html_progress(output_dir = output_dir,
+                            content_file = content_file,
+                            title = title,
+                            view = view,
+                            rep_id = rep_id), envir = environment())
   }
 
   ### check input directory
@@ -438,6 +476,8 @@ dq_report_by <- function(study_data,
   util_expect_data_frame(meta_data)
 
   util_ck_arg_aliases()
+
+  name_sd <- character(0)
 
   # Getting name of file indicated by user to add it as argument in util_verify_names
   # (not including names from dataframe_level metadata)
@@ -630,7 +670,7 @@ dq_report_by <- function(study_data,
     if(STUDY_SEGMENT %in% colnames(meta_data)) {
       segment_column <- STUDY_SEGMENT
       possible_segments <- unique(meta_data$STUDY_SEGMENT)
-      if(!segment_select %in% possible_segments) {
+      if (any(!segment_select %in% possible_segments, na.rm = TRUE)) {
         util_error(c("segment_select values are not present in the ",
                      "column 'STUDY_SEGMENT' that is assumed to be the ",
                      "segment_column when this is not assigned."))
@@ -646,7 +686,7 @@ dq_report_by <- function(study_data,
     if(STUDY_SEGMENT %in% colnames(meta_data)) {
       segment_column <- STUDY_SEGMENT
       possible_segments <- unique(meta_data$STUDY_SEGMENT)
-      if(!segment_exclude %in% possible_segments) {
+      if(any(!segment_exclude %in% possible_segments, na.rm = TRUE)) {
         util_error(c("segment_exclude values are not present in the ",
                      "column 'STUDY_SEGMENT' that is assumed to be the ",
                      "segment_column when this is not assigned."))
@@ -942,6 +982,8 @@ dq_report_by <- function(study_data,
                                             meta_data_item_computation =
                                               computed_in_resp_vars,
                                             strata_column = strata_column)
+    meta_data_cross_item <- cil_in_resp_vars
+    meta_data_item_computation <- computed_in_resp_vars
     resp_vars_complete <- overview_referred$vars_complete
     meta_data <- overview_referred$md_complete
     attr(meta_data, "normalized") <- TRUE
@@ -1165,8 +1207,10 @@ dq_report_by <- function(study_data,
       list_sd_columns <- lapply(list_sd_columns, colnames)
       names(list_sd_columns) <- dataframe_names
     } else {
-      util_error(c("Internal error, sorry. Please report. The provided ",
-                   "study_data argument is not supported"))
+      util_error(c("The provided ",
+                   "study_data argument of class %s is not supported"),
+                 util_pretty_vector_string(class(study_data)),
+                 applicability_problem = TRUE)
     }
   } else if (missing(study_data) &&
              is.data.frame(meta_data_dataframe)) {
@@ -2072,11 +2116,11 @@ dq_report_by <- function(study_data,
 
   # Create a job to report progress and give it a name ----
   util_setup_rstudio_job("dq_report_by",
-                         n = length(segmentNames) * length(n_strata))
+                         n = length(segmentNames) * n_strata)
   # create an extra environment for the progress
   p <- new.env(parent = emptyenv())
   p$i <- 0
-  p$N <- length(segmentNames) * length(n_strata)
+  p$N <- length(segmentNames) * n_strata
 
   # OUTER list: split base on segment----
   # Return a list of lists of results. The outer list is for the split based on
@@ -2432,11 +2476,13 @@ dq_report_by <- function(study_data,
         rule <- util_parse_redcap_rule(subgroup)
 
         sd_merged <- try(sd_merged[util_eval_rule(rule, ds1 = sd_merged,
-                                                  meta_data = meta_data), ])
+                                                  meta_data = meta_data), ],
+                         silent = TRUE)
         if (inherits(sd_merged, "try-error")) {
           # if the subgroup selection did not work
-          util_error("The subgroup rule %s was not acceptable.",
-                     dQuote(subgroup))
+          err <- conditionMessage(attr(sd_merged, "condition"))
+          util_error("The subgroup rule %s was not acceptable: %s",
+                     dQuote(subgroup), err)
         }
         if (nrow(sd_merged) == nrow_df) {
           util_warning(
@@ -2888,6 +2934,14 @@ dq_report_by <- function(study_data,
           # update the progress bar
           p$i <- p$i + 1
           progress(100 * p$i / p$N)
+          .outer_by_env$outer_by <- list(
+            i = p$i,
+            n = p$N,
+            msg = sprintf(
+              "Segment %s, Stratum %s...",
+              sQuote(cur_seg),
+              sQuote(level_name))
+          )
 
           # add the study data name that are too long to a list
           # containing original study data names and
@@ -2996,6 +3050,13 @@ dq_report_by <- function(study_data,
 
           clean_dots <- dots[names(dots) %in% allowed_args]
 
+          ui <- info_sd_name_per_report
+
+          if (!is.null(user_info) && is.list(user_info)) {
+            ui <- user_info
+            ui[names(info_sd_name_per_report)] <- info_sd_name_per_report
+          }
+
           args <- c(
             list(
               study_data = sd,
@@ -3007,16 +3068,19 @@ dq_report_by <- function(study_data,
               meta_data_item_computation = computed_in_segment[[cur_seg]],
               label_col = label_col,
               split_segments = split_segments,
-              user_info = info_sd_name_per_report,
+              user_info = ui,
               title = title_report,
               subtitle = subtitle_report,
               storr_factory = storr_factory_clone,
               amend = amend,
               checkpoint_resumed = checkpoint_resumed,
-              name_of_study_data = name_of_study_data
+              name_of_study_data = name_of_study_data,
+              author = author
             ),
             clean_dots
           )
+
+          args$output_dir <- NULL
 
           # create the different sub-reports ----
           r <- try(
@@ -3119,6 +3183,32 @@ dq_report_by <- function(study_data,
                     s_res, "condition")))
                 )
               }
+              obj <- NULL
+              try({
+                obj  <- util_setup_dashboard(r,
+                                             make_links = FALSE,
+                                             return_table_only = TRUE)
+                if (!is.null(obj)) {
+                  attr(obj, "name_of_study_data") <- name_of_study_data
+                  attr(obj, "level_name") <- level_name
+                }
+              })
+              # paste0(name_of_study_data, dashboard$Variables, level_name)
+              s_res <-
+                try(saveRDS(obj, file.path(output_dir, gsub(
+                  "[^a-zA-Z0-9_\\.]",
+                  "",
+                  sprintf("report_dashboard_%s.RDS", sdn)
+                ))))
+              if (inherits(s_res, "try-error")) {
+                # if the summary could not be saved
+                util_warning(
+                  "Could not save report dashboard table for %s: %s.",
+                  dQuote(sdn),
+                  sQuote(conditionMessage(attr(
+                    s_res, "condition")))
+                )
+              }
               # remove object to reduce memory use
               rm(s_res)
               .dir <- file.path(output_dir,
@@ -3183,16 +3273,39 @@ dq_report_by <- function(study_data,
     }
   )
 
+  if (!missing(output_dir) && dir.exists(output_dir)) {
+    maybe <- function(x) {
+      if (exists(x, envir = parent.frame())) {
+        setNames(list(rlang::maybe_missing(get(x, envir = parent.frame()))),
+                 nm = x)
+      } else {
+        list()
+      }
+    }
+    saveRDS(
+      c(
+        maybe("strata_column"),
+        maybe("segment_column"),
+        maybe("strata_column_label"),
+        maybe("subgroup"),
+        maybe("mod_label"),
+        maybe("disable_plotly"),
+        maybe("title"),
+        maybe("start_time"),
+        maybe("rep_id"),
+        maybe("subtitle"),
+        maybe("author"),
+        maybe("user_info"),
+        maybe("by_call")
+      ),
+      file = file.path(output_dir, "report_by_meta.RDS")
+    )
+  }
+
   # create the html overview page that links all sub-reports created -----
   if (!missing(output_dir) && also_print) {
     util_create_report_by_overview(
-      output_dir = output_dir,
-      strata_column = strata_column,
-      segment_column = segment_column,
-      strata_column_label = strata_column_label,
-      subgroup = subgroup,
-      mod_label = mod_label,
-      disable_plotly = disable_plotly
+      output_dir = output_dir
     )
   }
   prep_purge_data_frame_cache()
@@ -3209,11 +3322,156 @@ dq_report_by <- function(study_data,
     }
   } else {
     if (view && also_print) {
-      util_view_file(file.path(output_dir, "index.html"))
+      # util_view_file(content_file) done by exit handler
       return(overall_res)
     } else {
       return(invisible(overall_res))
     }
   }
 
+}
+
+# return a list of .hi, .hp, and .hm, the handles for the
+# progress hooks for init, progress and progress-messages
+# so use it as follows:
+# .hi <- .hp <- .hm <- NULL
+# list2env(util_init_html_progress(...), envir = environent)
+util_init_html_progress <- function(output_dir, content_file, title, view,
+                                    rep_id, start_time = Sys.time()) {
+  util_seed_last_error()
+  force(start_time)
+  packageName <- utils::packageName()
+  hook_store <- new.env(parent = emptyenv())
+  hook_store$n <- Inf
+  hook_store$percent <- 0
+  hook_store$status <- "Initializing"
+  hook_store$msg <- ""
+
+  hook <- function(n = hook_store$n,
+                   percent = hook_store$percent,
+                   status = hook_store$status,
+                   msg = hook_store$msg) {
+    if (!missing(n)) {
+      hook_store$n <- n
+    }
+    if (!missing(percent)) {
+      hook_store$percent <- percent
+    }
+    if (!missing(status)) {
+      hook_store$status <- status
+    }
+    if (!missing(msg)) {
+      hook_store$msg <- msg
+    }
+    util_write_index_html(
+      content_file,
+      util_index_loading_lines(
+        title  = title,
+        message = hook_store$status,
+        detail  = hook_store$msg,
+        reload_ms = 1200L,
+        n = hook_store$n,
+        percent = hook_store$percent
+      )
+    )
+    util_write_renderinfo_js_json(output_dir = output_dir,
+                                  rep_id = rep_id,
+                                  start_time = start_time,
+                                  end_time = Sys.time())
+  }
+
+  .hi <- prep_register_progress_hook(type = "init",
+                                     hook)
+  withr::defer_parent(prep_deregister_progress_hook(.hi, verbose = FALSE))
+  .hp <- prep_register_progress_hook(type = "progress",
+                                     hook)
+  withr::defer_parent(prep_deregister_progress_hook(.hp, verbose = FALSE))
+  .hm <- prep_register_progress_hook(type = "msg",
+                                     hook)
+  withr::defer_parent(prep_deregister_progress_hook(.hm, verbose = FALSE))
+
+  if (!dir.exists(file.path(output_dir, ".report"))) {
+    if (!dir.create(file.path(output_dir, ".report"))) {
+      util_error("Could not create %s for HTML output",
+                 dQuote(file.path(output_dir, ".report")))
+    }
+  }
+
+  file.copy(system.file("logos",
+                        "dataquieR_48x48.png",
+                        package = packageName),
+            file.path(output_dir, ".report", "logo.png"))
+
+  if (view) {
+    util_write_index_html(
+      content_file,
+      util_index_loading_lines(
+        title  = title,
+        message = hook_store$status,
+        detail  = hook_store$msg,
+        reload_ms = 1200L,
+        n = hook_store$n,
+        percent = hook_store$percent
+      )
+    )
+    util_write_renderinfo_js_json(output_dir = output_dir,
+                                  rep_id = rep_id,
+                                  start_time = start_time,
+                                  end_time = Sys.time())
+    withr::defer_parent({
+      cl <- ""
+      cl <- suppressWarnings(try(readLines(content_file), silent = TRUE))
+      if (!any(grepl(fixed = TRUE, "<!-- done -->", cl))) {
+        util_write_index_html(
+          content_file,
+          util_index_error_lines(
+            title = title,
+            message = "Report was not created... it was cancelled or an error occurred."
+          )
+        )
+        #print(dirname(content_file))
+        # util_message("Could not find done in %s: %s", dQuote(content_file), util_pretty_vector_string(cl))
+        unlink(file.path(dirname(content_file), "renderinfo.js")) # this is the marker for an error
+      }
+    })
+    if (util_works_in_rs_viewer(content_file)) {
+      # RStudio has a deadlock, if the autorefresh runs in its viewer, whatever, we have progressbars there, anyways.
+      withr::defer_parent({
+        cl <- ""
+        cl <- suppressWarnings(try(readLines(content_file), silent = TRUE))
+        if (!any(grepl(fixed = TRUE, "<!-- done -->", cl))) {
+          if (!util_is_last_error_sentinel()) {
+            p <- NULL
+            try(p <- rlang::last_error(), silent = TRUE)
+            rlang::abort("Cancelled.",
+                         parent = p)
+          } else {
+            util_error("Cancelled.")
+          }
+        } else {
+          util_view_file(content_file)
+        }
+      })
+    } else {
+      util_view_file(content_file)
+    }
+  }
+  list(.hi = .hi,
+       .hp = .hp,
+       .hm = .hm)
+}
+
+util_seed_last_error <- function(context = "pipeline phase started") {
+  cnd <- attr(try(
+    rlang::abort(
+      message = context,
+      class = "my_last_error_sentinel"
+    ), silent = TRUE
+  ), "condition")
+  rlang::entrace(cnd)
+}
+
+util_is_last_error_sentinel <- function() {
+  err <- tryCatch(rlang::last_error(), error = function(e) NULL)
+  inherits(err, "my_last_error_sentinel")
 }

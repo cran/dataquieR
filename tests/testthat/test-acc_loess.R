@@ -171,7 +171,7 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
                   time_vars = "v00017") # ===> "LAB_DT_0"
       ,
       regexp =
-        paste("Argument mark_time_points must match the predicate"),
+        paste("Argument mark_time_points must be logical"),
       perl = TRUE
     )
   )
@@ -217,7 +217,7 @@ test_that("acc_loess works without label_col and catches wrong inputs", {
                   mark_time_points = "TRUE",
                   min_obs_in_subgroup = 30,
                   time_vars = "v00017") # ===> "LAB_DT_0"
-      , regexp = "Argument mark_time_points must match the predicate"
+      , regexp = "Argument mark_time_points must be logical"
     )
   )
 

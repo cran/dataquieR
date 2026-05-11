@@ -14,7 +14,7 @@ util_funins <- function(f, expr, after = 1) { # https://stackoverflow.com/a/3873
 util_funwrap <- function(f, fn) {
   rlang::fn_body(f)<-
     call("{",
-      call(fn, rlang::fn_body(f))
+         call(fn, rlang::fn_body(f))
     )
   f
 }
@@ -68,16 +68,16 @@ util_maybe_eval_to_dataquieR_result <- function(my_call) {
     sum(as.character(rlang::call_name(sys.call())) == vapply(sys.calls(),
                                                              function(x) {
                                                                r <-
-                                                              rlang::call_name(
-                                                                x
-                                                              )
+                                                                 rlang::call_name(
+                                                                   x
+                                                                 )
                                                                if (is.null(r))
                                                                  r <-
                                                                    NA_character_
                                                                return(r)
-                                                              },
+                                                             },
                                                              FUN.VALUE =
-                                                              character(1))) > 1
+                                                               character(1))) > 1
   if (is.na(recursive_call)) {
     recursive_call <- FALSE
   }
@@ -91,7 +91,7 @@ util_maybe_eval_to_dataquieR_result <- function(my_call) {
   } else {
     call_to_attach <- as.symbol("<call not found>")
     if (util_is_try_error(try(call_to_attach <- rlang::call_match(rlang::caller_call(),
-                                        rlang::caller_fn()), silent = TRUE))) {
+                                                                  rlang::caller_fn()), silent = TRUE))) {
       util_warning(c("Internal Warning, sorry. Please report: This will",
                      "show a deprecation warning, but it should anyway",
                      "not happen."))
@@ -110,10 +110,10 @@ util_maybe_eval_to_dataquieR_result <- function(my_call) {
     r <- util_eval_to_dataquieR_result(my_call,
                                        nm = nm,
                                        function_name = fn,
-                                  filter_result_slots = c(),
-                                  env = parent.frame(),
-                                  checkpoint_resumed = FALSE,
-                                  called_in_pipeline = FALSE) # dont handle stuff twice
+                                       filter_result_slots = c(),
+                                       env = parent.frame(),
+                                       checkpoint_resumed = FALSE,
+                                       called_in_pipeline = FALSE) # dont handle stuff twice
     if (!util_is_try_error(.v))
       attr(call_to_attach, "entity_name") <- .v
     .v <- try(eval(as.symbol("label_col"), envir = rlang::caller_env()),
@@ -157,10 +157,10 @@ preps <- quote({
     ..what_i_have <- intersect(names(env_args), ls())
     missing_env_args <- vapply(..what_i_have, FUN.VALUE = logical(1),
                                function(object) {
-      .m <- call("missing", object)
-      r <- try(eval(.m, envir = rlang::caller_env(2)), silent = TRUE)
-      return(identical(r, TRUE))
-    })
+                                 .m <- call("missing", object)
+                                 r <- try(eval(.m, envir = rlang::caller_env(2)), silent = TRUE)
+                                 return(identical(r, TRUE))
+                               })
     ..what_i_have <- ..what_i_have[!missing_env_args]
     env_args[..what_i_have] <- mget(..what_i_have,
                                     inherits = FALSE)
@@ -198,7 +198,7 @@ preps <- quote({
     #
     my_call_orig <- my_call
     my_call <- try(.mde$provisionize_call(my_call, internal = TRUE, # TODO: also handle other condtions
-                                      env = environment()), silent = TRUE)
+                                          env = environment()), silent = TRUE)
     if (util_is_try_error(my_call)) {
       if (.called_in_pipeline || # TODO: in pipielines, the conditions are already collected, this may be change, later:
           getOption("dataquieR.testdebug", dataquieR.testdebug_default) ||
@@ -209,22 +209,22 @@ preps <- quote({
         function_name <- "dataquieR"
         nm <- paste0(function_name, ".?????")
         try({
-            function_name <- rlang::call_name(attr(my_call, "condition")$trace[[1]][[1]])
-            fkt <- get(function_name,
-                       mode = "function")
-            rvs <- rlang::call_match(attr(my_call, "condition")$trace[[1]][[1]],
-                                     fkt)[["resp_vars"]]
-            if (length(rvs) > 1) rvs <- "[ALL]"
-            if (length(rvs) < 1) rvs <- "?"
-            gvs <- rlang::call_match(attr(my_call, "condition")$trace[[1]][[1]],
-                                     fkt)[["group_vars"]] # TODO: this is not the name of the meta col but the content, but better than nothing
-            if (length(gvs) == 1)
-              nm <- paste0(function_name, "_", tolower(gvs), ".", rvs)
-            else
-              nm <- paste0(function_name, ".", rvs)
+          function_name <- rlang::call_name(attr(my_call, "condition")$trace[[1]][[1]])
+          fkt <- get(function_name,
+                     mode = "function")
+          rvs <- rlang::call_match(attr(my_call, "condition")$trace[[1]][[1]],
+                                   fkt)[["resp_vars"]]
+          if (length(rvs) > 1) rvs <- "[ALL]"
+          if (length(rvs) < 1) rvs <- "?"
+          gvs <- rlang::call_match(attr(my_call, "condition")$trace[[1]][[1]],
+                                   fkt)[["group_vars"]] # TODO: this is not the name of the meta col but the content, but better than nothing
+          if (length(gvs) == 1)
+            nm <- paste0(function_name, "_", tolower(gvs), ".", rvs)
+          else
+            nm <- paste0(function_name, ".", rvs)
 
-          },
-          silent = TRUE
+        },
+        silent = TRUE
         )
         .r <- util_eval_to_dataquieR_result(
           util_error(my_call),
@@ -263,9 +263,9 @@ util_decorator <- function(x,
 
   # reverse order (appends code)
   f <- util_funins(f,
-    if (!is.null(....alt_call_res)) {
-        return(....alt_call_res)
-    }
+                   if (!is.null(....alt_call_res)) {
+                     return(....alt_call_res)
+                   }
   )
   # f <- util_funins(f,
   # )
@@ -304,8 +304,8 @@ try({
     if (called_from_rogygen) withr::defer(local({
       use_cli_format <-
         suppressWarnings(util_ensure_suggested("cli", err = FALSE,
-                                             goal =
-                                               "nicer messages"))
+                                               goal =
+                                                 "nicer messages"))
       if (use_cli_format) {
         cmd <- sprintf("{.run [%s](%s)}", "dataquieR:::util_load_manual(TRUE)",
                        "dataquieR:::util_load_manual(TRUE)")
@@ -313,19 +313,19 @@ try({
         cmd <- "dataquieR:::util_load_manual(TRUE)"
       }
       need_rebuild <- FALSE
+      pp <- dynGet("base_path", ifnotfound=getwd(), inherits=TRUE)
+      withr::local_dir(pp)
       max_man <- max(vapply(list.files("man/", full.names = TRUE, all.files = TRUE,
                                        pattern = "*.Rd", ignore.case = TRUE), file.mtime,
                             FUN.VALUE = file.mtime("/")), na.rm = TRUE)
-      man_hash <- rlang::hash(rlang::hash_file(list.files("man/", full.names =
-                                                            TRUE,
-                                                          all.files = TRUE,
-                                                          pattern = "*.Rd",
-                                                          ignore.case = TRUE)))
+      rd_files <- sort(dir("man", pattern = "\\.[Rr]d$", full.names = TRUE))
+      md5 <- tools::md5sum(rd_files)
+      man_hash <- rlang::hash(unname(paste(names(md5), md5, sep = "\n")))
       old_man_hash <- ""
       try(
         old_man_hash <- rio::import("inst/manual.RData",
-                                   which = ".man_hash",
-                                   trust = TRUE),
+                                    which = "man_hash",
+                                    trust = TRUE),
         silent = TRUE
       )
       if (old_man_hash == "" || old_man_hash != man_hash) {
@@ -343,7 +343,7 @@ try({
       old_man_hash <- ""
       try(
         old_man_hash <- rio::import("inst/indicator_or_descriptor.RData",
-                                    which = ".man_hash",
+                                    which = "man_hash",
                                     trust = TRUE),
         silent = TRUE
       )
@@ -354,8 +354,8 @@ try({
           rlang::inform(
             use_cli_format = use_cli_format,
             c(i = cli::format_inline(sprintf(paste("inst/indicator_or_descriptor.RData may be out of date, as a",
-                  " dataquieR developer, please, consider updating it with",
-                  "%s -- doing this, now"), cmd))))
+                                                   " dataquieR developer, please, consider updating it with",
+                                                   "%s -- doing this, now"), cmd))))
           need_rebuild <- TRUE
         }
       }
@@ -366,15 +366,20 @@ try({
             suppressWarnings(util_ensure_suggested("callr", err = FALSE,
                                                    goal =
                                                    "provide help on report sections during development"))) {
+
           recursive_call <- Sys.getenv("dataquieR_child", "") == "TRUE"
           if (!recursive_call) callr::r(env =
                                           c(dataquieR_child = "TRUE"),
-                                        function(man_hash) {
-            devtools::document();
-            devtools::load_all()
-            util_load_manual(TRUE, man_hash = man_hash)
-          }, args = list(man_hash = man_hash))
+                                        function(man_hash, pp) {
+                                          withr::local_dir(pp)
+                                          devtools::document()
+                                          devtools::load_all()
+                                          util_fix_backticks()
+                                          util_load_manual(TRUE, man_hash = man_hash)
+                                        }, args = list(man_hash = man_hash, pp = pp))
         }
+      } else {
+        util_fix_backticks()
       }
     }), envir = rlang::caller_env(roxygenise_call), priority = "last")
   }
@@ -383,7 +388,7 @@ try({
 .git_hash <- try(suppressWarnings(suppressMessages(
   system("git rev-parse HEAD",
          intern = TRUE,ignore.stderr = TRUE
-         )
+  )
 )), silent = TRUE)
 
 if (util_is_try_error(.git_hash) ||
@@ -403,6 +408,11 @@ util_dataquieR_version <- function() {
             utils::packageName())),
           gh)
 }
+
+SSI_functions <-
+  unlist(unique(lapply(strsplit(unlist(lapply(util_get_concept_info("ssi")$functions,
+                                              util_parse_assignments, multi_variate_text = TRUE)), split = ".",
+                                fixed = TRUE), `[[`, 1)))
 
 # Hint: Debug with warpper turned off: withr::with_options(list(warn = 2, dataquieR.dontwrapresults = TRUE), com_item_missingness(study_data, resp_vars = "SBP_0", item_level = md0, suppressWarnings = TRUE))
 

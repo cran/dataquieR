@@ -4,9 +4,6 @@
 \name{Descriptor}
 \alias{Descriptor}
 \title{Descriptor Function}
-\format{
-An object of class \code{character} of length 1.
-}
 \usage{
 Descriptor
 }

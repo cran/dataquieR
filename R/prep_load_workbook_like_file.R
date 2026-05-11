@@ -9,6 +9,8 @@
 #' @param file the file name to load.
 #' @param keep_types [logical] keep types as possibly defined in the file.
 #'                             set `TRUE` for study data.
+#' @param append [logical] if a data frame already exists in the cache
+#'                         (by name), extend the existing one
 #'
 #' @return `invisible(the cache environment)`
 #' @export
@@ -16,8 +18,9 @@
 #' @seealso [prep_get_data_frame]
 #' @family data-frame-cache
 prep_load_workbook_like_file <- function(file,
-                                         keep_types = FALSE) {
-
+                                         keep_types = FALSE,
+                                         append = FALSE) {
+  util_expect_scalar(append, check_type = is.logical)
   if (!missing(keep_types)) {
     util_expect_scalar(keep_types,
                        check_type = is.logical,
@@ -26,7 +29,29 @@ prep_load_workbook_like_file <- function(file,
                                  sQuote("keep_types")))
   }
 
-  util_expect_scalar(file, check_type = is.character)
+  util_expect_scalar(file, check_type = is.character,
+                     allow_more_than_one = TRUE)
+
+  if (length(file) > 1 && (append || all(vapply(file, function(fn) {
+      (tolower(tools::file_ext(trimws(fn))) %in% c("odm", "xml") &&
+             file.exists(fn) && !dir.exists(fn) &&
+             util_is_odm_xml(fn))
+    }, FUN.VALUE = logical(1))))) {
+    if (!append) {
+    }
+    for (fn in file) {
+      prep_load_workbook_like_file(file = fn,
+                                   keep_types = keep_types,
+                                   append = TRUE)
+    }
+    return(invisible(.dataframe_environment()))
+  }
+
+  if (length(file) > 1) {
+    util_error(
+      c("Only for ODM files, we assume append = TRUE,",
+        "if more than one is read at the same time"))
+  }
 
   if (file %in% c("meta_data_v2",
                   "ship_meta_dataframe",
@@ -140,18 +165,18 @@ prep_load_workbook_like_file <- function(file,
                error)
   }
   data_frame_list <- r
+
 # addition to load a csv file
-  if(is.null(names(data_frame_list)) && length(data_frame_list)==1){
-    names(data_frame_list)<- paste0(basename(fn))
+  if (is.null(names(data_frame_list)) && length(data_frame_list) == 1) {
+    names(data_frame_list) <- paste0(basename(fn))
   }
 
-
-  prep_add_data_frames(data_frame_list = data_frame_list)
+  prep_add_data_frames(data_frame_list = data_frame_list, append = append)
   data_frame_list2 <- data_frame_list
   names(data_frame_list2) <- paste0(basename(fn),
                                     SPLIT_CHAR,
                                     names(data_frame_list2))
-  r <- prep_add_data_frames(data_frame_list = data_frame_list2)
+  r <- prep_add_data_frames(data_frame_list = data_frame_list2, append = append)
   trunc_name <- basename(fn)
   if (all(grepl("\\.(RDS|RData|xlsx)$", trunc_name, perl = TRUE))) {
     trunc_name <- gsub("\\.(RDS|RData|xlsx)$", "", trunc_name, perl = TRUE)
@@ -159,7 +184,8 @@ prep_load_workbook_like_file <- function(file,
     names(data_frame_list3) <- paste0(trunc_name,
                                       SPLIT_CHAR,
                                       names(data_frame_list3))
-    r <- prep_add_data_frames(data_frame_list = data_frame_list3)
+    r <- prep_add_data_frames(data_frame_list = data_frame_list3,
+                              append = append)
   }
   invisible(r)
 }

@@ -23,6 +23,7 @@ util_verify_names <- function(name_of_study_data = character(0)) {
 }
 
 .util_verify_names <- function(standard_names = c("CODE_LIST_TABLE",
+                                                  "MISSING_CODE_RULES",
                                                   "cross-item_level",
                                                   "dataframe_level",
                                                   "item_level",

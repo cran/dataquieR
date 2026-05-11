@@ -100,8 +100,8 @@ util_combine_list_report_summaries <- function(to_combine,
     #In case the variables are unique the type unique_vars is used
     if (type == "unique_vars") {
       #add a column origin in both result data frames (works also in case empty)
-      result_1$origin <- paste0(this1$title)
-      result_2$origin <- paste0(this2$title)
+      result_1$origin <- rep(paste0(this1$title), nrow(result_1))
+      result_2$origin <- rep(paste0(this2$title), nrow(result_2))
       result <- dplyr::bind_rows(result_1, result_2)
       rm(result_1, result_2)
 
@@ -223,14 +223,14 @@ util_combine_list_report_summaries <- function(to_combine,
       #add a column origin in both result data frames (works also in case empty)
       if (!"..Origin" %in% names(result_1)) {
         #in case we are merging the first 2 summaries
-        result_1$..Origin <- origin_name1
+        result_1$..Origin <- rep(origin_name1, nrow(result_1))
         result_1$Original_var_name <- result_1$VAR_NAMES
         result_1 <- dplyr::mutate(result_1,
                                   VAR_NAMES = paste0(result_1$..Origin,
                                                      "-", result_1$VAR_NAMES))
       }
       #the second summary is always a new one in all loops
-      result_2$..Origin <- origin_name2
+      result_2$..Origin <- rep(origin_name2, nrow(result_2))
       result_2$Original_var_name <- result_2$VAR_NAMES
       result_2 <- dplyr::mutate(result_2,
                                 VAR_NAMES = paste0(result_2$..Origin,
@@ -240,7 +240,7 @@ util_combine_list_report_summaries <- function(to_combine,
       ## meta_data
       if (!"..Origin" %in% names(md1)) {
         #in case we are merging the first 2 summaries
-        md1$..Origin <- origin_name1
+        md1$..Origin <- rep(origin_name1, nrow(md1))
         # long label is used for the list of variables in the final table, so if
         # present I add the prefix of ..Origin
         if ("LONG_LABEL" %in% names(md1)) {
@@ -451,8 +451,22 @@ util_combine_list_report_summaries <- function(to_combine,
     }
     rm(comp1)
 
+    l1 <- this1$label_col
+    l2 <- this2$label_col
+    while (!is.null(attr(l1, "orig_label_col"))) {
+      l1 <- attr(l1, "orig_label_col")
+    }
+    while (!is.null(attr(l1, "orig_label_col"))) {
+      l2 <- attr(l2, "orig_label_col")
+    }
+
+    if (l1 != l2) {
+      util_error(
+        "Cannot combine summaries if the reports used a different label_col")
+    }
+
     #label_col
-    label_col <- "new_label"
+    label_col <- util_attach_attr("new_label", orig_label_col = this1$label_col)
     attr(label_col, "var_att_required") <- "recommended"
 
     #filter_of

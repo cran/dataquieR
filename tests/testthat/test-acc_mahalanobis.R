@@ -97,7 +97,7 @@ test_that("mahalanobis works", {
                        meta_data = "item_level")
 
 
-  expect_equal(mahal_res$SummaryTable$NUM_ssc_MD, 2)
+  expect_equal(mahal_res$SummaryTable$NUM_ssc_mah, 2)
   expect_equal(mahal_res$SummaryTable$observational_units_removed, 2)
   expect_equal(mahal_res$SummaryData$`MD_outliers (%)`, 7.14)
 })

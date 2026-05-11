@@ -49,14 +49,15 @@ util_order_by_order <- function(x, order, ...) {
 #' @concept reporting
 #' @noRd
 util_sub_string_left_from_. <- function(x) {
-  splitted <- strsplit(x, ".", fixed = TRUE)
-  util_stop_if_not(
-    "there must be at least one dot to separated the col. name from the row name (wolog this is the first dots)" =
-      all(vapply(splitted, length, FUN.VALUE = integer(1)) >= 2))
-  #util_stop_if_not(all(grepl(fixed = TRUE, ".", x))) # there must be at least one dot to separated the col. name from the row name (wolog this is the first dots)
-  vapply(splitted, `[[`, 1, FUN.VALUE = character(1))
-}
+  pos <- regexpr(".", x, fixed = TRUE)
 
+  util_stop_if_not(
+    "there must be at least one dot to separate the col. name from the row name (wolog this is the first dot)" =
+      all(pos > 0)
+  )
+
+  substring(x, 1L, pos - 1L)
+}
 #' Get sub-string right from first `.`
 #'
 #' @param x the string with a least one `.`
@@ -66,18 +67,20 @@ util_sub_string_left_from_. <- function(x) {
 #' util_sub_string_right_from_.(c("a.b", "asdf.xyz"))
 #' util_sub_string_right_from_.(c("a.b", "asdf.xy.z"))
 #' util_sub_string_right_from_.(c("ab", "asdxy.z"))
+#' util_sub_string_right_from_.(c("a.b", "asdxy.z."))
+#' util_sub_string_right_from_.(c("a.b", "asdxy.z.."))
 #' }
 #'
 #' @family string_functions
 #' @concept reporting
 #' @noRd
 util_sub_string_right_from_. <- function(x) {
-  splitted <- strsplit(x, ".", fixed = TRUE)
-  util_stop_if_not(
-    "there must be at least one dot to separated the col. name from the row name (wolog this is the first dots)" =
-      all(vapply(splitted, length, FUN.VALUE = integer(1)) >= 2))
-  #util_stop_if_not(all(grepl(fixed = TRUE, ".", x))) # there must be at least one dot to separated the col. name from the row name (wolog this is the first dots)
-  vapply(lapply(splitted, `[`, -1),
-         paste0, collapse = ".", FUN.VALUE = character(1))
+  pos <- regexpr(".", x, fixed = TRUE)
 
+  util_stop_if_not(
+    "there must be at least one dot to separate the col. name from the row name (wolog this is the first dot)" =
+      all(pos > 0)
+  )
+
+  substring(x, pos + 1L)
 }

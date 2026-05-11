@@ -143,8 +143,15 @@ des_scatterplot_matrix <- function(label_col, # FIXME: This needs a variable_gro
               util_parse_assignments(vl),
               identity, FUN.VALUE = character(1))
 
-          cors <- cor(ds1[, rvs, FALSE], use = "complete.obs",
-                      method = correlation_method)
+          rvs <- rvs[vapply(rvs, FUN = function(x) {
+            !all(is.na(ds1[[x]]))
+          }, FUN.VALUE = logical(1) )]
+          if (length(rvs) == 0) {
+            cors <- matrix(ncol = 0, nrow = 0)
+          } else {
+            cors <- cor(ds1[, rvs, FALSE], use = "complete.obs",
+                        method = correlation_method)
+          }
 
           cors_combs <-
             t(apply(expand.grid(rvs, rvs), 1, sort))
@@ -158,14 +165,19 @@ des_scatterplot_matrix <- function(label_col, # FIXME: This needs a variable_gro
               drop = FALSE
             ]
 
-          cors_of_combs <- setNames(apply(cors_combs, 1, function(r) {
-            cors[r[[1]], r[[2]]]
-          }), nm = apply(cors_combs, 1, function(r) {
-            sprintf("cor(%s, %s)", r[[1]], r[[2]])
-          }))
+          if (!!prod(dim(cors_combs))) {
+            cors_of_combs <- setNames(apply(cors_combs, 1, function(r) {
+              cors[r[[1]], r[[2]]]
+            }), nm = apply(cors_combs, 1, function(r) {
+              sprintf("cor(%s, %s)", r[[1]], r[[2]])
+            }))
+          } else {
+            cors_of_combs <- setNames(numeric(0), nm = character(0))
+          }
 
           data.frame(VARIABLE_LIST = vl,
-                     pretty_cors = prep_deparse_assignments(labels = format(cors_of_combs),
+                     pretty_cors = prep_deparse_assignments(
+                                                     labels = format(util_round_to_decimal_places(cors_of_combs)),
                                                      codes = names(cors_of_combs),
                                                      mode = "string_codes"),
                      pretty_max_cor = format(max(cors_of_combs, na.rm = TRUE)),

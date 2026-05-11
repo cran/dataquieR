@@ -1,11 +1,13 @@
 #' Create a dashboard-table from a report summary
 #'
 #' @param repsum a report summary from `summary(report)`
+#' @param folder_of_report a named vector with the location of variable and
+#'                         `call_names`
 #'
 #' @family html
 #' @concept process
 #' @noRd
-util_dashboard_table <- function(repsum) {
+util_dashboard_table <- function(repsum, folder_of_report = NULL) {
   this <- attr(repsum, "this")
   bigTable <- this$result
   tb <- suppressWarnings(
@@ -38,7 +40,7 @@ util_dashboard_table <- function(repsum) {
   labs <- util_get_labels_grading_class()[tb$class]
   fg_cols <- util_get_fg_color(cols)
 
-  tb$`Class` <- ifelse(is.na(labs), "", paste0(
+  tb$`Class` <- ifelse(is.na(labs), "", paste0( # TODO: Find out, if we can remove this safely, when we have factors in datatables always working
     labs
   ))
 
@@ -47,7 +49,11 @@ util_dashboard_table <- function(repsum) {
                       FUN.VALUE = character(1))
   tb$n_classes <- NULL
 
-  tb <- merge(tb, meta_data)
+  meta_data$STUDY_SEGMENT <- NULL # delete, it is already in tb
+
+  tb <- merge(tb, meta_data, by = intersect(intersect(colnames(tb),
+                                                      colnames(meta_data)),
+                                            c(VAR_NAMES, label_col)))
 
   tb$class <- ordered(tb$class,
                       levels = names(util_get_labels_grading_class()),
@@ -108,6 +114,64 @@ util_dashboard_table <- function(repsum) {
 
   tb <- tb[, my_order, FALSE]
 
+  tb <- util_add_links_to_summary_table(tb,
+                                        this,
+                                        folder_of_report = folder_of_report)
+
   return(util_attach_attr(tb,
                           label_col = label_col))
+}
+
+util_add_links_to_summary_table <- function(tb, this, folder_of_report = NULL) {
+  label_col <- this$label_col
+  while (!is.null(attr(label_col, "orig_label_col"))) {
+    label_col <- attr(label_col, "orig_label_col")
+  }
+  tb[[label_col]] <-
+    prep_map_labels(tb$VAR_NAMES,
+                    meta_data = this$meta_data,
+                    to = label_col)
+  tb[[this$label_col]] <-
+    prep_map_labels(tb$VAR_NAMES,
+                    meta_data = this$meta_data,
+                    to = this$label_col)
+  if (nrow(tb) == 0) {
+    tb$href <- character(0)
+    tb$popup_href <- character(0)
+    tb$title <- character(0)
+  } else {
+    tb$href <-
+      paste0("VAR_", prep_link_escape(tb[[label_col]],
+                                      html = TRUE),
+             ".html#",
+             prep_link_escape(as.character(tb[[label_col]])),
+             ".", tb[["call_names"]])
+
+    # showDataquieRResult("VAR_AGE0.html#nm=acc_distributions_only.AGE_0", "VAR_AGE0.html#v00003: Age B/L", "Gemüsesuppe")
+    tb$popup_href <-
+      paste0("VAR_", prep_link_escape(tb[[label_col]],
+                                      html = TRUE),
+             ".html#nm=", tb$call_names, ".",
+             as.character(tb[[label_col]]))
+
+    tb$title <- paste0(tb[[this$label_col]],
+                       ": ",
+                       vapply(tb$call_names, util_alias2caption, long = TRUE, FUN.VALUE = character(1)),
+                       ifelse(!is.na(tb$title_ind), paste0(" (",
+                       tb$title_ind,
+                       ")"), ""))
+  }
+
+  if (!is.null(folder_of_report)) { # TODO: Use utility function util_add_links_to_summary_table
+    tb$href <-
+      paste0(folder_of_report[gsub("\\s+", "", paste0(tb[[this$label_col]], ".", tb[["call_names"]]))],
+             "/.report/",
+             tb$href)
+    tb$popup_href <-
+      paste0(folder_of_report[gsub("\\s+", "", paste0(tb[[this$label_col]], ".", tb[["call_names"]]))],
+             "/.report/",
+             tb$popup_href)
+  }
+
+  util_attach_attr(tb, orig_label_col = tb[[this$label_col]])
 }

@@ -71,7 +71,7 @@ categories:
 2. Matching datatype + Incomplete metadata,
 3. Matching datatype + complete metadata,
 4. Not applicable according to data type
-\item \code{ApplicabilityPlot}: \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} heatmap plot, graphical representation of
+\item \code{ApplicabilityPlot}: \link[ggplot2:ggplot2]{ggplot2::ggplot2} heatmap plot, graphical representation of
 \code{SummaryTable}
 \item \code{ApplicabilityPlotList}: \link{list} of plots per (maybe artificial) segment
 \item \code{ReportSummaryTable}: data frame underlying \code{ApplicabilityPlot}

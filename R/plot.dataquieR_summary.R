@@ -1,6 +1,5 @@
 #' Plot a `dataquieR` summary
 #'
-#' @inheritParams util_filter_repsum
 #' @param x the `dataquieR` summary, see [summary()] and [dq_report2()]
 #' @param y not yet used
 #' @param ... not yet used
@@ -10,6 +9,18 @@
 #'                   object derived from `x`
 #' @param stratify_by column to stratify the summary, may be one string.
 #' @param disable_plotly [logical] do not use `plotly`, even if installed
+#' @param vars_to_include [character] study | `ssi`. variables are study
+#'                                    variables or computed social science
+#'                                    indicator variables.
+#' @param hierarchy not yet defined, but if an argument is given, a
+#'                  sunburst chart is displayed, currently, only `DQ_OBS`
+#'                  can be used a the hierarchy.
+#' @param folder_of_report a named vector with the location of variable and
+#'                         `call_names`
+#' @param var_uniquenames a data frame with the original variable names and the
+#'                        unique names in case of reports created with dq_report_by
+#'                        containing the same variable in several reports
+#'                        (e.g., creation of reports by sex)
 #'
 #' @return invisible html object
 #' @export
@@ -17,7 +28,10 @@
 plot.dataquieR_summary <- function(x, y, ..., filter, dont_plot = FALSE,
                                    stratify_by,
                                    vars_to_include = "study",
-                                   disable_plotly = FALSE) {
+                                   disable_plotly = FALSE,
+                                   hierarchy,
+                                   folder_of_report = NULL,
+                                   var_uniquenames = NULL) {
   if (!disable_plotly) {
     util_ensure_suggested(pkg = c("plotly"),
                           goal = "generate interactive HTML-summaries.")
@@ -32,6 +46,7 @@ plot.dataquieR_summary <- function(x, y, ..., filter, dont_plot = FALSE,
   x <- util_reclassify_dataquieR_summary(x)
 
   repsum <- x
+
   indicator_metric <- NULL
   function_name <- NULL
   util_expect_scalar(dont_plot, check_type = is.logical)
@@ -48,6 +63,25 @@ plot.dataquieR_summary <- function(x, y, ..., filter, dont_plot = FALSE,
                                           this$rownames_of_report,
                                           this$label_col)
   rownames_of_report <- attr(suitable_vars_sum, "rownames_of_report")
+
+  if (!disable_plotly && !missing(hierarchy)) {
+    # TODO: Support other hierarchies
+    # TODO: Support filter / stratify_by like in the other plot versions.
+    rs <- repsum
+    attr(rs, "this") <- rlang::env_clone(this)
+    attr(rs, "this")$result <- suitable_vars_sum
+    if (is.null(attr(rs,"this")$result) ||
+        is.null(attr(rs,"this")$result) ||
+        !prod(dim(attr(rs,"this")$result))) {
+      return(htmltools::HTML(""))
+    }
+    return(util_render_sunburst_from_summary_classes(rs,
+                                                     folder_of_report =
+                                                       folder_of_report,
+                                                     var_uniquenames =
+                                                       var_uniquenames,
+                                                     ...))
+  }
 
   # suppressMessages(this$result %>%
   #                    dplyr::filter(!startsWith(as.character(indicator_metric), "CAT_")) %>%
@@ -112,9 +146,12 @@ plot.dataquieR_summary <- function(x, y, ..., filter, dont_plot = FALSE,
     sum_plot_tab %>%
       dplyr::mutate(X =
                       sprintf(
-                        "%d variables: %d classified by indicators",
-                        length(rownames_of_report),
-                        length(unique(plot_tab$VAR_NAMES))
+                        "%d %s: %d classified by indicators",
+                        ifelse(vars_to_include == "study", length(rownames_of_report), all_per_variable_all_issue_classes_except_errors %>%
+                                 dplyr::filter(!is.na(value)) %>% dplyr::select(VAR_NAMES) %>% unique %>% nrow),
+                        ifelse(vars_to_include == "study", "variables", "scales"),
+                        ifelse(vars_to_include == "study", length(unique(plot_tab$VAR_NAMES)), all_per_variable_all_issue_classes_except_errors %>%
+                             dplyr::filter(!is.na(value) & !is.na(class)) %>% dplyr::select(VAR_NAMES) %>% unique %>% nrow)
                       ),
                     class = as.integer(class)) ->
       sum_plot_tab
@@ -130,6 +167,7 @@ plot.dataquieR_summary <- function(x, y, ..., filter, dont_plot = FALSE,
 
   #  sum_worst_per_variable$note <-
 
+  attr(sum_plot_tab, "vars_to_include") <- vars_to_include
 #  if (length(unique(sum_plot_tab$X)) > 0) {
   if (!disable_plotly) {
     summaryplots <-

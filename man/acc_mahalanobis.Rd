@@ -2,28 +2,26 @@
 % Please edit documentation in R/acc_mahalanobis.R
 \name{acc_mahalanobis}
 \alias{acc_mahalanobis}
-\title{Calculate and plot Mahalanobis distances for social science indices}
+\title{Calculate and plot \code{Mahalanobis} distances}
 \usage{
 acc_mahalanobis(
   variable_group = NULL,
-  label_col = VAR_NAMES,
   study_data,
   item_level = "item_level",
   meta_data = item_level,
+  meta_data_cross_item = "cross-item_level",
+  label_col = VAR_NAMES,
   meta_data_v2,
+  cross_item_level,
+  `cross-item_level`,
   mahalanobis_threshold =
     suppressWarnings(as.numeric(getOption("dataquieR.MAHALANOBIS_THRESHOLD",
     dataquieR.MAHALANOBIS_THRESHOLD_default)))
 )
 }
 \arguments{
-\item{variable_group}{\link{variable list} the names of the continuous
-measurement variables building
-a group, for that multivariate outliers
-make sense.}
-
-\item{label_col}{\link{variable attribute} the name of the column in the metadata
-with labels of variables}
+\item{variable_group}{\link{variable list} the names of the variables used to
+calculate the \code{Mahalanobis} distance}
 
 \item{study_data}{\link{data.frame} the data frame that contains the measurements}
 
@@ -32,33 +30,49 @@ attributes of study data}
 
 \item{meta_data}{\link{data.frame} old name for \code{item_level}}
 
-\item{meta_data_v2}{\link{character} path to workbook like metadata file, see
+\item{meta_data_cross_item}{\link{data.frame} -- Cross-item level metadata}
+
+\item{label_col}{\link{variable attribute} the name of the column in the
+metadata containing the labels of
+the variables}
+
+\item{meta_data_v2}{\link{character} path or file name of the workbook like
+metadata file, see
 \code{\link{prep_load_workbook_like_file}} for details.
 \strong{ALL LOADED DATAFRAMES WILL BE PURGED},
 using \code{\link{prep_purge_data_frame_cache}},
-if you specify \code{meta_data_v2}.}
+if you specify \code{meta_data_v2}}
 
-\item{mahalanobis_threshold}{\link{numeric} TODO: ES}
+\item{cross_item_level}{\link{data.frame} alias for \code{meta_data_cross_item}}
+
+\item{`cross-item_level`}{\link{data.frame} alias for \code{meta_data_cross_item}}
+
+\item{mahalanobis_threshold}{\link{numeric} the confidence level to use to define
+\code{outliers}, if not stated it is by default
+0.975.}
 }
 \value{
 a list with:
 \itemize{
 \item \code{SummaryTable}: \link{data.frame} underlying the plot
-\item \code{SummaryPlot}: \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} outlier plot
-\item \code{FlaggedStudyData} \link{data.frame} contains the original data frame with
-the additional columns \code{tukey},
-\verb{3SD},
-\code{hubert}, and \code{sigmagap}. Every
-observation
-is coded 0 if no outlier was detected in
-the respective column and 1 if an
-outlier was detected. This can be used
-to exclude observations with outliers.
+\item \code{SummaryData}: \link{data.frame} underlying the plot with speaking column labels
+\item \code{SummaryPlot}: \link[ggplot2:ggplot2]{ggplot2::ggplot2} Q-Q plot of squared \code{Mahalanobis}
+distances vs. a theoretical
+chi-squared distribution showing \code{outliers}.
+\item \code{FlaggedStudyData}: \link{data.frame} contains the original data frame of the
+variables used to calculate
+the squared \code{Mahalanobis} distances
+with the additional column,
+containing the squared
+\code{Mahalanobis} distance, and a column
+called \code{MD_outliers}, that contains
+1 if the observational unit is considered
+a multivariate \code{outlier}.
 }
 }
 \description{
-A standard tool to calculate Mahalanobis distance.
-In this approach the Mahalanobis distance is calculated for ordinal
+A standard tool to calculate \code{Mahalanobis} distance.
+In this approach the squared \code{Mahalanobis} distance is calculated for ordinal
 variables (treated as continuous) to identify inattentive responses.
 It calculates the distance for each observational unit from the sample mean.
 The greater the distance, the atypical the responses.
@@ -70,11 +84,12 @@ The greater the distance, the atypical the responses.
 \item Implementation is restricted to variables of type integer
 \item Remove missing codes from the study data (if defined in the metadata)
 \item The covariance matrix is estimated for all variables from \code{variable_group}
-\item The Mahalanobis distance of each observation is calculated
+\item The \code{Mahalanobis} distance of each observation is calculated
 \eqn{MD^2_i  = (x_i - \mu)^T \Sigma^{-1} (x_i -  \mu)}
-\item The default to consider a value an outlier is "use the 0.975 quantile
-of a chi-square distribution with p degrees of freedom" (Mayrhofer and Filzmoser, 2023)
-List function.
+\item The default to consider a value an \code{outlier} is to use the 0.975 quantile
+of a theoretical chi-square distribution with degrees of freedom
+equals to the number of variables used to calculate the
+\code{Mahalanobis} distance (\verb{Mayrhofer and Filzmoser}, 2023)
 }
 }
 

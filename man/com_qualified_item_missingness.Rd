@@ -11,7 +11,9 @@ com_qualified_item_missingness(
   item_level = "item_level",
   expected_observations = c("HIERARCHY", "ALL", "SEGMENT"),
   meta_data = item_level,
-  meta_data_v2
+  meta_data_v2,
+  meta_data_segment,
+  segment_level
 )
 }
 \arguments{
@@ -38,6 +40,10 @@ explanation.}
 \strong{ALL LOADED DATAFRAMES WILL BE PURGED},
 using \code{\link{prep_purge_data_frame_cache}},
 if you specify \code{meta_data_v2}.}
+
+\item{meta_data_segment}{\link{data.frame} -- optional: Segment level metadata}
+
+\item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
 }
 \value{
 A \link{list} with:

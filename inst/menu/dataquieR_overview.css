@@ -1,0 +1,342 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #eef1f5;
+  color: #1f2937;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               Helvetica, Arial, sans-serif;
+}
+body {
+  line-height: 1.45;
+}
+.navbar {
+  display: none;
+}
+.dq-overview-app {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #505050 0px, #5a5a5a 84px, #eef1f5 84px, #eef1f5 100%);
+}
+.dq-overview-shell {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 22px 36px 22px;
+  box-sizing: border-box;
+}
+.dq-overview-topbar {
+  color: #a9aaab;
+  padding: 18px 0 16px 0;
+}
+.dq-overview-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.78;
+  margin-bottom: 6px;
+}
+.dq-overview-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.dq-overview-subtitle {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+  opacity: 0.88;
+}
+.dq-overview-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 18px 0 0 0;
+  padding: 0;
+}
+.dq-overview-tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.08);
+  color: #a9aaab;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.dq-overview-tab:hover {
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.24);
+}
+.dq-overview-tab.active {
+  background: #ffffff;
+  color: #3f3f46;
+  border-color: #ffffff;
+}
+.dq-overview-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.dq-overview-card {
+  background: #ffffff;
+  border: 1px solid #d7dde5;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
+  padding: 18px 20px;
+  overflow: hidden;
+}
+.dq-overview-card-title {
+  margin: 0 0 14px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #23272f;
+}
+.dq-overview-report-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.dq-overview-report-item {
+  margin: 0;
+  padding: 0;
+}
+.dq-overview-report-link {
+  display: block;
+  padding: 11px 13px;
+  border-radius: 10px;
+  text-decoration: none;
+  background: #f8fafc;
+  border: 1px solid #e3e8ef;
+  color: #294f8f;
+  font-weight: 600;
+}
+.dq-overview-report-link:hover {
+  background: #f1f5f9;
+  border-color: #cfd8e3;
+}
+.dq-overview-legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.dq-overview-legend-item {
+  border: 1px solid #e3e8ef;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 12px 14px;
+}
+.dq-overview-legend-key {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+.dq-overview-legend-value {
+  color: #111827;
+  font-size: 14px;
+}
+.dq-overview-section-card {
+  background: #ffffff;
+  border: 1px solid #d7dde5;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
+  padding: 18px 20px 20px 20px;
+  overflow-x: auto;
+}
+.dq-overview-section-heading {
+  margin: 0 0 16px 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #23272f;
+}
+.dq-overview-section-body {
+  min-height: 80px;
+}
+.dq-overview-section-body > .html-widget,
+.dq-overview-section-body > .plotly,
+.dq-overview-section-body .datatables,
+.dq-overview-section-body .dataTables_wrapper {
+  max-width: 100%;
+}
+.dq-overview-section-body img {
+  max-width: 100%;
+  height: auto;
+}
+.dq-overview-notes {
+  margin-top: 18px;
+}
+.dq-overview-notes:empty {
+  display: none;
+}
+.dq-overview-notes div:empty {
+  display: none;
+}
+.dq-overview-footer {
+  background: #ffffff;
+  border: 1px solid #d7dde5;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
+  padding: 18px 20px;
+  margin-top: 18px;
+}
+.dq-overview-notes > div {
+  background: #ffffff;
+  border: 1px solid #d7dde5;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
+  padding: 18px 20px;
+}
+.dq-overview-notes h3 {
+  margin-top: 0;
+  margin-bottom: 14px;
+  font-size: 18px;
+  color: #23272f;
+}
+.dq-overview-main h1 {
+  display: none;
+}
+@media (max-width: 900px) {
+  .dq-overview-shell {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .dq-overview-title {
+    font-size: 24px;
+  }
+  .dq-overview-card,
+  .dq-overview-section-card {
+    padding: 16px;
+  }
+}
+
+.dq-overview-footer {
+  background: #ffffff;
+  border: 1px solid #d7dde5;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
+  padding: 20px 22px;
+  margin-top: 18px;
+}
+
+/* Footer-Inhalt insgesamt etwas ruhiger und typografisch kompakter */
+.dq-overview-footer,
+.dq-overview-footer table,
+.dq-overview-footer td,
+.dq-overview-footer th {
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* Tabellenbereich im Footer harmonisieren */
+.dq-overview-footer table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+}
+
+.dq-overview-footer td,
+.dq-overview-footer th {
+  padding: 10px 0;
+  vertical-align: top;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dq-overview-footer tr:first-child td,
+.dq-overview-footer tr:first-child th {
+  border-top: 0;
+}
+
+/* Linke Spalte zurückhaltender, rechte Spalte etwas stärker */
+.dq-overview-footer th,
+.dq-overview-footer td:first-child {
+  color: #6b7280;
+  font-weight: 500;
+  white-space: nowrap;
+  padding-right: 18px;
+}
+
+.dq-overview-footer td:last-child {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+/* Code-/Call-Block professioneller statt gelb + outset */
+.dq-overview-footer pre {
+  margin: 0;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: none;
+  color: #334155;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+/* Falls der Call in code liegt */
+.dq-overview-footer code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: inherit;
+}
+
+/* DT-Buttons im Footer etwas weniger dominant */
+.dq-overview-footer .dt-buttons {
+  margin-bottom: 12px;
+}
+
+.dq-overview-footer .dt-button {
+  border-radius: 8px !important;
+  border: 1px solid #d1d5db !important;
+  background: #f9fafb !important;
+  box-shadow: none !important;
+  color: #374151 !important;
+}
+
+/* Filterzeile visuell entschärfen */
+.dq-overview-footer .dataTables_filter input,
+.dq-overview-footer .dataTables_wrapper .dataTables_length select,
+.dq-overview-footer .dataTables_wrapper thead input {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+/* Kleine Displays */
+@media (max-width: 900px) {
+  .dq-overview-footer {
+    padding: 16px;
+  }
+
+  .dq-overview-footer td,
+  .dq-overview-footer th {
+    display: block;
+    width: 100%;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .dq-overview-footer td:first-child,
+  .dq-overview-footer th {
+    padding-bottom: 2px;
+  }
+
+  .dq-overview-footer td:last-child {
+    padding-top: 0;
+    margin-bottom: 6px;
+  }
+}

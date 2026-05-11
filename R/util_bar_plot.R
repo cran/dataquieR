@@ -84,7 +84,7 @@ util_bar_plot <- function(plot_data, cat_var, num_var, relative = FALSE,
   if (!flip) {
     scale_x <- util_create_lean_ggplot(scale_x_discrete(drop = FALSE,
                                 expand = expansion(add = 0.5, mult = 0.1)))
-    ly <- util_create_lean_ggplot(theme(axis.text.x = element_text(size = 10),
+    ly <- util_create_lean_ggplot(theme(axis.text.x = element_text(angle = 35, hjust = 1, size = 10),
                 axis.text.y = element_text(size = 10),
                 panel.grid.major.x = element_blank(),
                 panel.grid.minor.x = element_blank()))

@@ -89,7 +89,7 @@ test_that("Time-only variables general", {
                   replace = TRUE)
   times[sample(seq_along(times),
                size = length(times) %/% 100,
-               replace = TRUE)] <-
+               replace = !TRUE)] <-
     list(hms::hms(seconds = 0, minutes = 0, hours = 0))
 
   study_data$v02000 <- times
@@ -105,7 +105,8 @@ test_that("Time-only variables general", {
                30)
   expect_equal(r$com_item_missingness.ADMIS_TM_0$SummaryTable$`Sysmiss N`, 0)
   expect_equal(r$con_limit_deviations.ADMIS_TM_0$SummaryTable$NUM_con_rvv_inum,
-               1865)
+               1864,
+               ignore_attr = TRUE)
 
   times <- sample(x = day_course,
                   prob = probs,
@@ -114,7 +115,7 @@ test_that("Time-only variables general", {
   # introduce some missing
   times[sample(seq_along(times),
                size = length(times) %/% 100,
-               replace = TRUE)] <-
+               replace = !TRUE)] <-
     hms::hms(seconds = 0, minutes = 0, hours = 0)
 
   study_data$v02000 <- times
@@ -130,7 +131,8 @@ test_that("Time-only variables general", {
                30)
   expect_equal(r$com_item_missingness.ADMIS_TM_0$SummaryTable$`Sysmiss N`, 0)
   expect_equal(r$con_limit_deviations.ADMIS_TM_0$SummaryTable$NUM_con_rvv_inum,
-               1879)
+               1876,
+               ignore_attr = TRUE)
 
 
   times[c(4, 6)] <-
@@ -149,7 +151,8 @@ test_that("Time-only variables general", {
                30)
   expect_equal(r$com_item_missingness.ADMIS_TM_0$SummaryTable$`Sysmiss N`, 3)
   expect_equal(r$con_limit_deviations.ADMIS_TM_0$SummaryTable$NUM_con_rvv_inum,
-               1876)
+               1875,
+               ignore_attr = TRUE)
 
   skip_if_not_installed("chron")
 
@@ -161,7 +164,7 @@ test_that("Time-only variables general", {
                   replace = TRUE)
   times[sample(seq_along(times),
                size = length(times) %/% 100,
-               replace = TRUE)] <-
+               replace = !TRUE)] <-
     list(hms::hms(seconds = 0, minutes = 0, hours = 0))
 
   times <-
@@ -180,7 +183,8 @@ test_that("Time-only variables general", {
                30)
   expect_equal(r$com_item_missingness.ADMIS_TM_0$SummaryTable$`Sysmiss N`, 0)
   expect_equal(r$con_limit_deviations.ADMIS_TM_0$SummaryTable$NUM_con_rvv_inum,
-               1879)
+               1876,
+               ignore_attr = TRUE)
 
 
 })

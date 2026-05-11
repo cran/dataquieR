@@ -8,6 +8,8 @@
 #'                                        here is the indicator abbreviation..
 #' @param level [integer] level of the message (defaults to 0). Higher
 #'                        levels are more severe.
+#' @param once_id [character] If specified, suppress further conditions
+#'                 with the same ID during this R session.
 #' @param immediate [logical] not used.
 #'
 #' @return [condition] the condition object, if the execution is not stopped

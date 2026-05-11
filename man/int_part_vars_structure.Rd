@@ -27,13 +27,15 @@ non-existing \code{PART_VARS}}
 
 \item{expected_observations}{\link{enum} HIERARCHY | SEGMENT. How should
 \code{PART_VARS} be handled:
-- \code{SEGMENT}: if \code{PART_VAR} is 1, an
+\itemize{
+\item \code{SEGMENT}: if \code{PART_VAR} is 1, an
 observation is expected
-- \code{HIERARCHY}: the default, if the
+\item \code{HIERARCHY}: the default, if the
 \code{PART_VAR} is 1 for this variable and
 also for all \code{PART_VARS} of \code{PART_VARS}
 up in the hierarchy, an observation is
-expected.}
+expected.
+}}
 
 \item{disclose_problem_paprt_var_data}{\link{logical} show the problematic data
 (\code{PART_VAR} only)}

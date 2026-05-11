@@ -309,7 +309,11 @@
       } else {
         return(character(0))
       }
+    } else if (!apply_to_nssi) {
+      return(character(0))
     }
+  } else if (!apply_to_nssi) {
+    return(character(0))
   }
   only_roles <- util_get_concept_info("implementations", get("function_R")
                                    == f, "only_roles")[["only_roles"]]

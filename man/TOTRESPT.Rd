@@ -9,7 +9,7 @@ TODO
 \seealso{
 \link{meta_data_cross}
 
-Other meta_data_cross: 
+Other meta_data_cross:
 \code{\link{ASSOCIATION_DIRECTION}},
 \code{\link{ASSOCIATION_FORM}},
 \code{\link{ASSOCIATION_METRIC}},
@@ -22,6 +22,7 @@ Other meta_data_cross:
 \code{\link{DATA_PREPARATION}},
 \code{\link{GOLDSTANDARD}},
 \code{\link{IRV}},
+\code{\link{MAHALANOBIS_RATIO}},
 \code{\link{MAHALANOBIS_THRESHOLD}},
 \code{\link{MAXIMUM_LONG_STRING}},
 \code{\link{MISS_RESP}},
@@ -37,9 +38,10 @@ Other meta_data_cross:
 \code{\link{meta_data_computation}},
 \code{\link{meta_data_cross}}
 
-Other SSI: 
+Other SSI:
 \code{\link{COMPUTED_VARIABLE_ROLES}},
 \code{\link{IRV}},
+\code{\link{MAHALANOBIS_RATIO}},
 \code{\link{MAXIMUM_LONG_STRING}},
 \code{\link{MISS_RESP}},
 \code{\link{RELCOMPL_SPEED}},

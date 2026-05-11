@@ -291,6 +291,7 @@ util_ensure_label <- function(meta_data, label_col) { # TODO: Add somehow also t
     # other, unchanged labels
     temp_label <- modified_label
     temp_label[ind_long_label] <- new_label
+    guard <- 0
     while (any(duplicated(temp_label))) {
       # add the duplicated labels to the selection of labels that should
       # be adapted by 'abbreviate'
@@ -298,14 +299,37 @@ util_ensure_label <- function(meta_data, label_col) { # TODO: Add somehow also t
                           which(modified_label %in% new_label))
       ind_long_label <- sort(unique(ind_long_label))
       # rerun the 'abbreviate' function to get shortened, unique labels
-      new_label <- unname(my_abbreviate(gsub("[[:punct:]]+", replacement = " ",
+      new_label <- trimws(unname(my_abbreviate(gsub("[[:punct:]]+", replacement = " ",
                                           modified_label[ind_long_label]),
-                                     minlength = max_label_len))
+                                     minlength = max_label_len)))
       if (any(util_empty(new_label))) {
-        new_label <- unname(my_abbreviate(modified_label[ind_long_label],
-                                       minlength = max_label_len))
+        new_label <- trimws(unname(my_abbreviate(modified_label[ind_long_label],
+                                       minlength = max_label_len)))
+      }
+      if (any(duplicated(new_label))) {
+        new_label <- trimws(unname(my_abbreviate(modified_label[ind_long_label],
+                                                 minlength = max_label_len)))
+      }
+      if (any(duplicated(new_label))) {
+        util_message(c("Could not shorten labels to at max. %d",
+                       "characters preserving uniqueness. Try to",
+                       "allow more characters setting the %s option()",
+                       "or amend your labels"),
+                     max_label_len, sQuote("dataquieR.MAX_LABEL_LEN"),
+                     applicability_problem = TRUE)
+        new_label <- make.unique(new_label) # may yield too long labels, but here, there is not better choice
       }
       temp_label[ind_long_label] <- new_label
+      guard <- guard + 1
+      if (guard > 1000) {
+        util_error(c("Internal error: Could not shorten labels to at max. %d",
+                     "characters preserving uniqueness. Try to",
+                     "allow more characters setting the %s option()",
+                     "or amend your labels. I gave up after %d tries (!!).",
+                     "This should not happen, sorry, please report."),
+                   max_label_len, sQuote("dataquieR.MAX_LABEL_LEN"), 1000,
+                   applicability_problem = TRUE)
+      }
     }
 
     modified_label <- temp_label

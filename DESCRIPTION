@@ -1,6 +1,6 @@
 Package: dataquieR
 Title: Data Quality in Epidemiological Research
-Version: 2.8.7
+Version: 2.8.9
 Authors@R: 
     c(person(given = "University Medicine Greifswald",
              role = "cph"),
@@ -53,12 +53,12 @@ Description: Data quality assessments guided by a
     <https://dataquality.qihs.uni-greifswald.de/VIN_Annotation_of_Metadata.html>.
 License: BSD_2_clause + file LICENSE
 URL: https://dataquality.qihs.uni-greifswald.de/
-BugReports: https://gitlab.com/libreumg/dataquier/-/issues
+BugReports: https://gitlab.com/libreumg/dataquier/-/work_items/issues
 Depends: R (>= 3.6.0)
 Imports: dplyr (>= 1.0.2), emmeans, ggplot2 (>= 3.5.0), lme4,
-        lubridate, MASS, MultinomialCI, parallelMap, patchwork (>=
-        1.3.0), R.devices, rlang, robustbase, qmrparser, utils, rio,
-        readr, scales, withr, lifecycle, units, methods, hms
+        lubridate, MASS, parallelMap, patchwork (>= 1.3.0), R.devices,
+        rlang, robustbase, qmrparser, utils, rio, readr, scales, withr,
+        lifecycle, units, methods, hms
 Suggests: S7 (>= 0.2.1), cowplot, grid, openxlsx2, grDevices, jsonlite,
         cli, whoami, DT (>= 0.23), htmltools, knitr, markdown,
         parallel, parallelly, rmarkdown, rstudioapi, testthat (>=
@@ -71,7 +71,6 @@ VignetteBuilder: knitr
 Encoding: UTF-8
 KeepSource: FALSE
 Language: en-US
-RoxygenNote: 7.3.3
 Config/testthat/parallel: true
 Config/testthat/edition: 3
 Config/testthat/start-first: dq_report_by_sm, dq_report2,
@@ -82,8 +81,9 @@ Config/testthat/start-first: dq_report_by_sm, dq_report2,
         con_limit_deviations, con_contradictions_redcap,
         com_segment_missingness, util_correct_variable_use
 BuildManual: TRUE
+Config/roxygen2/version: 8.0.0
 NeedsCompilation: no
-Packaged: 2026-01-07 17:41:23 UTC; struckmanns
+Packaged: 2026-05-11 16:23:28 UTC; struckmanns
 Author: University Medicine Greifswald [cph],
   Elisa Kasbohm [aut] (ORCID: <https://orcid.org/0000-0001-5261-538X>),
   Elena Salogni [aut] (ORCID: <https://orcid.org/0009-0007-3767-7145>),
@@ -101,4 +101,4 @@ Author: University Medicine Greifswald [cph],
     No. 825903) [fnd]
 Maintainer: Stephan Struckmann <stephan.struckmann@uni-greifswald.de>
 Repository: CRAN
-Date/Publication: 2026-01-08 09:20:09 UTC
+Date/Publication: 2026-05-11 19:30:02 UTC

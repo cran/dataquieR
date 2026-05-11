@@ -46,6 +46,12 @@
 #'                                               be used for the report. If
 #'                                               of length zero, no filtering
 #'                                               is performed.
+#' @param exclude_indicator_functions [character] regular expressions,
+#'                                               if an indicator function's name
+#'                                               matches one of these, it'll
+#'                                               be excluded from the report. If
+#'                                               of length zero, no filtering
+#'                                               is performed.
 #' @param filter_result_slots [character] regular expressions, only
 #'                                               if an indicator function's
 #'                                               result's name
@@ -111,6 +117,12 @@
 #'                            if your data source is already typed, this can
 #'                            be turned off to speed up computations.
 #'                            see [dataquieR.dt_adjust]
+#' @param output_dir [character] if `output_dir` is not `NULL`, also create
+#'                             `HTML` output for the report using
+#'                             [print.dataquieR_resultset2()]
+#'                               written to the path `output_dir`
+#' @param force_overwrite [logical] force to overwrite `output_dir`, even if it
+#'                                 exists
 #'
 #' @return a [dataquieR_resultset2] that can be
 #' [printed][print.dataquieR_resultset2] creating a `HTML`-report.
@@ -154,6 +166,7 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                        debug_parallel = FALSE,
                        resp_vars = character(0),
                        filter_indicator_functions = character(0),
+                       exclude_indicator_functions = character(0),
                        filter_result_slots = c(
                          "^Summary",
                          "^Segment",
@@ -182,7 +195,15 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                                    dataquieR.resume_checkpoint_default),
                        name_of_study_data,
                        dt_adjust = as.logical(getOption("dataquieR.dt_adjust",
-                                             dataquieR.dt_adjust_default))) { # TODO: on.exit(rstudioapi::executeCommand("activateConsole")), and also in the print()-method
+                                             dataquieR.dt_adjust_default)),
+                       output_dir = NULL,
+                       force_overwrite = FALSE
+                       ) {
+
+  util_expect_scalar(force_overwrite, check_type = is.logical)
+
+  rep_id <- util_make_report_id()
+
   util_stop_if_not(is.list(advanced_options))
 
   old_O <- options(
@@ -287,6 +308,30 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                      error_message = sprintf("%s needs to be character(1)",
                                              sQuote("subtitle")))
 
+  .hi <- .hp <- .hm <- NULL
+  content_file <- NULL
+
+  if (!missing(output_dir)) {
+
+    output_dir <- util_normalize_path(output_dir)
+
+    content_file <- file.path(output_dir, "index.html")
+
+    util_expect_scalar(output_dir, check_type = is.character)
+
+    util_overwrite_if_requested(output_dir, force_overwrite)
+
+    util_message("Writing to %s", dQuote(content_file))
+
+    packageName <- utils::packageName()
+
+    list2env(util_init_html_progress(output_dir = output_dir,
+                            content_file = content_file,
+                            title = title,
+                            view = TRUE,
+                            rep_id = rep_id), envir = environment())
+  }
+
   if (!is.null(cores) && (missing(cores) || (
     is.vector(cores) && length(cores) == 1 && util_is_integer(cores)) &&
     cores > 1) &&
@@ -363,7 +408,8 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                                                   nm = name_of_study_data))
   prep_add_data_frames(data_frame_list = setNames(list(study_data),
                                                   nm = "study_data"))
-
+#TODO:  FIX with this new utility function util_fix_missing_table_references
+  # to amend the metadata files, remove tables that are not existing here
   util_handle_val_tab()
 
   # checks the data frame names in the dataframe cache
@@ -500,10 +546,35 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                 sQuote("label_col"),
                     sQuote("meta_data")))
 
+  if (MISSING_CODE_RULES %in% prep_list_dataframes()) {
+    # https://gitlab.com/libreumg/dataquier/-/work_items/632
+    missing_code_rules <- MISSING_CODE_RULES
+    util_expect_data_frame(missing_code_rules)
+    pamc <- try(prep_add_missing_codes(
+      use_value_labels = FALSE, # TODO
+      study_data = study_data,
+      meta_data = meta_data,
+      rules = missing_code_rules
+    ), silent = TRUE)
+    if (util_is_try_error(pamc)) {
+      cnd <- util_condition_from_try_error(pamc)
+      util_warning("Could not amend missing codes based on the sheet %s: %s",
+                   sQuote(MISSING_CODE_RULES),
+                   dQuote(conditionMessage(cnd)),
+                   applicability_problem = TRUE)
+    } else {
+      study_data <- pamc$ModifiedStudyData
+      meta_data <- pamc$ModifiedMetaData
+    }
+  }
+
   try(util_expect_data_frame(meta_data_item_computation), silent = TRUE)
   if (!is.data.frame(meta_data_item_computation)) {
     meta_data_item_computation <- data.frame()
   }
+
+  # computed variables from cross sheet ------
+
   uaci <-
     util_add_computed_internals(meta_data_item_computation,
                                 meta_data_cross_item,
@@ -513,7 +584,8 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
     uaci$meta_data_item_computation
   meta_data <- uaci$meta_data
   if (is.data.frame(meta_data_item_computation)) {
-    util_message("Computed items metadata defined. Computing them...")
+    if (!!prod(dim(meta_data_item_computation)))
+      util_message("Computed items metadata defined. Computing them...")
     # strip rownames from metadata to prevent confusing the html_table function
     rownames(meta_data_item_computation) <- NULL
     function_e <- environment()
@@ -571,6 +643,37 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
         meta_data[[VAR_NAMES]][which(util_empty(meta_data[[lcol]]))]
     }
   }
+
+  all_vars <- (length(resp_vars) == 0)
+
+  # remove unrelated rules, if resp_vars -----
+  if (!all_vars && nrow(meta_data_cross_item) > 0) {
+    # TODO: consolidate with the literally copied code in dq_report_by
+    # 1st: extract all rules from cross-item containing a var from resp_vars
+    #combine var_names with labels
+    vars <- util_map_labels(resp_vars,
+                            meta_data = meta_data,
+                            to = label_col,
+                            from = VAR_NAMES,
+                            ifnotfound = NA_character_)
+    # create a list with the vars from the column
+    # variable_list in cross-item metadata
+    rules_vars <-
+      util_parse_assignments(meta_data_cross_item$VARIABLE_LIST,
+                             multi_variate_text =
+                               TRUE)
+
+    # intersect vars in the rules with vars
+    # in the segment to see which rules affect the
+    # current segment and discard rules not affected by the resp_vars
+    rules_to_use_cil <-
+      vapply(lapply(rules_vars, intersect, vars),
+             length,
+             FUN.VALUE = integer(1)) > 0
+    meta_data_cross_item <- meta_data_cross_item[rules_to_use_cil, , FALSE]
+  }
+  # end remove unrelated rules -----
+
 
   meta_data_cross_item <- util_normalize_cross_item(
     meta_data = meta_data,
@@ -636,7 +739,7 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
     md100 <- md100[!miss_from_study, , FALSE]
   }
 
-  if (length(resp_vars) == 0) {
+  if (all_vars) {
     resp_vars <- md100[[label_col]] # TODO: Sort by VAR_ORDER?
   } else {
     resp_vars_m <- util_find_var_by_meta(
@@ -704,6 +807,10 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                      allow_more_than_one = TRUE,
                      allow_null = TRUE,
                      check_type = is.character)
+  util_expect_scalar(exclude_indicator_functions,
+                     allow_more_than_one = TRUE,
+                     allow_null = TRUE,
+                     check_type = is.character)
   util_expect_scalar(filter_result_slots,
                      allow_more_than_one = TRUE,
                      allow_null = TRUE,
@@ -740,6 +847,8 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                                    arg_overrides = list(...),
                                    filter_indicator_functions =
                                      filter_indicator_functions,
+                                   exclude_indicator_functions =
+                                     exclude_indicator_functions,
                                    resp_vars = resp_vars)
 
   tm <- system.time(
@@ -759,7 +868,8 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
       mode_args = mode_args,
       my_storr_object = my_storr_object,
       checkpoint_resumed = checkpoint_resumed,
-      dt_adjust = dt_adjust
+      dt_adjust = dt_adjust,
+      content_file = content_file
     )
   )
 
@@ -849,12 +959,15 @@ dq_report2 <- function(study_data, # TODO: make meta_data_segment, ... optional
                            util_get_storr_att_namespace(my_storr_object))
   }
 
-#  repsum <- summary(r) FIXME: Dead slow!!
-repsum <- NA
+  #  repsum <- summary(r) FIXME: Dead slow!!
+  repsum <- NA
+
+  p$rep_id <- rep_id
 
   r <- util_attach_attr(r,
                    properties = p,
                    min_render_version = as.numeric_version("1.0.0"),
+                   translation_version = translation_version,
                    warning_pred_meta = warning_pred_meta,
                    label_modification_text = trimws(paste(
                      notes_from_wrapper[["label_modification_text"]],
@@ -884,7 +997,14 @@ repsum <- NA
 
   }
 
-  r
+  if (!missing(output_dir)) {
+    print.dataquieR_resultset2(r, dir = output_dir,
+                               view = FALSE, force_overwrite = TRUE)
+    return(invisible(r))
+  } else {
+    return(r)
+  }
+
 }
 
 .study_data_cache <- new.env(parent = emptyenv())

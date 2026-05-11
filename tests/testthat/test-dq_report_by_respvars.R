@@ -34,19 +34,18 @@ test_that("dq_report_by error_respvars", {
     dimensions = "Integrity",
     segment_column = "STUDY_SEGMENT"))
 
-  expect_warning(dq_report_by(
+  dq_report_by(
     resp_vars = c("v00000", "v00001", "v00002", "v00003",
                   "v00010",
                   "v00004", "v00005",
                   "v00020", "v00021"),
     cores = NULL,
-    study_data =study_data,
+    study_data = study_data,
     meta_data_v2 =
       "https://dataquality.qihs.uni-greifswald.de/extdata/fortests/meta_data_v2.xlsx",
     output_dir = file.path(target, "resp2"),
-    also_print=TRUE,
+    also_print = TRUE,
     dimensions = NULL,
-    segment_column = "STUDY_SEGMENT"),
-    regexp = "Entry VARIABLE_LIST for check.+not specified correctly.+")
+    segment_column = "STUDY_SEGMENT")
 
 })

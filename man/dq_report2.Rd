@@ -29,6 +29,7 @@ dq_report2(
   debug_parallel = FALSE,
   resp_vars = character(0),
   filter_indicator_functions = character(0),
+  exclude_indicator_functions = character(0),
   filter_result_slots = c("^Summary", "^Segment", "^DataTypePlotList",
     "^ReportSummaryTable", "^Dataframe", "^Result", "^VariableGroup"),
   mode = c("default", "futures", "queue", "parallel"),
@@ -45,7 +46,9 @@ dq_report2(
   checkpoint_resumed = getOption("dataquieR.resume_checkpoint",
     dataquieR.resume_checkpoint_default),
   name_of_study_data,
-  dt_adjust = as.logical(getOption("dataquieR.dt_adjust", dataquieR.dt_adjust_default))
+  dt_adjust = as.logical(getOption("dataquieR.dt_adjust", dataquieR.dt_adjust_default)),
+  output_dir = NULL,
+  force_overwrite = FALSE
 )
 }
 \arguments{
@@ -134,6 +137,13 @@ be used for the report. If
 of length zero, no filtering
 is performed.}
 
+\item{exclude_indicator_functions}{\link{character} regular expressions,
+if an indicator function's name
+matches one of these, it'll
+be excluded from the report. If
+of length zero, no filtering
+is performed.}
+
 \item{filter_result_slots}{\link{character} regular expressions, only
 if an indicator function's
 result's name
@@ -144,14 +154,16 @@ is performed.}
 
 \item{mode}{\link{character} work mode for parallel execution. default is
 "default", the values mean:
-- default: use \code{queue} except \code{cores} has been set explicitly
-- futures: use the \code{future} package
-- queue: use a queue as described in the examples
+\itemize{
+\item default: use \code{queue} except \code{cores} has been set explicitly
+\item futures: use the \code{future} package
+\item queue: use a queue as described in the examples
 from the \code{callr} package by Csárdi and Chang and start
 sub-processes as workers that evaluate the queue.
-- parallel: use the cluster from \code{cores} to evaluate all
+\item parallel: use the cluster from \code{cores} to evaluate all
 calls of indicator functions using the classic
-R \code{parallel} back-ends}
+R \code{parallel} back-ends
+}}
 
 \item{mode_args}{\link{list} of arguments for the selected \code{mode}. As of writing
 this manual, only for the mode \code{queue} the argument
@@ -178,6 +190,8 @@ use it anyways -- unsupported, so far!}
 
 \item{cross_item_level}{\link{data.frame} alias for \code{meta_data_cross_item}}
 
+\item{`cross-item_level`}{\link{data.frame} alias for \code{meta_data_cross_item}}
+
 \item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
 
 \item{dataframe_level}{\link{data.frame} alias for \code{meta_data_dataframe}}
@@ -203,7 +217,13 @@ if your data source is already typed, this can
 be turned off to speed up computations.
 see \link{dataquieR.dt_adjust}}
 
-\item{`cross-item_level`}{\link{data.frame} alias for \code{meta_data_cross_item}}
+\item{output_dir}{\link{character} if \code{output_dir} is not \code{NULL}, also create
+\code{HTML} output for the report using
+\code{\link[=print.dataquieR_resultset2]{print.dataquieR_resultset2()}}
+written to the path \code{output_dir}}
+
+\item{force_overwrite}{\link{logical} force to overwrite \code{output_dir}, even if it
+exists}
 }
 \value{
 a \link{dataquieR_resultset2} that can be

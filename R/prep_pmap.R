@@ -40,7 +40,7 @@ prep_pmap <- function(.l, .f, ..., cores = 0) {
                                                   load.balancing = TRUE))
       # Should not test in parallel
     } # nocov end
-    on.exit(suppressMessages(parallelMap::parallelStop()))
+    on.exit({Sys.sleep(2);suppressMessages(parallelMap::parallelStop());}, add = TRUE) # whyever, rstudio needs these two seconds, it hangs, otherwise.
   }
   more_args <- list(...)
   ..f <- function(...) {

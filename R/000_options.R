@@ -104,6 +104,15 @@ dataquieR.traceback_default <- FALSE
 #' @docType data
 NULL
 
+dataquieR.acc_shape_or_scale_ci_default <- "multinomial"
+#' @name dataquieR.acc_shape_or_scale_ci
+#' @title Method for confidence intervals in `acc_shape_or_scale()` and `acc_end_digits()`
+#' @description
+#' TODO
+#' @family options
+#' @docType data
+NULL
+
 dataquieR.debug_default <- FALSE
 #' @name dataquieR.debug
 #' @title Call [browser()] on errors
@@ -183,6 +192,18 @@ dataquieR.VALUE_LABELS_htmlescaped_default <- FALSE
 #' @title Assume, all [VALUE_LABELS] are [HTML escaped](https://www.w3.org/International/questions/qa-escapes)
 #' @description
 #' TODO
+#' @family options
+#' @docType data
+NULL
+
+dataquieR.acc_loess.min_obs_in_subgroup_default <- 30
+#' @name dataquieR.acc_loess.min_obs_in_subgroup
+#' @title Minimum observations for a level to be included by [acc_loess()]
+#' @description
+#' specify the minimum number of observations required for
+#' each of the subgroups. Subgroups with fewer
+#' observations are excluded. The default number
+#' is `r dataquieR.acc_loess.min_obs_in_subgroup_default`.
 #' @family options
 #' @docType data
 NULL
@@ -394,6 +415,22 @@ dataquieR.max_group_var_levels_with_violins_default <- 10
 #' @description
 #' If there are more examiners or devices, the figure will be reduced to
 #' box-plots to save space.
+#' @family options
+#' @docType data
+NULL
+
+dataquieR.no_overall_in_bin_default <- TRUE
+#' @name dataquieR.no_overall_in_bin
+#' @title Suppress overall distribution in 'margins' figures for binary outcomes
+#' @family options
+#' @docType data
+NULL
+
+dataquieR.no_geom_count_in_bin_default <- TRUE
+#' @name dataquieR.no_geom_count_in_bin
+#' @title Suppress counts 'margins' figures for binary outcomes
+#' @description
+#' so they are not always including 0 and 1.
 #' @family options
 #' @docType data
 NULL

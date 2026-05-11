@@ -12,7 +12,10 @@
   dont_plot = FALSE,
   stratify_by,
   vars_to_include = "study",
-  disable_plotly = FALSE
+  disable_plotly = FALSE,
+  hierarchy,
+  folder_of_report = NULL,
+  var_uniquenames = NULL
 )
 }
 \arguments{
@@ -30,9 +33,23 @@ object derived from \code{x}}
 
 \item{stratify_by}{column to stratify the summary, may be one string.}
 
-\item{vars_to_include}{\code{"study"}, \code{"ssi"} or \code{c("study", "ssi")}. variables to include}
+\item{vars_to_include}{\link{character} study | \code{ssi}. variables are study
+variables or computed social science
+indicator variables.}
 
 \item{disable_plotly}{\link{logical} do not use \code{plotly}, even if installed}
+
+\item{hierarchy}{not yet defined, but if an argument is given, a
+sunburst chart is displayed, currently, only \code{DQ_OBS}
+can be used a the hierarchy.}
+
+\item{folder_of_report}{a named vector with the location of variable and
+\code{call_names}}
+
+\item{var_uniquenames}{a data frame with the original variable names and the
+unique names in case of reports created with dq_report_by
+containing the same variable in several reports
+(e.g., creation of reports by sex)}
 }
 \value{
 invisible html object

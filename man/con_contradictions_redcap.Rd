@@ -55,13 +55,13 @@ category. TODO: Not yet controllable by metadata.}
 
 \item{cross_item_level}{\link{data.frame} alias for \code{meta_data_cross_item}}
 
+\item{`cross-item_level`}{\link{data.frame} alias for \code{meta_data_cross_item}}
+
 \item{meta_data_v2}{\link{character} path to workbook like metadata file, see
 \code{\link{prep_load_workbook_like_file}} for details.
 \strong{ALL LOADED DATAFRAMES WILL BE PURGED},
 using \code{\link{prep_purge_data_frame_cache}},
 if you specify \code{meta_data_v2}.}
-
-\item{`cross-item_level`}{\link{data.frame} alias for \code{meta_data_cross_item}}
 }
 \value{
 If \code{summarize_categories} is \code{FALSE}:

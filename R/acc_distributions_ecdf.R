@@ -22,9 +22,7 @@
 #'   - `SummaryPlotList`: [list] of [ggplot2::ggplot]s for each response variable in
 #'                    `resp_vars`.
 #'
-#' @importFrom ggplot2 ggplot aes stat_ecdf scale_x_continuous scale_x_datetime
-#'                     theme_minimal theme element_text element_blank
-#'                     labs
+#' @importFrom ggplot2 ggplot aes stat_ecdf scale_x_continuous scale_x_datetime theme_minimal theme element_text element_blank labs
 #' @importFrom rlang .data
 #' @seealso
 #' [Online Documentation](

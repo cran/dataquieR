@@ -56,7 +56,7 @@ categories: "Non-matching datatype",
 "Matching datatype"
 \item \code{SummaryData}: data frame containing data quality check for
 "data type mismatch" for a report
-\item \code{SummaryPlot}: \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} heatmap plot, graphical representation of
+\item \code{SummaryPlot}: \link[ggplot2:ggplot2]{ggplot2::ggplot2} heatmap plot, graphical representation of
 \code{SummaryTable}
 \item \code{DataTypePlotList}: \link{list} of plots per (maybe artificial) segment
 \item \code{ReportSummaryTable}: data frame underlying \code{SummaryPlot}

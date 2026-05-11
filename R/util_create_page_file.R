@@ -71,7 +71,7 @@ util_create_page_file <- function(page_nr,
       htmltools::a(
         href = "#",
         onclick =
-          'window.location.href = "../../index.html"',
+          'if (window.__dqPersistPopupHistory) window.__dqPersistPopupHistory();window.location.href = "../../index.html"',
         "Back to reports' overview"
       )
     )
@@ -99,7 +99,14 @@ util_create_page_file <- function(page_nr,
     header <- NULL
   }
 
+  if (by_report) {
+    by_report <- "true"
+  } else {
+    by_report <- "false"
+  }
+
   html_report <- htmltools::htmlTemplate(template_file,
+                                  by_report = by_report,
                                   document_ = TRUE,
                                   spage = pg,
                                   logo = logo,
@@ -138,4 +145,12 @@ util_create_page_file <- function(page_nr,
   progress(page_nr / length(pages) * 100)
 
   invisible(file_name)
+}
+
+util_make_report_id <- function() {
+  # Stable enough uniqueness: time + pid + random
+  ts <- format(Sys.time(), "%Y%m%dT%H%M%OS6", tz = "UTC")
+  pid <- Sys.getpid()
+  rnd <- paste(sample(c(letters, LETTERS, 0:9), 16, replace = TRUE), collapse = "")
+  paste0("dq-", ts, "-p", pid, "-", rnd)
 }

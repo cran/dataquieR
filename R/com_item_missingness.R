@@ -78,8 +78,7 @@
 #'   - `ReportSummaryTable`: data frame underlying `SummaryPlot`
 #'
 #' @export
-#' @importFrom ggplot2 ggplot facet_wrap geom_bar theme_minimal theme annotate
-#'                     scale_fill_gradientn theme element_blank
+#' @importFrom ggplot2 ggplot facet_wrap geom_bar theme_minimal theme annotate scale_fill_gradientn theme element_blank
 #' @seealso
 #' [Online Documentation](
 #' https://dataquality.qihs.uni-greifswald.de/VIN_com_impl_item_missingness.html

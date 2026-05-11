@@ -58,6 +58,14 @@ table.myDT * {
     margin:0px!important;
 }
 
+button.dq-hidden-col {
+  display: none !important;
+}
+
+button.dq-hidden-col.dq-show {
+  display: inline-block !important;
+}
+
 /* TODO: FIND OUT; WHAT EXACTLY:
 table.matrixTable > * > * > * > * > * {
     padding: 0px;

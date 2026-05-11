@@ -25,9 +25,11 @@ or both c("call_names", "indicator_metric"). The last combination is the default
 \item{dont_print}{suppress the actual printing, just return a printable
 object derived from \code{x}}
 
-\item{folder_of_report}{a named vector with the location of variable and call_names}
+\item{folder_of_report}{a named vector with the location of variable and
+\code{call_names}}
 
-\item{vars_to_include}{\code{"study"}, \code{"ssi"} or \code{c("study", "ssi")}. variables to include}
+\item{vars_to_include}{\code{"study"}, \code{"ssi"} or \code{c("study", "ssi")}. variables
+to include}
 }
 \value{
 invisible html object

@@ -66,7 +66,7 @@ only.}
 a list with:
 \itemize{
 \item \code{SummaryTable}: \link{data.frame} underlying the plot
-\item \code{SummaryPlot}: \link[ggplot2:ggplot2-package]{ggplot2::ggplot2} outlier plot
+\item \code{SummaryPlot}: \link[ggplot2:ggplot2]{ggplot2::ggplot2} outlier plot
 \item \code{FlaggedStudyData} \link{data.frame} contains the original data frame with
 the additional columns \code{tukey},
 \verb{3SD},

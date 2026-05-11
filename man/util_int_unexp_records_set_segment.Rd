@@ -57,12 +57,12 @@ check for unexpected data record sets by study segments or to consider only sele
 segments.
 }
 \seealso{
-Other integrity_indicator_functions: 
-\code{\link{util_int_duplicate_content_dataframe}()},
-\code{\link{util_int_duplicate_content_segment}()},
-\code{\link{util_int_duplicate_ids_dataframe}()},
-\code{\link{util_int_duplicate_ids_segment}()},
-\code{\link{util_int_unexp_records_set_dataframe}()}
+Other integrity_indicator_functions:
+\code{\link[=util_int_duplicate_content_dataframe]{util_int_duplicate_content_dataframe()}},
+\code{\link[=util_int_duplicate_content_segment]{util_int_duplicate_content_segment()}},
+\code{\link[=util_int_duplicate_ids_dataframe]{util_int_duplicate_ids_dataframe()}},
+\code{\link[=util_int_duplicate_ids_segment]{util_int_duplicate_ids_segment()}},
+\code{\link[=util_int_unexp_records_set_dataframe]{util_int_unexp_records_set_dataframe()}}
 }
 \concept{integrity_indicator}
 \concept{integrity_indicator_functions}

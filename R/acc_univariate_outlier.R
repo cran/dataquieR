@@ -79,9 +79,7 @@
 #' )
 #'
 #' @importFrom dplyr %>%
-#' @importFrom ggplot2 ggplot geom_jitter position_jitter aes
-#'                     scale_size_continuous scale_color_manual
-#'                     facet_wrap vars scale_alpha theme_minimal
+#' @importFrom ggplot2 ggplot geom_jitter position_jitter aes scale_size_continuous scale_color_manual facet_wrap vars scale_alpha theme_minimal
 #' @importFrom stats median aggregate sd aggregate
 #' @export
 #'

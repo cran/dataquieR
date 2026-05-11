@@ -91,7 +91,7 @@ util_eval_rule <- function(rule, ds1, meta_data = "item_level",
          replace_missing_by != "NA" # then, an unsuitable ds1 has been passed
     util_stop_if_not(!problem) # an unsuitable ds1 has been passed
     if (!!prod(dim(meta_data))) {
-      prep_prepare_dataframes(.replace_hard_limits = replace_limits,
+      ds1 <- prep_prepare_dataframes(.replace_hard_limits = replace_limits,
                               .replace_missings = (replace_missing_by == "NA"),
                               .study_data = ds1,
                               .label_col = attr(ds1, "label_col"))

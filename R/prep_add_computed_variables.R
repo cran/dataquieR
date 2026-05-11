@@ -27,7 +27,7 @@
 #' prep_load_workbook_like_file("ship_meta_v2")
 #' meta_data <- prep_get_data_frame("item_level")
 #' rules <- tibble::tribble(
-#'   ~VAR_NAMES,  ~RULE,
+#'   ~VAR_NAMES,  ~COMPUTATION_RULE,
 #'   "BMI", '[BODY_WEIGHT_0]/(([BODY_HEIGHT_0]/100)^2)',
 #'   "R", '[WAIST_CIRC_0]/2/[pi]', # in m^3
 #'   "VOL_EST", '[pi]*([WAIST_CIRC_0]/2/[pi])^2*[BODY_HEIGHT_0] / 1000', # in l
@@ -134,7 +134,12 @@ prep_add_computed_variables <- function(
                                     rules[[COMPUTATION_RULE]]),
                            util_parse_redcap_rule)
 
-  rule_res <- lapply(compiled_rules, function(rule) {
+  rule_res <- mapply(SIMPLIFY = FALSE,
+                     rule = compiled_rules,
+                     nm = names(compiled_rules),
+                     function(rule, nm) {
+    # util_message("Rule: %s", paste(attr(rule, "src")))
+    util_message("%s", nm)
     r <- try(util_eval_rule(rule = rule,
                    ds1 = ds1,
                    meta_data = meta_data,

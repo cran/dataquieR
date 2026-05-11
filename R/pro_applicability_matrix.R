@@ -53,9 +53,7 @@
 #'   - `ApplicabilityPlotList`: [list] of plots per (maybe artificial) segment
 #'   - `ReportSummaryTable`: data frame underlying `ApplicabilityPlot`
 #' @export
-#' @importFrom ggplot2 ggplot aes geom_tile scale_fill_manual facet_wrap
-#'                     theme_minimal scale_x_discrete xlab guides
-#'                     guide_legend theme element_text
+#' @importFrom ggplot2 ggplot aes geom_tile scale_fill_manual facet_wrap theme_minimal scale_x_discrete xlab guides guide_legend theme element_text
 pro_applicability_matrix <- function(study_data,
                                      item_level = "item_level",
                                      split_segments =

@@ -161,8 +161,37 @@ div.singlePageFinal {display: none}
 div.singlePageFinal:target {display: block}
 div.singlePageFinal:has(:target) {display: block}
 
-div.singlePageFinal h5 {
-  font-size: 1.08em;
+/* Keep heading scale consistent within singlePageFinal */
+div.singlePageFinal h1 { font-size: 1.60em; }
+div.singlePageFinal h2 { font-size: 1.38em; }
+div.singlePageFinal h3 { font-size: 1.22em; }
+div.singlePageFinal h4 { font-size: 1.14em; }
+div.singlePageFinal h5 { font-size: 1.08em; } /* existing */
+div.singlePageFinal h6 { font-size: 1.00em; }
+
+/* Optional, but usually needed to make the “fit” look consistent */
+div.singlePageFinal h1,
+div.singlePageFinal h2,
+div.singlePageFinal h3,
+div.singlePageFinal h4,
+div.singlePageFinal h5,
+div.singlePageFinal h6 {
+  margin: 0.9em 0 0.35em 0;
+  line-height: 1.2;
+}
+
+.dq-infobutton {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.9em;
+  line-height: 1;
+  opacity: 0.65;
+  margin-left: 0.4em;
+  vertical-align: middle;
+}
+
+.dq-infobutton:hover {
+  opacity: 1;
 }
 
 div.default-target {
@@ -239,6 +268,19 @@ div.default-target {
   .navbar.responsive button.dropbtn * {
     display: inline;
   }
+
+  .dropdown .dropdown-content { display: none; }
+  .dropdown.dq-dd-open .dropdown-content { display: block; }
+  .navbar.responsive div:has(*.target) * { display: block; }
+
+  .navbar.dq-suspend-target *.dq-dd-open-by-search { display: block !important; }
+  .navbar.dq-suspend-target *.dq-dd-open-by-search div.dropdown-content { display: block !important; }
+  .navbar.dq-suspend-target div.dropdown-content { display: none !important; }
+
+  .navbar.dq-suspend-target div:has(*.target) button.dropbtn { background-color: #555; !important; }
+
+  .navbar.dq-suspend-target div.dq-dd-open-by-search button.dropbtn { background-color: #aaa; !important; }
+
 }
 
 .navbar button.dropbtn * {
@@ -281,7 +323,8 @@ span.dataquieR-error-message {
 /* https://github.com/rstudio/DT/issues/951#issuecomment-1256844234 */
 .datatables.html-widget.html-widget-static-bound {
   height: auto !important;
-  width: calc(100vw - 47px) !important; /* TODO: 47px: heuristic quick fix for scrollbars hiding content/hidden scrollbar. Scrollbar width could be detected using javascript, but then, the css class is hard to adjust from javascript, hence possible. */
+  width: 100% !important;
+  max-width: 100% !important; /* TODO: 47px: heuristic quick fix for scrollbars hiding content/hidden scrollbar. Scrollbar width could be detected using javascript, but then, the css class is hard to adjust from javascript, hence possible. */
 }
 .dataTables_scrollBody {
   height: unset !important;
@@ -298,15 +341,34 @@ add a floating menu to the single page's divs
 */
 .floatbar {
   position: absolute;
-  right: 0px;
-  z-index: 99;
+  /* left: 20px; set by JS */
   background-color: #555;
   font-family: Arial;
   text-decoration: none;
   list-style-type: none;
   color: white;
   max-height: 60vh; /* long menus otherwise are off the browser even in full-screen */
-  overflow-y: scroll;
+}
+
+.floatbar i {
+  opacity: 0.7;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.floatbar:hover i {
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+@keyframes floatbarHint {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.floatbar i {
+  animation: floatbarHint 0.6s ease 1;
+  animation-delay: 1s;
 }
 
 .floatbar * {
@@ -321,6 +383,18 @@ add a floating menu to the single page's divs
 .floatbar a:hover,
 .floatbar a:active {
   color: white;
+}
+
+.floatbar {
+  width: 1.2em;
+  overflow-y: hidden;
+  z-index: 5;
+}
+
+.floatbar:hover {
+  z-index:9999;
+  width: auto;
+  overflow-y: scroll;
 }
 
 .floatmenu {
@@ -413,4 +487,58 @@ div.infobutton a {
 .dataquieR_result.dq-plot-table-result.dq-stack-table .dq-plot-cell,
 .dataquieR_result.dq-plot-table-result.dq-stack-table .dq-table-cell {
   grid-column: 1 / -1;
+}
+
+/* --- Search hint icon (top right) --- */
+.dq-search-hint {
+  float: right;
+  color: rgba(255,255,255,0.6);
+  padding: 14px 16px;
+  cursor: text;
+  position: relative;
+  font-size: 0.9em;
+}
+
+.dq-search-hint:hover {
+  color: white;
+}
+
+/* Tooltip */
+.dq-search-hint::after {
+  content: "Type to search\2026";
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+
+  background: rgba(0,0,0,0.8);
+  color: white;
+  border-radius: 6px;
+
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: all 120ms ease;
+}
+
+.dq-search-hint:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media screen and (max-width: 1082px) { /* also adjust in CSS at line tagged with !!MEDIA!!*/
+  .navbar .dq-search-hint {
+    display: block;
+  }
+}
+
+.dq-search-hint {
+  opacity: 0.5;
+}
+
+.dq-search-hint:hover {
+  opacity: 1;
 }

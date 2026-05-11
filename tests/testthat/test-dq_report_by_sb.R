@@ -54,5 +54,5 @@ test_that("dq_report_by works with subgroup", {
                               selection_type = "value",
                               subgroup = "[AGGGE_0] == 56",
                               dimensions = "Integrity"),
-               regexp = "The subgroup rule.+not acceptable.")
+               regexp = "The subgroup rule.+not acceptable.+AGGGE_0")
 })

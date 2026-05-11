@@ -8,7 +8,7 @@ Computation rules
 TODO
 }
 \seealso{
-Other meta_data_cross: 
+Other meta_data_cross:
 \code{\link{ASSOCIATION_DIRECTION}},
 \code{\link{ASSOCIATION_FORM}},
 \code{\link{ASSOCIATION_METRIC}},
@@ -21,6 +21,7 @@ Other meta_data_cross:
 \code{\link{DATA_PREPARATION}},
 \code{\link{GOLDSTANDARD}},
 \code{\link{IRV}},
+\code{\link{MAHALANOBIS_RATIO}},
 \code{\link{MAHALANOBIS_THRESHOLD}},
 \code{\link{MAXIMUM_LONG_STRING}},
 \code{\link{MISS_RESP}},

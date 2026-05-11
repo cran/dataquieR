@@ -172,11 +172,11 @@ util_finalize_sizing_hints <- function(sizing_hints) {
     if (is.null(sizing_hints$number_of_bars) ||
         is.null(sizing_hints$range)) {
       util_error(c("Internal error, sorry, please report:",
-                 "Missing sizing hint values for %s"),
+                   "Missing sizing hint values for %s"),
                  dQuote(sizing_hints$figure_type_id))
     }
 
-   # BAR CHART CASE1: it is rotated (bars are horizontal)
+    # BAR CHART CASE1: it is rotated (bars are horizontal)
     if (!is.null(sizing_hints$rotated) &&
         sizing_hints$rotated == TRUE) {
       if (!is.null(sizing_hints$number_of_bars) &&
@@ -240,24 +240,24 @@ util_finalize_sizing_hints <- function(sizing_hints) {
         h <- "calc(var(--screen-height) * 0.5 * 1px);"
       }
 
-    if(length(sizing_hints$no_char_x) != 1 || sizing_hints$no_char_x < 4) {
-      sizing_hints$no_char_x <- 4
-    }
-    if(length(sizing_hints$no_char_y) != 1 || sizing_hints$no_char_y < 4) {
-      sizing_hints$no_char_y <- 4
-    }
-    # final height in cm
-    if(is.numeric(h)) {
-      h <- h + 16 * sizing_hints$no_char_y
-      h <- round(h * 0.0264583333, digits = 4)
-      h <- paste0(h, "cm;")
-    }
-    # final width in cm
-    if(is.numeric(w)) {
-      w <- w + 16 * sizing_hints$no_char_x
-      w <- round(w * 0.0264583333, digits = 4)
-      w <- paste0(w, "cm;")
-    }
+      if(length(sizing_hints$no_char_x) != 1 || sizing_hints$no_char_x < 4) {
+        sizing_hints$no_char_x <- 4
+      }
+      if(length(sizing_hints$no_char_y) != 1 || sizing_hints$no_char_y < 4) {
+        sizing_hints$no_char_y <- 4
+      }
+      # final height in cm
+      if(is.numeric(h)) {
+        h <- h + 16 * sizing_hints$no_char_y
+        h <- round(h * 0.0264583333, digits = 4)
+        h <- paste0(h, "cm;")
+      }
+      # final width in cm
+      if(is.numeric(w)) {
+        w <- w + 16 * sizing_hints$no_char_x
+        w <- round(w * 0.0264583333, digits = 4)
+        w <- paste0(w, "cm;")
+      }
     }
     ##CASE 2: dot_mat
   } else if (!is.null(sizing_hints$figure_type_id) &&
@@ -314,7 +314,7 @@ util_finalize_sizing_hints <- function(sizing_hints) {
       if (sizing_hints$number_of_cat < 4) {
         h <- 150
       } else if (sizing_hints$number_of_cat >3 &&
-                sizing_hints$number_of_cat < 15) {
+                 sizing_hints$number_of_cat < 15) {
         h <- 250
       } else {
         h <- 100 + sizing_hints$number_of_cat * 16
@@ -347,9 +347,51 @@ util_finalize_sizing_hints <- function(sizing_hints) {
         w <- paste0(w, "cm;")
       }
     }
+    ##CASE 2b: dot_mat DATATYPE matrix with fix size
+  } else if (!is.null(sizing_hints$figure_type_id) &&
+             sizing_hints$figure_type_id == "dot_mat_fix") {
+    #In case of missing hints, give an error
+    if (is.null(sizing_hints$number_of_vars) ||
+        is.null(sizing_hints$number_of_cat)) {
+      util_error(c("Internal error, sorry, please report:",
+                   "Missing sizing hint values for %s"),
+                 dQuote(sizing_hints$figure_type_id))
+    }
+    # DOT_MAT can not be rotated
+    # DOT_MAT CASE2: it is NOT rotated
+    # (vars on the x axis, and categories of
+    # missing or levels of groups are on the y axis)
+    h <- 25
+    if (sizing_hints$number_of_vars < 7) {
+      w <- 300
+    } else if (6 < sizing_hints$number_of_vars &&
+               sizing_hints$number_of_vars < 15) {
+      w <-  sizing_hints$number_of_vars * 48
+    } else {
+      w <- sizing_hints$number_of_vars * 35
+    }
+
+    if(sizing_hints$no_char_vars < 4) {
+      sizing_hints$no_char_vars <- 4
+    }
+    if(sizing_hints$no_char_cat < 4) {
+      sizing_hints$no_char_cat <- 4
+    }
+    # final height in cm
+    if(is.numeric(h)) {
+      h <- h + 16 * sizing_hints$no_char_vars
+      h <- round(h * 0.0264583333, digits = 4)
+      h <- paste0(h, "cm;")
+    }
+    # final width in cm
+    if(is.numeric(w)) {
+      w <- w + 16 * sizing_hints$no_char_cat
+      w <- round(w * 0.0264583333, digits = 4)
+      w <- paste0(w, "cm;")
+    }
     ##CASE 3: scatt_plot, only used now for univariate outliers
-  }  else if (!is.null(sizing_hints$figure_type_id) &&
-              sizing_hints$figure_type_id == "scatt_plot") {
+  } else if (!is.null(sizing_hints$figure_type_id) &&
+             sizing_hints$figure_type_id == "scatt_plot") {
     #In case of missing hints, give an error
     if (is.null(sizing_hints$range) ||
         is.null(sizing_hints$number_of_vars)) {
@@ -389,7 +431,47 @@ util_finalize_sizing_hints <- function(sizing_hints) {
       w <- round(w * 0.0264583333, digits = 4)
       w <- paste0(w, "cm;")
     }
-    ##CASE 4: bar_limit
+    ## CASE 3 bis: mahalanobis_plot
+  } else if (!is.null(sizing_hints$figure_type_id) &&
+             sizing_hints$figure_type_id == "mahalanobis_plot") {
+    #In case of missing hints, give an error
+    if (is.null(sizing_hints$range_x) ||
+        is.null(sizing_hints$range_y)) {
+      util_error(c("Internal error, sorry, please report:",
+                   "Missing sizing hint values for %s"),
+                 dQuote(sizing_hints$figure_type_id))
+    }
+    if (sizing_hints$range_y < 20) {
+      h <- 200
+    } else if (sizing_hints$range_y > 19 &&
+               sizing_hints$range_y < 101) {
+      h <- 350
+    } else if (sizing_hints$range_y > 100 &&
+               sizing_hints$range_y < 251) {
+      h <- 400
+    } else {
+      h <- 600
+    }
+    if (sizing_hints$range_x < 201) {
+      w <- 400
+    } else if (sizing_hints$range_y > 200 &&
+               sizing_hints$range_y < 401) {
+      w <- 600
+    } else {
+      w <- "calc(var(--screen-width) * 0.5 * 1px);"
+    }
+
+    # final height in cm
+    if(is.numeric(h)) {
+      h <- round(h * 0.0264583333, digits = 4)
+      h <- paste0(h, "cm;")
+    }
+    # final width in cm
+    if(is.numeric(w)) {
+      w <- round(w * 0.0264583333, digits = 4)
+      w <- paste0(w, "cm;")
+      ##CASE 4: bar_limit
+    }
   } else if (!is.null(sizing_hints$figure_type_id) &&
              sizing_hints$figure_type_id == "bar_limit") {
     #In case of missing hints, give an error
@@ -409,15 +491,15 @@ util_finalize_sizing_hints <- function(sizing_hints) {
     } else {
       w <- "calc(var(--screen-width) * 0.6 * 1px);"
     }
-      if (sizing_hints$range < 301 ||
-          sizing_hints$no_bars_in_all_w < 21) {
-        h <- 350
-      } else if (sizing_hints$range > 300 &&
-                 sizing_hints$range < 501) {
-        h <- 450
-      } else {
-        h <- "calc(var(--screen-height) * 0.5 * 1px);"
-      }
+    if (sizing_hints$range < 301 ||
+        sizing_hints$no_bars_in_all_w < 21) {
+      h <- 350
+    } else if (sizing_hints$range > 300 &&
+               sizing_hints$range < 501) {
+      h <- 450
+    } else {
+      h <- "calc(var(--screen-height) * 0.5 * 1px);"
+    }
 
     if(sizing_hints$no_char_y < 4) {
       sizing_hints$no_char_y <- 4
@@ -466,6 +548,7 @@ util_finalize_sizing_hints <- function(sizing_hints) {
       w <- paste0(w, "cm;")
     }
     ##CASE 6: marg_plot
+    # FIXME: @Elena, please handle the case, where the plot does not feature an overall distribution plot: (length(res$SummaryPlot) == 1)
   } else if (!is.null(sizing_hints$figure_type_id) &&
              sizing_hints$figure_type_id == "marg_plot") {
     #In case of missing hints, give an error
@@ -587,52 +670,52 @@ util_finalize_sizing_hints <- function(sizing_hints) {
       w <- paste0(w, "cm;")
     }
     ##CASE 8: connected points with lines in multivariate outliers
-    } else if (!is.null(sizing_hints$figure_type_id) &&
-               sizing_hints$figure_type_id == "multivar_plot") {
-      #In case of missing hints, give an error
-      if (is.null(sizing_hints$number_of_vars) ||
-          is.null(sizing_hints$range)) {
-        util_error(c("Internal error, sorry, please report:",
-                     "Missing sizing hint values for %s"),
-                   dQuote(sizing_hints$figure_type_id))
-      }
+  } else if (!is.null(sizing_hints$figure_type_id) &&
+             sizing_hints$figure_type_id == "multivar_plot") {
+    #In case of missing hints, give an error
+    if (is.null(sizing_hints$number_of_vars) ||
+        is.null(sizing_hints$range)) {
+      util_error(c("Internal error, sorry, please report:",
+                   "Missing sizing hint values for %s"),
+                 dQuote(sizing_hints$figure_type_id))
+    }
 
-      if (sizing_hints$number_of_vars < 7) {
-        w <- 100 + 200 * sizing_hints$number_of_vars
-      } else {
-        w <- "calc(var(--screen-width) * 0.9 * 1px);"
-      }
-
-      if (sizing_hints$range < 101) {
-        h <- 400
-      } else if (sizing_hints$range > 100 &&
-                 sizing_hints$range < 401) {
-        h <- 600
-      } else  {
-        h <- "calc(var(--screen-height) * 0.65 * 1px);"
-      }
-
-      if(sizing_hints$no_char_y < 4) {
-        sizing_hints$no_char_y <- 4
-      }
-
-      # final height in cm
-      if(is.numeric(h)) {
-        h <- round(h * 0.0264583333, digits = 4)
-        h <- paste0(h, "cm;")
-      }
-      # final width in cm
-      if(is.numeric(w)) {
-        w <- w + 16 * sizing_hints$no_char_y
-        w <- round(w * 0.0264583333, digits = 4)
-        w <- paste0(w, "cm;")
-      }
-    ##CASE 999: test only
-    } else if (!is.null(sizing_hints$figure_type_id) &&
-               sizing_hints$figure_type_id == "pass_through") {
-      w <- sizing_hints$w
-      h <- sizing_hints$h
+    if (sizing_hints$number_of_vars < 7) {
+      w <- 100 + 200 * sizing_hints$number_of_vars
     } else {
+      w <- "calc(var(--screen-width) * 0.9 * 1px);"
+    }
+
+    if (sizing_hints$range < 101) {
+      h <- 400
+    } else if (sizing_hints$range > 100 &&
+               sizing_hints$range < 401) {
+      h <- 600
+    } else  {
+      h <- "calc(var(--screen-height) * 0.65 * 1px);"
+    }
+
+    if(sizing_hints$no_char_y < 4) {
+      sizing_hints$no_char_y <- 4
+    }
+
+    # final height in cm
+    if(is.numeric(h)) {
+      h <- round(h * 0.0264583333, digits = 4)
+      h <- paste0(h, "cm;")
+    }
+    # final width in cm
+    if(is.numeric(w)) {
+      w <- w + 16 * sizing_hints$no_char_y
+      w <- round(w * 0.0264583333, digits = 4)
+      w <- paste0(w, "cm;")
+    }
+    ##CASE 999: test only
+  } else if (!is.null(sizing_hints$figure_type_id) &&
+             sizing_hints$figure_type_id == "pass_through") {
+    w <- sizing_hints$w
+    h <- sizing_hints$h
+  } else {
     # none of the plots before
     w <- NULL
     h <- NULL

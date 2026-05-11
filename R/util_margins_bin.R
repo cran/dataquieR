@@ -31,14 +31,15 @@
 #' @param include_numbers_in_figures [logical] Should the figure report the
 #'                        number of observations for each level of the grouping
 #'                        variable?
+#' @param no_overall_in_bin [logical] Suppress overall distribution in 'margins'
+#'                                    figures for binary outcomes
+#' @param no_geom_count_in_bin [logical] Suppress counts 'margins'
+#'                                       figures for binary outcomes, so they
+#'.                                      are not always including 0 and 1.
 #'
 #' @return A table and a matching plot.
 #'
-#' @importFrom ggplot2 ggplot geom_violin geom_boxplot geom_pointrange geom_text
-#'                     element_blank element_text
-#'                     geom_density coord_flip annotate
-#'                     ggplot_build theme_minimal labs theme scale_colour_manual
-#'                     geom_count aes geom_vline geom_hline
+#' @importFrom ggplot2 ggplot geom_violin geom_boxplot geom_pointrange geom_text element_blank element_text geom_density coord_flip annotate ggplot_build theme_minimal labs theme scale_colour_manual geom_count aes geom_vline geom_hline
 #' @import patchwork
 #'
 #' @noRd
@@ -53,9 +54,29 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
                                          dataquieR.acc_margins_sort_default),
                              include_numbers_in_figures =
                                getOption("dataquieR.acc_margins_num",
-                                         dataquieR.acc_margins_num_default)) {
+                                         dataquieR.acc_margins_num_default),
+                             no_overall_in_bin =
+                               getOption("dataquieR.no_overall_in_bin",
+                                         dataquieR.no_overall_in_bin_default),
+                             no_geom_count_in_bin =
+                               getOption("dataquieR.no_geom_count_in_bin",
+                                      dataquieR.no_geom_count_in_bin_default)) {
   # preps and checks -----------------------------------------------------------
   # to avoid "no visible binding for global variable ‘sample_size’"
+
+  if (no_geom_count_in_bin &&  # so it does not scale to 0/1
+      !no_overall_in_bin) { # but we want to have the overall distribution
+    util_message("Cannot have %s = %s and %s = %s, setting %s to %s",
+                 sQuote("no_geom_count_in_bin"),
+                 dQuote(TRUE),
+                 sQuote("no_overall_in_bin"),
+                 dQuote(FALSE),
+                 sQuote("no_overall_in_bin"),
+                 dQuote(TRUE)
+    )
+    no_overall_in_bin <- TRUE
+  }
+
   sample_size <- NULL
   # ensure that the response variable is not constant
   var_prop <- util_dist_selection(ds1[, resp_vars, drop = FALSE])
@@ -193,11 +214,63 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
     util_error("No data left.")
   }
 
+  if (no_geom_count_in_bin) { # FIXME: Elisa had some corner cases, where this did not match the overall distribution any more.
+    y_lims <- c(
+      max(0, min(res_df_plot$LCL, na.rm = TRUE)),
+      min(1, max(res_df_plot$UCL, na.rm = TRUE))
+    )
+    ### extract 0/1-values and group
+    # tmp_count_df <- data.frame(
+    #   .grp = .ds00[[group_vars]],
+    #   .y = round(.ds00[["resp_var_adj"]])
+    # )
+    #
+    # ## only 0/1
+    # tmp_count_df <- tmp_count_df[!is.na(tmp_count_df$.grp) &
+    #                                !is.na(tmp_count_df$.y) &
+    #                                tmp_count_df$.y %in% c(0, 1), , drop = FALSE]
+    #
+    # ## frequencies
+    # tab <- table(tmp_count_df$.grp, tmp_count_df$.y)
+    #
+    # ## ensure coluns 0 and 1
+    # tab_df <- data.frame(
+    #   .grp = rownames(tab),
+    #   n0 = if ("0" %in% colnames(tab)) tab[, "0"] else 0,
+    #   n1 = if ("1" %in% colnames(tab)) tab[, "1"] else 0,
+    #   row.names = NULL,
+    #   check.names = FALSE
+    # )
+    #
+    # ## add to res_df_plot
+    # label_df <- merge(
+    #   data.frame(.grp = res_df_plot[[group_vars]], res_df_plot, check.names = FALSE),
+    #   tab_df,
+    #   by = ".grp",
+    #   all.x = TRUE,
+    #   sort = FALSE
+    # )
+    #
+    # ## NAs -> 0
+    # label_df$n0[is.na(label_df$n0)] <- 0
+    # label_df$n1[is.na(label_df$n1)] <- 0
+    #
+    # ## create labels
+    # label_df$label <- paste0(label_df$n0, "+", label_df$n1)
+    gcnt <- NULL
+    # summary_ds$sample_size <- paste0(summary_ds$sample_size,
+    #                                  "=\n",
+    #                                 label_df$label)
+  } else {
+    y_lims <- c(0, 1)
+    gcnt <- geom_count(aes(alpha = 0.9), color = "gray")
+  }
+
   p1 <- util_create_lean_ggplot(ggplot(data = .ds00,
                                        aes(x = .data[[group_vars]],
                                            y = round(.data[["resp_var_adj"]]))) +
-                                  geom_count(aes(alpha = 0.9), color = "gray") +
-                                  geom_pointrange(data = res_df_plot, aes(
+                                  gcnt +
+                                  util_geom_pointrange_robust(data = res_df_plot, aes(
                                     x = .data[[group_vars]],
                                     y = margins,
                                     ymin = LCL,
@@ -219,31 +292,41 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
                                     plot.margin = ggplot2::unit(c(2, 0, 2, 0),
                                                                 "mm")) +
                                   scale_colour_manual(values = warn_code) +
-                                  ggplot2::expand_limits(y = c(0, 1)),
+                                  ggplot2::expand_limits(y = y_lims),
                                 .ds00 = .ds00,
                                 group_vars = group_vars,
                                 res_df_plot = res_df_plot,
-                                warn_code = warn_code)
+                                warn_code = warn_code,
+                                y_lims = y_lims,
+                                gcnt = gcnt)
+
+  p1 <- util_create_lean_ggplot(p1 +
+                                  ggplot2::coord_cartesian(ylim = y_lims,
+                                                            clip = "off"),
+                                p1 = p1,
+                                y_lims = y_lims)
 
     if (include_numbers_in_figures) {
-      .ds01 <- ds1[, "resp_var_adj", drop = FALSE]
-      .ds02 <- summary_ds[, group_vars]
-
       p1 <- util_create_lean_ggplot(p1 +
                                       geom_text(data = summary_ds,
-                                                aes(x = .ds02,
-                                                    y = max(round(.ds01)) + 0.3,
+                                                aes(x = .data[[group_vars]],
+                                                    y = Inf,
                                                     label = sample_size),
+                                                inherit.aes = FALSE,
                                                 hjust = 0.5,
+                                                vjust = -0.2,
                                                 angle = 90) +
                                       annotate("text",
                                                x = 0.5,
-                                               y = max(round(.ds01)) + 0.3,
-                                               label = "N"),
+                                               y = Inf,
+                                               label = "N",
+                                               vjust = -0.2) +
+                                      theme(plot.margin = ggplot2::unit(c(8, 0, 2, 0),
+                                                                        "mm")),
                                     p1 = p1,
                                     summary_ds = summary_ds,
-                                    .ds01 = .ds01,
-                                    .ds02 = .ds02,
+                                    group_vars = group_vars,
+                                    y_lims = y_lims,
                                     sample_size = sample_size)
     }
 
@@ -294,10 +377,11 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
                                         text = element_text(size = 16),
                                         plot.margin =
                                           ggplot2::unit(c(0, 2, 0, 2), "mm")) +
-                                  ggplot2::expand_limits(x = c(0, 1)),
+                                  ggplot2::expand_limits(x = y_lims),
                                 .ds01 = .ds01,
                                 pars = pars,
-                                offs = offs)
+                                offs = offs,
+                                y_lims = y_lims)
 
   if (threshold_type != "none") {
     p2 <- util_create_lean_ggplot(p2 +
@@ -336,12 +420,19 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   }
 
   # combine plots and add the title
+  if (no_overall_in_bin) {
+    p2 <- NULL
+    my_plot_layout <- plot_layout(nrow = 1)
+  } else {
+    my_plot_layout <- plot_layout(nrow = 1,
+                                  widths = c(5, 1))
+  }
+
   res_plot <- # TODO: For all patchwork-calls, add information to reproduce the layout in plot.ly
     util_create_lean_ggplot(
       p1 +
         p2 +
-        plot_layout(nrow = 1,
-                    widths = c(5, 1)) +
+        my_plot_layout +
         plot_annotation(title = title,
                         subtitle = adjusted_hint,
                         caption = caption),
@@ -349,7 +440,8 @@ util_margins_bin <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
       p2 = p2,
       title = title,
       adjusted_hint = adjusted_hint,
-      caption = caption)
+      caption = caption,
+      my_plot_layout = my_plot_layout)
 
   # output ---------------------------------------------------------------------
   return(list("plot_data" = res_df, "plot" = res_plot))

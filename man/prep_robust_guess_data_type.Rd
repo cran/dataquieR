@@ -16,14 +16,14 @@ minimum sample size is 1.}
 }
 \value{
 a guess of the data type of \code{x}. An attribute \code{orig_type} is also
-attached to give the more detailed guess returned by \code{\link[readr:parse_guess]{readr::guess_parser()}}.
+attached to give the more detailed guess returned by \code{\link[readr:guess_parser]{readr::guess_parser()}}.
 }
 \description{
 Guess the data type of a vector
 }
 \section{Algorithm}{
 This function takes \code{x} and tries to guess the data type of random subsets of
-this vector using \code{\link[readr:parse_guess]{readr::guess_parser()}}. The RNG is initialized with a
+this vector using \code{\link[readr:guess_parser]{readr::guess_parser()}}. The RNG is initialized with a
 constant, so the function stays deterministic. It does such sub-sample based
 checks \code{it} times, the majority of the detected datatype determines the
 guessed data type.

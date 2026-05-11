@@ -127,6 +127,7 @@ util_setup_rstudio_job <- function(job_name = "Job", n) {
 
   # Define default progress functions ----
   progress <- function(percent, is_rstudio, is_shiny, is_cli, e) {
+    util_call_progress_hooks("progress", percent = percent)
     if (isTRUE(e$.is_testing)) {
       return()
     }
@@ -173,6 +174,7 @@ util_setup_rstudio_job <- function(job_name = "Job", n) {
   assign("progress", progress, envir = p)
 
   progress_msg <- function(status, msg, is_rstudio, is_shiny, e) {
+    util_call_progress_hooks("msg", status = status, msg = msg)
     if (isTRUE(e$.is_testing)) {
       return()
     }
@@ -210,6 +212,8 @@ util_setup_rstudio_job <- function(job_name = "Job", n) {
   formals(progress_msg)$is_shiny <- force(is_shiny)
   formals(progress_msg)$is_cli <- force(is_cli)
   formals(progress_msg)$e <- p
+  if (rlang::is_missing(formals(progress_msg)$msg))
+    formals(progress_msg)$msg <- ""
 
   if (is.function(progress_init_fkt)) {
     if (!identical(names(formals(progress_init_fkt)), "n")) {
@@ -220,6 +224,7 @@ util_setup_rstudio_job <- function(job_name = "Job", n) {
       )
     }
     progress_init_fkt(n = n)
+    util_call_progress_hooks("init", n = n)
   }
 
   environment(progress_msg) <- p
@@ -229,4 +234,109 @@ util_setup_rstudio_job <- function(job_name = "Job", n) {
 
   invisible(list(progress = progress,
                  progress_msg = progress_msg))
+}
+
+.progress_hooks <- new.env(parent = emptyenv())
+
+#' Register a hook function for progresses in computation/rendering
+#'
+#' The order hooks are called is not defined.
+#'
+#' @param type [character] what event
+#' @param hook [function] hook function
+#'
+#' @returns [character] a handle for de-registering, `invisible`
+#' @export
+prep_register_progress_hook <- function(type = c("progress", "init", "msg"),
+                                        hook) {
+  type <- util_match_arg(type)
+  util_expect_scalar(hook,
+                     check_type = is.function,
+                     allow_na = TRUE,
+                     error_message = sprintf("%s must be a function",
+                                             sQuote("hook")))
+  if (type == "init" && !"n" %in% names(formals(hook))) {
+    util_error("A progress hook of type %s must feature a formal argument %s",
+               sQuote(hook), sQuote("n"))
+  }
+  if (type == "progress" && !"percent" %in% names(formals(hook))) {
+    util_error("A progress hook of type %s must feature a formal argument %s",
+               sQuote(hook), sQuote("percent"))
+  }
+  if (type == "msg" && !all(c("status", "msg") %in% names(formals(hook)))) {
+    util_error(c("A progress hook of type %s must feature formal arguments %s",
+                 "and %s"),
+               sQuote(hook), sQuote("percent"), sQuote("msg"))
+  }
+  handle <- rlang::hash(list(type, hook))
+  if (!exists(type, .progress_hooks, mode = "list")) {
+    .progress_hooks[[type]] <- list()
+  }
+  if (!is.null(.progress_hooks[[type]][[handle]])) {
+    util_message("This hook has already been registered, won't register twice")
+  } else {
+    .progress_hooks[[type]][[handle]] <- hook
+  }
+  return(invisible(handle))
+}
+
+#' De-register a hook function for progresses in computation/rendering
+#'
+#' @param handle [character] the handle
+#' @param verbose [logical] message, if `handle` has currently no registration
+#'
+#' @returns [logical] `invisible(TRUE)` on success
+#' @export
+prep_deregister_progress_hook <- function(handle, verbose = TRUE) {
+  util_expect_scalar(verbose,
+                     check_type = is.logical,
+                     error_message = sprintf("%s must be a logical",
+                                             sQuote("verbose")))
+  util_expect_scalar(handle,
+                     check_type = is.character,
+                     error_message = sprintf("%s must be a character",
+                                             sQuote("handle")))
+  found <- FALSE
+  for (type in eval(formals(prep_register_progress_hook)[["type"]],
+                    envir = baseenv())) {
+    if (!exists(type, .progress_hooks, mode = "list")) {
+      .progress_hooks[[type]] <- list()
+    }
+    if (!is.null(.progress_hooks[[type]][[handle]])) {
+      .progress_hooks[[type]][[handle]] <- NULL
+      found <- TRUE
+    }
+  }
+  if (!found && verbose) {
+    util_message(c("This hook has not been registered or already",
+                   "de-registered, cannot de-register"))
+  }
+  return(invisible(found))
+}
+
+util_call_progress_hooks <- function(type = c("progress", "init", "msg"), ...) {
+  type <- util_match_arg(type)
+  if (!exists(type, .progress_hooks, mode = "list")) {
+    .progress_hooks[[type]] <- list()
+  }
+  for (handle in names(.progress_hooks[[type]])) {
+    if (is.function(.progress_hooks[[type]][[handle]])) {
+      worked <-
+        try(
+          util_call_with_only_existing_formals(
+            .progress_hooks[[type]][[handle]], ...),
+          silent = TRUE)
+      if (util_is_try_error(worked)) {
+        util_message("Could not call a hook function: %s\n%s",
+                     head(.progress_hooks[[type]][[handle]]),
+                     conditionMessage(attr(worked, "condition")))
+      }
+    } else {
+      util_message(
+        c("Could not call a hook function, which should never",
+          "have been registered: %s. Internal error, sorry. Please report."),
+        dQuote(util_deparse1(.progress_hooks[[type]][[handle]]))
+      )
+    }
+  }
 }

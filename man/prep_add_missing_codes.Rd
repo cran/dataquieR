@@ -11,7 +11,7 @@ prep_add_missing_codes(
   item_level = "item_level",
   label_col,
   rules,
-  use_value_labels,
+  use_value_labels = NA,
   overwrite = FALSE,
   meta_data = item_level
 )
@@ -36,7 +36,8 @@ with labels of variables}
 
 \item{rules}{\link{data.frame} with the columns:
 \itemize{
-\item \code{resp_vars}: Variable, whose \code{NA}-values should be replaced by jump codes
+\item \code{resp_vars} or \code{VAR_NAMES}:
+Variable, whose \code{NA}-values should be replaced by jump codes
 \item \code{CODE_CLASS}: Either \code{MISSING} or \code{JUMP}: Is the currently described case
 an expected missing value (\code{JUMP}) or not (\code{MISSING})
 \item \code{CODE_VALUE}: The jump code or missing code
@@ -46,11 +47,16 @@ an expected missing value (\code{JUMP}) or not (\code{MISSING})
 \href{https://docs.google.com/document/d/1l3nGBgqqPKi5PtMe75g7q0dny8QzGMd_/edit?tab=t.0}{\code{REDcap} how-to}), and
 \href{https://www.iths.org/wp-content/uploads/REDCap-Branching-Logic-2017-202.pdf}{\code{REDcap} branching logic}
 that describes cases for the missing
+\item \code{DATA_PREPARATION}: optional. if available, and \verb{use_value_labels`` is either missing or }NA`, this columns
+controls the rule handling.
 }}
 
 \item{use_value_labels}{\link{logical} In rules for factors, use the value labels,
 not the codes. Defaults to \code{TRUE}, if any
-\code{VALUE_LABELS} are given in the metadata.}
+\code{VALUE_LABELS} are given in the metadata,
+and no \code{DATA_PREPARATION} exists for the
+\code{rules}. \code{NA} means to use
+\code{DATA_PREPARATION}, if available.}
 
 \item{overwrite}{\link{logical} Also insert missing codes, if the values are not
 \code{NA}}

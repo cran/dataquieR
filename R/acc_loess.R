@@ -104,11 +104,8 @@
 #' at least one level of the `group_vars` (similar to `geom_smooth`
 #' from `ggplot2`).
 #'
-#' @importFrom ggplot2 ggplot aes scale_color_manual xlab ylab geom_point
-#'                     geom_line facet_wrap theme_minimal ggtitle theme
-#'                     element_blank
-#' @importFrom stats as.formula lm loess lowess predict na.omit glm
-#'                   binomial poisson sd cov var runif
+#' @importFrom ggplot2 ggplot aes scale_color_manual xlab ylab geom_point geom_line facet_wrap theme_minimal ggtitle theme element_blank
+#' @importFrom stats as.formula lm loess lowess predict na.omit glm binomial poisson sd cov var runif
 #'
 #' @seealso
 #' [Online Documentation](
@@ -121,7 +118,9 @@ acc_loess <- function(resp_vars,
                       study_data,
                       label_col = VAR_NAMES,
                       item_level = "item_level",
-                      min_obs_in_subgroup = 30,
+                      min_obs_in_subgroup =
+                        getOption("dataquieR.acc_loess.min_obs_in_subgroup",
+                               dataquieR.acc_loess.min_obs_in_subgroup_default),
                       resolution = 80,
                       comparison_lines = list(type = c("mean/sd", "quartiles"),
                                               color = "grey30",
@@ -179,6 +178,8 @@ acc_loess <- function(resp_vars,
                             allow_all_obs_na = FALSE,
                             min_distinct_values = 3)
   util_correct_variable_use("co_vars",
+                            overwrite = TRUE,
+                            remove_not_found = TRUE,
                             allow_more_than_one = TRUE,
                             allow_all_obs_na = FALSE,
                             allow_na = TRUE,
@@ -296,7 +297,54 @@ acc_loess <- function(resp_vars,
                applicability_problem = TRUE,
                intrinsic_applicability_problem = TRUE)
   }
-
-  return(SummaryPlotList = SummaryPlotList_from_util)
+  return(util_attach_attr(SummaryPlotList_from_util,
+                          as_plotly = "util_as_plotly_acc_loess"))
 }
 
+#' @family plotly_shims
+#' @concept plotly_shims
+#' @noRd
+util_as_plotly_acc_loess <- function(res, ...) {
+  util_ensure_suggested("plotly")
+  if ("SummaryPlotList" %in% names(res)) {
+    SummaryPlot <- util_remove_dataquieR_result_class(res$SummaryPlotList[[1]])
+  } else {
+    SummaryPlot <- util_remove_dataquieR_result_class(res$SummaryPlot)
+  }
+  build_obj <- ggplot2::ggplot_build(SummaryPlot)
+  plot_obj <- util_gg_get(build_obj, "plot")
+  labels_obj <- if (!is.null(plot_obj)) util_gg_get(plot_obj, "labels") else NULL
+  title <- if (!is.null(labels_obj)) util_gg_get(labels_obj, "title") else NULL
+  subtitle <- if (!is.null(labels_obj)) util_gg_get(labels_obj, "subtitle") else NULL
+  sc <- plot_obj$scales$get_scales("colour")
+  breaks <- sc$get_breaks()
+  labels <- setNames(sc$get_labels(breaks), nm = breaks)
+  py <- util_ggplotly(SummaryPlot, ...)
+  for (i in seq_along(labels)) {
+    if (py$x$data[[i]]$name %in% names(labels))
+    py$x$data[[i]]$name <-
+      labels[py$x$data[[i]]$name]
+  }
+  if (!is.null(title) && is.null(subtitle)) {
+    py <- plotly::layout(py, title = title)
+  } else if (!is.null(title) && !is.null(subtitle)) {
+    # if (packageVersion("plotly") > "4.10.4") { # should be supported, soon
+    #   py <- plotly::layout(py, title = list(text = title,
+    #                                       subtitle = list(text = subtitle)))
+    # } else {
+    py <- plotly::layout(
+      py,
+      margin = list(b = 100),
+      title = list(
+        text = paste0(
+          "<sub>",
+          title,
+          "\u00a0\u2014\u00a0",
+          subtitle,
+          "</sub>"
+        )
+      )
+    )
+  }
+  py
+}

@@ -172,7 +172,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(item_level = "item_level",
                         ifnotfound = meta_data[[KEY_STUDY_SEGMENT]])
       meta_data[[KEY_STUDY_SEGMENT]] <- NULL
     } else if (!any(meta_data[[KEY_STUDY_SEGMENT]] %in%
-                    c(NA_character_, meta_data[[VAR_NAMES]]))) {
+                    c(meta_data[[VAR_NAMES]]))) { # NA_character_ is not allowed here, because NA should not cause doubts, if keystudysegment contains varnames, NA is not a varname
       # KEY_STUDY_SEGMENT is STUDY_SEGMENT, PART_VAR is empty
       if (verbose)
         util_message("%s is %s, %s is empty",
@@ -528,7 +528,7 @@ prep_meta_data_v1_to_item_level_meta_data <- function(item_level = "item_level",
       setNames(meta_data[[MISSING_LIST_TABLE]], nm = meta_data[[VAR_NAMES]]),
       meta_data[[VAR_NAMES]],
       FUN = function(cld, vn) {
-        if (all(is.na(cld))) {
+        if (all(util_empty(cld))) {
           return(NULL)
         }
         r <- data.frame()

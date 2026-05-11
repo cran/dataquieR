@@ -156,6 +156,8 @@ acc_cat_distributions <- function(resp_vars = NULL,
                            resp_vars_match_label_col_only = TRUE,
                            label_class = "LONG")
 
+  as_plotly <- attr(p, "as_plotly")
+
   # p <- p + ggplot2::ggtitle(rvlab,
   #                           sprintf("Effects of %s",
   #                                   gvlab)
@@ -166,7 +168,6 @@ acc_cat_distributions <- function(resp_vars = NULL,
   )
   #  p <- util_set_size(p)
 
-  as_plotly <- attr(p, "as_plotly")
   attr(p, "as_plotly") <- NULL
   dont_util_adjust_geom_text_for_plotly <-
     attr(p, "dont_util_adjust_geom_text_for_plotly")

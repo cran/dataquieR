@@ -17,14 +17,19 @@ util_normalize_clt <- function(meta_data) {
     FUN.VALUE = logical(1),
     setNames(nm = na.omit(unique(meta_data[[CODE_LIST_TABLE]]))),
     function(tb) {
-      "MISSING" %in% prep_get_data_frame(tb)[[CODE_CLASS]] ||
-        "JUMP" %in% prep_get_data_frame(tb)[[CODE_CLASS]]
+      if (util_empty(tb)) return(FALSE)
+      tb <- try(prep_get_data_frame(tb), silent = TRUE)
+      if (util_is_try_error(tb)) return(FALSE)
+      "MISSING" %in% tb[[CODE_CLASS]] ||
+        "JUMP" %in% tb[[CODE_CLASS]]
     })
   is_vlt <- vapply(
     FUN.VALUE = logical(1),
     setNames(nm = na.omit(unique(meta_data[[CODE_LIST_TABLE]]))),
     function(tb) {
-      tb <- prep_get_data_frame(tb)
+      if (util_empty(tb)) return(FALSE)
+      tb <- try(prep_get_data_frame(tb), silent = TRUE)
+      if (util_is_try_error(tb)) return(FALSE)
       (!(CODE_CLASS %in% names(tb))) || "VALUE" %in% tb[[CODE_CLASS]]
     })
   if (any(!util_empty(meta_data[[MISSING_LIST_TABLE]][is_mlt[
@@ -45,10 +50,14 @@ util_normalize_clt <- function(meta_data) {
                  sQuote(VALUE_LABEL_TABLE),
                  applicability_problem = TRUE)
   }
-  meta_data[[MISSING_LIST_TABLE]][is_mlt[meta_data[[CODE_LIST_TABLE]]]] <-
-    meta_data[[CODE_LIST_TABLE]][is_mlt[meta_data[[CODE_LIST_TABLE]]]]
-  meta_data[[VALUE_LABEL_TABLE]][is_vlt[meta_data[[CODE_LIST_TABLE]]]] <-
-    meta_data[[CODE_LIST_TABLE]][is_vlt[meta_data[[CODE_LIST_TABLE]]]]
+  code_list_table <- meta_data[[CODE_LIST_TABLE]]
+  code_list_table[util_empty(code_list_table)] <- "//**//??"
+  is_mlt["//**//??"] <- FALSE
+  is_vlt["//**//??"] <- FALSE
+  meta_data[[MISSING_LIST_TABLE]][is_mlt[code_list_table]] <-
+    meta_data[[CODE_LIST_TABLE]][is_mlt[code_list_table]]
+  meta_data[[VALUE_LABEL_TABLE]][is_vlt[code_list_table]] <-
+    meta_data[[CODE_LIST_TABLE]][is_vlt[code_list_table]]
   meta_data[[CODE_LIST_TABLE]] <- NULL
   meta_data
 }

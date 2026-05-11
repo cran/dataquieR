@@ -13,12 +13,14 @@ html_dependency_dataquieR <- function(iframe = FALSE) {
                                src = system.file("menu", package =
                                                    "dataquieR"),
                                stylesheet = c("style.css", "style_iframe.css"),
-                               script = c("script.js", "script_iframe.js"))
+                               script = c("script.js", "script2.js",
+                                          "script_iframe.js"))
   } else {
     htmltools:: htmlDependency("menu", "1.0.1",
                                src = system.file("menu", package =
                                                    "dataquieR"),
                                stylesheet = c("style.css", "style_toplevel.css"),
-                               script = c("script.js", "script_toplevel.js"))
+                               script = c("script.js", "script2.js",
+                                          "script_toplevel.js"))
   }
 }

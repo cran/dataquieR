@@ -8,7 +8,7 @@
 #' @seealso [`StackOverflow`](https://stackoverflow.com/a/7854620)
 #' @author [`Joshua Ulrich`](https://stackoverflow.com/users/271616/joshua-ulrich)
 util_duplicated_inclding_first <- function(x, ...) {
-  if (is.vector(x) || is.data.frame(x)) {
+  if (is.atomic(x) || is.data.frame(x)) {
     return(duplicated(x, ...) | duplicated(x, fromLast=TRUE, ...))
   } else {
     util_error("Object of unsupported class %s passed",

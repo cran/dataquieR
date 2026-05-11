@@ -38,7 +38,7 @@ util_plot_figure_plotly <- function(x, sizing_hints = NULL) {
       if (is.null(py)) {
         py <- attr(x, "plotly")
       }
-      if (is.null(py)) {
+      if (is.null(py) || !inherits(py, "plotly")) {
         x <- util_remove_dataquieR_result_class(x)
         # x <- x + ggplot2::theme(aspect.ratio = NULL) # prevent a warning
         py <- suppressWarnings( # prevent a warning

@@ -33,6 +33,12 @@
 #'                                               be used for the report. If
 #'                                               of length zero, no filtering
 #'                                               is performed.
+#' @param exclude_indicator_functions [character] regular expressions,
+#'                                               if an indicator function's name
+#'                                               matches one of these, it'll
+#'                                               be excluded from the report. If
+#'                                               of length zero, no filtering
+#'                                               is performed.
 #'
 #' @return a list of calls
 #'
@@ -48,7 +54,8 @@ util_generate_calls <- function(dimensions,
                                 specific_args,
                                 arg_overrides,
                                 resp_vars,
-                                filter_indicator_functions) {
+                                filter_indicator_functions,
+                                exclude_indicator_functions) {
   .dimensions <- unique(c("Descriptors", "Integrity", dimensions))
   .dimensions <- substr(tolower(.dimensions), 1, 3)
   .dimensions[.dimensions == "int"] <- "int_all" # use the wrappers, only
@@ -74,6 +81,11 @@ util_generate_calls <- function(dimensions,
 
   ind_functions <- util_filter_names_by_regexps(ind_functions,
                                                 filter_indicator_functions)
+
+  ind_functions <- util_filter_names_by_regexps(ind_functions,
+                                                exclude_indicator_functions,
+                                                negate = TRUE)
+
   # handle SSI functions
   ssi_functions <- character(0)
   try({
@@ -94,7 +106,9 @@ util_generate_calls <- function(dimensions,
                       meta_data_cross_item = meta_data_cross_item,
                       specific_args = specific_args,
                       arg_overrides = arg_overrides,
-                      resp_vars = resp_vars
+                      resp_vars = resp_vars,
+                      ssi_functions = ssi_functions,
+                      non_ssi_functions = ind_functions
   )
 
   # TODO: https://gitlab.com/libreumg/dataquier/-/issues/147, before

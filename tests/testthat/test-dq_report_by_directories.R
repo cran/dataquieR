@@ -16,7 +16,7 @@ test_that("dq_report_by works with input and output dir", {
     n = 10)
 
   library(rio)
-  export(sd1,file.path(target, "data_origin.RData") )
+  export(sd1, file.path(target, "data_origin.RData") )
 
 
   try(utils::download.file(
@@ -34,7 +34,8 @@ test_that("dq_report_by works with input and output dir", {
                               strata_select = "0",
                               meta_data_v2 = "meta_data_v2.xlsx",
                               output_dir = target1,
-                              also_print = TRUE))
+                              also_print = TRUE,
+                              advanced_options = list(rio.import.trust = TRUE)))
 
 
   expect_error(dq_report_by(study_data = "data_origin.RData",
@@ -45,8 +46,9 @@ test_that("dq_report_by works with input and output dir", {
                               strata_select = "0",
                               meta_data_v2 = "meta_data_v2.xlsx",
                               output_dir = target1,
-                              also_print = TRUE),
-               regexp = ".+already exists. Remove the.+output_dir.+first")
+                              also_print = TRUE,
+                            advanced_options = list(rio.import.trust = TRUE)),
+               regexp = ".+already exists. cannot use this as an output folder")
 
 
   target_v3 <- withr::local_tempdir("testdqareportby_v3")
@@ -80,7 +82,8 @@ test_that("dq_report_by works with input and output dir", {
                               strata_select = "0",
                               meta_data_v2 = "meta_data_v2.xlsx",
                               output_dir = target2,
-                              also_print = TRUE),
+                              also_print = TRUE,
+                              advanced_options = list(rio.import.trust = TRUE)),
                  regexp = "Because no id.+created duplicated rows.")
 
 })

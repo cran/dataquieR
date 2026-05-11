@@ -6,7 +6,7 @@ test_that("reflection works", {
   expect_true(
     any(
       vapply(
-        mget(ls(.indicator_or_descriptor),
+        mget(setdiff(ls(.indicator_or_descriptor), "man_hash"),
              envir = .indicator_or_descriptor), identity,
         FUN.VALUE = logical(1))), info = "Any Indicator in Package")
 })

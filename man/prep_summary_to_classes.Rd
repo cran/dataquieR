@@ -17,13 +17,13 @@ prep_summary_to_classes(report_summary)
 Classify metrics from a report summary table
 }
 \seealso{
-Other summary_functions: 
-\code{\link{prep_combine_report_summaries}()},
-\code{\link{prep_extract_classes_by_functions}()},
-\code{\link{prep_extract_summary}()},
-\code{\link{prep_extract_summary.dataquieR_result}()},
-\code{\link{prep_extract_summary.dataquieR_resultset2}()},
-\code{\link{prep_render_pie_chart_from_summaryclasses_ggplot2}()},
-\code{\link{prep_render_pie_chart_from_summaryclasses_plotly}()}
+Other summary_functions:
+\code{\link[=prep_combine_report_summaries]{prep_combine_report_summaries()}},
+\code{\link[=prep_extract_classes_by_functions]{prep_extract_classes_by_functions()}},
+\code{\link[=prep_extract_summary]{prep_extract_summary()}},
+\code{\link[=prep_extract_summary.dataquieR_result]{prep_extract_summary.dataquieR_result()}},
+\code{\link[=prep_extract_summary.dataquieR_resultset2]{prep_extract_summary.dataquieR_resultset2()}},
+\code{\link[=prep_render_pie_chart_from_summaryclasses_ggplot2]{prep_render_pie_chart_from_summaryclasses_ggplot2()}},
+\code{\link[=prep_render_pie_chart_from_summaryclasses_plotly]{prep_render_pie_chart_from_summaryclasses_plotly()}}
 }
 \concept{summary_functions}

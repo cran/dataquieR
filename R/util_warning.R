@@ -8,6 +8,8 @@
 #'
 #' @param level [integer] level of the warning message (defaults to 0). Higher
 #'                        levels are more severe.
+#' @param once_id [character] If specified, suppress further conditions
+#'                 with the same ID during this R session.
 #' @param immediate [logical] Display the warning immediately, not only, when
 #'                            the interactive session comes back.
 #'

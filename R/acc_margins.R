@@ -102,6 +102,11 @@
 #'                       the maximum number of levels of the `group_var` for
 #'                       which violin plots will be shown in the figure.
 #'
+#' @param no_overall_in_bin [logical] Suppress overall distribution in 'margins'
+#'                                    figures for binary outcomes
+#' @param no_geom_count_in_bin [logical] Suppress counts 'margins'
+#'                                       figures for binary outcomes, so they
+#'.                                      are not always including 0 and 1.
 #' @return a list with:
 #'   - `SummaryTable`: [data.frame] underlying the plot
 #'   - `ResultData`: [data.frame]
@@ -137,7 +142,13 @@ acc_margins <- function(resp_vars = NULL,
                                     dataquieR.acc_margins_num_default),
                         n_violin_max =
                           getOption("dataquieR.max_group_var_levels_with_violins",
-                                    dataquieR.max_group_var_levels_with_violins_default)) { # TODO: flip_mode =
+                                    dataquieR.max_group_var_levels_with_violins_default),
+                        no_overall_in_bin =
+                          getOption("dataquieR.no_overall_in_bin",
+                                    dataquieR.no_overall_in_bin_default),
+                        no_geom_count_in_bin =
+                          getOption("dataquieR.no_geom_count_in_bin",
+                                    dataquieR.no_geom_count_in_bin_default)) { # TODO: flip_mode =
   #prep for meta_data_v2
   util_maybe_load_meta_data_v2()
 
@@ -159,6 +170,8 @@ acc_margins <- function(resp_vars = NULL,
                             min_distinct_values = 2)
 
   util_correct_variable_use("co_vars",
+                            overwrite = TRUE,
+                            remove_not_found = TRUE,
                             allow_more_than_one = TRUE,
                             allow_all_obs_na = FALSE,
                             allow_null = TRUE,
@@ -248,6 +261,9 @@ acc_margins <- function(resp_vars = NULL,
   util_expect_scalar(include_numbers_in_figures, check_type = is.logical)
   util_expect_scalar(n_violin_max,
                      check_type = util_is_numeric_in(min = 0))
+
+  util_expect_scalar(no_overall_in_bin, check_type = is.logical)
+  util_expect_scalar(no_geom_count_in_bin, check_type = is.logical)
 
   # omit missing values and unnecessary variables
   n_prior <- nrow(ds1)
@@ -421,7 +437,9 @@ acc_margins <- function(resp_vars = NULL,
                                 title = title,
                                 sort_group_var_levels = sort_group_var_levels,
                                 include_numbers_in_figures =
-                                  include_numbers_in_figures)
+                                  include_numbers_in_figures,
+                                no_overall_in_bin = no_overall_in_bin,
+                                no_geom_count_in_bin = no_geom_count_in_bin)
 
     .plot1 <- mar_out$plot
     obj1 <- util_create_lean_ggplot(
@@ -518,7 +536,9 @@ acc_margins <- function(resp_vars = NULL,
                                   title = title,
                                   sort_group_var_levels = sort_group_var_levels,
                                   include_numbers_in_figures =
-                                    include_numbers_in_figures)
+                                    include_numbers_in_figures,
+                                  no_overall_in_bin = no_overall_in_bin,
+                                  no_geom_count_in_bin = no_geom_count_in_bin)
 
       .plot2 <- mar_out$plot
       obj1 <- util_create_lean_ggplot(
@@ -755,10 +775,10 @@ acc_margins <- function(resp_vars = NULL,
   res_df <- mar_out$plot_data
   res_plot <- mar_out$plot
 
-  SummaryTable <- data.frame(
+  SummaryTable <- data.frame( # TODO: This should finally feature all data SummaryData has, but w/o any formatting and rounding.
     Variables = resp_vars#,
     # FLG_acc_ud_loc = as.numeric(any(res_df$GRADING > 0)),
-    #PCT_acc_ud_loc = round(sum(res_df$GRADING == 1)/nrow(res_df)*100,
+    # PCT_acc_ud_loc = round(sum(res_df$GRADING == 1)/nrow(res_df)*100,
    #                        digits = 2)
   )
 
@@ -879,9 +899,13 @@ util_as_plotly_acc_margins <- function(res, ...) {
       py1$x$data[[2]]$mode <- NULL # suppress a warning on print (https://github.com/plotly/plotly.R/issues/2242)
     }
 
-    # extract the overall distribution plot
-    py2 <- try(util_ggplotly(res$SummaryPlot[[2]],
-                             ...), silent = TRUE)
+    if (length(res$SummaryPlot) == 1) {
+      py2 <- NULL
+    } else {
+      # extract the overall distribution plot
+      py2 <- try(util_ggplotly(res$SummaryPlot[[2]],
+                               ...), silent = TRUE)
+    }
     if (util_is_try_error(py2)) {
       err <- attr(py2, "condition")
       err_msg <- conditionMessage(err)

@@ -39,7 +39,7 @@ util_par_pmap <- function(.l, .f, ...,
                                                   logging = FALSE,
                                                   load.balancing = TRUE))
     }
-    on.exit(suppressMessages(parallelMap::parallelStop()))
+    on.exit({Sys.sleep(2);suppressMessages(parallelMap::parallelStop());}, add = TRUE) # whyever, rstudio needs these two seconds, it hangs, otherwise.
   } # TODO: else it fails with Error in `assign(n, get(n, envir = env), envir = ee)`: cannot add bindings to a locked environment -- guess, the same problem I had in util_evaluate_calls see ''if (parallelMap::parallelGetOptions()$settings$mode == "local") {'' therein
   more_args <- list(...)
   if ("meta_data" %in% names(more_args)) {

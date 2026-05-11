@@ -1,3 +1,20 @@
+.util_condition_once_seen <- new.env(parent = emptyenv())
+
+util_condition_once_seen <- function(id) {
+  exists(id, envir = .util_condition_once_seen, inherits = FALSE)
+}
+
+util_condition_once_mark_seen <- function(id) {
+  assign(id, TRUE, envir = .util_condition_once_seen)
+  invisible(TRUE)
+}
+
+util_clean_condition_once_cache <- function() {
+  rm(list = ls(.util_condition_once_seen),
+     envir = .util_condition_once_seen)
+  invisible(NULL)
+}
+
 #' Produce a condition function
 #'
 #' @param .condition_type [character] the type of the conditions being created
@@ -30,7 +47,7 @@ util_condition_constructor_factory <- function(
   function(m, ..., applicability_problem = NA,
            intrinsic_applicability_problem = NA,
            integrity_indicator = "none", level = 0, immediate, title = "",
-           additional_classes = c(), varname = NULL) {
+           additional_classes = c(), varname = NULL, once_id) {
     invis <- FALSE
     if (identical(Sys.getenv("TESTTHAT"), "true")) { # TODO: use the ensure_suggested/is_testing pattern, but do this efficiently, then
       if(!isTRUE(getOption("dataquieR.testthat_expect_message_active", NULL))) {
@@ -45,6 +62,9 @@ util_condition_constructor_factory <- function(
       immediate <- FALSE
     }
     m_args <- eval(quote(force(list(...))))
+    if (!missing(once_id)) {
+      util_expect_scalar(once_id, check_type = is.character)
+    }
     # shows some false positive note on possible misplaced
     # ...
     # m_args <- lapply(
@@ -182,6 +202,12 @@ util_condition_constructor_factory <- function(
       ))
     }
     class(ec) <- unique(c(additional_classes, dq_err_classes, class(ec)))
+    if (!isTRUE(.dq2_globs$.called_in_pipeline) && !missing(once_id)) {
+      if (util_condition_once_seen(once_id)) {
+        return(invisible(ec))
+      }
+      util_condition_once_mark_seen(once_id)
+    }
     if (level >= getOption("dataquieR.CONDITIONS_LEVEL_TRHESHOLD",
                   dataquieR.CONDITIONS_LEVEL_TRHESHOLD_default) ||
         inherits(ec, "error")) {
@@ -197,7 +223,7 @@ util_condition_constructor_factory <- function(
       if (inherits(ec, "error")) {
         rlang::cnd_signal(ec)
       } else {
-        if (inherits(ec, "warning")) {
+        if (inherits(ec, "warning")) { # TODO: add something like rlang::warn(.frequency = "once")
           rlang::cnd_signal(ec)
         } else {
           x <- capture.output(rlang::cnd_signal(ec), file = NULL, type = "message")

@@ -36,7 +36,7 @@ test_that("acc_margins works without label_col", {
                 meta_data = meta_data, group_vars = "not_avail",
                 label_col = LABEL),
     regexp = paste("Variable .+not_avail.+ \\(group_vars\\) not found in",
-                   "study data. Did you mean .+ASTHMA_0.+\\?"),
+                   "metadata. Did you mean .+ASTHMA_0.+\\?"),
     perl = TRUE
   )
 
@@ -469,7 +469,8 @@ test_that("acc_margins works with co_vars", {
   # compare estimates from the model with empirical mean values
   mu_emp <- tapply(sd1[["v00004"]], sd1[["v00012"]], mean, na.rm = TRUE)
   mu_emp <- mu_emp[match(res1_lm_unadj$ResultData$USR_BP_0, names(mu_emp))]
-  expect_lte(max(abs(as.numeric(res1_lm_unadj$ResultData$margins) - mu_emp)),
+  expect_lte(max(abs(as.numeric(res1_lm_unadj$ResultData$margins) -
+                       as.numeric(util_round_to_decimal_places(as.vector(mu_emp))))),
              0.01)
   suppressMessages(
     res1_lm <- acc_margins(resp_vars = "SBP_0",
@@ -521,7 +522,10 @@ test_that("acc_margins works with co_vars", {
   # compare estimates from the model with empirical mean values
   mu_emp <- tapply(sd1[["v00004"]], sd1[["v00012"]], mean, na.rm = TRUE)
   mu_emp <- mu_emp[match(res2_lm_unadj$ResultData$USR_BP_0, names(mu_emp))]
-  expect_lte(max(abs(res2u_mar - mu_emp)), 0.01)
+
+  expect_lte(max(abs(res2u_mar -
+                       as.numeric(util_round_to_decimal_places(
+                         as.vector(mu_emp))))), 0.01)
   # the estimated marginal means should deviate considerably
   expect_gte(max(res2u_mar) - min(res2u_mar), 15)
   suppressMessages(
@@ -577,7 +581,11 @@ test_that("acc_margins works with co_vars", {
   # compare estimates from the model with empirical mean values
   mu_emp <- tapply(sd1[["v00007"]], sd1[["v00011"]], mean, na.rm = TRUE)
   mu_emp <- mu_emp[match(res3_bin_unadj$ResultData$USR_VO2_0, names(mu_emp))]
-  expect_lte(max(abs(res3u_mar - mu_emp)), 0.01)
+
+  expect_lte(max(abs(res3u_mar -
+                       as.numeric(
+                         util_round_to_decimal_places(as.vector(mu_emp))))),
+             0.01)
   # the estimated marginal means should deviate considerably
   expect_gte(max(res3u_mar) - min(res3u_mar), 0.5)
   suppressMessages(
@@ -631,7 +639,8 @@ test_that("acc_margins works with co_vars", {
   # compare estimates from the model with empirical mean values
   mu_emp <- tapply(sd1[["v00026"]], sd1[["v00032"]], mean, na.rm = TRUE)
   mu_emp <- mu_emp[match(res5_poi_unadj$ResultData$USR_SOCDEM_0, names(mu_emp))]
-  expect_lte(max(abs(as.numeric(res5_poi_unadj$ResultData$margins) - mu_emp)),
+  expect_lte(max(abs(as.numeric(res5_poi_unadj$ResultData$margins) -
+                  as.numeric(util_round_to_decimal_places(as.vector(mu_emp))))),
              0.01)
   suppressMessages(
     res5_poi <- acc_margins(resp_vars = "N_INJURIES_0",
@@ -680,7 +689,8 @@ test_that("acc_margins works with co_vars", {
   # compare estimates from the model with empirical mean values
   mu_emp <- tapply(sd1[["v00026"]], sd1[["v00032"]], mean, na.rm = TRUE)
   mu_emp <- mu_emp[match(res6_poi_unadj$ResultData$USR_SOCDEM_0, names(mu_emp))]
-  expect_lte(max(abs(as.numeric(res6_poi_unadj$ResultData$margins) - mu_emp)),
+  expect_lte(max(abs(as.numeric(res6_poi_unadj$ResultData$margins) -
+                  as.numeric(util_round_to_decimal_places(as.vector(mu_emp))))),
              0.01)
   suppressMessages(
     res6_poi <- acc_margins(resp_vars = "N_INJURIES_0",

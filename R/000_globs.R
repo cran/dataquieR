@@ -62,8 +62,7 @@ dimensions = c("Completeness", "Consistency", "Accuracy")
 #'                   using [prep_map_labels]
 #'
 #' @seealso [integer] [string]
-#' @aliases integer string float datetime time numeric enum
-#'          FLOAT INTEGER STRING DATETIME TIME variable set
+#' @aliases integer string float datetime time numeric enum FLOAT INTEGER STRING DATETIME TIME variable set
 #' @rawRd \alias{variable list}
 #'
 #' @export
@@ -157,6 +156,17 @@ VARIABLE_ROLES <- list(
 )
 
 #' @name MAXIMUM_LONG_STRING
+#' @title Cross-item level metadata attribute name
+#' @description
+#'
+#' TODO
+#'
+#' @seealso [meta_data_cross]
+#' @family meta_data_cross
+#' @family SSI
+NULL
+
+#' @name MAHALANOBIS_RATIO
 #' @title Cross-item level metadata attribute name
 #' @description
 #'
@@ -317,7 +327,7 @@ VARATT_REQUIRE_LEVELS_ORDER <- c(
 #'
 #' @rawRd \alias{variable attribute}
 #'
-#' @eval c("@aliases", paste(names(WELL_KNOWN_META_VARIABLE_NAMES)))
+#' @eval paste("@aliases", paste(names(WELL_KNOWN_META_VARIABLE_NAMES), collapse = " "))
 #'
 #' @seealso [meta_data_segment] for `STUDY_SEGMENT`
 #' @seealso [online](https://dataquality.qihs.uni-greifswald.de/VIN_Item_Level_Metadata.html)
@@ -481,6 +491,22 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
 
 .onLoad <- function(...) { # nocov start
 
+  if ((suppressWarnings(util_ensure_suggested("jsonlite", err = FALSE)))) {
+    methods::setClass("dataquieR_translated")
+    methods::setMethod(methods::getGeneric("asJSON", package = "jsonlite"),
+              "dataquieR_translated",
+              asJSON.dataquieR_translated)
+  }
+
+
+  delayedAssign("odm_installed",
+         suppressWarnings(
+           util_ensure_suggested("dataquieR2odm",
+                                 goal = "Read ODM files",
+                                 err = FALSE)),
+         eval.env = asNamespace("dataquieR"),
+         asNamespace("dataquieR"))
+
   to_set <-
     grep("^dataquieR.*_default$", ls(asNamespace("dataquieR")), value = TRUE)
 
@@ -505,6 +531,7 @@ WELL_KNOWN_META_VARIABLE_NAMES <- list(
     util_s3_register("plotly::plotly_build", "dq_lazy_ggplot", plotly_build.dq_lazy_ggplot)
     util_s3_register("plotly::ggplotly",     "dq_lazy_ggplot_s7", ggplotly.dq_lazy_ggplot_s7)
     util_s3_register("plotly::plotly_build", "dq_lazy_ggplot_s7", plotly_build.dq_lazy_ggplot_s7)
+    util_s3_register("plotly::to_basic", "GeomPointrangeRobust", to_basic.GeomPointrangeRobust)
   }
 
   if (packageVersion("ggplot2") >= as.package_version("3.5.2")) {
@@ -1475,6 +1502,10 @@ CODE_ORDER <- "CODE_ORDER"
 CODE_CLASSES <- list(MISSING = "MISSING",
                   JUMP = "JUMP",
                   VALUE = "VALUE")
+
+#' Name of the sheet with rules to introduce missing codes in the pipeline
+#' @export
+MISSING_CODE_RULES = "MISSING_CODE_RULES"
 
 #' Dimension Titles for Prefixes
 #'

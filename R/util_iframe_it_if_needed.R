@@ -36,6 +36,22 @@ util_iframe_it_if_needed <- function(it, dir, nm, fkt, sizing_hints, ggthumb) {
 
     sizing_hints <- util_finalize_sizing_hints(sizing_hints = sizing_hints)
 
+    # original proportions
+    aspect_ratio <- sizing_hints$w_in_cm / sizing_hints$h_in_cm
+    if (!is.finite(aspect_ratio)) aspect_ratio <- 1
+    min.width <- 320
+    min.height <- 250
+    min.width.from.height <- min.height * aspect_ratio
+    min.height.from.width <- min.width / aspect_ratio
+    if (min.width.from.height > min.width) {
+      min.width <- min.width.from.height
+    } else {
+      min.height <- min.height.from.width
+    }
+    min.width <- paste0(min.width, "px");
+    min.height <- paste0(min.height, "px");
+
+
     if (util_is_gg(ggthumb)) {
       optimized_args <- util_get_restricted_size_args_for_figure(
         MAX_SIZE = 5 * 1024 * 1024,
@@ -82,7 +98,7 @@ util_iframe_it_if_needed <- function(it, dir, nm, fkt, sizing_hints, ggthumb) {
     )
 
     if (util_is_gg(ggthumb)) {
-      my_style <- "margin:-10px;width:100%;height:100%;object-fit:fill;cursor:zoom-in;"
+      my_style <- "margin:0px;width:100%;height:100%;object-fit:scale-down;object-position: left top;cursor:zoom-in;display:block;"
       imgTag <- htmltools::tagList(htmltools::img(
         src = basename(thumb_file),
         style = my_style,
@@ -100,8 +116,8 @@ util_iframe_it_if_needed <- function(it, dir, nm, fkt, sizing_hints, ggthumb) {
       style = htmltools::css(
         width = sizing_hints$w,
         height = sizing_hints$h,
-        min.width = "320px",
-        min.height = "180px",
+        min.width = min.width,
+        min.height = min.height,
         resize = "both",
         overflow = "auto",
         border = "1px"

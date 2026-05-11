@@ -7,7 +7,7 @@
 see column \code{source_xml} therein, i.e., base, derived, accepted, or common
 }
 \seealso{
-Other UNITS: 
+Other UNITS:
 \code{\link{UNITS}},
 \code{\link{UNIT_IS_COUNT}},
 \code{\link{UNIT_PREFIXES}},

@@ -14,5 +14,5 @@ Using this \code{rbind} implementation, you can combine different
 heatmap-like results of the class \code{ReportSummaryTable}.
 }
 \seealso{
-\link[base:cbind]{base::rbind.data.frame}
+\link[base:rbind.data.frame]{base::rbind.data.frame}
 }

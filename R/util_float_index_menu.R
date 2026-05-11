@@ -38,7 +38,8 @@ util_float_index_menu <- function(index_menu_table, object) {
   if (!!length(object)) {
     htmltools::div(
       class = "floatbar",
-      htmltools::tags$i(class = "fas fa-bars"),
+      htmltools::tags$i(class = "fas fa-list-ul",
+                        title = "Jump to section"),
       htmltools::tags$ul(
         class = "floatmenu",
         object

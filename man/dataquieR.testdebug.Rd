@@ -8,7 +8,7 @@
 TODO
 }
 \seealso{
-Other options: 
+Other options:
 \code{\link{dataquieR}},
 \code{\link{dataquieR.CONDITIONS_LEVEL_TRHESHOLD}},
 \code{\link{dataquieR.CONDITIONS_WITH_STACKTRACE}},
@@ -26,12 +26,14 @@ Other options:
 \code{\link{dataquieR.acc_loess.exclude_constant_subgroups}},
 \code{\link{dataquieR.acc_loess.mark_time_points}},
 \code{\link{dataquieR.acc_loess.min_bw}},
+\code{\link{dataquieR.acc_loess.min_obs_in_subgroup}},
 \code{\link{dataquieR.acc_loess.min_proportion}},
 \code{\link{dataquieR.acc_loess.plot_format}},
 \code{\link{dataquieR.acc_loess.plot_observations}},
 \code{\link{dataquieR.acc_margins_num}},
 \code{\link{dataquieR.acc_margins_sort}},
 \code{\link{dataquieR.acc_multivariate_outlier.scale}},
+\code{\link{dataquieR.acc_shape_or_scale_ci}},
 \code{\link{dataquieR.col_con_con_empirical}},
 \code{\link{dataquieR.col_con_con_logical}},
 \code{\link{dataquieR.convert_to_list_for_lapply}},
@@ -59,6 +61,8 @@ Other options:
 \code{\link{dataquieR.max_group_var_levels_with_violins}},
 \code{\link{dataquieR.min_obs_per_group_var_in_plot}},
 \code{\link{dataquieR.min_time_points_for_cat_resp_var}},
+\code{\link{dataquieR.no_geom_count_in_bin}},
+\code{\link{dataquieR.no_overall_in_bin}},
 \code{\link{dataquieR.non_disclosure}},
 \code{\link{dataquieR.old_factor_handling}},
 \code{\link{dataquieR.old_type_adjust}},

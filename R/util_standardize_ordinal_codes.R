@@ -8,7 +8,7 @@
 #'
 #' @return [integer()] `n` values in `{1, ..., maxlevel_new}`
 #' @noRd
-util_standardise_ordinal_codes <- function(codes, maxlevel_old, maxlevel_new) {
+util_standardize_ordinal_codes <- function(codes, maxlevel_old, maxlevel_new) {
   util_expect_scalar(maxlevel_old, check_type = util_is_numeric_in(min = 2,
                                                                    whole_num = TRUE,
                                                                    finite = TRUE))

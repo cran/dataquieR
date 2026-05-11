@@ -45,9 +45,7 @@
 #'
 #' @inheritParams acc_distributions
 #'
-#' @importFrom ggplot2 ggplot geom_histogram scale_fill_manual coord_flip labs
-#'                     theme_minimal theme geom_bar geom_vline annotate
-#'                     scale_linetype_manual
+#' @importFrom ggplot2 ggplot geom_histogram scale_fill_manual coord_flip labs theme_minimal theme geom_bar geom_vline annotate scale_linetype_manual
 #' @importFrom stats setNames IQR complete.cases
 #' @importFrom grDevices colorRampPalette gray.colors
 #'
@@ -1302,7 +1300,7 @@ con_limit_deviations <- function(resp_vars = NULL,
                                 direction = "wide")
   sumdat_wide$"All.outside.limitsN" <- sumdat_wide$Number.below + sumdat_wide$Number.above
   sumdat_wide$"All.outside.limits%" <- round(sumdat_wide$"All.outside.limitsN"/
-                                               sumdat_wide$Number.samplesize,
+                                               sumdat_wide$Number.samplesize * 100,
                                              digits = 2)
   sumdat_wide$`Below.limits-N (%)`  <- paste0(sumdat_wide$Number.below,  " (", sumdat_wide$Percentage.below,")")
   sumdat_wide$`Within.limits-N (%)` <- paste0(sumdat_wide$Number.within, " (", sumdat_wide$Percentage.within,")")

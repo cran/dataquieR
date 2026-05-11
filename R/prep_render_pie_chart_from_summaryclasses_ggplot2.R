@@ -13,6 +13,8 @@
 #' @export
 prep_render_pie_chart_from_summaryclasses_ggplot2 <- function(data,
                                                       meta_data = "item_level") {
+  vars_to_include <- attr(data, "vars_to_include")
+  ssi <- (identical(vars_to_include, "ssi"))
   te <- topenv(parent.frame(1)) # see https://stackoverflow.com/a/27870803
   if (!(isNamespace(te) && getNamespaceName(te) == "dataquieR")) {
     lifecycle::deprecate_soft("2.1.0.9007",
@@ -154,9 +156,11 @@ prep_render_pie_chart_from_summaryclasses_ggplot2 <- function(data,
     #    util_error("Unkown grouping by %s", sQuote(grouped_by))
   }
 
-  subtitle <- paste(subtitle, sprintf(" -- %d of %d variables classified",
-                                      sum(data$value, na.rm = TRUE),
-                                      nrow(meta_data)
+  if (!ssi) # FIXME: also for ssi
+    subtitle <- paste(subtitle, sprintf(" -- %d of %d %s classified",
+                                        sum(data$value, na.rm = TRUE),
+                                        nrow(meta_data),
+                                        ifelse(ssi, "scales", "variables")
   )) # TODO: Maybe, we should not compute this here, but earlier.
 
   p <- p + ggtitle(

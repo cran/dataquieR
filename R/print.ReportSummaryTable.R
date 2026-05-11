@@ -583,14 +583,26 @@ print.ReportSummaryTable <- function(x, relative = lifecycle::deprecated(),
 
         attr(p, "from_ReportSummaryTable") <- TRUE
 
-        attr(p, "sizing_hints") <- list(
-          figure_type_id = "dot_mat",
-          rotated = is_flipped,
-          number_of_vars = nrow(x),
-          number_of_cat =  ncol(x)-2,
-          no_char_vars = no_char_vars,
-          no_char_cat = no_char_cat
-        )
+        if (!is.null(attr(x, "size_info")) &&
+            attr(x, "size_info") == "fix_size") {
+          attr(p, "sizing_hints") <- list(
+            figure_type_id = "dot_mat_fix",
+            rotated = FALSE,
+            number_of_vars = nrow(x),
+            number_of_cat =  3,
+            no_char_vars = no_char_vars,
+            no_char_cat = no_char_cat
+          )
+        } else {
+          attr(p, "sizing_hints") <- list(
+            figure_type_id = "dot_mat",
+            rotated = is_flipped,
+            number_of_vars = nrow(x),
+            number_of_cat =  ncol(x)-2,
+            no_char_vars = no_char_vars,
+            no_char_cat = no_char_cat
+          )
+        }
 
 
 

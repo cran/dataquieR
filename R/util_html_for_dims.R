@@ -108,6 +108,9 @@ util_html_for_dims <- function(report, use_plot_ly, template,
 util_html_for_dim <- function(results, cll, repsum, function_alias_map,
                               meta_data, label_col, use_plot_ly, dir,
                               template, wd) {
+  if (length(results) == 0) {
+    return(NULL)
+  }
   setwd(wd)
 
   cur_dm <- sub("_.*$", "", cll)
@@ -197,27 +200,6 @@ util_html_for_dim <- function(results, cll, repsum, function_alias_map,
         p$link <- NULL
         p
       })
-      # generates pages with navigation menu
-      # load concept to get current indicator links in reports
-      # TODO: the implementation view needs to be updated so that the columns
-      # "PublicID" and "Name" are included
-      concept <- util_get_concept_info("dqi")
-      concept <- concept[c("PublicID", "Name", "function_R")]
-      fkt2concept <- subset(concept,
-                            get("function_R") ==
-                              fkt)
-      # create link tags
-      get_links <- function(indicator_id, indicator_name) {
-        htmltools::tags$a(target="_blank",
-                          href= paste("https://dataquality.qihs.uni-greifswald.de/id/#", indicator_id, sep = ""),
-                          indicator_name)
-      }
-      # create un-ordered item list for each indicator
-      links <- mapply(get_links, indicator_id = fkt2concept$PublicID,
-                      indicator_name = fkt2concept$Name, SIMPLIFY = FALSE)
-      names(links) <- NULL
-      items <- lapply(links, htmltools::tags$li)
-      items_indicators <- htmltools::tags$ul(items)
       # call template
       page <- htmltools::htmlTemplate(
         system.file("templates", template, "single_indicator_with_menu.html",
@@ -225,11 +207,11 @@ util_html_for_dim <- function(results, cll, repsum, function_alias_map,
         page_menu = page_menu,
         cll = cll,
         fkt = fkt,
-        title = util_alias2caption(fkt, long = TRUE),
+        title = util_alias2caption(cll, long = TRUE),
         description = htmltools::HTML(util_function_description(fkt)),
         page = page,
         online_ref = util_online_ref(fkt),
-        items_indicators = items_indicators,
+        items_indicators = util_get_concept_links(fkt),
         sumplot = sumplot
       )
       # the "dim_" prefix is required because otherwise windows will ignore a file called con.html confusing it with a special device con:
@@ -239,15 +221,29 @@ util_html_for_dim <- function(results, cll, repsum, function_alias_map,
                     package = utils::packageName()),
         cll = cll,
         fkt = fkt,
-        title = util_alias2caption(fkt, long = TRUE),
+        title = util_alias2caption(cll, long = TRUE),
         description = util_function_description(fkt),
         page = page,
         online_ref = util_online_ref(fkt),
         sumplot = sumplot
       )
     }
+    #Check implementations and if there is a menu_location_report info, use it to distribute results
+    impls <- util_get_concept_info("implementations")
+    if(fkt %in% impls$function_R &&
+      impls[impls$function_R == fkt, "menu_location_report", drop = TRUE] != "") {
+      drop_down <- impls[impls$function_R == fkt, "menu_location_report", drop = TRUE]
+    }
+
+    title <- util_alias2caption(cll, long = TRUE);
+    title <- util_attach_attr(title,
+                     alternative_names =
+                       as.vector(unlist(c(cll,
+                                        util_alias2caption(cll,
+                                                           long = FALSE)))))
+
     r <- list( drop_down,
-               util_alias2caption(cll, long = TRUE),
+               title,
                fname,
                page)
     if (getOption("dataquieR.resume_print", dataquieR.resume_print_default)) {

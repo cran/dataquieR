@@ -134,10 +134,12 @@ util_acc_varcomp <-
   )
 
   util_correct_variable_use("co_vars",
-    allow_na = TRUE,
-    allow_more_than_one = TRUE,
-    allow_null = TRUE
-  )
+                            overwrite = TRUE,
+                            remove_not_found = TRUE,
+                            allow_na = TRUE,
+                            allow_more_than_one = TRUE,
+                            allow_null = TRUE
+                            )
 
   rvs <- resp_vars # TODO: Fix rvs <-> resp_vars
 

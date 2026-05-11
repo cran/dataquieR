@@ -289,7 +289,7 @@ print.StudyDataSlot <- function(x, ...) {
 #' @export
 print.DataSlot <- function(x, ...) {
   util_ensure_suggested("htmltools")
-  r <- util_html_table(x, output_format = "HTML")
+  r <- util_html_table(x)
   if (!is.null(r)) r <- htmltools::browsable(r)
   if (!("view" %in% names(list(...))) || (!identical(list(...)[["view"]],
                                                   FALSE))) {
@@ -314,7 +314,7 @@ print.DataSlot <- function(x, ...) {
 print.TableSlot <- function(x, ...) {
   util_ensure_suggested("htmltools")
   r <- util_make_data_slot_from_table_slot(x)
-  r <- util_html_table(r, output_format = "HTML")
+  r <- util_html_table(r)
   if (!is.null(r)) r <- htmltools::browsable(r)
   if (!("view" %in% names(list(...))) || (!identical(list(...)[["view"]],
                                                      FALSE)))
@@ -396,6 +396,7 @@ print.master_result <- function(x, template = "default", ...) {
                                                      package =
                                                        packageName()),
                                          document_ = TRUE,
+                                         by_report = FALSE,
                                          spage = doc,
                                          logo = NULL,
                                          menu = NULL,

@@ -9,23 +9,24 @@
 #'
 #' @noRd
 util_combine_res <- function(all_of_f) {
-
+  # getting the call names for all_of_f (subset of the report)
   cn <- unique(unlist(lapply(all_of_f, attr, "cn")))
   if (length(cn) != 1) {
     cn <- ""
   }
-
+  #remove the class dataquieR_result
   all_of_f <- lapply(all_of_f, function(x) {
     class(x) <- setdiff(class(x), "dataquieR_result")
     x
   })
 
-  # combine results for the indicator functions related overview
-
+  # combine results for the indicator functions related overview----
+  # extracting call names (all until first dot)
   nms <- sub("^([^\\.]*).*$", "\\1", names(all_of_f))
-
+  # combine only if results come from the same call
   util_stop_if_not(length(unique(nms)) == 1)
   cll <- nms[[1]]
+  # get the function name
   fkt <- util_map_by_largest_prefix(
     cll,
     haystack = util_all_ind_functions())
@@ -107,6 +108,7 @@ util_combine_res <- function(all_of_f) {
   plain_label_atts <- lapply(lapply(lapply(all_of_f[RESs & !NULLs],
                                            `[[`,
                                            slot), `[[`, "Variables"), attr, "plain_label")
+  #plain label should be only 1 or no plain_label(error), be characters, not NA
   if (all(vapply(plain_label_atts, length, FUN.VALUE = integer(1)) %in% 0:1) &&
       all(vapply(plain_label_atts, is.character, FUN.VALUE = logical(1)) == TRUE) &&
       !any(vapply(plain_label_atts, identical, NA_character_, FUN.VALUE = logical(1)))) {
@@ -119,6 +121,7 @@ util_combine_res <- function(all_of_f) {
     }
     plain_label_atts <- NULL
   }
+
   # combine results (ReportSummaryTable and tables)
   # select results according to the logical vectors, extract the corresponding slots, and then bind by row
   # then write the combined result to all_of_f keeping its original structure (a list of encapsulated lists)

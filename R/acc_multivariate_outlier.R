@@ -69,8 +69,7 @@
 #'                                     to exclude observations with outliers.
 #'
 #' @export
-#' @importFrom ggplot2 ggplot aes geom_path  scale_color_manual geom_point
-#'                     discrete_scale theme_minimal scale_alpha_manual
+#' @importFrom ggplot2 ggplot aes geom_path  scale_color_manual geom_point discrete_scale theme_minimal scale_alpha_manual
 #'
 #' @importFrom stats mahalanobis
 #' @importFrom rlang .data

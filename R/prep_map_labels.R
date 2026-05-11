@@ -55,6 +55,10 @@ prep_map_labels <- function(x, item_level = "item_level",
                             warn_ambiguous = FALSE,
                             meta_data_v2,
                             meta_data = item_level) {
+  if (!missing(x) && length(x) == 0) {
+    return(character(0))
+  }
+
   if (!missing(item_level) && !missing(meta_data) &&
       !identical(item_level, meta_data)) {
     util_error(c("You cannot provide both, %s as well as %s",

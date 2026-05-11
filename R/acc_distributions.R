@@ -56,10 +56,7 @@
 #'   - `SummaryPlotList`: [list] of [ggplot2::ggplot]s for each response variable in
 #'                    `resp_vars`.
 #'
-#' @importFrom ggplot2 ggplot aes geom_histogram geom_bar geom_vline stat_ecdf
-#'                     geom_segment scale_x_continuous scale_color_manual
-#'                     coord_flip theme_minimal theme element_text element_blank
-#'                     labs ylab
+#' @importFrom ggplot2 ggplot aes geom_histogram geom_bar geom_vline stat_ecdf geom_segment scale_x_continuous scale_color_manual coord_flip theme_minimal theme element_text element_blank labs ylab
 #' @importFrom stats na.omit
 #' @importFrom rlang .data
 #' @importFrom grDevices hcl.colors
@@ -809,6 +806,16 @@ util_as_plotly_acc_distributions <- function(res, ...) {
 
   res$SummaryPlot <- res$SummaryPlotList[[1]]
 
-  py <- util_ggplotly(res$SummaryPlot, ...)
+  withCallingHandlers(
+    {
+      py <- util_ggplotly(res$SummaryPlot, ...) # xxxx remove withCallingHandlers after removing xxxxx from util_histogram
+    },
+    warning = function(w) {
+      if (grepl("position_stack", conditionMessage(w), fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+
   plotly::layout(py, xaxis = list(tickangle = "auto"))
 }

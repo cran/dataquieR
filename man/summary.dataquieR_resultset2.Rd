@@ -33,7 +33,7 @@ Generate a report summary table
 \dontrun{
   util_html_table(summary(report),
        filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"),
-       is_matrix_table = TRUE, rotate_headers = TRUE, output_format = "HTML"
+       is_matrix_table = TRUE, rotate_headers = TRUE
   )
 }
 }

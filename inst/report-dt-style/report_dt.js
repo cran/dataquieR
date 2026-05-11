@@ -108,11 +108,12 @@ sort_vert_dt = function(data, type, row, meta) {
           return(1 * attributes.sort);
         } else {
           if (is_html(data)) data = escape_html(data);
-          var num_with_pct = new RegExp('^\\s*([0-9\\.]+)\\s+\\([0-9\\.]+%?\\)\\s*$');
-          if (match = num_with_pct.exec(data)) {
-            return(Number(match[[1]]))
+          var num_one_or_with_paren = new RegExp(
+            '^\\s*([0-9]+(?:[\\.,][0-9]+)?)\\s*(?:\\(\\s*[0-9]+(?:[\\.,][0-9]+)?\\s*%\\s*\\))?\\s*([a-zA-Z%]*)\\s*$'
+          );
+          if (match = num_one_or_with_paren.exec(data)) {
+            return Number(match[1].replace(",", "."));
           }
-
           return(data) // if html formated, remove this format, first
         }
      } else if (type == 'type') {
@@ -133,9 +134,11 @@ sort_vert_dt = function(data, type, row, meta) {
         while ((match = regex.exec(string))) {
             attributes[match[1]] = match[3];
         }
-        var num_with_pct = new RegExp('^\\s*([0-9\\.]+)\\s+\\([0-9\\.]+%?\\)\\s*$');
-        if (match = num_with_pct.exec(data)) {
-          return(Number(match[[1]]))
+        var num_one_or_with_paren = new RegExp(
+          '^\\s*([0-9]+(?:[\\.,][0-9]+)?)\\s*(?:\\(\\s*[0-9]+(?:[\\.,][0-9]+)?\\s*%\\s*\\))?\\s*([a-zA-Z%]*)\\s*$'
+        );
+        if (match = num_one_or_with_paren.exec(data)) {
+          return Number(match[1].replace(",", "."));
         }
         if (isNumeric(string.replace(/\s*%\s*$/, ""))) {
           return(Number(string.replace(/\s*%\s*$/, "")))
@@ -274,10 +277,25 @@ function highlightCells(that, cfg, sheet, stylesCount, stylesDict, colIndex, row
     }
     var tdNode = $(that.cell(rowIndex.dom2data[rowIdx], colIndex.dom2data[colIdx]).nodes()[0])
     if (rowIndex.dom2data[rowIdx] != undefined && tdNode.is(":visible")) {
-      var bgColor = tdNode.find("[style]").map(function() {
-        return(rgba2hex($(this).css("background-color")));
-      }).get()
-      // find out, if %
+    var bgColor = tdNode.map(function() {
+      var $td = $(this);
+      var $cand = $td.children().filter(function() {
+        var bg = $(this).css("background-color");
+        return bg && bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)";
+      });
+
+      if ($cand.length) {
+        var best = $cand.get().reduce(function(bestEl, el) {
+          var bestArea = ($(bestEl).outerWidth() || 0) * ($(bestEl).outerHeight() || 0);
+          var elArea = ($(el).outerWidth() || 0) * ($(el).outerHeight() || 0);
+          return elArea > bestArea ? el : bestEl;
+        });
+        return rgba2hex($(best).css("background-color"));
+      }
+
+      return rgba2hex($td.css("background-color"));
+    }).get();
+    // find out, if %
       var txt = tdNode.text().trim()
       var pct = txt.endsWith("%");
       if (pct) {
@@ -467,6 +485,28 @@ function computeColIndex(that) {
   }
 }
 
+function estimate_pdf_size(pdf) {
+    const the_table = pdf.content.find((x) => {return x.table != undefined;}).table.body;
+    const columns = [...Array(the_table[0].length).keys()].map(() => Array(0));
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const get_size = (row, text) => {
+        const fontsize = row === 0 ? 11 : 6;
+        ctx.font = `${fontsize}px arial`;
+        return ctx.measureText(text).width;
+    };
+    the_table.forEach( (val, row) => {
+        val.map( (inner, col) => {
+            columns[col].push(get_size(row, inner.text));
+        } );
+    })
+
+    const max_width = columns.map((v) => v.reduce((p,c) => Math.max(p,c))).reduce((p, c) => p + c, 0);
+    console.log(`calculated width: ${max_width}`);
+    return max_width * 0.9;
+}
+
+
 function customize_pdf(pdf, cfg, that) {
   var colIndex = computeColIndex(that);
   var rowIndex = computeRowIndex(that)
@@ -496,7 +536,14 @@ function customize_pdf(pdf, cfg, that) {
   })
   pdf.styles.tableHeader.fontSize = 8;
   pdf.defaultStyle.fontSize = 6;
-  pdf.pageSize = "A3"
+  const width = estimate_pdf_size(pdf);
+  //A3 in postscript points. see https://pdfkit.org/docs/paper_sizes.html
+  if (width > 1190.55) {
+      pdf.pageSize = {width: width, height: 841.89};
+  } else {
+      pdf.pageSize = "A3"
+  }
+  console.log(pdf);
 }
 
 function customize_excel(xlsx, cfg, that) {
@@ -611,7 +658,62 @@ function dataquieRcolorize(config) {
     }
 }
 
+function util_dt_sync_filter_alignment(rootEl) {
+  if (!rootEl) return;
+
+  // Accept either a DataTables API instance or a DOM root.
+  var api = null;
+  try {
+    if (rootEl.table && typeof rootEl.table === "function") api = rootEl;
+  } catch (e) {}
+
+  if (!api) {
+    var $root = $(rootEl);
+    var $tbl = $root.is("table") ? $root : $root.find("table").first();
+    if (!$tbl.length) return;
+    try { api = $tbl.DataTable(); } catch (e) { return; }
+  }
+
+  var container = api.table().container();
+  if (!container) return;
+
+  $(container).find("table thead").each(function () {
+    var thead = this;
+
+    // Row 0 = header labels (TH), Row 1 = filters (TD in DT::filter='top')
+    var headerRow = thead.querySelector("tr");
+    if (!headerRow) return;
+
+    var headerCells = headerRow.querySelectorAll("th");
+    if (!headerCells || !headerCells.length) return;
+
+    // Find the filter row: the first TR in THEAD that contains an input
+    var filterRow = null;
+    var rows = thead.querySelectorAll("tr");
+    for (var r = 0; r < rows.length; r++) {
+      if (rows[r].querySelector("input")) { filterRow = rows[r]; break; }
+    }
+    if (!filterRow) return;
+
+    // Filter cells can be TD (DT) or TH (some setups)
+    var filterCells = filterRow.querySelectorAll("td, th");
+    if (!filterCells || !filterCells.length) return;
+
+    var n = Math.min(headerCells.length, filterCells.length);
+    for (var i = 0; i < n; i++) {
+      var input = filterCells[i].querySelector("input");
+      if (!input) continue;
+
+      var align = window.getComputedStyle(headerCells[i]).textAlign;
+      if (align) input.style.textAlign = align;
+    }
+  });
+}
+
 function dataquieRdtCallback(config) {
+  util_dt_sync_filter_alignment(config.table);
+  setTimeout(function () { util_dt_sync_filter_alignment(config.table); }, 0);
+
   if (config.initialColTag != null)
     config.table.button(config.initialColTag + ":name").trigger()
   if (config.initSearch != null)
@@ -635,4 +737,30 @@ $(function() {
       sessionStorage.setItem(dt_id + ".ActiveFilter", filterText);
     })
   })
-})
+});
+
+(function ($) {
+  var comboDown = false;
+
+  function isComboPressed(e) {
+    var isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+    return e.altKey && e.shiftKey && (isMac ? e.metaKey : e.ctrlKey);
+  }
+
+  $(document).on("keydown", function (e) {
+    if (comboDown) return;
+    if (isComboPressed(e)) {
+      comboDown = true;
+      $("button.dq-hidden-col").addClass("dq-show").hide().fadeIn(150);
+    }
+  });
+
+  $(document).on("keyup", function () {
+    if (!comboDown) return;
+    comboDown = false;
+    $("button.dq-hidden-col").fadeOut(150, function () {
+      $(this).removeClass("dq-show");
+    });
+  });
+
+})(jQuery);

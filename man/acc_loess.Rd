@@ -13,7 +13,8 @@ acc_loess(
   study_data,
   label_col = VAR_NAMES,
   item_level = "item_level",
-  min_obs_in_subgroup = 30,
+  min_obs_in_subgroup = getOption("dataquieR.acc_loess.min_obs_in_subgroup",
+    dataquieR.acc_loess.min_obs_in_subgroup_default),
   resolution = 80,
   comparison_lines = list(type = c("mean/sd", "quartiles"), color = "grey30", linetype =
     2, sd_factor = 0.5),
@@ -73,7 +74,7 @@ lines are to be compared. Can be mean +/- 0.5
 standard deviation (the factor can be specified
 differently in \code{sd_factor}) or quartiles
 (Q1, Q2, and Q3). Arguments \code{color} and
-\code{linetype} are passed to \code{\link[ggplot2:geom_path]{ggplot2::geom_line()}}.}
+\code{linetype} are passed to \code{\link[ggplot2:geom_line]{ggplot2::geom_line()}}.}
 
 \item{mark_time_points}{\link{logical} mark time points with observations
 (caution, there may be many marks)}

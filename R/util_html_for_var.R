@@ -63,31 +63,68 @@ util_html_for_var <- function(results, cur_var, use_plot_ly, template,
 
     texts <- vapply(rs[, 1, drop = TRUE],
                     util_alias2caption, long = TRUE, FUN.VALUE = character(1))
-    links <- vapply(mapply(href =
-                             gsub("^.*window.location = &quot;(.*?)&quot;.*$",
-                                  "\\1",
-                                  gsub("^.*href=\"(.*?)\".*$", "\\1",
-                                       rs[, 2, drop = TRUE])),
-                           # rs[, 1, drop = TRUE],
-                           text = texts,
-                    SIMPLIFY = FALSE, FUN = function(href, text) {
-                      # if (text == "Total") {
-                      #   return(text)
-                      # }
-                      # as.character(util_generate_anchor_link(cur_var,
-                      #                           callname = href,
-                      #                           order_context = "variable",
-                      #                           title = text))
-                      paste0("<a href=\"", href, "\">", text, "</a>")
-                    }), FUN = paste0, collapse = "", FUN.VALUE = character(1))
+
+    x <- rs[, 2, drop = TRUE]
+
+    # 1) href="..."
+    href1 <- sub('^.*href="([^"]+)".*$', "\\1", x)
+
+    # nur echte Treffer behalten
+    href1[href1 == x] <- NA_character_
+
+    # 2) window.location = &quot;...&quot;
+    href2 <- sub(
+      '^.*window\\.location\\s*=\\s*&quot;([^&]+)&quot;.*$',
+      "\\1",
+      x
+    )
+    href2[href2 == x] <- NA_character_
+
+    # 3) showDataquieRResult(&quot;...&quot;, &quot;TARGET&quot;, &quot;...&quot;)
+    href3 <- sub(
+      '^.*showDataquieRResult\\(&quot;[^&]*&quot;\\s*,\\s*&quot;([^&]+)&quot;.*$',
+      "\\1",
+      x
+    )
+    href3[href3 == x] <- NA_character_
+
+    # Fallback-Kaskade pro Zeile
+    href_final <- ifelse(
+      !is.na(href1), href1,
+      ifelse(!is.na(href2), href2, href3)
+    )
+
+    links <- vapply(
+      mapply(
+        href = href_final,
+        text = texts,
+        no_res = grepl("No results available", rs[, 2]),
+        SIMPLIFY = FALSE,
+        FUN = function(href, text, no_res) {
+          if (any(grepl(".", href, fixed = TRUE)) && !no_res) {
+            paste0("<a href=\"", href, "\">", text, "</a>")
+          } else {
+            paste0("<a style=\"color:black;cursor:default;text-decoration:none;\">", text, "</a>")
+          }
+        }
+      ),
+      FUN = paste0, collapse = "",
+      FUN.VALUE = character(1)
+    )
+
     rs[, 1] <- links
+
+    # Remove onclick from a elements
+    rs[, 2] <- gsub("(<a\\b[^>]*?)\\s+onclick\\s*=\\s*(['\"]).*?\\2", "\\1", rs[, 2], perl = TRUE, ignore.case = TRUE)
+    rs <- rs[!is.na(href3), , FALSE]
+
     if (!!prod(dim(rs))) {
       rep_sum_el <- htmltools::browsable(util_html_table(rs, filter = "top", options = list(scrollCollapse = TRUE, scrollY = "75vh"),
                                            is_matrix_table = TRUE, rotate_headers = TRUE,
                                            meta_data = this$meta_data,
                                            label_col = this$label_col,
                                            dl_fn = "DQ Report Summary",
-                                           output_format = "HTML", link_variables = FALSE, colnames = c(" ", " ")))
+                                           link_variables = FALSE, colnames = c(" ", " ")))
     }
   }
 
@@ -151,7 +188,11 @@ util_html_for_var <- function(results, cur_var, use_plot_ly, template,
             htmltools::h5(paste(unique(c(cll, fkt)),
                                 collapse = ": ")),
             htmltools::HTML(" -->"),
-            htmltools::div(class="infobutton", htmltools::HTML(description))),
+            htmltools::div(class="infobutton", htmltools::tagList(
+                           htmltools::HTML(description),
+                           htmltools::h6("Concept relations:"),
+                           htmltools::p(util_get_concept_links(fkt))
+                           ))),
           output)
       } else {
         svp[[cll]] <- NULL
@@ -192,7 +233,27 @@ util_html_for_var <- function(results, cur_var, use_plot_ly, template,
   cur_md <- meta_data[meta_data[[label_col]] == cur_var,
                       , FALSE] # subset the metadata for the current variable to show it in the report
 
-  md_info <- htmltools::tagList(
+  { # link tables to their representation in this report-site
+    cur_md[, !grepl("_TABLE$", colnames(cur_md))] <-
+      util_df_escape(cur_md[, !grepl("_TABLE$", colnames(cur_md)),
+                            drop = FALSE])
+
+    for (cn in grep("_TABLE$", colnames(cur_md), value = TRUE)) {
+
+      cur_md[!util_empty(cur_md[[cn]]), cn] <- vapply(FUN.VALUE = character(1),
+                                                      cur_md[!util_empty(cur_md[[cn]]), cn],
+                                                      FUN = function(tn) {
+                                                        paste(as.character(htmltools::a(href = paste0(
+                                                          prep_link_escape(tn, html = TRUE), ".html"), tn)),
+                                                          collapse = "")
+                                                      }
+      )
+
+    }
+
+  }
+
+  md_info <- htmltools::tagList(## link tables
     anchor = util_generate_anchor_tag(cur_var, "meta_data", "variable"),
     link = util_generate_anchor_link(cur_var, "meta_data", "variable"), # these links are moved later
     htmltools::h1("Item-level Metadata"),
@@ -202,8 +263,7 @@ util_html_for_var <- function(results, cur_var, use_plot_ly, template,
                     meta_data = meta_data,
                     label_col = label_col,
                     copy_row_names_to_column = FALSE,
-                    dl_fn = paste("Item-level_Metadata_", cur_var),
-                    output_format = "HTML") # ignore row names (created by data.frame)
+                    dl_fn = paste("Item-level_Metadata_", cur_var))
   )
 
   svp <- c(list(rep_sum_el = list("", list(rep_sum_el))), # add the rep_sum_el info to the svp keeping the same structure of svp
@@ -229,7 +289,10 @@ util_html_for_var <- function(results, cur_var, use_plot_ly, template,
 
   add_anchor <- util_generate_anchor_tag(cur_var, "", "variable")
 
-  page <- htmltools::tagList(add_anchor, title, body)
+  is_var_page_js <- htmltools::tags$script(type = "text/javascript",
+                                           htmltools::HTML("window.is_svp = true;"))
+
+  page <- htmltools::tagList(is_var_page_js, add_anchor, title, body)
 
   title <- prep_get_labels(cur_var,
                            meta_data = meta_data,
@@ -245,7 +308,13 @@ util_html_for_var <- function(results, cur_var, use_plot_ly, template,
 
 
   r <- list(list("Single Variables",
-                 title,
+                 util_attach_attr(title,
+                                  alternative_names =
+                                    as.vector(unlist(
+                                      cur_md[, startsWith(colnames(cur_md), LABEL) |
+                                               startsWith(colnames(cur_md), LONG_LABEL) |
+                                               colnames(cur_md) == VAR_NAMES,
+                                             drop = TRUE]))),
                  fname,
                  page))
 

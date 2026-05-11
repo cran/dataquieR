@@ -13,12 +13,12 @@ nothing
 Clear data frame cache
 }
 \seealso{
-Other data-frame-cache: 
-\code{\link{prep_add_data_frames}()},
-\code{\link{prep_get_data_frame}()},
-\code{\link{prep_list_dataframes}()},
-\code{\link{prep_load_folder_with_metadata}()},
-\code{\link{prep_load_workbook_like_file}()},
-\code{\link{prep_remove_from_cache}()}
+Other data-frame-cache:
+\code{\link[=prep_add_data_frames]{prep_add_data_frames()}},
+\code{\link[=prep_get_data_frame]{prep_get_data_frame()}},
+\code{\link[=prep_list_dataframes]{prep_list_dataframes()}},
+\code{\link[=prep_load_folder_with_metadata]{prep_load_folder_with_metadata()}},
+\code{\link[=prep_load_workbook_like_file]{prep_load_workbook_like_file()}},
+\code{\link[=prep_remove_from_cache]{prep_remove_from_cache()}}
 }
 \concept{data-frame-cache}

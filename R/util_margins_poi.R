@@ -28,11 +28,7 @@
 #'
 #' @return A table and a matching plot.
 #'
-#' @importFrom ggplot2 ggplot geom_pointrange geom_text
-#'                     element_blank element_text
-#'                     geom_density coord_flip annotate
-#'                     ggplot_build theme_minimal labs theme scale_colour_manual
-#'                     geom_count aes geom_vline geom_hline
+#' @importFrom ggplot2 ggplot geom_pointrange geom_text element_blank element_text geom_density coord_flip annotate ggplot_build theme_minimal labs theme scale_colour_manual geom_count aes geom_vline geom_hline
 #' @import patchwork
 #'
 #' @noRd
@@ -165,7 +161,7 @@ util_margins_poi <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
            aes(x = .data[[group_vars]],
                y = round(.data[["resp_var_adj"]]))) +
       geom_count(aes(alpha = 0.9), color = "gray") +
-      geom_pointrange(
+      util_geom_pointrange_robust(
         data = res_df, aes(
           x = .data[[group_vars]],
           y = margins,
@@ -191,23 +187,37 @@ util_margins_poi <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
     res_df = res_df,
     warn_code = warn_code)
 
+  y_lims <- range(c(round(.ds00[["resp_var_adj"]]), pars, pars + offs),
+                  finite = TRUE)
+
+  p1 <- util_create_lean_ggplot(
+    p1 +
+      ggplot2::coord_cartesian(ylim = y_lims,
+                                                            clip = "off"),
+    p1 = p1,
+    y_lims = y_lims)
+
   if (include_numbers_in_figures) {
-    .ds01 <- summary_ds[, group_vars]
-    .ds02 <- ds1[, "resp_var_adj", drop = FALSE]
     p1 <- util_create_lean_ggplot(p1 +
                                     geom_text(data = summary_ds,
-                                              aes(x = .ds01,
-                                                  y = max(round(.ds02)) + 1.2,
+                                              aes(x = .data[[group_vars]],
+                                                  y = Inf,
                                                   label = sample_size),
-                                              hjust = 0.5, angle = 90) +
+                                              inherit.aes = FALSE,
+                                              hjust = 0.5,
+                                              vjust = -0.2,
+                                              angle = 90) +
                                     annotate("text",
                                              x = 0.5,
-                                             y = max(round(.ds02)) + 1.2,
-                                             label = "N"),
+                                             y = Inf,
+                                             label = "N",
+                                             vjust = -0.2) +
+                                    theme(plot.margin = ggplot2::unit(c(8, 0, 2, 0),
+                                                                      "mm")),
                                   p1 = p1,
                                   summary_ds = summary_ds,
-                                  .ds01 = .ds01,
-                                  .ds02 = .ds02)
+                                  group_vars = group_vars,
+                                  y_lims = y_lims)
   }
 
   if (threshold_type != "none") {
@@ -238,7 +248,6 @@ util_margins_poi <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
 
   aty <- mean(range(yvals))
 
-
   p2 <- util_create_lean_ggplot(
     ggplot(.ds03,
                aes(round(.data[["resp_var_adj"]]))) +
@@ -246,15 +255,12 @@ util_margins_poi <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
     coord_flip() + # util_lazy_add_coord(p, fli)
     theme_minimal() +
     labs(x = NULL, y = NULL) +
-    ggplot2::xlim(c(min(min(round(.ds03)), pars),
-                    max(max(round(.ds03)) + 1.2,
-                        pars + offs))) +
+    ggplot2::xlim(y_lims) +
     theme(axis.text.y = element_blank(),
           axis.text.x = element_blank(),
           text = element_text(size = 16)),
     .ds03 = .ds03,
-    pars = pars,
-    offs = offs)
+    y_lims = y_lims)
 
   if (threshold_type != "none") {
     p2 <- util_create_lean_ggplot(p2 +

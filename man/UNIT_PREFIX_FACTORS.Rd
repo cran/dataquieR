@@ -2,7 +2,7 @@
 % Please edit documentation in R/000_globs.R
 \name{UNIT_PREFIX_FACTORS}
 \alias{UNIT_PREFIX_FACTORS}
-\title{Factors related to unit prefixes \code{\link[units:valid_udunits]{units::valid_udunits_prefixes()}}}
+\title{Factors related to unit prefixes \code{\link[units:valid_udunits_prefixes]{units::valid_udunits_prefixes()}}}
 \description{
 named \code{numeric} vector
 }
@@ -10,7 +10,7 @@ named \code{numeric} vector
 translates k, m, M, c, ... to 1000, 0.001, ...
 }
 \seealso{
-Other UNITS: 
+Other UNITS:
 \code{\link{UNITS}},
 \code{\link{UNIT_IS_COUNT}},
 \code{\link{UNIT_PREFIXES}},

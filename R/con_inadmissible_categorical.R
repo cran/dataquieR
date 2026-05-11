@@ -400,7 +400,16 @@ con_inadmissible_categorical <- function(resp_vars = NULL,
 
   attr(sumdf1, "description") <- text_to_display
 
-  # TODO EK: Use util_pretty_vector_string for SummaryData to avoid very long strings
+  #Add new attribute to the columns of SummaryData to define the datatype of each column
+  attr(sumdf1$Variables, DATA_TYPE) <- DATA_TYPES$STRING
+  attr(sumdf1$OBSERVED_CATEGORIES, DATA_TYPE) <- DATA_TYPES$STRING
+  attr(sumdf1$DEFINED_CATEGORIES, DATA_TYPE) <- DATA_TYPES$STRING
+  attr(sumdf1$NON_MATCHING, DATA_TYPE) <- DATA_TYPES$STRING
+  attr(sumdf1$NON_MATCHING_N, DATA_TYPE) <- DATA_TYPES$INTEGER
+  attr(sumdf1$NON_MATCHING_N_PER_CATEGORY, DATA_TYPE) <- DATA_TYPES$STRING
+
+
+   # TODO EK: Use util_pretty_vector_string for SummaryData to avoid very long strings
   # Examples:
   # util_pretty_vector_string(letters, n_max = 30)
   # util_pretty_vector_string(letters, n_max = 3)

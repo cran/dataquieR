@@ -50,7 +50,7 @@ util_expect_scalar <- function(arg_name,
                                allow_na = FALSE,
                                min_length = -Inf,
                                max_length = Inf,
-                               check_type,# IDEA: attr(check_type, "error_message") as default for error_message and some prepared predicates with reasonable standard messages for standard case like is.character or is.numeric (or maybe, for the most simple ones, list them here)
+                               check_type,
                                convert_if_possible,
                                conversion_may_replace_NA = FALSE,
                                dont_assign = FALSE,
@@ -246,9 +246,25 @@ util_expect_scalar <- function(arg_name,
         util_error(error_message,
                    applicability_problem = TRUE)
       } else {
-        util_error("Argument %s must match the predicate %s",
+        if (!is.null(error_msg <- attr(check_type, "error_msg"))) {
+          msg <- error_msg
+        } else if (identical(check_type, is.character)) {
+          msg <- "be characters"
+        } else if (identical(check_type, is.integer)) {
+          msg <- "be integer numbers"
+        } else if (identical(check_type, is.double)) {
+          msg <- "be floating point"
+        } else if (identical(check_type, is.numeric)) {
+          msg <- "be numeric"
+        } else if (identical(check_type, is.logical)) {
+          msg <- "be logical"
+        } else {
+          msg <- sprintf("match the predicate %s",
+                  dQuote(paste(head(deparse(check_type)), collapse = " ")))
+        }
+        util_error("Argument %s must %s",
                    arg_name,
-                   dQuote(paste(head(deparse(check_type)), collapse = " ")),
+                   msg,
                    applicability_problem = TRUE)
       }
     }

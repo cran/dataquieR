@@ -51,7 +51,8 @@ util_add_computed_internals <- function(meta_data_item_computation,
     rule_template <- rule_info$rule_template[1]
     data_preparation <- rule_info$data_preparation[1]
     extra_col <- rule_info$extra_arguments[1]
-    human_prefix <- rule_info$long_label[1]
+    human_prefix_from_result_caption <- rule_info$result_caption[1]
+    human_prefix_from_menu_label <- rule_info$menu_label[1]
     scale_level <- SCALE_LEVELS[[rule_info$scale_level[1]]]
     data_type <- DATA_TYPES[[rule_info$data_type[1]]]
 
@@ -61,7 +62,7 @@ util_add_computed_internals <- function(meta_data_item_computation,
     e$given_llab <- character(0)
     e$given_seg <- character(0)
 
-    short_prefix <- gsub("[^A-Z0-9_]", "", toupper(ssi_col))
+    tech_prefix <- gsub("[^A-Z0-9_]", "", toupper(ssi_col))
 
     to_add <- lapply(rows, function(rw, e) {
       parsed <- suppressWarnings(
@@ -100,13 +101,13 @@ util_add_computed_internals <- function(meta_data_item_computation,
 
       study_segment <- util_free_varname(
         meta_data,
-        paste0("COMPUTED_", short_prefix),
+        paste0("COMPUTED_", tech_prefix),
         target = STUDY_SEGMENT,
         also_not = e$given_seg
       )
       e$given_seg <- c(e$given_seg, study_segment)
 
-      prefix <- short_prefix
+      prefix <- tech_prefix
       if (!!length(scale_name) && !util_empty(scale_name)) {
         prefix <- paste0(prefix, "_", scale_name)
       } else if (!!length(check_label) && !util_empty(check_label)) {
@@ -119,19 +120,21 @@ util_add_computed_internals <- function(meta_data_item_computation,
       )
       e$given <- c(e$given, var_names)
 
-      prefix <- paste0(short_prefix, ": ")
+      prefix <- paste0(human_prefix_from_menu_label, ": ")
       if (!!length(scale_name) && !util_empty(scale_name)) {
         prefix <- paste0(prefix, scale_name)
-      }
-      if (!!length(check_label) && !util_empty(check_label)) {
-        prefix <- paste0(prefix, " (", check_label, ")")
+        if (!!length(check_label) && !util_empty(check_label)) {
+          prefix <- paste0(prefix, " (", check_label, ")")
+        }
+      } else if (!!length(check_label) && !util_empty(check_label)) {
+        prefix <- paste0(prefix, check_label)
       }
       label <- util_free_varname(
         meta_data, prefix, target = LABEL, also_not = e$given_lab
       )
       e$given_lab <- c(e$given_lab, var_names)
 
-      long_prefix <- human_prefix
+      long_prefix <- human_prefix_from_result_caption
       if (!!length(scale_name) && !util_empty(scale_name)) {
         long_prefix <- paste0(long_prefix, " for ", scale_name)
       }
@@ -215,7 +218,8 @@ util_add_computed_internals <- function(meta_data_item_computation,
           HARD_LIMITS,
           LABEL,
           LONG_LABEL,
-          STUDY_SEGMENT
+          STUDY_SEGMENT,
+          CHECK_ID
         ))])
         names(row) <- toupper(names(row))
         if (!is.null(label_col) &&

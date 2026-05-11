@@ -272,6 +272,35 @@ int_all_datastructure_segment <- function(study_data,
 
   rm(SegmentData1)
 
+  #Add new attribute to the columns of SummaryData to define the datatype of each column
+  strings_col <- c("Segment",
+               "Unexpected data record count N (%)",
+               "Unexpected data record set N (%)",
+               "Duplicates N (%)",
+               "Unexp. Variables",
+               "Unexpected data element set N (%)")
+  strings_col <- intersect(strings_col, colnames(SegmentData))
+
+  integers_col <- c("Unexpected data record count (Grading)",
+                "Unexpected data record set (Grading)",
+                "Duplicates (Grading)",
+                "Unexpected data element set (Grading)")
+  integers_col<- intersect(integers_col, colnames(SegmentData))
+
+  # Assign attributes in bulk
+  if (length(strings_col) > 0 ) {
+    SegmentData[strings_col] <- lapply(SegmentData[strings_col],
+                                   function(x) {
+                                     attr(x, DATA_TYPE) <- DATA_TYPES$STRING; x
+                                   })
+  }
+  if (length(integers_col) > 0) {
+    SegmentData[integers_col] <- lapply(SegmentData[integers_col],
+                                    function(x) {
+                                      attr(x, DATA_TYPE) <- DATA_TYPES$INTEGER; x
+                                    })
+  }
+
   return(list(
     SegmentTable = SegmentTable,
     SegmentData = SegmentData,

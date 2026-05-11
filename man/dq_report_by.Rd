@@ -33,6 +33,7 @@ dq_report_by(
   output_dir = NULL,
   input_dir = NULL,
   also_print = FALSE,
+  force_overwrite = FALSE,
   disable_plotly = FALSE,
   view = TRUE,
   meta_data = item_level,
@@ -40,7 +41,12 @@ dq_report_by(
   `cross-item_level`,
   segment_level,
   dataframe_level,
-  item_computation_level
+  item_computation_level,
+  author = prep_get_user_name(),
+  title = ifelse(is.null(output_dir), "Data quality report Bundle",
+    paste0(basename(output_dir))),
+  subtitle = as.character(Sys.Date()),
+  user_info = NULL
 )
 }
 \arguments{
@@ -215,6 +221,9 @@ in this directory if no path is provided}
 \code{\link[=print.dataquieR_resultset2]{print.dataquieR_resultset2()}}
 written to the path \code{output_dir}}
 
+\item{force_overwrite}{\link{logical} force to overwrite \code{output_dir}, even if it
+exists}
+
 \item{disable_plotly}{\link{logical} do not use \code{plotly}, even if installed}
 
 \item{view}{\link{logical} open the returned report}
@@ -223,6 +232,8 @@ written to the path \code{output_dir}}
 
 \item{cross_item_level}{\link{data.frame} alias for \code{meta_data_cross_item}}
 
+\item{`cross-item_level`}{\link{data.frame} alias for \code{meta_data_cross_item}}
+
 \item{segment_level}{\link{data.frame} alias for \code{meta_data_segment}}
 
 \item{dataframe_level}{\link{data.frame} alias for \code{meta_data_dataframe}}
@@ -230,7 +241,16 @@ written to the path \code{output_dir}}
 \item{item_computation_level}{\link{data.frame} alias for
 \code{meta_data_item_computation}}
 
-\item{`cross-item_level`}{\link{data.frame} alias for \code{meta_data_cross_item}}
+\item{author}{\link{character} author for the report bundle's documents.}
+
+\item{title}{\link{character} optional argument to specify the title for
+the data quality report bundle}
+
+\item{subtitle}{\link{character} optional argument to specify a subtitle for
+the data quality report bundle}
+
+\item{user_info}{\link{list} additional info stored with the report bundle,
+e.g., comments, title, ...}
 }
 \value{
 A named \link{list} of named \link{list}s of \link{dq_report2} reports, returned

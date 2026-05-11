@@ -32,9 +32,7 @@
 #'
 #' @return A table and a matching plot.
 #'
-#' @importFrom ggplot2 ggplot geom_point geom_pointrange
-#'                     theme_minimal theme labs xlab ylab ggtitle
-#'                     scale_colour_manual aes geom_vline
+#' @importFrom ggplot2 ggplot geom_point geom_pointrange theme_minimal theme labs xlab ylab ggtitle scale_colour_manual aes geom_vline
 #' @importFrom stats qnorm p.adjust
 #'
 #' @noRd
@@ -59,6 +57,8 @@ util_margins_ord <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
   #                           need_type = "!float",
   #                           need_scale = "nominal | ordinal")
   # util_correct_variable_use("co_vars",
+  # overwrite = TRUE,
+  # remove_not_found = TRUE,
   #                           allow_na = TRUE,
   #                           allow_more_than_one = TRUE,
   #                           allow_null = TRUE)
@@ -200,7 +200,7 @@ util_margins_ord <- function(resp_vars = NULL, group_vars = NULL, co_vars = NULL
       geom_vline(xintercept = sqrt(as.numeric(ordinal::VarCorr(fit1)[[group_vars]])),
                  linetype = 2,
                  col = "gray60") +
-      geom_pointrange(aes(xmin = .data[["lower"]],
+      util_geom_pointrange_robust(aes(xmin = .data[["lower"]],
                           xmax = .data[["upper"]])) +
       geom_point() +
       scale_color_manual(values = warn_code,

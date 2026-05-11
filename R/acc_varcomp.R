@@ -94,11 +94,25 @@ acc_varcomp <- function(resp_vars = NULL,
                             need_scale = "!na")
 
   util_correct_variable_use("group_vars",
-                            allow_all_obs_na = FALSE,
+                            allow_na = TRUE,
+                            allow_all_obs_na = TRUE,
                             need_type = "!float",
                             need_scale = "nominal | ordinal")
 
+  if (length(unique(setdiff(group_vars, NA_character_))) != 1) {
+    util_error("Missing entries not allowed in argument %s",
+               "group_vars",
+               applicability_problem = TRUE,
+               intrinsic_applicability_problem = .called_in_pipeline) #TODO: clean up, find a way not to call this function from pipeline at all if there is no group_vr
+  }
+ #util_correct_variable_use("group_vars",
+ #                           allow_all_obs_na = FALSE,
+ #                           need_type = "!float",
+ #                           need_scale = "nominal | ordinal")
+
   util_correct_variable_use("co_vars",
+                            overwrite = TRUE,
+                            remove_not_found = TRUE,
                             allow_na = TRUE,
                             allow_more_than_one = TRUE,
                             allow_null = TRUE)

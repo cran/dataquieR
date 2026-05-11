@@ -136,34 +136,36 @@ util_pretty_print <- function(dqr, nm, is_single_var,
                                      == fkt, "Reportoutputs")[["Reportoutputs"]]
     if (length(outputs) == 1 && !util_empty(outputs)) {
       outputs <- names(util_parse_assignments(outputs)) ###
-      if (is_single_var) {
-        outputs <- grep("(I)",
-                        outputs,
-                        value = TRUE,
-                        invert = TRUE,
-                        fixed = TRUE)
-      } else {
-        outputs <- grep("(V)",
-                        outputs,
-                        value = TRUE,
-                        invert = TRUE,
-                        fixed = TRUE)
+      if (!is_ssi) {
+        if (is_single_var) {
+          outputs <- grep("(I)",
+                          outputs,
+                          value = TRUE,
+                          invert = TRUE,
+                          fixed = TRUE)
+        } else {
+          outputs <- grep("(V)",
+                          outputs,
+                          value = TRUE,
+                          invert = TRUE,
+                          fixed = TRUE)
+        }
+        outputs <- gsub("(V)", "", outputs, fixed = TRUE)
+        outputs <- gsub("(I)", "", outputs, fixed = TRUE)
+        remaining_slots <- intersect(outputs, names(dqr))
+        if (length(remaining_slots) == 0) {
+          util_message(
+            "Removed all outputs of %s according to %s",
+            dQuote(fkt),
+            sQuote("concept | implementations | Reportoutputs"),
+            level = 10
+          )
+        }
+        for (.slot in setdiff(names(dqr), remaining_slots)) {
+          dqr[[.slot]] <- NULL
+        }
+        # dqr <- dqr[remaining_slots] loosses attrbiutes
       }
-      outputs <- gsub("(V)", "", outputs, fixed = TRUE)
-      outputs <- gsub("(I)", "", outputs, fixed = TRUE)
-      remaining_slots <- intersect(outputs, names(dqr))
-      if (length(remaining_slots) == 0) {
-        util_message(
-          "Removed all outputs of %s according to %s",
-          dQuote(fkt),
-          sQuote("concept | implementations | Reportoutputs"),
-          level = 10
-        )
-      }
-      for (.slot in setdiff(names(dqr), remaining_slots)) {
-        dqr[[.slot]] <- NULL
-      }
-      # dqr <- dqr[remaining_slots] loosses attrbiutes
     }
 
     slot <- # stores the name of the result object returned by the indicator function being displayed
@@ -234,7 +236,9 @@ util_pretty_print <- function(dqr, nm, is_single_var,
                         } else{
                           .nm <- nm
                         }
-                        util_pretty_print(list(SummaryPlot = pl_i),
+                        as_py_i <- attr(dqr, "as_plotly")
+                        util_pretty_print(util_attach_attr(
+                          list(SummaryPlot = pl_i), as_plotly = as_py_i),
                                           nm =
                                             paste0(.nm, ".", pl_nm),
                                           #paste0("", head(names(pl_nm), 1)), # avoid the same name, iframe FIG_.html won't work, if > 1
@@ -340,68 +344,7 @@ util_pretty_print <- function(dqr, nm, is_single_var,
                            TRUE)) {
               x <- util_adjust_geom_text_for_plotly(x)
             }
-            x <- plotly::layout(x,
-                                autosize = !FALSE,
-                                margin = list(autoexpand = !FALSE,
-                                              r = 200,
-                                              b = 100)
-            )
-            x <- plotly::config(x, # TODO: generalize and combine with util_plot_figure_plotly
-                                responsive = TRUE,
-                                autosizable = TRUE,
-                                fillFrame = TRUE,
-                                displaylogo = FALSE,
-                                modeBarButtonsToRemove = list("toImage"),
-                                modeBarButtonsToAdd =
-                                  list(
-                                    list(
-                                      name = "Save as image",
-                                      icon = htmlwidgets::JS("Plotly.Icons.camera"),
-                                      click = htmlwidgets::JS(paste(sep = "\n",
-                                                                    "function(gd) {",
-                                                                    "  plotlyDL(gd)",
-                                                                    "}"))
-                                    ),
-                                    list(
-                                      name = "Restore initial Size",
-                                      icon =
-                                        htmlwidgets::JS("PlotlyIconshomeRED()"),
-                                      click =
-                                        htmlwidgets::JS(
-                                          paste(sep = "\n",
-                                                "function() {",
-                                                "   if (togglePlotlyWindowZoom instanceof Function) {",
-                                                "     togglePlotlyWindowZoom()",
-                                                "   }",
-                                                "}"
-                                          )
-                                        )),
-                                    list(
-                                      name = "Print plot",
-                                      icon = htmlwidgets::JS("PlotlyIconsprinter()"),
-                                      click = htmlwidgets::JS(paste(sep = "\n",
-                                                                    "function(gd) {",
-                                                                    "  plotlyPrint(gd)",
-                                                                    "}"))
-                                    ),
-                                    list(
-                                      name = "Download as PDF",
-                                      icon = htmlwidgets::JS("PlotlyIconspdf()"),
-                                      click = htmlwidgets::JS(paste(sep = "\n",
-                                                                    "function(gd) {",
-                                                                    "  downloadPlotlyAsPDF(gd, {orientation: 'landscape', dpi: 300});",
-                                                                    "}"))
-                                    ))
-            )
-            util_ensure_suggested("htmlwidgets",
-                                  goal = "Creating the Print Dialog for Plotly")
-            x <- htmlwidgets::onRender(x, "
-                          function(el, x) {
-                            if (typeof injectPlotlyPrintDialog === 'function') {
-                              injectPlotlyPrintDialog();
-                            }
-                          }
-                        ")
+            x <- util_decorate_plotly(x)
           },
           warning = function(cond) { # suppress a waning caused by ggplotly for barplots
             if (startsWith(conditionMessage(cond),
@@ -444,11 +387,12 @@ util_pretty_print <- function(dqr, nm, is_single_var,
           x <- NULL
         } else {
           rownames(x) <- NULL # TODO: Check, if this is okay, always
-          x <- util_html_table(util_df_escape(util_table_rotator(x)),
+          x <- util_html_table(x,
                                meta_data = meta_data,
                                label_col = label_col,
-                               output_format = "HTML",
-                               dl_fn = nm)
+                               dl_fn = nm,
+                               rotate_for_one_row = TRUE,
+                               df_escape = TRUE)
         }
       }
       if (length(x) > 0) {
@@ -500,6 +444,9 @@ util_pretty_print <- function(dqr, nm, is_single_var,
                                                                        is_single_var,
                                                                        "indicator", # link to the other world
                                                                        "variable")), attr = "href")
+      if (!sub("^[^\\.]*\\.", "", nm) %in% meta_data[[label_col]]) {
+        href <- NULL # TODO: Better solution
+      }
       var_label <- sub("^[^\\.]*\\.", "", nm)
       caption <- var_label
       if (caption != "[ALL]") {
@@ -567,11 +514,12 @@ util_pretty_print <- function(dqr, nm, is_single_var,
               y$Variables <- NULL
             }
           }
-          y <- util_html_table(util_df_escape(util_table_rotator(y)),
+          y <- util_html_table(y,
                                meta_data = meta_data,
                                label_col = label_col,
-                               output_format = "HTML",
-                               dl_fn = nm)
+                               dl_fn = nm,
+                               rotate_for_one_row = TRUE,
+                               df_escape = TRUE)
         }
       }
       if (length(y) > 0) {
@@ -644,6 +592,93 @@ util_pretty_print <- function(dqr, nm, is_single_var,
     x <- htmltools::tagList(anchor = anchor, link = link, caption, x, y)
     # the link is most easily added here, but still in the wrong position, so later it must be moved
   }
+  x
+}
+
+util_plotly_add_modebar_buttons <- function(py, buttons) {
+  if (is.null(py$x$config)) py$x$config <- list()
+  if (is.null(py$x$config$modeBarButtonsToAdd)) py$x$config$modeBarButtonsToAdd <- list()
+
+  py$x$config$modeBarButtonsToAdd <- c(py$x$config$modeBarButtonsToAdd, buttons)
+  py
+}
+
+#' Adds layout and buttons to a `plotly`
+#'
+#' meant to work inside a report
+#'
+#' @param x a `plotly` object
+#'
+#' @returns decorated `htmltools` object
+#' @noRd
+util_decorate_plotly <- function(x) {
+
+  if (!.called_in_pipeline) {
+    return(x)
+  }
+
+  x <- plotly::layout(x,
+                      autosize = !FALSE,
+                      margin = list(autoexpand = !FALSE,
+                                    r = 200,
+                                    b = 100)
+  )
+  x <- plotly::config(x, # TODO: generalize and combine with util_plot_figure_plotly
+                      responsive = TRUE,
+                      autosizable = TRUE,
+                      fillFrame = TRUE,
+                      displaylogo = FALSE,
+                      modeBarButtonsToRemove = list("toImage"))
+  x <- util_plotly_add_modebar_buttons(x,
+                      list(
+                          list(
+                            name = "Save as image",
+                            icon = htmlwidgets::JS("Plotly.Icons.camera"),
+                            click = htmlwidgets::JS(paste(sep = "\n",
+                                                          "function(gd) {",
+                                                          "  plotlyDL(gd)",
+                                                          "}"))
+                          ),
+                          list(
+                            name = "Restore initial Size",
+                            icon =
+                              htmlwidgets::JS("PlotlyIconshomeRED()"),
+                            click =
+                              htmlwidgets::JS(
+                                paste(sep = "\n",
+                                      "function() {",
+                                      "   if (togglePlotlyWindowZoom instanceof Function) {",
+                                      "     togglePlotlyWindowZoom()",
+                                      "   }",
+                                      "}"
+                                )
+                              )),
+                          list(
+                            name = "Print plot",
+                            icon = htmlwidgets::JS("PlotlyIconsprinter()"),
+                            click = htmlwidgets::JS(paste(sep = "\n",
+                                                          "function(gd) {",
+                                                          "  plotlyPrint(gd)",
+                                                          "}"))
+                          ),
+                          list(
+                            name = "Download as PDF",
+                            icon = htmlwidgets::JS("PlotlyIconspdf()"),
+                            click = htmlwidgets::JS(paste(sep = "\n",
+                                                          "function(gd) {",
+                                                          "  downloadPlotlyAsPDF(gd, {orientation: 'landscape', dpi: 300});",
+                                                          "}"))
+                          ))
+  )
+  util_ensure_suggested("htmlwidgets",
+                        goal = "Creating the Print Dialog for Plotly") # TODO: can we simply omit the print dialog, if htmlwidgets are missing?
+  x <- htmlwidgets::onRender(x, "
+                          function(el, x) {
+                            if (typeof injectPlotlyPrintDialog === 'function') {
+                              injectPlotlyPrintDialog();
+                            }
+                          }
+                        ")
   x
 }
 

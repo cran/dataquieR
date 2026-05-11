@@ -11,6 +11,8 @@
 #' @param specific_args argument overrides for specific functions
 #' @param arg_overrides general argument overrides
 #' @param resp_vars variables to be respected
+#' @param ssi_functions [vector] functions for `SSI-computation`
+#' @param non_ssi_functions  functions computation excluding `SSI-computation`
 #'
 #' @return function calls for the given function
 #'
@@ -26,13 +28,17 @@ util_generate_calls_for_function <-
            meta_data_cross_item,
            specific_args,
            arg_overrides,
-           resp_vars) { # TODO: Document
+           resp_vars,
+           ssi_functions,
+           non_ssi_functions) { # TODO: Document
   .meta_data_env$fkt <- fkt
   .meta_data_env$meta_data <- meta_data
   .meta_data_env$label_col <- label_col
   .meta_data_env$meta_data_segment <- meta_data_segment
   .meta_data_env$meta_data_dataframe <- meta_data_dataframe
   .meta_data_env$meta_data_cross_item <- meta_data_cross_item
+  .meta_data_env$apply_to_ssi <- (fkt %in% ssi_functions)
+  .meta_data_env$apply_to_nssi <- (fkt %in% non_ssi_functions)
   on.exit({
     .meta_data_env$fkt <- NULL
     .meta_data_env$meta_data <- NULL
@@ -41,6 +47,8 @@ util_generate_calls_for_function <-
     .meta_data_env$meta_data_dataframe <- NULL
     .meta_data_env$meta_data_cross_item <- NULL
     .meta_data_env$target_meta_data <- NULL
+    .meta_data_env$apply_to_ssi <- NULL
+    .meta_data_env$apply_to_nssi <- NULL
   })
   .to_fill <- formals(fkt)
   to_fill <- list()

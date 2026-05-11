@@ -1,6 +1,6 @@
 #' Check, if `x` is a try-error
 #'
-#' @param x
+#' @param x object to test
 #'
 #' @return [logical()] if it is a try-error
 #' @noRd

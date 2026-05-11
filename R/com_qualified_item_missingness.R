@@ -29,7 +29,9 @@ com_qualified_item_missingness <-    function(resp_vars,
                                                                         "ALL",
                                                                         "SEGMENT"),
                                               meta_data = item_level,
-                                              meta_data_v2) {
+                                              meta_data_v2,
+                                              meta_data_segment,
+                                              segment_level) {
   # TODO: Allow also here dates values as missing codes
   # TODO (for the example): Add also missing table assignments to the synthetic cases with PART_VAR working following the old implementation
 
@@ -37,9 +39,14 @@ com_qualified_item_missingness <-    function(resp_vars,
 
   util_maybe_load_meta_data_v2()
 
+  util_ck_arg_aliases()
+
   prep_prepare_dataframes(.replace_missings = FALSE)
 
   expected_observations <- util_match_arg(expected_observations)
+
+  meta_data_segment <- try(prep_check_meta_data_segment(meta_data_segment),
+      silent = TRUE)
 
   if (missing(resp_vars) || length(resp_vars) == 0) {
     resp_vars <- meta_data[[label_col]]
@@ -52,6 +59,14 @@ com_qualified_item_missingness <-    function(resp_vars,
 
   # allowed AAPOR-States
   AAPOR_STATES <- c("I", "P", "PL", "R", "BO", "NC", "O", "UH", "UO", "NE")
+
+  # try to get segment part var names
+  seg_pv_vn <- character(0)
+  try({
+    if (is.data.frame(meta_data_segment) && SEGMENT_PART_VARS %in%
+        colnames(meta_data_segment))
+      seg_pv_vn <- util_find_var_by_meta(meta_data_segment[[SEGMENT_PART_VARS]])
+  }, silent = TRUE)
 
   # Loop over all resp_vars ----
 
@@ -156,21 +171,27 @@ com_qualified_item_missingness <-    function(resp_vars,
                                                             expected_observations)
 
                  if (length(r$P) == 1 && !is.na(r$P) && r$P != 0) {
-                   util_warning(
-                     c("%0.2f%% of the values in %s have a missing code for",
-                       "%s assigned, which is impossible on item level. Treating",
-                       "these cases as %s"),
-                     round(r$P / r$N * 100, 2),
-                     sQuote(rv),
-                     sQuote("P"),
-                     sQuote("UO"),
-                     applicability_problem = TRUE)
-                   if (length(r$UO) == 1 && !is.na(r$UO) && r$UO != 0) {
-                     r$UO <- r$UO + r$P
+                   # find out, if the variable is in segment part vars
+                   if (is.data.frame(meta_data_segment) &&
+                       rv_vn %in% seg_pv_vn) {
+                      # this is still ok, it's a part var
                    } else {
-                     r$UO <- r$P
+                     util_warning(
+                       c("%0.2f%% of the values in %s have a missing code for",
+                         "%s assigned, which is impossible on item level. Treating",
+                         "these cases as %s"),
+                       round(r$P / r$N * 100, 2),
+                       sQuote(rv),
+                       sQuote("P"),
+                       sQuote("UO"),
+                       applicability_problem = TRUE)
+                     if (length(r$UO) == 1 && !is.na(r$UO) && r$UO != 0) {
+                       r$UO <- r$UO + r$P
+                     } else {
+                       r$UO <- r$P
+                     }
+                     r$P <- 0
                    }
-                   r$P <- 0
                  }
 
 

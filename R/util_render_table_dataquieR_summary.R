@@ -528,35 +528,51 @@ util_render_table_dataquieR_summary <- function(x,
                                             get("values_readable")))
 
        # create a link
+
+      result_full <-
+        util_add_links_to_summary_table(result_full,
+                                        this,
+                                        folder_of_report = ) # TODO: Let util_add_links_to_summary_table handle the folder-of-report and remove the respective code from R/util_render_table_dataquieR_summary.R
+
+
+      rf <- result_full[, c(LABEL, "call_names",
+                            "value", "fg_color", "href", "popup_href", "title", "title_ind"),
+                        drop=FALSE]
+      rf$orig_label_col <- attr(result_full, "orig_label_col")
+
       result_full$ln <-
-        apply(result_full[, c(LABEL, "call_names",
-                              "value", "fg_color"),
-                          drop=FALSE], 1,
+        apply(rf, 1,
               FUN = function(x) {
-                #in case it is a summary of a single report
-                if(is.null(folder_of_report)) {
-                  link <-
-                    util_generate_anchor_link(x[[1]],
-                                              x[["call_names"]],
-                                              title =
-                                                htmltools::HTML(as.character(
-                                                  x[["value"]])))
-                } else {
-                  #in case it is a summary of a group of reports
-                  anchor_name <- gsub(".*-(.*)", "\\1" , x[[1]])
-                  search_name <- paste0(x[[1]], ".", x[["call_names"]])
-                  link <-
-                    util_generate_anchor_link(anchor_name,
-                                              x[["call_names"]],
-                                              title =
-                                                htmltools::HTML(as.character(
-                                                  x[["value"]])))
-                  prefix <-
-                    unique(folder_of_report[names(folder_of_report)[
-                      names(folder_of_report) %in% search_name]])
-                  link[["attribs"]]$href <- paste0(prefix, "/.report/",
-                                                   link[["attribs"]]$href)
+                if (!is.null(folder_of_report)) { # in case it is not a summary of a single report
+                  search_name <- gsub("\\s+", "", paste0(x[["orig_label_col"]], ".", x[["call_names"]]))
+                  name_of_r <- unique(folder_of_report[names(folder_of_report)[
+                    names(folder_of_report) %in% search_name]])
+                  if (!length(name_of_r)) {
+                    name_of_r <- ""
+                    prefix <- ""
+                  } else {
+                    prefix <-
+                      paste0(name_of_r, "/.report/")
+                    name_of_r <- paste0(name_of_r, " -- ")
+                  }
+                } else { # in case it is a summary of a single report
+                  name_of_r <- ""
+                  prefix <- ""
                 }
+                dlg_cap <- paste0(name_of_r, paste0(x[["title"]], x[["title_ind"]]))
+                link <- htmltools::a(href = paste0(prefix, x[["href"]]),
+                                     title = htmltools::HTML(as.character(
+                                       x[["value"]])),
+                                       onclick = htmltools::htmlTemplate(text_ = "(function(e) {
+                                                        e.preventDefault();
+                                                        // showDataquieRResult({{url}}, {{link_url}}, {{title}}); this is triggered by the pre onclick handler, already
+                                                      })(event);",
+                                                   url =
+                                                     jsonlite::toJSON(paste0(prefix, x[["popup_href"]]), auto_unbox = TRUE),
+                                                   link_url = jsonlite::toJSON(paste0(prefix, x[["href"]]), auto_unbox = TRUE),
+                                                   title = jsonlite::toJSON(dlg_cap, auto_unbox = TRUE)
+                                       ),
+                                     htmltools::HTML(as.character(x[["value"]])))
 
                 link$attribs$style <- c(link$attribs$style,
                                         "text-decoration:none;display:block;")
@@ -579,8 +595,10 @@ util_render_table_dataquieR_summary <- function(x,
       result_full$href <- gsub('<a.*? *href *= *"([^"]*)".*?>.*',
                                "\\1",
                                x = result_full$ln, perl = TRUE)
-
       result_full$ln <- gsub('(<a.*?) *href *= *"[^"]*"(.*?>)',
+                             "\\1\\2",
+                             x = result_full$ln, perl = TRUE)
+      result_full$ln <- gsub('(<a.*?) *onclick *= *"[^"]*"(.*?>)',
                              "\\1\\2",
                              x = result_full$ln, perl = TRUE)
 
@@ -631,7 +649,7 @@ util_render_table_dataquieR_summary <- function(x,
         #in case of a summary of a single report
         # create the complete href sentence to add after in the html text
         result_full$href_sentence <-
-          sprintf('"if (window.hasOwnProperty(&quot;dq_report2&quot;) &amp;&amp; window.dq_report2 &amp;&amp; window.location != &quot;%s&quot;) { if (all_ids.all_ids.includes(&quot;%s&quot;)) { window.location = &quot;%s&quot; } else { window.alert(&quot;No result available&quot;) } }"',
+          sprintf('"if (window.hasOwnProperty(&quot;dq_report2&quot;) &amp;&amp; window.dq_report2 &amp;&amp; window.location != &quot;%s&quot;) { if (knowID(&quot;%s&quot;)) { window.location = &quot;%s&quot; } else { window.alert(&quot;No result available&quot;) } }"',
                   result_full$href,
                   result_full$href, result_full$href)
 
@@ -639,28 +657,67 @@ util_render_table_dataquieR_summary <- function(x,
         #in case of a summary of a group of reports
         # create the complete href sentence to add after in the html text
         result_full$href_sentence <-
-          sprintf('"if (window.hasOwnProperty(&quot;dq_report_by_overview&quot;) &amp;&amp; window.dq_report_by_overview &amp;&amp; window.location != &quot;%s&quot;) { if (all_ids.all_ids_overall.includes(&quot;%s&quot;)) { window.location = &quot;%s&quot; } else { window.alert(&quot;No result available&quot;) } }"',
+          sprintf('"if (window.hasOwnProperty(&quot;dq_report_by_overview&quot;) &amp;&amp; window.dq_report_by_overview &amp;&amp; window.location != &quot;%s&quot;) { if (knowID(&quot;%s&quot;)) { window.location = &quot;%s&quot; } else { window.alert(&quot;No result available&quot;) } }"',
                   result_full$href,
                   result_full$href, result_full$href)
 
       }
+      rf <- result_full[, c(LABEL, "href_sentence", "class_color",
+                            "o", "f",
+                            "text_complete_hover", "ln",
+                            "call_names",
+                            "value", "fg_color", "href", "popup_href", "title", "title_ind"),
+                        drop=FALSE]
+      rf$orig_label_col <- attr(result_full, "orig_label_col")
       # create a column with the final html text
       try(result_full$html <-
-            apply(result_full[, c("href_sentence", "class_color",
-                                  "o", "f",
-                                  "text_complete_hover", "ln"),
-                              drop=FALSE], 1,
+            apply(rf, 1,
                   FUN = function(x) {
                     ln <- x[["ln"]]
                     filter <- x[["f"]]
                     sort_value <- x[["o"]]
+                    if (!is.null(folder_of_report)) { # in case it is not a summary of a single report
+                      search_name <- gsub("\\s+", "", paste0(x[["orig_label_col"]], ".", x[["call_names"]]))
+                      name_of_r <- unique(folder_of_report[names(folder_of_report)[
+                        names(folder_of_report) %in% search_name]])
+                      if (!length(name_of_r)) {
+                        name_of_r <- ""
+                        prefix <- ""
+                      } else {
+                        prefix <-
+                          paste0(name_of_r, "/.report/")
+                        name_of_r <- paste0(name_of_r, " -- ")
+                      }
+                    } else { # in case it is a summary of a single report
+                      name_of_r <- ""
+                      prefix <- ""
+                    }
+                    dlg_cap <- paste0(name_of_r, paste0(x[["title"]], x[["title_ind"]]))
+
+                    if (!util_empty(x[["value"]])) { # NOT no results available
+                      onclick <- paste0("onclick=\"",
+                      htmltools::htmlEscape(htmltools::htmlTemplate(text_ = "(function(e) {
+                                                        e.preventDefault();
+                                                        showDataquieRResult({{url}}, {{link_url}}, {{title}});
+                                                      })(event);",
+                                                                    url =
+                                                                      jsonlite::toJSON(paste0(prefix, x[["popup_href"]]), auto_unbox = TRUE),
+                                                                    link_url = jsonlite::toJSON(x[["href"]], auto_unbox = TRUE), # this has a prefix here, already.
+                                                                    # TODO: href shouldn't have a prefix, here
+                                                                    title = jsonlite::toJSON(dlg_cap, auto_unbox = TRUE)
+                      ), attribute = TRUE),
+                      "\"")
+                      cursor_style <- "cursor: pointer;"
+                    } else {
+                      onclick <- ""
+                      cursor_style <- ""
+                    }
                     #  x <- htmltools::htmlEscape(x, attribute = TRUE)
                     text_for_html <- paste0("<pre ",
-                                            "onclick=",
-                                            x[["href_sentence"]],
+                                            onclick,
                                             " style=",
-                                            sprintf('"height: 100%%; min-height: 2em; margin: 0em; padding: 0em; background: %s; cursor: pointer; text-align: center;"',
-                                                    x[["class_color"]]),
+                                            sprintf('"height: 100%%; min-height: 2em; margin: 0em; padding: 0em; background: %s; %s text-align: center;"',
+                                                    x[["class_color"]], cursor_style),
                                             " sort=\"",
                                             sort_value, "\"",
                                             " filter=\"",
@@ -947,11 +1004,11 @@ util_render_table_dataquieR_summary <- function(x,
                   text_for_html <-
                     paste0(
                       "<pre ",
-                      "onclick=",
-                      x[["href_sentence"]],
+#                      "onclick=",
+#                      x[["href_sentence"]],
                       " style=",
                       sprintf(
-                        '"height: 100%%; min-height: 2em; margin: 0em; padding: 0em; background: %s; cursor: pointer; text-align: center;"',
+                        '"height: 100%%; min-height: 2em; margin: 0em; padding: 0em; background: %s; text-align: center;"', # cursor: pointer;
                         x[["class_color"]]
                       ),
                       " sort=\"",
@@ -1553,7 +1610,6 @@ util_render_table_dataquieR_summary <- function(x,
                                     paste(packageVersion(
                                       packageName()))
             ),
-            output_format = "HTML",
             col_tags = list(`All columns` = colnames(result2),
                             `Integrity` = c("Variables",
                                             colnames_speaking_from_tech[grep(
@@ -1598,7 +1654,6 @@ util_render_table_dataquieR_summary <- function(x,
                                     paste(packageVersion(
                                       packageName()))
             ),
-            output_format = "HTML",
             col_tags = list(`All columns` = colnames(result2),
                             `Integrity` = c("Variables",
                                             colnames_speaking_from_tech[grep(

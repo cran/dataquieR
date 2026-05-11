@@ -360,8 +360,10 @@ test_that("con_limit_deviations with no lower limit", {
                                          meta_data  = md0,
                                          limits     = "HARD_LIMITS")
 
-  expect_equal(MyValueLimits1$SummaryTable$NUM_con_rvv_inum, 4)
-  expect_equal(MyValueLimits2$SummaryTable$NUM_con_rvv_inum, 0)
+  expect_equal(MyValueLimits1$SummaryTable$NUM_con_rvv_inum, 4,
+               ignore_attr = TRUE)
+  expect_equal(MyValueLimits2$SummaryTable$NUM_con_rvv_inum, 0,
+               ignore_attr = TRUE)
 
   expect_equal(MyValueLimits1$SummaryData$Number[
     which(MyValueLimits1$SummaryData$Section == "above")], MyValueLimits2$SummaryData$Number[
@@ -546,7 +548,8 @@ test_that("con_limit_deviations does not crash with strong outliers", {
   )
 
   expect_type(MyValueLimits, "list")
-  expect_equal(MyValueLimits$SummaryTable$NUM_con_rvv_inum, 3)
+  expect_equal(MyValueLimits$SummaryTable$NUM_con_rvv_inum, 3,
+               ignore_attr = TRUE)
 })
 
 test_that("con_limits_deviations does not crash with NAs in datetime vars", {
@@ -580,7 +583,8 @@ test_that("con_limits_deviations does not crash with NAs in datetime vars", {
   )
 
   expect_type(MyValueLimits, "list")
-  expect_equal(MyValueLimits$SummaryTable$NUM_con_rvv_itdat, 9)
+  expect_equal(MyValueLimits$SummaryTable$NUM_con_rvv_itdat, 9,
+               ignore_attr = TRUE)
 })
 
 test_that("con_limit_deviations works with no values within limits", {
@@ -718,7 +722,8 @@ test_that("con_limit_deviations complex limits alone", {
 
 
     expect_equal(
-      MyValueLimits$SummaryData$`All outside limits N (%)`, "2 (0.07)")
+      MyValueLimits$SummaryData$`All outside limits N (%)`, "2 (0.07)",
+      ignore_attr = TRUE)
 
 })
 
@@ -740,7 +745,8 @@ test_that("con_limit_deviations complex limits alone", {
 
 
   expect_equal(
-    MyValueLimits$SummaryData$`All outside limits N (%)`, "3 (0.1)")
+    MyValueLimits$SummaryData$`All outside limits N (%)`, "3 (0.1)",
+    ignore_attr = TRUE)
 
 })
 

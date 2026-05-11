@@ -1,0 +1,219 @@
+/* 1) DT container sizing. Keep the wrapper full-width but do not center the
+   scroll area (centering made tables look “floating”). */
+.table_result .dataTables_wrapper,
+.dq-plot-table-grid .dq-table-cell .dataTables_wrapper {
+  width: 100%;
+}
+
+.table_result .dataTables_scroll,
+.table_result .dataTables_scrollHead,
+.table_result .dataTables_scrollBody {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.dq-plot-table-grid .dq-table-cell .dataTables_scroll,
+.dq-plot-table-grid .dq-table-cell .dataTables_scrollHead,
+.dq-plot-table-grid .dq-table-cell .dataTables_scrollBody {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* 2) Default: no wrapping (prevents tall rows + “white stripes”) */
+table.matrixTable th,
+table.matrixTable td {
+  white-space: nowrap;
+}
+
+/* 3) Allow wrapping only where you want it (optional) */
+.table_result table.dataTable td.dt-wrap,
+.table_result table.dataTable th.dt-wrap {
+  white-space: normal;
+}
+/* Small tables: don’t visually stretch across the whole page */
+.dt-cols-1 .dataTables_scroll,
+.dt-cols-2 .dataTables_scroll,
+.dt-cols-3 .dataTables_scroll,
+.dt-cols-4 .dataTables_scroll,
+.dt-cols-5 .dataTables_scroll {
+  max-width: calc(min(var(--screen-width) * 0.5 * 1px, 45em)); /* use fixed sizes, otherwise strange on narrow windows */
+}
+
+.dt-cols-6 .dataTables_scroll,
+.dt-cols-7 .dataTables_scroll {
+  max-width: calc(min(var(--screen-width) * 0.6 * 1px, 54em)); /* use fixed sizes, otherwise strange on narrow windows */
+}
+
+.dt-cols-8 .dataTables_scroll,
+.dt-cols-9 .dataTables_scroll {
+  max-width: calc(min(var(--screen-width) * 0.9 * 1px, 81em)); /* use fixed sizes, otherwise strange on narrow windows */
+}
+
+
+/* Many columns: allow full width */
+.dt-cols-10 .dataTables_scroll,
+.dt-cols-11 .dataTables_scroll,
+.dt-cols-12 .dataTables_scroll,
+.dt-cols-13 .dataTables_scroll,
+.dt-cols-14 .dataTables_scroll,
+.dt-cols-15 .dataTables_scroll,
+.dt-cols-99 .dataTables_scroll {
+  max-width: 100%;
+}
+
+/* --- DT: fixed-column shadow (stays put while horizontal scrolling) --- */
+.dataTables_wrapper .dataTables_scroll {
+  position: relative;
+}
+
+/* Shadow overlay element injected by script.js */
+.dataTables_wrapper .dataTables_scroll .dq-xshadow-ind {
+  position: absolute;
+  width: 18px;
+  pointer-events: none;
+  z-index: 9999;
+  display: none;
+  /* Right-edge hint: pinned overlay (JS positions it). */
+  background: linear-gradient(to left,
+    rgba(0,0,0,0.14),
+    rgba(0,0,0,0.00)
+  );
+}
+
+.dataTables_wrapper .dataTables_scroll .dq-xshadow-ind {
+/*  right: auto;
+  background: linear-gradient(to right,
+    rgba(0,0,0,0.12),
+    rgba(0,0,0,0.00)
+  );*/
+}
+
+.dataTables_wrapper .dataTables_scroll.dq-has-x-shadow-fixedleft .dq-xshadow-ind {
+  display: block;
+}
+
+/* If FixedColumns hides the left edge of the scroll viewport behind the
+   fixed-left column, the left overlay can be obscured. Add a shadow directly
+   on the fixed-left cells as a reliable hint that columns exist underneath. */
+.dataTables_wrapper .dataTables_scroll.dq-has-x-shadow-fixedleft th.dtfc-fixed-left,
+.dataTables_wrapper .dataTables_scroll.dq-has-x-shadow-fixedleft td.dtfc-fixed-left {
+  box-shadow: 10px 0 10px -10px rgba(0,0,0,0.25);
+}
+
+/* Right-edge "more columns" hint for DT scrollX, pinned to viewport edge */
+.dataTables_scrollBody {
+  position: relative; /* needed for the absolute overlay */
+}
+
+.dataTables_scrollBody .dq-scroll-shadow-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 22px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms linear;
+  /* subtle fade into the table background; works on white/very light backgrounds */
+  background: linear-gradient(to left, rgba(0,0,0,0.14), rgba(0,0,0,0));
+  z-index: 9999;
+}
+
+.dataTables_scrollBody.dq-has-xshadow-right .dq-scroll-shadow-right {
+  opacity: 1;
+}
+
+/* --- stderr tippy theme + layout --- */
+.tippy-box[data-theme~='dq-stderr'] {
+  background: #1f232a;
+  color: #e7eaf0;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+.tippy-box[data-theme~='dq-stderr'] .tippy-content {
+  padding: 0; /* we do padding in our own layout */
+}
+
+.dq-stderr-pop {
+  width: max-content;
+  min-width: 420px;
+  max-width: 720px;
+}
+
+.dq-stderr-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.dq-stderr-title {
+  font: 600 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  letter-spacing: 0.2px;
+  opacity: 0.9;
+}
+
+.dq-stderr-close {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: #e7eaf0;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 16px;
+}
+.dq-stderr-close:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.dq-stderr-body {
+  margin: 0;
+  padding: 10px 12px 12px 12px;
+
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  max-height: 320px;
+  overflow: auto;
+
+  font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+  /* Firefox scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.22) rgba(255,255,255,0.06);
+}
+
+/* WebKit scrollbar */
+.dq-stderr-body::-webkit-scrollbar { width: 10px; }
+.dq-stderr-body::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+}
+.dq-stderr-body::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.18);
+  border-radius: 10px;
+  border: 2px solid rgba(0,0,0,0);
+  background-clip: padding-box;
+}
+.dq-stderr-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.28);
+}
+
+.dq-warning-btn {
+  background-color: white;
+  border: 0;
+  cursor: help;
+  color: #9aa0a6;
+}
+.dq-warning-btn:hover {
+  color: #f0ad4e; /* warning yellow */
+}

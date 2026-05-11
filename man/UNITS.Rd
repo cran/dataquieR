@@ -7,7 +7,7 @@
 like m, g, N, ...
 }
 \seealso{
-Other UNITS: 
+Other UNITS:
 \code{\link{UNIT_IS_COUNT}},
 \code{\link{UNIT_PREFIXES}},
 \code{\link{UNIT_PREFIX_FACTORS}},

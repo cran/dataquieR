@@ -22,9 +22,7 @@
 #' @return a [list] with:
 #'   - `SummaryPlot`: [ggplot2::ggplot] object with the heatmap
 #'
-#' @importFrom ggplot2 ggplot aes geom_bar geom_text scale_fill_manual
-#'                     scale_y_discrete coord_flip facet_grid theme_minimal
-#'                     scale_x_discrete
+#' @importFrom ggplot2 ggplot aes geom_bar geom_text scale_fill_manual scale_y_discrete coord_flip facet_grid theme_minimal scale_x_discrete
 #'
 #'
 #' @family figure_functions

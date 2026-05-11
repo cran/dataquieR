@@ -14,13 +14,18 @@
 #' @param data_frame_list a named list with data frames. Also these will be
 #'                        added and names will be handled as for the `...`
 #'                        argument.
+#' @param append [logical] if a data frame already exists in the cache
+#'                         (by name), extend the existing one
 #'
 #' @return [data.frame] `invisible(the cache environment)`
 #' @export
 #' @seealso [prep_load_workbook_like_file]
 #' @seealso [prep_get_data_frame]
 #' @family data-frame-cache
-prep_add_data_frames <- function(..., data_frame_list = list()) {
+prep_add_data_frames <- function(...,
+                                 data_frame_list = list(),
+                                 append = FALSE) {
+  util_expect_scalar(append, check_type = is.logical)
   ellipse <- list(...)
   if (is.null(names(ellipse))) {
     names(ellipse) <- rep("", length(ellipse))
@@ -72,6 +77,15 @@ prep_add_data_frames <- function(..., data_frame_list = list()) {
       paste0(dQuote(names(data_frame_list)[errors]), collapse = ", "))
   }
   for (n in names(data_frame_list)) {
+    if (append && exists(n, envir = .dataframe_environment())) {
+      existing <- get(n, envir = .dataframe_environment())
+      if (is.data.frame(existing)) {
+        data_frame_list[[n]] <- util_rbind(
+          existing,
+          data_frame_list[[n]]
+        )
+      }
+    }
     assign(
       n,
       data_frame_list[[n]],

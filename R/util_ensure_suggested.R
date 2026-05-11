@@ -87,3 +87,23 @@ util_ensure_suggested <- function(pkg, goal =
     return(TRUE)
   }
 }
+
+.util_optional_packages <- new.env(parent = emptyenv())
+
+util_have_suggested <- function(pkg, goal =
+                                  ifelse(
+                                    is.null(
+                                      rlang::caller_call()),
+                                    "work",
+                                    paste("call", sQuote(rlang::call_name(
+                                      rlang::caller_call()))))) {
+  if (!exists(pkg, envir = .util_optional_packages, inherits = FALSE)) {
+    assign(pkg,
+           suppressWarnings(suppressMessages(
+             util_ensure_suggested(pkg, goal = goal, err = FALSE)
+           )),
+           envir = .util_optional_packages)
+  }
+
+  get(pkg, envir = .util_optional_packages, inherits = FALSE)
+}

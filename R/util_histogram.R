@@ -20,9 +20,7 @@
 #'
 #' @return a histogram
 #'
-#' @importFrom ggplot2 ggplot aes theme_minimal xlab ylab geom_col
-#'                     scale_x_continuous scale_x_datetime expansion facet_grid
-#'                     theme element_text
+#' @importFrom ggplot2 ggplot aes theme_minimal xlab ylab geom_col scale_x_continuous scale_x_datetime expansion facet_grid theme element_text
 #' @importFrom grDevices colorRampPalette
 #'
 #' @noRd
@@ -33,7 +31,7 @@ util_histogram <- function(plot_data,
                            nbins_max = 100,
                            colors = "#2166AC",
                            is_datetime = FALSE,
-                           is_time = FALSE) {
+                           is_time = FALSE) { # FIXME: EK: see https://chatgpt.com/s/t_69d517c5f1488191a4afb6fe4763b8cc for time-only-variables at least, the binning can look like overlapping bins triggering warnings like "`position_stack()` requires non-overlapping x intervals." at rendering time. I'm suppressing them now, but fixing would be preferred. # xxxx remove after removing xxxxx from acc_distributions and addressing this issuse correctly, here.
   # compute bin breaks
   # if the plot is faceted, optimize bin breaks for the most frequent category
   bb_opt_sel <- seq_len(nrow(plot_data))

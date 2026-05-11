@@ -7,8 +7,10 @@
 #' @param grouped_by define the columns of the resulting matrix. It can be either
 #' "call_names", one column per function,  or "indicator_metric", one column per indicator
 #' or both c("call_names", "indicator_metric"). The last combination is the default
-#' @param folder_of_report a named vector with the location of variable and call_names
-#' @param vars_to_include `"study"`, `"ssi"` or `c("study", "ssi")`. variables to include
+#' @param folder_of_report a named vector with the location of variable and
+#'                         `call_names`
+#' @param vars_to_include `"study"`, `"ssi"` or `c("study", "ssi")`. variables
+#'        to include
 #' @return invisible html object
 #' @export
 #'

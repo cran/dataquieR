@@ -85,9 +85,7 @@
 #'
 #' @export
 #'
-#' @importFrom ggplot2 ggplot geom_bar scale_fill_manual theme_minimal
-#'                     scale_y_continuous geom_hline coord_flip theme aes
-#'                     geom_text xlab scale_x_continuous sec_axis
+#' @importFrom ggplot2 ggplot geom_bar scale_fill_manual theme_minimal scale_y_continuous geom_hline coord_flip theme aes geom_text xlab scale_x_continuous sec_axis
 #' @importFrom stats setNames
 #' @seealso
 #' [Online Documentation for the function](

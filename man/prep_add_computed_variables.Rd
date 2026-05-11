@@ -50,7 +50,7 @@ study_data <- prep_get_data_frame("ship")
 prep_load_workbook_like_file("ship_meta_v2")
 meta_data <- prep_get_data_frame("item_level")
 rules <- tibble::tribble(
-  ~VAR_NAMES,  ~RULE,
+  ~VAR_NAMES,  ~COMPUTATION_RULE,
   "BMI", '[BODY_WEIGHT_0]/(([BODY_HEIGHT_0]/100)^2)',
   "R", '[WAIST_CIRC_0]/2/[pi]', # in m^3
   "VOL_EST", '[pi]*([WAIST_CIRC_0]/2/[pi])^2*[BODY_HEIGHT_0] / 1000', # in l

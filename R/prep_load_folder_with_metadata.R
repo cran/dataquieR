@@ -26,6 +26,8 @@
 #' @param folder the folder name to load.
 #' @param keep_types [logical] keep types as possibly defined in the file.
 #'                             set `TRUE` for study data.
+#' @param append [logical] if a data frame already exists in the cache
+#'                         (by name), extend the existing one
 #' @param ... arguments passed to [list.files()]
 #'
 #' @return `invisible(the cache environment)`
@@ -35,8 +37,9 @@
 #' @family data-frame-cache
 prep_load_folder_with_metadata <- function(folder,
                                          keep_types = FALSE,
+                                         append = FALSE,
                                          ...) {
-
+  util_expect_scalar(append, check_type = is.logical)
   util_expect_scalar(folder, check_type = is.character)
   util_stop_if_not(
     "full.names not supported by prep_load_folder_with_metadata" =
@@ -163,7 +166,8 @@ prep_load_folder_with_metadata <- function(folder,
   }
   lapply(fls, function(fn) {
     if (inherits(suppressWarnings(try(prep_load_workbook_like_file(fn,
-                                                                   keep_types = keep_types),
+                                                                   keep_types = keep_types,
+                                                                   append = append),
                                       silent = TRUE)),
         "try-error")) {
       if (inherits(suppressWarnings(try(prep_get_data_frame(fn,

@@ -12,6 +12,8 @@
 #' @export
 prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If use_plotly is FALSE?
                                                              meta_data = "item_level") {
+  vars_to_include <- attr(data, "vars_to_include")
+  ssi <- (identical(vars_to_include, "ssi"))
   # FIXME: Amend prep_render_pie_chart_from_summaryclasses_ggplot2 to handle this also.
   te <- topenv(parent.frame(1)) # see https://stackoverflow.com/a/27870803
   if (!(isNamespace(te) && getNamespaceName(te) == "dataquieR")) {
@@ -203,10 +205,12 @@ prep_render_pie_chart_from_summaryclasses_plotly <- function(data, # FIXME: If u
     #    util_error("Unkown grouping by %s", sQuote(grouped_by))
   }
 
-  subtitle <- paste(subtitle, sprintf(" -- %d of %d variables classified",
-                                      sum(data$value, na.rm = TRUE),
-                                      nrow(meta_data)
-  )) # TODO: Maybe, we should not compute this here, but earlier.
+  if (!ssi) # FIXME: also for ssi
+    subtitle <- paste(subtitle, sprintf(" -- %d of %d %s classified",
+                                        sum(data$value, na.rm = TRUE),
+                                        nrow(meta_data),
+                                        ifelse(ssi, "scales", "variables")
+    )) # TODO: Maybe, we should not compute this here, but earlier.
 
 
   #Define the space on top among the title and the plot conditionally

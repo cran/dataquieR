@@ -45,7 +45,7 @@ util_normalize_cross_item <-
     }
 
     # ensure unique identifiers for cross-item checks --------------------------
-    if (!CHECK_ID %in% colnames(meta_data_cross_item)) {
+    if (!CHECK_ID %in% colnames(meta_data_cross_item)) { # as early as possible
       meta_data_cross_item[[CHECK_ID]] <- seq_len(nrow(meta_data_cross_item))
     }
     if (any(duplicated(meta_data_cross_item[[CHECK_ID]]))) {
@@ -57,6 +57,105 @@ util_normalize_cross_item <-
     }
     meta_data_cross_item[[CHECK_ID]] <- trimws(meta_data_cross_item[[CHECK_ID]])
 
+
+    # Find all valid variable names:
+    valid_name_cols <- eval(formals(util_find_var_by_meta)$allowed_sources,
+                            envir = environment())
+    valid_name_cols <- c(valid_name_cols,
+                         VAR_NAMES,
+                         label_col,
+                         LABEL,
+                         LONG_LABEL,
+                         "ORIGINAL_VAR_NAMES",
+                         "ORIGINAL_LABEL")
+    lng <- getOption("dataquieR.lang", dataquieR.lang_default)
+    if (nzchar(lng)) {
+      valid_name_cols <- c(valid_name_cols,
+                           paste0(valid_name_cols, "_", lng))
+    }
+    valid_name_cols <- intersect(unique(trimws(valid_name_cols)),
+                                 colnames(meta_data))
+
+    valid_names <- sort(unique(as.vector(unlist(meta_data[, valid_name_cols]))))
+
+    # Expand CONTRADICTION_TERM using util_expand_pattern_rules
+    # do before using the term for filling in variable_list
+    expanded_contradiction_terms <-
+      lapply(meta_data_cross_item[[CONTRADICTION_TERM]], function(rl) {
+        r <- util_expand_pattern_rules(rl, valid_names = valid_names)
+        if (length(r) == 0)
+          r <- rl
+        r
+      })
+    expanded_lengths <- lengths(expanded_contradiction_terms)
+    expanded_indices <- sequence(expanded_lengths)
+    expanded_source_rows <- rep(seq_len(nrow(meta_data_cross_item)),
+                                expanded_lengths)
+
+    meta_data_cross_item <-
+      util_explode_var_names_lists(
+        expanded_contradiction_terms,
+        dframe = meta_data_cross_item,
+        col_name = CONTRADICTION_TERM
+      )
+
+    expanded_clones <- expanded_lengths[expanded_source_rows] > 1L
+    if (any(expanded_clones)) {
+      original_check_ids <- meta_data_cross_item[[CHECK_ID]]
+      meta_data_cross_item[[CHECK_ID]][expanded_clones] <- paste0(
+        original_check_ids[expanded_clones],
+        "_",
+        expanded_indices[expanded_clones]
+      )
+      meta_data_cross_item[[CHECK_ID]] <- make.unique(
+        meta_data_cross_item[[CHECK_ID]],
+        sep = "_"
+      )
+
+      if (CHECK_LABEL %in% colnames(meta_data_cross_item)) {
+        base_labels <- meta_data_cross_item[[CHECK_LABEL]]
+        base_labels[util_empty(base_labels)] <- original_check_ids[
+          util_empty(base_labels)]
+        meta_data_cross_item[[CHECK_LABEL]][expanded_clones] <- paste0(
+          base_labels[expanded_clones],
+          " #",
+          expanded_indices[expanded_clones]
+        )
+      }
+    }
+
+    if (VARIABLE_LIST %in% colnames(meta_data_cross_item)) {
+      # Expand patterns in list column
+      meta_data_cross_item[[VARIABLE_LIST]] <-
+        unname(vapply(mapply(vl = meta_data_cross_item[[VARIABLE_LIST]],
+                             id = meta_data_cross_item[[CHECK_ID]],
+                             SIMPLIFY = FALSE,
+                      function(vl, id) {
+                        r <- util_expand_pattern_rules(
+                          paste0("[",
+                                 unlist(util_parse_assignments(
+                                   vl,
+                                   multi_variate_text = TRUE)),
+                                 "]"),
+                          valid_names = valid_names)
+                        if (length(not_found <- attr(r, "mismatches")) > 0) {
+                          util_warning(c("Entry VARIABLE_LIST for check %s",
+                                         "maybe not specified correctly: %s"),
+                                       paste(id),
+                                       util_pretty_vector_string(
+                                         as.vector(not_found)),
+                                       applicability_problem = TRUE)
+
+                        }
+                        r <- gsub("^\\[(.*)\\]$", "\\1", trimws(r))
+                        r <- paste(r, collapse = SPLIT_CHAR)
+                        if (nzchar(r)) {
+                          r
+                        } else {
+                          NA_character_
+                        }
+                      }), FUN = identity, FUN.VALUE = character(1)))
+    }
 
     if (VARIABLE_LIST %in% colnames(meta_data_cross_item)) {
       meta_data_cross_item[[VARIABLE_LIST_ORDER]] <-
@@ -88,12 +187,15 @@ util_normalize_cross_item <-
       if (is.vector(x)) {
         x <- as.matrix(t(x))
       }
-      # variablelist <- lapply(lapply(lapply(apply(x, 1, which, simplify = FALSE), # apply supports simplify from R 4.1.0
+      # variablelist_from_term <- lapply(lapply(lapply(apply(x, 1, which, simplify = FALSE), # apply supports simplify from R 4.1.0
       #                                      names), sort), unique)                # so use the following, less intuitive code line
-      variablelist <- unname(lapply(as.data.frame(t(x)),
+      variablelist_from_term <- unname(lapply(as.data.frame(t(x)),
                                     function(xx) unique(sort(colnames(x)[xx]))))
-      variablelist <-
-        lapply(variablelist, paste0, collapse = sprintf(" %s ", SPLIT_CHAR))
+      variablelist_from_term <-
+        lapply(variablelist_from_term, paste0, collapse = sprintf(" %s ", SPLIT_CHAR))
+
+      vl_from_term_empty <-
+        vapply(variablelist_from_term, util_empty, FUN.VALUE = logical(1))
 
       if (!VARIABLE_LIST %in% colnames(meta_data_cross_item)) {
         meta_data_cross_item[[VARIABLE_LIST]] <- NA
@@ -101,16 +203,17 @@ util_normalize_cross_item <-
 
       # Empty VARIABLE_LIST entries can be replaced with the generated lists.
       vl_empty <- util_empty(meta_data_cross_item[[VARIABLE_LIST]])
-      meta_data_cross_item[[VARIABLE_LIST]][vl_empty] <- variablelist[vl_empty]
+      meta_data_cross_item[[VARIABLE_LIST]][vl_empty] <- variablelist_from_term[vl_empty]
       # For existing VARIABLE_LIST entries, we have to check whether they match
       # with the generated lists from CONTRADICTION_TERM. This will be done
       # below, after mapping the lists to `label_col`, because then both
       # lists can be compared more easily. We store the generated entries that
       # have to be checked in a temporary column.
       if (!all(seq_len(nrow(meta_data_cross_item)) %in% vl_empty)) {
-        meta_data_cross_item[["TEMPORARY_VARIABLE_LIST"]] <- NA
-        meta_data_cross_item[["TEMPORARY_VARIABLE_LIST"]][!vl_empty] <-
-          variablelist[!vl_empty]
+        meta_data_cross_item[["VARIABLE_LIST_FROM_TERM"]] <- NA
+        meta_data_cross_item[[
+          "VARIABLE_LIST_FROM_TERM"]][!vl_empty & !vl_from_term_empty] <-
+          variablelist_from_term[!vl_empty & !vl_from_term_empty]
       }
     }
 
@@ -126,51 +229,55 @@ util_normalize_cross_item <-
       target = label_col,
       ifnotfound = NA_character_))
     # compare with lists from CONTRADICTION_TERM, if necessary
-    if ("TEMPORARY_VARIABLE_LIST" %in% colnames(meta_data_cross_item)) {
-      vl_filled <-
-        !util_empty(meta_data_cross_item[["TEMPORARY_VARIABLE_LIST"]]) &
-        !util_empty(meta_data_cross_item[[CONTRADICTION_TERM]])
-      variablelist2 <- lapply(util_parse_assignments(
-        meta_data_cross_item[["TEMPORARY_VARIABLE_LIST"]][vl_filled],
+    if ("VARIABLE_LIST_FROM_TERM" %in% colnames(meta_data_cross_item)) {
+      vl_from_term_filled <-
+        !util_empty(meta_data_cross_item[["VARIABLE_LIST_FROM_TERM"]])
+      variablelist_from_term <- lapply(util_parse_assignments(
+        meta_data_cross_item[["VARIABLE_LIST_FROM_TERM"]][vl_from_term_filled],
         multi_variate_text = TRUE), names)
-      variablelist2 <- lapply(variablelist2, function(x) util_find_var_by_meta(
+      variablelist_from_term <- lapply(variablelist_from_term, function(x) util_find_var_by_meta(
         resp_vars = x,
         meta_data = meta_data,
         label_col = label_col,
         target = label_col,
         ifnotfound = NA_character_))
-      variablelist[vl_filled] <- mapply(variablelist[vl_filled], variablelist2,
-             meta_data_cross_item[[CHECK_ID]][vl_filled],
+      variablelist[vl_from_term_filled] <- mapply(
+             vl = variablelist[vl_from_term_filled],
+             vl_from_term = variablelist_from_term,
+             id = meta_data_cross_item[[CHECK_ID]][vl_from_term_filled],
              SIMPLIFY = FALSE,
-             FUN = function(vl, vl_con, id) {
-               not_in_vl <- vl[!(vl %in% vl_con)]
-               not_in_vl_con <- vl_con[!(vl_con %in% vl)]
-               if (length(not_in_vl) > 0 | length(not_in_vl_con) > 0) {
+             FUN = function(vl, vl_from_term, id) { # TODO: Still needed after util_expand_pattern_rules
+               not_in_vl <- vl_from_term[!(vl_from_term %in% vl)]
+               not_in_vl_from_term <- vl[!(vl %in% vl_from_term)]
+               if (length(not_in_vl) > 0 || length(not_in_vl_from_term) > 0) {
                  msg <- paste("Entry VARIABLE_LIST for check",
                               id,
                               "was not specified correctly and adapted:")
+                 if (length(not_in_vl_from_term) > 0) {
+                   msg <- paste(msg, "Variable(s)",
+                                paste(not_in_vl_from_term, collapse = ", "),
+                                ifelse(length(not_in_vl_from_term) > 1, "were", "was"),
+                                "not used by the", sQuote(CONTRADICTION_TERM))
+                 }
                  if (length(not_in_vl) > 0) {
-                   msg <- paste(msg, "Variable",
+                   if (length(not_in_vl_from_term) > 0) {
+                     msg <- paste0(msg, ". Also,")
+                   }
+                   msg <- paste(msg, "Variable(s)",
                                 paste(not_in_vl, collapse = ", "),
                                 ifelse(length(not_in_vl) > 1, "were", "was"),
-                                "superfluous.")
-                 }
-                 if (length(not_in_vl_con) > 0) {
-                   msg <- paste(msg, "Variable",
-                                paste(not_in_vl_con, collapse = ", "),
-                                ifelse(length(not_in_vl) > 1, "were", "was"),
-                                "missing.")
+                                "missing from", sQuote(VARIABLE_LIST))
                  }
                  util_warning(msg, applicability_problem = FALSE)
                  # replace variable list with the generated one
-                 return(vl_con)
+                 return(vl_from_term)
                }
                return(vl)
              })
       # delete the temporary column
       meta_data_cross_item <-
         meta_data_cross_item[, -which(colnames(meta_data_cross_item) ==
-                                        "TEMPORARY_VARIABLE_LIST")]
+                                        "VARIABLE_LIST_FROM_TERM")]
     }
     meta_data_cross_item[[VARIABLE_LIST]] <-
       lapply(variablelist, paste, collapse = sprintf(" %s ", SPLIT_CHAR))

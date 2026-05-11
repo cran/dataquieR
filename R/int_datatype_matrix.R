@@ -41,9 +41,7 @@
 #'   - `DataTypePlotList`: [list] of plots per (maybe artificial) segment
 #'   - `ReportSummaryTable`: data frame underlying `SummaryPlot`
 #' @export
-#' @importFrom ggplot2 ggplot aes geom_tile scale_fill_manual facet_wrap
-#'                     theme_minimal scale_x_discrete xlab guides
-#'                     guide_legend theme element_text
+#' @importFrom ggplot2 ggplot aes geom_tile scale_fill_manual facet_wrap theme_minimal scale_x_discrete xlab guides guide_legend theme element_text
 int_datatype_matrix <- function(resp_vars = NULL,
                                 study_data,
                                 label_col,
@@ -494,6 +492,8 @@ int_datatype_matrix <- function(resp_vars = NULL,
   }
 
   attr(ReportSummaryTable, "flip_mode") <- "noflip";
+  #Fix size for data_type matrix plot
+  attr(ReportSummaryTable, "size_info") <- "fix_size";
 
   return(list( # FIXME: Add Flagged- and Modified-StudyData
     SummaryPlot = p,

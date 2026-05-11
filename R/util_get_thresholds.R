@@ -21,7 +21,7 @@ util_get_thresholds <- function(indicator_metric, meta_data) {
 
   rsts <- util_get_rule_sets()
   availab_rulesets <- meta_data[[GRADING_RULESET]] %in% names(rsts)
-  if (any(!availab_rulesets)) {
+  if (any(!availab_rulesets)) {##### TODO: issue #723 https://gitlab.com/libreumg/dataquier/-/work_items/723
     util_warning(c("The following rulesets are used by item-level metadata",
                    "but missing from the ruleset file: %s. Falling back to",
                    "default (0) for them"),
